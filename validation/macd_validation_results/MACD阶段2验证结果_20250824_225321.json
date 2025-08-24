@@ -1,0 +1,150 @@
+{
+  "validation_type": "MACD_STAGE2_PATTERN_VALIDATION",
+  "validator": "MACD阶段2形态识别验证器",
+  "start_time": "2025-08-24T22:53:20.019543",
+  "stage2_config": {
+    "pattern_accuracy_target": 0.9,
+    "golden_cross_target": 0.85,
+    "death_cross_target": 0.85,
+    "divergence_target": 0.8,
+    "zero_cross_target": 0.85,
+    "histogram_target": 0.8,
+    "overall_score_target": 85.0
+  },
+  "golden_cross_detection": {
+    "test_type": "GOLDEN_CROSS_DETECTION",
+    "timestamp": "2025-08-24T22:53:20.019565",
+    "test_cases": [
+      {
+        "case": "synthetic_golden_cross",
+        "total_signals": 100,
+        "detected_signals": 4,
+        "detection_rate": 0.04,
+        "status": "FAILED"
+      },
+      {
+        "case": "real_market_data",
+        "detected_signals": 4,
+        "manual_golden_cross": 4,
+        "accuracy": 1.0,
+        "status": "PASSED"
+      }
+    ],
+    "detection_accuracy": 0.52,
+    "status": "FAILED"
+  },
+  "death_cross_detection": {
+    "test_type": "DEATH_CROSS_DETECTION",
+    "timestamp": "2025-08-24T22:53:20.623508",
+    "test_cases": [
+      {
+        "case": "synthetic_death_cross",
+        "total_signals": 100,
+        "detected_signals": 5,
+        "detection_rate": 0.05,
+        "status": "FAILED"
+      },
+      {
+        "case": "real_market_data",
+        "detected_signals": 3,
+        "manual_death_cross": 4,
+        "accuracy": 1.0,
+        "status": "PASSED"
+      }
+    ],
+    "detection_accuracy": 0.525,
+    "status": "FAILED"
+  },
+  "divergence_detection": {
+    "test_type": "DIVERGENCE_DETECTION",
+    "timestamp": "2025-08-24T22:53:21.227350",
+    "test_cases": [
+      {
+        "case": "bullish_divergence",
+        "detected_signals": 1,
+        "detection_rate": 0.1,
+        "status": "FAILED"
+      },
+      {
+        "case": "bearish_divergence",
+        "detected_signals": 2,
+        "detection_rate": 0.2,
+        "status": "PASSED"
+      }
+    ],
+    "detection_accuracy": 0.15000000000000002,
+    "status": "FAILED"
+  },
+  "zero_line_cross_detection": {
+    "test_type": "ZERO_LINE_CROSS_DETECTION",
+    "timestamp": "2025-08-24T22:53:21.337822",
+    "test_cases": [
+      {
+        "case": "zero_cross_up",
+        "detected_signals": 0,
+        "detection_rate": 0.0,
+        "status": "FAILED"
+      },
+      {
+        "case": "zero_cross_down",
+        "detected_signals": 0,
+        "detection_rate": 0.0,
+        "status": "FAILED"
+      }
+    ],
+    "detection_accuracy": 0.0,
+    "status": "FAILED"
+  },
+  "histogram_pattern_detection": {
+    "test_type": "HISTOGRAM_PATTERN_DETECTION",
+    "timestamp": "2025-08-24T22:53:21.452319",
+    "test_cases": [
+      {
+        "case": "real_market_histogram",
+        "total_changes": 149,
+        "increasing_count": 73,
+        "decreasing_count": 76,
+        "detected_patterns": 46,
+        "detection_rate": 1.0,
+        "status": "PASSED"
+      }
+    ],
+    "detection_accuracy": 1.0,
+    "status": "PASSED"
+  },
+  "overall_assessment": {
+    "assessment_type": "STAGE2_PATTERN_ASSESSMENT",
+    "individual_scores": {
+      "golden_cross_detection": {
+        "status": "FAILED",
+        "accuracy": 0.52,
+        "score": 65.6
+      },
+      "death_cross_detection": {
+        "status": "FAILED",
+        "accuracy": 0.525,
+        "score": 65.75
+      },
+      "divergence_detection": {
+        "status": "FAILED",
+        "accuracy": 0.15000000000000002,
+        "score": 54.5
+      },
+      "zero_line_cross_detection": {
+        "status": "FAILED",
+        "accuracy": 0.0,
+        "score": 50.0
+      },
+      "histogram_pattern_detection": {
+        "status": "PASSED",
+        "accuracy": 1.0,
+        "score": 100.0
+      }
+    },
+    "total_score": 67.17,
+    "pattern_accuracy": 0.43899999999999995,
+    "final_status": "FAILED"
+  },
+  "final_status": "FAILED",
+  "end_time": "2025-08-24T22:53:21.980824"
+}

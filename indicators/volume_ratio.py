@@ -13,12 +13,13 @@ from typing import Dict, Any, List, Union, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class VolumeRatio(BaseIndicator, PatternSignalMixin):
+class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     量比指标(VOLUME_RATIO) - 最高生产级实现
     
@@ -717,3 +718,15 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin):
     def get_patterns_Ratio(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        VolumeRatio指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

@@ -21,13 +21,14 @@ except ImportError:
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class Rsima(BaseIndicator, PatternSignalMixin):
+class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     RSI均线系统(RSIMA)
     
@@ -458,3 +459,16 @@ class Rsima(BaseIndicator, PatternSignalMixin):
     def calculate_confidence_Rsima(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         return 0.5
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Rsima指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 rsi_period(14) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        rsi_period = self._parameters.get('rsi_period', 14)
+        return rsi_period + max(10, rsi_period // 2)

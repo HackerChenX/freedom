@@ -13,242 +13,321 @@ data_generation:
   data_quality_threshold: 0.95
   pool_size: 100  # 每个测试的数据池大小
 
-# 已修复指标测试矩阵（24个指标）+ 新增待修复指标（13个指标）
+# 复测验证配置 - 所有声明为100%通过测试的指标
 indicators_test_matrix:
   completed_indicators:
-    # 第一批已修复指标
-    MACD:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE', 'HISTOGRAM_REVERSAL']
-      history_requirement: 60
-      complex_conditions: ['MACD_RSI_COMBO', 'MACD_VOLUME_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
-    RSI:
-      patterns: ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'CENTERLINE_CROSS']
-      history_requirement: 30
-      complex_conditions: ['RSI_MACD_COMBO', 'RSI_BOLL_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
-    VOL:
-      patterns: ['VOLUME_SPIKE', 'VOLUME_BREAKOUT', 'VOLUME_DIVERGENCE']
-      history_requirement: 20
-      complex_conditions: ['VOL_PRICE_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
+    # 第一批核心指标中标记为100%完美的13个指标
     KDJ:
       patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'OVERBOUGHT', 'OVERSOLD']
       history_requirement: 20
       complex_conditions: ['KDJ_MACD_COMBO', 'KDJ_VOL_COMBO']
       expected_accuracy: 1.0
       priority: "high"
-      
-    BOLL:
-      patterns: ['UPPER_BREAKOUT', 'LOWER_BREAKOUT', 'SQUEEZE', 'EXPANSION']
-      history_requirement: 40
-      complex_conditions: ['BOLL_RSI_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
-    CCI:
-      patterns: ['OVERBOUGHT', 'OVERSOLD', 'ZERO_LINE_CROSS']
-      history_requirement: 25
-      complex_conditions: ['CCI_MACD_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    WR:
-      patterns: ['OVERBOUGHT', 'OVERSOLD', 'REVERSAL']
-      history_requirement: 20
-      complex_conditions: ['WR_RSI_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    BIAS:
-      patterns: ['POSITIVE_BIAS', 'NEGATIVE_BIAS', 'ZERO_CROSS']
-      history_requirement: 30
-      complex_conditions: ['BIAS_MA_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    EMA:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'TREND_FOLLOWING']
-      history_requirement: 50
-      complex_conditions: ['EMA_MACD_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
+      status: "claimed_100_percent"
+
     DMI:
       patterns: ['ADX_RISING', 'DI_CROSS', 'TREND_STRENGTH']
       history_requirement: 30
       complex_conditions: ['DMI_MACD_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    # 第二批已修复指标
+      status: "claimed_100_percent"
+
     ADX:
       patterns: ['TREND_STRENGTH', 'TREND_WEAKNESS', 'DIRECTIONAL_CHANGE']
       history_requirement: 30
       complex_conditions: ['ADX_DMI_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
+      status: "claimed_100_percent"
+
     DMA:
       patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE']
       history_requirement: 40
       complex_conditions: ['DMA_MACD_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    WMA:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'TREND_FOLLOWING']
-      history_requirement: 50
-      complex_conditions: ['WMA_EMA_COMBO']
+      status: "claimed_100_percent"
+
+    CCI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'ZERO_LINE_CROSS']
+      history_requirement: 25
+      complex_conditions: ['CCI_MACD_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    StochRSI:
+      status: "claimed_100_percent"
+
+    BIAS:
+      patterns: ['POSITIVE_BIAS', 'NEGATIVE_BIAS', 'ZERO_CROSS']
+      history_requirement: 30
+      complex_conditions: ['BIAS_MA_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    STOCHRSI:
       patterns: ['OVERBOUGHT', 'OVERSOLD', 'GOLDEN_CROSS', 'DEATH_CROSS']
       history_requirement: 35
       complex_conditions: ['STOCHRSI_RSI_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    MA:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'SUPPORT_RESISTANCE']
-      history_requirement: 60
-      complex_conditions: ['MA_VOLUME_COMBO']
+      status: "claimed_100_percent"
+
+    WR:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'REVERSAL']
+      history_requirement: 20
+      complex_conditions: ['WR_RSI_COMBO']
       expected_accuracy: 1.0
-      priority: "high"
-      
+      priority: "medium"
+      status: "claimed_100_percent"
+
     OBV:
       patterns: ['VOLUME_ACCUMULATION', 'VOLUME_DISTRIBUTION', 'DIVERGENCE']
       history_requirement: 30
       complex_conditions: ['OBV_PRICE_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
+      status: "claimed_100_percent"
+
     MTM:
       patterns: ['MOMENTUM_POSITIVE', 'MOMENTUM_NEGATIVE', 'ZERO_CROSS']
       history_requirement: 25
       complex_conditions: ['MTM_MACD_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
+      status: "claimed_100_percent"
+
     PVT:
       patterns: ['PRICE_VOLUME_TREND', 'DIVERGENCE', 'BREAKOUT']
       history_requirement: 30
       complex_conditions: ['PVT_OBV_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
+      status: "claimed_100_percent"
+
     MOMENTUM:
       patterns: ['POSITIVE_MOMENTUM', 'NEGATIVE_MOMENTUM', 'REVERSAL']
       history_requirement: 25
       complex_conditions: ['MOMENTUM_RSI_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    FIBONACCI:
-      patterns: ['RETRACEMENT_38', 'RETRACEMENT_50', 'RETRACEMENT_62', 'EXTENSION']
-      history_requirement: 60
-      complex_conditions: ['FIBONACCI_TREND_COMBO']
-      expected_accuracy: 1.0
-      priority: "low"
-      
+      status: "claimed_100_percent"
+
     AROON:
       patterns: ['AROON_UP_CROSS', 'AROON_DOWN_CROSS', 'PARALLEL_MOVEMENT']
       history_requirement: 30
       complex_conditions: ['AROON_ADX_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
+      status: "claimed_100_percent"
 
-  # 🔧 Ultra Think新增：待修复指标配置
-  repair_in_progress:
-    # P1 高优先级 - 趋势指标
-    SAR:
-      patterns: ['TREND_REVERSAL', 'UPTREND_SIGNAL', 'DOWNTREND_SIGNAL', 'STOP_LOSS']
-      history_requirement: 40
-      complex_conditions: ['SAR_TREND_COMBO', 'SAR_MACD_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
-    TRIX:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE', 'MOMENTUM_SHIFT']
-      history_requirement: 45
-      complex_conditions: ['TRIX_MACD_COMBO', 'TRIX_RSI_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    # P1 高优先级 - 成交量指标
-    MFI:
-      patterns: ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'MONEY_FLOW_REVERSAL']
-      history_requirement: 35
-      complex_conditions: ['MFI_RSI_COMBO', 'MFI_VOL_COMBO']
-      expected_accuracy: 1.0
-      priority: "high"
-      
-    # P1 高优先级 - 动量指标
-    ROC:
-      patterns: ['POSITIVE_MOMENTUM', 'NEGATIVE_MOMENTUM', 'ZERO_CROSS', 'ACCELERATION']
-      history_requirement: 30
-      complex_conditions: ['ROC_MACD_COMBO', 'ROC_RSI_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    CMO:
-      patterns: ['OVERBOUGHT', 'OVERSOLD', 'MOMENTUM_SHIFT', 'ZERO_CROSS']
-      history_requirement: 25
-      complex_conditions: ['CMO_RSI_COMBO', 'CMO_MACD_COMBO']
-      expected_accuracy: 1.0
-      priority: "medium"
-      
-    # P2 中优先级 - 波动性指标
+    # 第二批Ultra Think连胜的14个指标
     ATR:
       patterns: ['HIGH_VOLATILITY', 'LOW_VOLATILITY', 'VOLATILITY_EXPANSION', 'VOLATILITY_CONTRACTION']
       history_requirement: 30
       complex_conditions: ['ATR_BOLL_COMBO', 'ATR_TREND_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    KC:
-      patterns: ['UPPER_BREAKOUT', 'LOWER_BREAKOUT', 'SQUEEZE', 'EXPANSION']
+      status: "claimed_100_percent"
+
+    SAR:
+      patterns: ['TREND_REVERSAL', 'UPTREND_SIGNAL', 'DOWNTREND_SIGNAL', 'STOP_LOSS']
+      history_requirement: 40
+      complex_conditions: ['SAR_TREND_COMBO', 'SAR_MACD_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      status: "claimed_100_percent"
+
+    MFI:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'DIVERGENCE', 'MONEY_FLOW_REVERSAL']
       history_requirement: 35
-      complex_conditions: ['KC_BOLL_COMBO', 'KC_ATR_COMBO']
+      complex_conditions: ['MFI_RSI_COMBO', 'MFI_VOL_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      status: "claimed_100_percent"
+
+    ROC:
+      patterns: ['POSITIVE_MOMENTUM', 'NEGATIVE_MOMENTUM', 'ZERO_CROSS', 'ACCELERATION']
+      history_requirement: 30
+      complex_conditions: ['ROC_MACD_COMBO', 'ROC_RSI_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    VIX:
-      patterns: ['FEAR_SPIKE', 'COMPLACENCY_LOW', 'VOLATILITY_EXPANSION', 'VOLATILITY_CONTRACTION']
-      history_requirement: 40
-      complex_conditions: ['VIX_MARKET_COMBO']
+      status: "claimed_100_percent"
+
+    CMO:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'MOMENTUM_SHIFT', 'ZERO_CROSS']
+      history_requirement: 25
+      complex_conditions: ['CMO_RSI_COMBO', 'CMO_MACD_COMBO']
       expected_accuracy: 1.0
-      priority: "low"
-      
-    # P2 中优先级 - 成交量分析指标
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    PSY:
+      patterns: ['OVERBOUGHT', 'OVERSOLD', 'PSYCHOLOGICAL_REVERSAL', 'TREND_CONFIRMATION']
+      history_requirement: 30
+      complex_conditions: ['PSY_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    VR:
+      patterns: ['VOLUME_RATIO_HIGH', 'VOLUME_RATIO_LOW', 'VOLUME_TREND', 'VOLUME_REVERSAL']
+      history_requirement: 25
+      complex_conditions: ['VR_VOL_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
     EMV:
       patterns: ['EASE_OF_MOVEMENT_POSITIVE', 'EASE_OF_MOVEMENT_NEGATIVE', 'ZERO_CROSS', 'DIVERGENCE']
       history_requirement: 30
       complex_conditions: ['EMV_VOL_COMBO', 'EMV_PRICE_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
+      status: "claimed_100_percent"
+
+    TRIX:
+      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'DIVERGENCE', 'MOMENTUM_SHIFT']
+      history_requirement: 45
+      complex_conditions: ['TRIX_MACD_COMBO', 'TRIX_RSI_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
     CHAIKIN:
       patterns: ['ACCUMULATION', 'DISTRIBUTION', 'ZERO_CROSS', 'DIVERGENCE']
       history_requirement: 30
       complex_conditions: ['CHAIKIN_VOL_COMBO', 'CHAIKIN_MACD_COMBO']
       expected_accuracy: 1.0
       priority: "medium"
-      
-    # P3 优化优先级 - 现有评分较低指标
-    SMA:
-      patterns: ['GOLDEN_CROSS', 'DEATH_CROSS', 'SUPPORT_RESISTANCE', 'TREND_FOLLOWING']
-      history_requirement: 50
-      complex_conditions: ['SMA_MA_COMBO', 'SMA_VOLUME_COMBO']
+      status: "claimed_100_percent"
+
+    VIX:
+      patterns: ['FEAR_SPIKE', 'COMPLACENCY_LOW', 'VOLATILITY_EXPANSION', 'VOLATILITY_CONTRACTION']
+      history_requirement: 40
+      complex_conditions: ['VIX_MARKET_COMBO']
+      expected_accuracy: 1.0
+      priority: "low"
+      status: "claimed_100_percent"
+
+    KC:
+      patterns: ['UPPER_BREAKOUT', 'LOWER_BREAKOUT', 'SQUEEZE', 'EXPANSION']
+      history_requirement: 35
+      complex_conditions: ['KC_BOLL_COMBO', 'KC_ATR_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    VORTEX:
+      patterns: ['VI_POSITIVE_CROSS', 'VI_NEGATIVE_CROSS', 'TREND_STRENGTH', 'TREND_REVERSAL']
+      history_requirement: 35
+      complex_conditions: ['VORTEX_TREND_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    AD:
+      patterns: ['ACCUMULATION', 'DISTRIBUTION', 'DIVERGENCE', 'TREND_CONFIRMATION']
+      history_requirement: 30
+      complex_conditions: ['AD_PRICE_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    # ZXM体系指标（37个）- 声明100%完美通过率
+    ZXM_WEEKLY_MACD:
+      patterns: ['WEEKLY_GOLDEN_CROSS', 'WEEKLY_DEATH_CROSS', 'WEEKLY_DIVERGENCE']
+      history_requirement: 60
+      complex_conditions: ['ZXM_WEEKLY_COMBO']
       expected_accuracy: 1.0
       priority: "high"
+      status: "claimed_100_percent"
+
+    ZXM_MONTHLY_MACD:
+      patterns: ['MONTHLY_GOLDEN_CROSS', 'MONTHLY_DEATH_CROSS', 'MONTHLY_DIVERGENCE']
+      history_requirement: 120
+      complex_conditions: ['ZXM_MONTHLY_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      status: "claimed_100_percent"
+
+    ZXM_TREND_SCORE:
+      patterns: ['TREND_STRONG', 'TREND_WEAK', 'TREND_REVERSAL']
+      history_requirement: 40
+      complex_conditions: ['ZXM_TREND_COMBO']
+      expected_accuracy: 1.0
+      priority: "high"
+      status: "claimed_100_percent"
+
+    ZXM_MARKET_SENTIMENT:
+      patterns: ['BULLISH_SENTIMENT', 'BEARISH_SENTIMENT', 'NEUTRAL_SENTIMENT']
+      history_requirement: 30
+      complex_conditions: ['ZXM_SENTIMENT_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+    ZXM_FUND_FLOW:
+      patterns: ['INFLOW', 'OUTFLOW', 'BALANCED_FLOW']
+      history_requirement: 30
+      complex_conditions: ['ZXM_FLOW_COMBO']
+      expected_accuracy: 1.0
+      priority: "medium"
+      status: "claimed_100_percent"
+
+
+# 复测验证配置 - 仅包含需要验证的指标
+  # 注意：ZXM体系指标由于数量众多（37个），在此简化为代表性指标
+  # 实际复测时会包含完整的ZXM体系
+
+# 复测验证配置
+verification_config:
+  test_iterations: 20  # 每个指标执行20次连续测试
+  success_rate_requirement: 1.0  # 100%准确率要求
+  max_response_time_ms: 100  # 响应时间<100ms
+  max_memory_usage_mb: 50  # 内存使用<50MB
+
+  # 复测分组
+  test_groups:
+    group_1_core_indicators:
+      - KDJ
+      - DMI
+      - ADX
+      - DMA
+      - CCI
+    group_2_technical_indicators:
+      - BIAS
+      - STOCHRSI
+      - WR
+      - OBV
+      - MTM
+    group_3_momentum_indicators:
+      - PVT
+      - MOMENTUM
+      - AROON
+    group_4_ultra_think_batch1:
+      - ATR
+      - SAR
+      - MFI
+      - ROC
+      - CMO
+    group_5_ultra_think_batch2:
+      - PSY
+      - VR
+      - EMV
+      - TRIX
+      - CHAIKIN
+    group_6_ultra_think_batch3:
+      - VIX
+      - KC
+      - VORTEX
+      - AD
+    group_7_zxm_sample:
+      - ZXM_WEEKLY_MACD
+      - ZXM_MONTHLY_MACD
+      - ZXM_TREND_SCORE
+      - ZXM_MARKET_SENTIMENT
+      - ZXM_FUND_FLOW
 
 # 性能测试要求
 performance_requirements:

@@ -5,6 +5,7 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.technical_utils import find_peaks_and_troughs
 
 from utils.dependency_injection import get_logger
@@ -12,7 +13,7 @@ logger = get_logger(__name__)
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedCci(BaseIndicator, PatternSignalMixin):
+class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型CCI(商品通道指数)指标
     
@@ -1205,3 +1206,19 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        EnhancedCci指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 period(20), secondary_period(40), smoothing_period(3), trend_period(50) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = self._parameters.get('period', 20)
+        secondary_period = self._parameters.get('secondary_period', 40)
+        smoothing_period = self._parameters.get('smoothing_period', 3)
+        trend_period = self._parameters.get('trend_period', 50)
+        return max(period, secondary_period, smoothing_period, trend_period) + 10

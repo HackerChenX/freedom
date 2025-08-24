@@ -13,11 +13,12 @@ from enums.indicator_types import Trend_type, Cross_type
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin):
+class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     钱德动量摆动指标 (Chande Momentum Oscillator)
     
@@ -991,3 +992,14 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin):
                 'type': 'neutral',
                 'strength': 'medium'
             })
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ChandeMomentumOscillator指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 20

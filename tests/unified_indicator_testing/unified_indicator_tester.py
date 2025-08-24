@@ -129,15 +129,25 @@ class UnifiedIndicatorTester:
             if section not in self.config:
                 raise ConfigurationError(f"配置文件缺少必需部分: {section}")
 
-        # 验证指标配置
-        completed_indicators = self.config.get('indicators_test_matrix', {}).get('completed_indicators', {})
-        repair_indicators = self.config.get('indicators_test_matrix', {}).get('repair_in_progress', {})
-        total_indicators = len(completed_indicators) + len(repair_indicators)
-        
+        # 验证指标配置 - 支持新的生产级配置结构
+        test_matrix = self.config.get('indicators_test_matrix', {})
+        total_indicators = 0
+
+        # 统计新的批次结构中的指标
+        for batch_name, batch_indicators in test_matrix.items():
+            if batch_name.startswith('P') and isinstance(batch_indicators, dict):
+                total_indicators += len(batch_indicators)
+
+        # 兼容旧的配置结构
+        if total_indicators == 0:
+            completed_indicators = test_matrix.get('completed_indicators', {})
+            repair_indicators = test_matrix.get('repair_in_progress', {})
+            total_indicators = len(completed_indicators) + len(repair_indicators)
+
         if total_indicators == 0:
             raise ConfigurationError("配置文件中没有找到任何指标")
 
-        logger.debug(f"配置验证通过，找到 {total_indicators} 个指标（已完成:{len(completed_indicators)}, 待修复:{len(repair_indicators)}）")
+        logger.debug(f"配置验证通过，找到 {total_indicators} 个指标")
 
     def _setup_output_directories(self):
         """设置输出目录"""
@@ -319,17 +329,31 @@ class UnifiedIndicatorTester:
         start_time = datetime.now()
 
         try:
-            # 🔧 Ultra Think修复：验证指标配置，同时检查已完成和待修复指标
-            completed_indicators = self.config['indicators_test_matrix'].get('completed_indicators', {})
-            repair_indicators = self.config['indicators_test_matrix'].get('repair_in_progress', {})
-            
-            if indicator_name in completed_indicators:
-                indicator_config = completed_indicators[indicator_name]
-                indicator_status = "已完成"
-            elif indicator_name in repair_indicators:
-                indicator_config = repair_indicators[indicator_name]
-                indicator_status = "待修复"
-            else:
+            # 🔧 Ultra Think修复：支持新的生产级配置结构
+            indicator_config = None
+            indicator_status = "未找到"
+
+            # 检查新的生产级配置结构
+            test_matrix = self.config.get('indicators_test_matrix', {})
+            for batch_name, batch_indicators in test_matrix.items():
+                if batch_name.startswith('P') and indicator_name in batch_indicators:
+                    indicator_config = batch_indicators[indicator_name]
+                    indicator_status = f"批次{batch_name}"
+                    break
+
+            # 兼容旧的配置结构
+            if not indicator_config:
+                completed_indicators = test_matrix.get('completed_indicators', {})
+                repair_indicators = test_matrix.get('repair_in_progress', {})
+
+                if indicator_name in completed_indicators:
+                    indicator_config = completed_indicators[indicator_name]
+                    indicator_status = "已完成"
+                elif indicator_name in repair_indicators:
+                    indicator_config = repair_indicators[indicator_name]
+                    indicator_status = "待修复"
+
+            if not indicator_config:
                 logger.error(f"指标 {indicator_name} 未在配置中找到")
                 return {
                     'indicator': indicator_name,

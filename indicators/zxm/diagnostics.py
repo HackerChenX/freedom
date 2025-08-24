@@ -7,11 +7,12 @@ from typing import Dict, List, Tuple, Union, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
+class ZXMDiagnostics(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM智能诊断器
     
@@ -1443,3 +1444,15 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin):
     def _identify_composite_patterns(self, data: pd.DataFrame, diagnosis_result: pd.DataFrame, patterns: pd.DataFrame, min_strength: float):
         """识别综合技术形态"""
         pass  # 简化实现
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXMDiagnostics指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

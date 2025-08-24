@@ -1,0 +1,63 @@
+{
+  "stage": "STAGE3_CODE_QUALITY",
+  "validator": "RSI代码质量验证器",
+  "start_time": "2025-08-24T14:51:21.669257",
+  "quality_standards": {
+    "code_coverage_target": 0.95,
+    "function_complexity_max": 10,
+    "code_duplication_max": 0.05,
+    "documentation_completeness": 0.9,
+    "calculation_accuracy_target": 0.995,
+    "performance_single_stock_max": 1.0,
+    "performance_batch_max": 30.0,
+    "memory_usage_max": 100
+  },
+  "code_structure_analysis": {
+    "analysis_type": "CODE_STRUCTURE",
+    "timestamp": "2025-08-24T14:51:21.669269",
+    "class_analysis": {},
+    "method_analysis": {},
+    "inheritance_analysis": {},
+    "quality_metrics": {},
+    "error": "Can't instantiate abstract class RsiRsi with abstract method minimum_periods"
+  },
+  "calculation_precision": {
+    "validation_type": "CALCULATION_PRECISION",
+    "timestamp": "2025-08-24T14:51:21.669292",
+    "method_comparisons": {
+      "methods_tested": [
+        "wilder",
+        "sma",
+        "ema"
+      ],
+      "correlation_matrix": {
+        "sma_vs_wilder": 0.9196000446999294,
+        "ema_vs_wilder": 0.9515167842018051,
+        "ema_vs_sma": 0.9417157382477007
+      },
+      "difference_analysis": {
+        "mean_difference": -0.39957484919252845,
+        "max_difference": 27.611812893038874,
+        "std_difference": 9.78537307271988
+      },
+      "recommended_method": "wilder"
+    },
+    "stability_tests": {},
+    "accuracy_benchmarks": {},
+    "overall_precision_score": 0.0,
+    "error": "Can't instantiate abstract class RsiRsi with abstract method minimum_periods"
+  },
+  "performance_benchmarks": {
+    "test_type": "PERFORMANCE_BENCHMARKS",
+    "timestamp": "2025-08-24T14:51:21.692370",
+    "single_stock_performance": {},
+    "batch_performance": {},
+    "memory_usage": {},
+    "concurrent_performance": {},
+    "overall_performance_score": 0.0,
+    "error": "Can't instantiate abstract class RsiRsi with abstract method minimum_periods"
+  },
+  "overall_quality_score": 0.0,
+  "quality_grade": "POOR",
+  "end_time": "2025-08-24T14:51:21.693393"
+}

@@ -4,12 +4,13 @@ from typing import Dict, Any, List, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnhancedMACD(BaseIndicator, PatternSignalMixin):
+class EnhancedMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ENHANCED_MACD 指标
     

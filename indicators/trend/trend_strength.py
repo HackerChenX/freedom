@@ -15,6 +15,7 @@ import warnings
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 # 静默警告
@@ -23,7 +24,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class TrendStrength(BaseIndicator, PatternSignalMixin):
+class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     趋势强度指标
     
@@ -222,3 +223,15 @@ class TrendStrength(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        TrendStrength指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

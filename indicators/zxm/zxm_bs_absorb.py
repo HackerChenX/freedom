@@ -1,9 +1,10 @@
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 import pandas as pd
 from typing import Dict
 
-class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin):
+class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     主力吸筹指标 (ZXM Buy/Sell Absorb)
     
@@ -169,3 +170,15 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZxmbsabsorbAbsorb指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

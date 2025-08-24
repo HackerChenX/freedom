@@ -4,12 +4,13 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class PatternDetector(BaseIndicator, PatternSignalMixin):
+class PatternDetector(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     PATTERN_DETECTOR 指标
     
@@ -114,3 +115,15 @@ class PatternDetector(BaseIndicator, PatternSignalMixin):
     def get_patterns_Detector(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        PatternDetector指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

@@ -12,6 +12,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.base_indicator import BaseIndicator
 from utils.dependency_injection import get_logger
 from utils.technical_utils import find_peaks_and_troughs
@@ -20,7 +21,7 @@ from utils.indicator_utils import crossover, crossunder
 logger = get_logger(__name__)
 
 
-class EnhancedObv(BaseIndicator, PatternSignalMixin):
+class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型能量潮(On Balance Volume)指标
     

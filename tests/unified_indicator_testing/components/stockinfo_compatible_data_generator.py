@@ -444,7 +444,46 @@ class StockInfoCompatibleDataGenerator:
                 adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
                 adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
                 adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
-        
+
+        elif pattern_type == 'DIVERGENCE':
+            # 创建MACD背离形态：价格创新高，但MACD柱状图减弱
+            divergence_point = max(n - 15, n//2)
+
+            base_price = adjusted_data['close'].iloc[0]
+
+            # 创建两个高点，第二个高点更高但MACD动量减弱
+            first_peak = divergence_point // 2
+            second_peak = divergence_point + (n - divergence_point) // 2
+
+            for i in range(n):
+                if i < first_peak:
+                    # 第一次上升到第一个高点
+                    trend_factor = 1 + (0.15 * i / first_peak)  # 上涨15%
+                elif i < divergence_point:
+                    # 从第一个高点回调
+                    decline_ratio = (i - first_peak) / (divergence_point - first_peak)
+                    trend_factor = 1.15 - (0.08 * decline_ratio)  # 回调8%
+                elif i < second_peak:
+                    # 第二次上升到更高的高点（但动量减弱）
+                    rise_ratio = (i - divergence_point) / (second_peak - divergence_point)
+                    trend_factor = 1.07 + (0.12 * rise_ratio)  # 上涨到1.19（比第一个高点高）
+                else:
+                    # 背离后的下跌
+                    decline_ratio = (i - second_peak) / (n - second_peak)
+                    trend_factor = 1.19 - (0.15 * decline_ratio)  # 下跌15%
+
+                new_price = base_price * trend_factor
+                adjusted_data.loc[i, 'close'] = new_price
+                adjusted_data.loc[i, 'open'] = new_price * random.uniform(0.99, 1.01)
+
+                # 在第二个高点附近减少波动性（模拟动量减弱）
+                if abs(i - second_peak) <= 3:
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.005, 1.02)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.98, 0.995)
+                else:
+                    adjusted_data.loc[i, 'high'] = new_price * random.uniform(1.01, 1.05)
+                    adjusted_data.loc[i, 'low'] = new_price * random.uniform(0.95, 0.99)
+
         return adjusted_data
 
     def _create_rsi_pattern(self, data: pd.DataFrame, pattern_type: str) -> pd.DataFrame:

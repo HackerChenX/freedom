@@ -13,6 +13,7 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -56,7 +57,7 @@ class PatterntypePatterns(Enum):
     V_REVERSAL = "V形反转"            # 急速下跌后快速反弹
 
 
-class CandlestickPatterns(BaseIndicator, PatternSignalMixin):
+class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     K线形态识别指标
     

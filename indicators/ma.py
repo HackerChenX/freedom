@@ -4,6 +4,7 @@ from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from indicators.pattern_registry import PatternTypePatternRegistry
 from utils.dependency_injection import get_logger
@@ -14,7 +15,7 @@ class Pattern_type:
 
 logger = get_logger(__name__)
 
-class MaMa(BaseIndicator, PatternSignalMixin):
+class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     移动平均线(MA_Ma)
     分类：趋势类指标

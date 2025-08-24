@@ -16,13 +16,14 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class ParabolicSar(BaseIndicator, PatternSignalMixin):
+class ParabolicSar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     抛物线转向系统(SAR) (SAR)
     
@@ -1137,3 +1138,15 @@ class ParabolicSar(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ParabolicSar指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 15

@@ -15,13 +15,14 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class Pvt(BaseIndicator, PatternSignalMixin):
+class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     价格成交量趋势指标(PVT) (PVT)
     

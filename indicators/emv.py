@@ -17,13 +17,14 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class EmvEmv(BaseIndicator, PatternSignalMixin):
+class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     量能指标 (Ease of Movement Value)
     
@@ -1090,3 +1091,16 @@ class EmvEmv(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        EmvEmv指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 period(14) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = self._parameters.get('period', 14)
+        return period + max(10, period // 2)

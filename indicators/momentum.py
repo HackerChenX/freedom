@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class MomentumMomentum(BaseIndicator, PatternSignalMixin):
+class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     MOMENTUM 指标
     

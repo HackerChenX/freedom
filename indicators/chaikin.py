@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class Chaikin(BaseIndicator, PatternSignalMixin):
+class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     CHAIKIN 指标 (Chaikin A/D Oscillator)
     

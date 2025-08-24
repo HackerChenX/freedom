@@ -4,10 +4,11 @@ from typing import Optional, Dict, Any, Tuple, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 
 
-class EnhancedDmi(BaseIndicator, PatternSignalMixin):
+class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型DMI指标
     

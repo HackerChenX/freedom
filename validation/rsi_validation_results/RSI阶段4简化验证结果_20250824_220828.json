@@ -1,0 +1,190 @@
+{
+  "validation_type": "STAGE4_SIMPLIFIED_VALIDATION",
+  "validator": "RSI简化验证器",
+  "start_time": "2025-08-24T22:08:25.137334",
+  "algorithm_accuracy_test": {
+    "test_type": "ALGORITHM_ACCURACY_TEST",
+    "timestamp": "2025-08-24T22:08:25.137355",
+    "test_results": [
+      {
+        "stock_code": "002578",
+        "data_points": 50,
+        "rsi_values_compared": 36,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 50.99512747115193,
+        "latest_benchmark_rsi": 50.99512747115193,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "002492",
+        "data_points": 50,
+        "rsi_values_compared": 36,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 41.68405306741951,
+        "latest_benchmark_rsi": 41.68405306741951,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "300900",
+        "data_points": 50,
+        "rsi_values_compared": 36,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 50.98354971674732,
+        "latest_benchmark_rsi": 50.98354971674732,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "002003",
+        "data_points": 50,
+        "rsi_values_compared": 36,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 51.898728922712266,
+        "latest_benchmark_rsi": 51.898728922712266,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "300961",
+        "data_points": 50,
+        "rsi_values_compared": 36,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 51.9236215234563,
+        "latest_benchmark_rsi": 51.9236215234563,
+        "status": "PASSED"
+      }
+    ],
+    "overall_accuracy": 1.0,
+    "status": "PASSED"
+  },
+  "functionality_test": {
+    "test_type": "FUNCTIONALITY_TEST",
+    "timestamp": "2025-08-24T22:08:26.474606",
+    "test_results": [
+      {
+        "stock_code": "002578",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "002492",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "301029",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "600996",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "001373",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "300900",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "300961",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "601601",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "300678",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      },
+      {
+        "stock_code": "002003",
+        "status": "SUCCESS",
+        "reason": "VALID_RSI_CALCULATION",
+        "data_points": 40,
+        "rsi_values_count": 26
+      }
+    ],
+    "success_rate": 1.0,
+    "status": "PASSED"
+  },
+  "stability_test": {
+    "test_type": "STABILITY_TEST",
+    "timestamp": "2025-08-24T22:08:27.601323",
+    "tests": [
+      {
+        "test": "DATABASE_STABILITY",
+        "result": "PASSED",
+        "stability_rate": 1.0
+      },
+      {
+        "test": "RSI_STABILITY",
+        "result": "PASSED",
+        "success_rate": 1.0
+      },
+      {
+        "test": "ERROR_HANDLING",
+        "result": "PASSED",
+        "handling_rate": 1.0
+      }
+    ],
+    "status": "PASSED"
+  },
+  "overall_assessment": {
+    "assessment_type": "SIMPLIFIED_ASSESSMENT",
+    "individual_scores": {
+      "algorithm_accuracy_test": {
+        "status": "PASSED",
+        "score": 100
+      },
+      "functionality_test": {
+        "status": "PASSED",
+        "score": 100
+      },
+      "stability_test": {
+        "status": "PASSED",
+        "score": 100
+      }
+    },
+    "total_score": 100.0,
+    "production_readiness": "FULLY_PRODUCTION_READY",
+    "final_status": "FULLY_PASSED"
+  },
+  "final_status": "FULLY_PASSED",
+  "end_time": "2025-08-24T22:08:28.886956"
+}

@@ -1,0 +1,372 @@
+{
+  "indicator_name": "RSI",
+  "validation_date": "2025-05-12",
+  "timeframe": "日线",
+  "validation_timestamp": "2025-08-23T23:47:00.093004",
+  "patterns_validation": {
+    "OVERBOUGHT": {
+      "pattern_name": "OVERBOUGHT",
+      "indicator_name": "RSI",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000006",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERBOUGHT形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000014",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERBOUGHT形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000031",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERBOUGHT形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "OVERSOLD": {
+      "pattern_name": "OVERSOLD",
+      "indicator_name": "RSI",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000007",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERSOLD形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERSOLD形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000026",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERSOLD形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000029",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认OVERSOLD形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "RSI_GOLDEN_CROSS": {
+      "pattern_name": "RSI_GOLDEN_CROSS",
+      "indicator_name": "RSI",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000002",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000007",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000020",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000030",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000031",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_GOLDEN_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "RSI_DEATH_CROSS": {
+      "pattern_name": "RSI_DEATH_CROSS",
+      "indicator_name": "RSI",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000006",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000012",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000017",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000019",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000021",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000026",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "rsi_value": 20
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认RSI_DEATH_CROSS形态识别准确",
+            "验证RSI指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    }
+  },
+  "overall_result": {
+    "total_patterns": 4,
+    "validated_patterns": 4,
+    "failed_patterns": 0,
+    "validation_passed": true
+  },
+  "human_verification": {
+    "verification_required": true,
+    "verification_completed": false,
+    "verification_notes": [],
+    "issues_found": [],
+    "approval_status": "PENDING"
+  },
+  "stock_results": {},
+  "issues_found": []
+}

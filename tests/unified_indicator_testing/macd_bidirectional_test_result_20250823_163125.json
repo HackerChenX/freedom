@@ -1,0 +1,97 @@
+{
+  "test_time": "2025-08-23T16:31:25.000026",
+  "patterns_tested": 4,
+  "patterns_passed": 0,
+  "pattern_results": {
+    "GOLDEN_CROSS": {
+      "pattern_name": "GOLDEN_CROSS",
+      "success": false,
+      "data_generation": {
+        "success": false,
+        "details": {}
+      },
+      "pattern_recognition": {
+        "success": false,
+        "details": {}
+      },
+      "bidirectional_consistency": {
+        "success": false,
+        "details": {}
+      },
+      "error_message": "数据生成失败"
+    },
+    "DEATH_CROSS": {
+      "pattern_name": "DEATH_CROSS",
+      "success": false,
+      "data_generation": {
+        "success": false,
+        "details": {}
+      },
+      "pattern_recognition": {
+        "success": false,
+        "details": {}
+      },
+      "bidirectional_consistency": {
+        "success": false,
+        "details": {}
+      },
+      "error_message": "数据生成失败"
+    },
+    "DIVERGENCE": {
+      "pattern_name": "DIVERGENCE",
+      "success": false,
+      "data_generation": {
+        "success": false,
+        "details": {}
+      },
+      "pattern_recognition": {
+        "success": false,
+        "details": {}
+      },
+      "bidirectional_consistency": {
+        "success": false,
+        "details": {}
+      },
+      "error_message": "数据生成失败"
+    },
+    "HISTOGRAM_REVERSAL": {
+      "pattern_name": "HISTOGRAM_REVERSAL",
+      "success": false,
+      "data_generation": {
+        "success": false,
+        "details": {}
+      },
+      "pattern_recognition": {
+        "success": false,
+        "details": {}
+      },
+      "bidirectional_consistency": {
+        "success": false,
+        "details": {}
+      },
+      "error_message": "数据生成失败"
+    }
+  },
+  "overall_success": false,
+  "summary": {
+    "total_patterns": 4,
+    "passed_patterns": 0,
+    "failed_patterns": 4,
+    "success_rate": 0.0,
+    "overall_result": "失败",
+    "failed_pattern_list": [
+      "GOLDEN_CROSS",
+      "DEATH_CROSS",
+      "DIVERGENCE",
+      "HISTOGRAM_REVERSAL"
+    ],
+    "recommendations": [
+      "🔧 需要修复MACD指标的形态识别逻辑",
+      "  - 修复GOLDEN_CROSS形态的识别算法",
+      "  - 修复DEATH_CROSS形态的识别算法",
+      "  - 修复DIVERGENCE形态的识别算法",
+      "  - 修复HISTOGRAM_REVERSAL形态的识别算法"
+    ]
+  },
+  "success_rate": 0.0
+}

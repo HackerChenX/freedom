@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>批量指标人工验证汇总报告</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .header { background-color: #f0f8ff; padding: 20px; border-radius: 5px; }
+        .summary { background-color: #f9f9f9; padding: 15px; margin: 20px 0; }
+        .indicator { border: 1px solid #ddd; margin: 10px 0; padding: 15px; }
+        .success { background-color: #d4edda; }
+        .failure { background-color: #f8d7da; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>批量指标人工验证汇总报告</h1>
+        <p><strong>验证日期:</strong> 2025-05-12</p>
+        <p><strong>生成时间:</strong> 2025-08-23T23:46:57.992804</p>
+    </div>
+
+    <div class="summary">
+        <h2>验证结果汇总</h2>
+        <p><strong>总指标数:</strong> 4</p>
+        <p><strong>已完成:</strong> 4</p>
+        <p><strong>验证通过:</strong> 4</p>
+        <p><strong>验证失败:</strong> 0</p>
+        <p><strong>成功率:</strong> 100.0%</p>
+    </div>
+
+    <h2>各指标验证详情</h2>
+    <table>
+        <tr>
+            <th>指标名称</th>
+            <th>总形态数</th>
+            <th>验证通过形态</th>
+            <th>验证失败形态</th>
+            <th>整体结果</th>
+            <th>详细报告</th>
+        </tr>
+
+        <tr class="success">
+            <td>MACD</td>
+            <td>4</td>
+            <td>4</td>
+            <td>0</td>
+            <td>✅ 通过</td>
+            <td><a href="MACD_validation_report.html">查看详情</a></td>
+        </tr>
+
+        <tr class="success">
+            <td>RSI</td>
+            <td>4</td>
+            <td>4</td>
+            <td>0</td>
+            <td>✅ 通过</td>
+            <td><a href="RSI_validation_report.html">查看详情</a></td>
+        </tr>
+
+        <tr class="success">
+            <td>KDJ</td>
+            <td>4</td>
+            <td>4</td>
+            <td>0</td>
+            <td>✅ 通过</td>
+            <td><a href="KDJ_validation_report.html">查看详情</a></td>
+        </tr>
+
+        <tr class="success">
+            <td>BOLL</td>
+            <td>4</td>
+            <td>4</td>
+            <td>0</td>
+            <td>✅ 通过</td>
+            <td><a href="BOLL_validation_report.html">查看详情</a></td>
+        </tr>
+
+    </table>
+
+    <div style="margin-top: 30px; padding: 20px; background-color: #fff3cd; border-radius: 5px;">
+        <h3>🔍 下一步行动</h3>
+        <ul>
+            <li>对于验证通过的指标，可以进入生产环境使用</li>
+            <li>对于验证失败的指标，需要修复问题后重新验证</li>
+            <li>完成所有指标的人工验证确认</li>
+            <li>更新指标质量评级和使用建议</li>
+        </ul>
+    </div>
+
+</body>
+</html>

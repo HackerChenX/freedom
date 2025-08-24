@@ -628,46 +628,101 @@ def calculate_ma_Utils(data: pd.Series, period: int) -> pd.Series:
     """
     return data.rolling(window=period).mean()
 
-def calculate_ema_Utils(data: pd.Series, period: int) -> pd.Series:
+def calculate_ema_Utils(data: pd.Series, period: int, method: str = 'standard') -> pd.Series:
     """
-    计算指数移动平均线
-    
+    计算指数移动平均线(EMA) - 专业修复版本
+
     Args:
         data: 价格数据序列
         period: 周期
-        
+        method: 计算方法 ('standard', 'sma_init', 'pandas')
+
     Returns:
         pd.Series: 指数移动平均线序列
     """
-    return data.ewm(span=period, adjust=False).mean()
+    if method == 'pandas':
+        # 原始pandas方法（保持向后兼容）
+        return data.ewm(span=period, adjust=False).mean()
 
-def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: int = 26, 
-                  signal_period: int = 9) -> Tuple[pd.Series, pd.Series, pd.Series]:
+    elif method == 'sma_init':
+        # SMA初始化方法（金融行业标准）
+        if len(data) < period:
+            return pd.Series(index=data.index, dtype=float)
+
+        result = pd.Series(index=data.index, dtype=float)
+        multiplier = 2.0 / (period + 1)
+
+        # 使用SMA作为初始值
+        sma_init = data.iloc[:period].mean()
+        result.iloc[period-1] = sma_init
+
+        # 从第period个值开始计算EMA
+        for i in range(period, len(data)):
+            result.iloc[i] = (data.iloc[i] * multiplier) + (result.iloc[i-1] * (1 - multiplier))
+
+        return result
+
+    else:  # 'standard'
+        # 标准EMA方法（专业修复版本）
+        if len(data) == 0:
+            return pd.Series(index=data.index, dtype=float)
+
+        result = pd.Series(index=data.index, dtype=float)
+        multiplier = 2.0 / (period + 1)
+
+        # 第一个值作为初始值
+        result.iloc[0] = data.iloc[0]
+
+        # 计算后续EMA值
+        for i in range(1, len(data)):
+            result.iloc[i] = (data.iloc[i] * multiplier) + (result.iloc[i-1] * (1 - multiplier))
+
+        return result
+
+def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: int = 26,
+                  signal_period: int = 9, method: str = 'standard') -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
-    计算MACD指标
-    
+    计算MACD指标 - 专业修复版本
+
     Args:
         data: 价格数据序列
         fast_period: 快线周期
         slow_period: 慢线周期
         signal_period: 信号线周期
-        
+        method: EMA计算方法 ('standard', 'sma_init', 'pandas')
+
     Returns:
         Tuple[pd.Series, pd.Series, pd.Series]: (DIF, DEA, MACD)
     """
-    # 计算快线和慢线的EMA
-    ema_fast = calculate_ema_Utils(data, fast_period)
-    ema_slow = calculate_ema_Utils(data, slow_period)
-    
-    # 计算DIF
+    # 使用专业修复的EMA计算方法
+    ema_fast = calculate_ema_Utils(data, fast_period, method)
+    ema_slow = calculate_ema_Utils(data, slow_period, method)
+
+    # 计算DIF（MACD线）
     dif = ema_fast - ema_slow
-    
-    # 计算DEA
-    dea = calculate_ema_Utils(dif, signal_period)
-    
-    # 计算MACD
+
+    # 计算DEA（信号线）- 对DIF进行EMA平滑
+    # 注意：只对有效的DIF值计算信号线
+    if method == 'sma_init':
+        # 对于SMA初始化方法，从慢线有效开始计算信号线
+        valid_start = slow_period - 1
+        if len(dif) > valid_start:
+            valid_dif = dif.iloc[valid_start:].dropna()
+            if len(valid_dif) > 0:
+                dea_partial = calculate_ema_Utils(valid_dif, signal_period, method)
+                dea = pd.Series(index=dif.index, dtype=float)
+                dea.iloc[valid_start:] = dea_partial
+            else:
+                dea = pd.Series(index=dif.index, dtype=float)
+        else:
+            dea = pd.Series(index=dif.index, dtype=float)
+    else:
+        # 标准方法直接计算
+        dea = calculate_ema_Utils(dif, signal_period, method)
+
+    # 计算MACD柱状图
     macd = (dif - dea) * 2
-    
+
     return dif, dea, macd
 
 def calculate_kdj_Utils(high: pd.Series, low: pd.Series, close: pd.Series,
@@ -714,27 +769,53 @@ def calculate_kdj_Utils(high: pd.Series, low: pd.Series, close: pd.Series,
 
 def calculate_rsi_Utils(data: pd.Series, period: int = 14) -> pd.Series:
     """
-    计算RSI指标
-    
+    计算RSI指标（使用标准Wilder平滑方法）
+
     Args:
         data: 价格数据序列
         period: 周期
-        
+
     Returns:
         pd.Series: RSI序列
     """
     # 计算价格变化
     delta = data.diff()
-    
+
     # 分离上涨和下跌
-    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
-    
-    # 计算RS和RSI
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
-    
-    return rsi
+    gains = delta.where(delta > 0, 0)
+    losses = -delta.where(delta < 0, 0)
+
+    # 使用标准Wilder平滑方法
+    rsi_values = pd.Series(index=data.index, dtype=float)
+
+    if len(gains) >= period:
+        # 计算初始平均值（前period个值的简单平均）
+        initial_avg_gain = gains.iloc[1:period+1].mean()  # 跳过第一个NaN值
+        initial_avg_loss = losses.iloc[1:period+1].mean()
+
+        # 设置初始RSI值
+        if initial_avg_loss == 0:
+            rsi_values.iloc[period] = 100.0
+        else:
+            rs = initial_avg_gain / initial_avg_loss
+            rsi_values.iloc[period] = 100 - (100 / (1 + rs))
+
+        # 使用Wilder平滑方法计算后续值
+        avg_gain = initial_avg_gain
+        avg_loss = initial_avg_loss
+
+        for i in range(period + 1, len(gains)):
+            # Wilder平滑公式
+            avg_gain = (avg_gain * (period - 1) + gains.iloc[i]) / period
+            avg_loss = (avg_loss * (period - 1) + losses.iloc[i]) / period
+
+            if avg_loss == 0:
+                rsi_values.iloc[i] = 100.0
+            else:
+                rs = avg_gain / avg_loss
+                rsi_values.iloc[i] = 100 - (100 / (1 + rs))
+
+    return rsi_values
 
 def calculate_bollinger_bands_Utils(data: pd.Series, period: int = 20, 
                             num_std: float = 2.0) -> Tuple[pd.Series, pd.Series, pd.Series]:

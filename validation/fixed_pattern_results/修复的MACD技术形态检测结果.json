@@ -1,0 +1,119 @@
+{
+  "detection_timestamp": "2025-08-24T12:53:37.409299",
+  "target_date": "2025-05-12",
+  "detection_method": "fixed_precise_date_matching",
+  "stocks_processed": 50,
+  "stocks_with_valid_data": 46,
+  "processing_time": 5.356361150741577,
+  "data_quality": {
+    "min_history_days": 120,
+    "date_matching": "precise",
+    "macd_calculation": "verified_accurate"
+  },
+  "patterns_detected": {
+    "GOLDEN_CROSS": {
+      "pattern_name": "MACD金叉",
+      "pattern_description": "MACD线上穿信号线，买入信号",
+      "stocks_found": 2,
+      "target_stocks": 10,
+      "stocks_list": [
+        {
+          "stock_code": "000066",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "2025-05-12",
+          "macd_values": {
+            "DIFF": -0.08663952869418345,
+            "DEA": -0.09944468261096928,
+            "MACD": 0.025610307833571655
+          },
+          "price_data": {
+            "open": 14.9,
+            "high": 15.28,
+            "low": 14.9,
+            "close": 15.17,
+            "volume": 829599.0
+          },
+          "cross_strength": 0.012805153916785827,
+          "verification_data": {
+            "prev_day_macd": -0.1110328461334813,
+            "prev_day_signal": -0.10264597109016574,
+            "curr_day_macd": -0.08663952869418345,
+            "curr_day_signal": -0.09944468261096928,
+            "cross_confirmed": true
+          },
+          "human_verification_points": [
+            "日期: 2025-05-12",
+            "DIFF: -0.086640",
+            "DEA: -0.099445",
+            "MACD: 0.025610",
+            "收盘价: 15.17",
+            "金叉确认: MACD线(-0.086640) > 信号线(-0.099445)",
+            "前日对比: MACD线(-0.111033) <= 信号线(-0.102646)"
+          ]
+        },
+        {
+          "stock_code": "000088",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "2025-05-12",
+          "macd_values": {
+            "DIFF": -0.030411849960684023,
+            "DEA": -0.033768726095064996,
+            "MACD": 0.006713752268761947
+          },
+          "price_data": {
+            "open": 4.59,
+            "high": 4.65,
+            "low": 4.59,
+            "close": 4.65,
+            "volume": 116931.0
+          },
+          "cross_strength": 0.0033568761343809733,
+          "verification_data": {
+            "prev_day_macd": -0.03737102734754938,
+            "prev_day_signal": -0.034607945128660236,
+            "curr_day_macd": -0.030411849960684023,
+            "curr_day_signal": -0.033768726095064996,
+            "cross_confirmed": true
+          },
+          "human_verification_points": [
+            "日期: 2025-05-12",
+            "DIFF: -0.030412",
+            "DEA: -0.033769",
+            "MACD: 0.006714",
+            "收盘价: 4.65",
+            "金叉确认: MACD线(-0.030412) > 信号线(-0.033769)",
+            "前日对比: MACD线(-0.037371) <= 信号线(-0.034608)"
+          ]
+        }
+      ]
+    },
+    "DEATH_CROSS": {
+      "pattern_name": "MACD死叉",
+      "pattern_description": "MACD线下穿信号线，卖出信号",
+      "stocks_found": 0,
+      "target_stocks": 10,
+      "stocks_list": []
+    },
+    "ABOVE_ZERO_GOLDEN": {
+      "pattern_name": "MACD零轴上金叉",
+      "pattern_description": "MACD线在零轴上方形成金叉，强买入信号",
+      "stocks_found": 0,
+      "target_stocks": 10,
+      "stocks_list": []
+    },
+    "BEARISH_DIVERGENCE": {
+      "pattern_name": "MACD看跌背离",
+      "pattern_description": "价格创新高但MACD未创新高，顶部信号",
+      "stocks_found": 0,
+      "target_stocks": 10,
+      "stocks_list": []
+    }
+  },
+  "summary": {
+    "total_patterns": 4,
+    "patterns_with_stocks": 1,
+    "total_stocks_found": 2,
+    "detection_success_rate": 0.25,
+    "data_quality_rate": 0.92
+  }
+}

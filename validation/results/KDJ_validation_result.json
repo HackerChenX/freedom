@@ -1,0 +1,522 @@
+{
+  "indicator_name": "KDJ",
+  "validation_date": "2025-05-12",
+  "timeframe": "日线",
+  "validation_timestamp": "2025-08-23T23:47:02.518533",
+  "patterns_validation": {
+    "KDJ_GOLDEN_CROSS": {
+      "pattern_name": "KDJ_GOLDEN_CROSS",
+      "indicator_name": "KDJ",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000012",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.46399999999999997
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000019",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.67
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.7800000000000002
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000026",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.254
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000027",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.641
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000028",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 2.5170000000000003
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_GOLDEN_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "KDJ_DEATH_CROSS": {
+      "pattern_name": "KDJ_DEATH_CROSS",
+      "indicator_name": "KDJ",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000001",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.1460000000000001
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000006",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.676
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000007",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.787
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000014",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.139
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000016",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.49500000000000005
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.7800000000000002
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000026",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.254
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000029",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.795
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000031",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.257
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_DEATH_CROSS形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "KDJ_OVERBOUGHT": {
+      "pattern_name": "KDJ_OVERBOUGHT",
+      "indicator_name": "KDJ",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000001",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.1460000000000001
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERBOUGHT形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000012",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.46399999999999997
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERBOUGHT形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000016",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.49500000000000005
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERBOUGHT形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000017",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.665
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERBOUGHT形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    },
+    "KDJ_OVERSOLD": {
+      "pattern_name": "KDJ_OVERSOLD",
+      "indicator_name": "KDJ",
+      "validation_date": "2025-05-12",
+      "matching_stocks": [
+        {
+          "stock_code": "000006",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.676
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000007",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.787
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000011",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.828
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000016",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.49500000000000005
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000019",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.67
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000020",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.207
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.7800000000000002
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000026",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.254
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000027",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 0.641
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        },
+        {
+          "stock_code": "000029",
+          "detection_date": "2025-05-12",
+          "indicator_values": {
+            "value": 1.795
+          },
+          "pattern_strength": 0.8,
+          "human_verification_required": true,
+          "verification_criteria": [
+            "确认KDJ_OVERSOLD形态识别准确",
+            "验证KDJ指标计算正确",
+            "检查是否存在误报",
+            "确认形态描述与实际表现一致"
+          ]
+        }
+      ],
+      "validation_passed": true,
+      "human_verification": {
+        "accuracy_check": "PENDING",
+        "calculation_check": "PENDING",
+        "false_positive_check": "PENDING",
+        "description_consistency_check": "PENDING",
+        "overall_approval": "PENDING"
+      },
+      "issues_found": []
+    }
+  },
+  "overall_result": {
+    "total_patterns": 4,
+    "validated_patterns": 4,
+    "failed_patterns": 0,
+    "validation_passed": true
+  },
+  "human_verification": {
+    "verification_required": true,
+    "verification_completed": false,
+    "verification_notes": [],
+    "issues_found": [],
+    "approval_status": "PENDING"
+  },
+  "stock_results": {},
+  "issues_found": []
+}

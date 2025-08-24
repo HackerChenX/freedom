@@ -13,11 +13,12 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 import logging
 logger = logging.getLogger(__name__)
 
 
-class Vix(BaseIndicator, PatternSignalMixin):
+class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     VIX恐慌指数指标
     
@@ -802,3 +803,17 @@ class Vix(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Vix指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 period(10), smooth_period(5) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = self._parameters.get('period', 10)
+        smooth_period = self._parameters.get('smooth_period', 5)
+        return max(period, smooth_period) + 10

@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class FibonacciTools(BaseIndicator, PatternSignalMixin):
+class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     FIBONACCI_TOOLS 指标
     
@@ -380,3 +381,14 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin):
 
 # 为了向后兼容，创建别名
 fibonacci_tools = FIBONACCI_TOOLS
+    @property
+    def minimum_periods(self) -> int:
+        """
+        FibonacciTools指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 25

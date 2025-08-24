@@ -10,12 +10,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
+class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM买点-日MACD指标
     
@@ -495,6 +496,17 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin):
         """公共计算接口"""
         return self._calculate(data, **kwargs)
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXMDailyMACD指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class ZXMTurnover(BaseIndicator, PatternSignalMixin):
     """

@@ -4,6 +4,7 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -29,7 +30,7 @@ class IndicatorScoreBase:
         return self.default_score
 
 
-class ScoringFramework(BaseIndicator, PatternSignalMixin):
+class ScoringFramework(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     SCORING_FRAMEWORK 指标
     
@@ -119,6 +120,17 @@ class ScoringFramework(BaseIndicator, PatternSignalMixin):
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ScoringFramework指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class IndicatorscoremanagerFramework:
     """指标评分管理器"""

@@ -13,12 +13,13 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class StockVix(BaseIndicator, PatternSignalMixin):
+class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     STOCK_VIX 指标 (股票波动率指标)
     
@@ -395,3 +396,14 @@ class StockVix(BaseIndicator, PatternSignalMixin):
 
 # 为了向后兼容，创建别名
 stock_vix = STOCK_VIX
+    @property
+    def minimum_periods(self) -> int:
+        """
+        StockVix指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

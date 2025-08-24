@@ -12,6 +12,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.base_indicator import BaseIndicator
 from utils.dependency_injection import get_logger
 from utils.indicator_utils import crossover, crossunder
@@ -19,7 +20,7 @@ from utils.indicator_utils import crossover, crossunder
 logger = get_logger(__name__)
 
 
-class EnhancedKdj(BaseIndicator, PatternSignalMixin):
+class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型随机指标(KDJ)
     

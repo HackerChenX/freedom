@@ -28,6 +28,7 @@ import time
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -66,7 +67,7 @@ def financial_grade_performance_monitor(threshold_seconds: float = 2.0):
     return decorator
 
 
-class PivotPoints(BaseIndicator, PatternSignalMixin):
+class PivotPoints(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     PIVOT_POINTS (枢轴点) 指标 - 金融级标准实现
     
@@ -559,3 +560,15 @@ class PivotPoints(BaseIndicator, PatternSignalMixin):
     def has_result(self) -> bool:
         """检查是否有计算结果"""
         return self._result is not None and not self._result.empty
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        PivotPoints指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

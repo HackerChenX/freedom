@@ -4,12 +4,13 @@ from typing import Dict, Any, List, Optional, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin):
+class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型Stoch_rSI指标
 

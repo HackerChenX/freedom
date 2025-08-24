@@ -11,11 +11,12 @@ from utils.dependency_injection import get_logger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.pattern_registry import PatternRegistry
 
 logger = get_logger(__name__)
 
-class MacdMacd(BaseIndicator, PatternSignalMixin):
+class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """MACD指标"""
     
     def __init__(self, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9,
@@ -96,6 +97,24 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         registry.set_allow_override(False)
         
         self.is_available = True
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        MACD指标所需的最少数据周期数
+
+        计算逻辑：
+        - 慢线周期（默认26）+ 信号线周期（默认9）= 35个周期
+        - 这确保EMA有足够的预热期，信号线也能稳定计算
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        slow_period = self._parameters.get('slow_period', 26)
+        signal_period = self._parameters.get('signal_period', 9)
+
+        # 慢线需要的最小周期 + 信号线周期 + 额外缓冲
+        return slow_period + signal_period + 5  # 默认情况下是40个周期
     
     @property
     def fast_period(self) -> int:
@@ -118,7 +137,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         """
         # 注册MACD金叉形态
         self.register_pattern_to_registry(
-            pattern_id="MACD_GOLDEN_CROSS",
+            pattern_id="GOLDEN_CROSS",
             display_name="MACD金叉",
             description="MACD快线从下向上穿越慢线，看涨信号",
             pattern_type="BULLISH",
@@ -129,7 +148,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         
         # 注册MACD死叉形态
         self.register_pattern_to_registry(
-            pattern_id="MACD_DEATH_CROSS",
+            pattern_id="DEATH_CROSS",
             display_name="MACD死叉",
             description="MACD快线从上向下穿越慢线，看跌信号",
             pattern_type="BEARISH",
@@ -276,22 +295,29 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
 
     def _calculate_macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算MACD指标
-        
+        计算MACD指标 - 专业修复版本
+
         Args:
             data: 输入数据，必须包含 'close' 列
-            
+
         Returns:
             pd.DataFrame: 包含MACD线、信号线和柱状图的Data_frame
         """
         price_col = self._parameters['price_col']
-        
-        # 计算MACD
-        macd_line, macd_signal, macd_histogram = calculate_macd(
+
+        # 使用专业修复的MACD计算方法
+        from utils.technical_utils import calculate_macd_Utils
+
+        # 获取EMA计算方法（默认使用标准方法）
+        ema_method = kwargs.get('ema_method', 'standard')
+
+        # 计算MACD - 使用专业修复版本
+        macd_line, macd_signal, macd_histogram = calculate_macd_Utils(
             data[price_col],
             fast_period=self.fast_period,
             slow_period=self.slow_period,
-            signal_period=self.signal_period
+            signal_period=self.signal_period,
+            method=ema_method
         )
 
         # 确保返回的是Series而不是数组，并处理可能的多维数组
@@ -392,8 +418,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 1. 金叉和死叉
-        patterns_df['MACD_GOLDEN_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='above')
-        patterns_df['MACD_DEATH_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='below')
+        patterns_df['GOLDEN_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='above')
+        patterns_df['DEATH_CROSS'] = self._detect_robust_crossover_Macd(dif, dea, window=3, cross_type='below')
 
         # 2. 零轴穿越
         patterns_df['MACD_ZERO_CROSS_ABOVE'] = self._detect_robust_crossover_Macd(dif, 0, window=1, cross_type='above')
@@ -445,8 +471,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         
         # 将所有形态信号合并到一个DataFrame
         patterns_df = pd.DataFrame({
-            'MACD_GOLDEN_CROSS': patterns_df['MACD_GOLDEN_CROSS'],
-            'MACD_DEATH_CROSS': patterns_df['MACD_DEATH_CROSS'],
+            'GOLDEN_CROSS': patterns_df['GOLDEN_CROSS'],
+            'DEATH_CROSS': patterns_df['DEATH_CROSS'],
             'MACD_BULLISH_DIVERGENCE': bullish_divergence,
             'MACD_BEARISH_DIVERGENCE': bearish_divergence,
             'MACD_ZERO_CROSS_ABOVE': patterns_df['MACD_ZERO_CROSS_ABOVE'],
@@ -494,8 +520,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
 
         # 定义各形态的得分权重
         pattern_scores = {
-            'MACD_GOLDEN_CROSS': 20.0,
-            'MACD_DEATH_CROSS': -20.0,
+            'GOLDEN_CROSS': 20.0,
+            'DEATH_CROSS': -20.0,
             'MACD_BULLISH_DIVERGENCE': 25.0,
             'MACD_BEARISH_DIVERGENCE': -25.0,
             'MACD_ZERO_CROSS_ABOVE': 15.0,
@@ -713,8 +739,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         }
         
         # 定义买入和卖出形态
-        buy_patterns = ["MACD_GOLDEN_CROSS", "MACD_BULLISH_DIVERGENCE", "MACD_ZERO_CROSS_ABOVE", "MACD_DOUBLE_BOTTOM"]
-        sell_patterns = ["MACD_DEATH_CROSS", "MACD_BEARISH_DIVERGENCE", "MACD_ZERO_CROSS_BELOW", "MACD_DOUBLE_TOP"]
+        buy_patterns = ["GOLDEN_CROSS", "MACD_BULLISH_DIVERGENCE", "MACD_ZERO_CROSS_ABOVE", "MACD_DOUBLE_BOTTOM"]
+        sell_patterns = ["DEATH_CROSS", "MACD_BEARISH_DIVERGENCE", "MACD_ZERO_CROSS_BELOW", "MACD_DOUBLE_TOP"]
         
         # 聚合买入信号
         for pattern in buy_patterns:
@@ -769,7 +795,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         对指定的形态进行深入分析
         
         Args:
-            pattern_id: 形态ID (例如, "MACD_GOLDEN_CROSS")
+            pattern_id: 形态ID (例如, "GOLDEN_CROSS")
             data: 输入数据
             
         Returns:
@@ -812,14 +838,14 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         """
         # ... 实现金叉的详细分析 ...
         # 此处可以返回更丰富的上下文信息
-        return self.analyze_pattern("MACD_GOLDEN_CROSS", data)
+        return self.analyze_pattern("GOLDEN_CROSS", data)
 
     def _analyze_death_cross(self, data: pd.DataFrame) -> List[Dict]:
         """
         分析死叉形态的具体情况
         """
         # ... 实现死叉的详细分析 ...
-        return self.analyze_pattern("MACD_DEATH_CROSS", data)
+        return self.analyze_pattern("DEATH_CROSS", data)
 
     def _analyze_divergence(self, data: pd.DataFrame) -> List[Dict]:
         """
@@ -882,13 +908,13 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
             dict: 形态信息字典，包含name, description, strength等
         """
         pattern_info_map = {
-            'MACD_GOLDEN_CROSS': {
+            'GOLDEN_CROSS': {
                 'name': 'MACD金叉',
                 'description': 'MACD快线从下向上穿越慢线，看涨信号',
                 'strength': 'strong',
                 'type': 'bullish'
             },
-            'MACD_DEATH_CROSS': {
+            'DEATH_CROSS': {
                 'name': 'MACD死叉',
                 'description': 'MACD快线从上向下穿越慢线，看跌信号',
                 'strength': 'strong',
@@ -957,7 +983,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
         """
         # 注册MACD金叉形态
         self.register_pattern_to_registry(
-            pattern_id="MACD_GOLDEN_CROSS",
+            pattern_id="GOLDEN_CROSS",
             display_name="MACD金叉",
             description="MACD快线(DIF)上穿慢线(DEA)，形成金叉买入信号",
             pattern_type="BULLISH",
@@ -968,7 +994,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
 
         # 注册MACD死叉形态
         self.register_pattern_to_registry(
-            pattern_id="MACD_DEATH_CROSS",
+            pattern_id="DEATH_CROSS",
             display_name="MACD死叉",
             description="MACD快线(DIF)下穿慢线(DEA)，形成死叉卖出信号",
             pattern_type="BEARISH",
@@ -1247,21 +1273,189 @@ class MacdMacd(BaseIndicator, PatternSignalMixin):
             macd_signal = result.get('macd_signal', pd.Series([0] * len(data))) if 'macd_signal' in result.columns else pd.Series([0] * len(data))
             macd_histogram = result.get('macd_histogram', pd.Series([0] * len(data))) if 'macd_histogram' in result.columns else pd.Series([0] * len(data))
 
-        # 识别MACD金叉形态
-        golden_cross = (macd_line > macd_signal) & (macd_line.shift(1) <= macd_signal.shift(1))
-        patterns_df['MACD_GOLDEN_CROSS'] = golden_cross
+        # 识别MACD金叉形态 (严格噪声抗性算法)
+        # 动态阈值计算（平衡敏感性）
+        macd_volatility = macd_line.rolling(window=10).std().fillna(0)
+        signal_volatility = macd_signal.rolling(window=10).std().fillna(0)
+        dynamic_strength_threshold = 0.0005 + macd_volatility * 0.5  # 更敏感的动态阈值
+        dynamic_change_threshold = 0.0002 + signal_volatility * 0.3
 
-        # 识别MACD死叉形态
-        death_cross = (macd_line < macd_signal) & (macd_line.shift(1) >= macd_signal.shift(1))
-        patterns_df['MACD_DEATH_CROSS'] = death_cross
+        # 第1层：基本金叉条件（严格）
+        basic_golden_cross = (macd_line > macd_signal) & (macd_line.shift(1) <= macd_signal.shift(1))
 
-        # 识别MACD零轴上金叉
-        above_zero_golden = golden_cross & (macd_line > 0)
+        # 第2层：强度验证（宽松阈值）
+        strength_validation = (
+            (abs(macd_line - macd_signal) > dynamic_strength_threshold) |  # OR逻辑：满足任一条件
+            (abs(macd_line - macd_line.shift(1)) > dynamic_change_threshold) |
+            (macd_line - macd_signal > macd_line.shift(1) - macd_signal.shift(1))  # 差值扩大
+        )
+
+        # 第3层：趋势确认（宽松条件）
+        trend_confirmation = (
+            (macd_line > macd_line.shift(1)) |  # OR逻辑：当前上升
+            (macd_line > macd_line.shift(2)) |  # 或相比前2期上升
+            (macd_signal > macd_signal.shift(1))  # 或信号线上升
+        )
+
+        # 增强验证（可选）
+        enhancement_validation = (
+            (abs(macd_histogram) > abs(macd_histogram.shift(1))) |  # 柱状图增强
+            (macd_histogram > 0) |  # 柱状图为正
+            (macd_line > macd_line.shift(3))  # 3期内上升
+        )
+
+        # 增强噪声过滤层（更严格的真实数据标准）
+        noise_filter = (
+            (abs(macd_line) > dynamic_strength_threshold * 4) &  # 更严格的MACD线强度要求
+            (abs(macd_signal) > dynamic_strength_threshold * 3) &  # 更严格的信号线强度要求
+            (abs(macd_histogram) > dynamic_change_threshold * 5)  # 更严格的柱状图变化要求
+        )
+
+        # 增强市场环境过滤（避免在极小波动中产生信号）
+        market_filter = (
+            (macd_line.rolling(window=5).std() > dynamic_change_threshold * 2) &  # 更严格的波动性要求
+            (abs(macd_line.max() - macd_line.min()) > dynamic_strength_threshold * 10) &  # 更大的价格区间要求
+            (macd_line.rolling(window=10).mean() != macd_line.rolling(window=10).mean().shift(1))  # 避免平盘
+        )
+
+        # 最终验证：核心条件 + 增强条件 + 噪声过滤
+        golden_cross = (basic_golden_cross &
+                       (strength_validation | trend_confirmation | enhancement_validation) &
+                       noise_filter & market_filter)
+        patterns_df['GOLDEN_CROSS'] = golden_cross
+
+        # 识别MACD死叉形态 (严格噪声抗性算法)
+        # 第1层：基本死叉条件（严格）
+        basic_death_cross = (macd_line < macd_signal) & (macd_line.shift(1) >= macd_signal.shift(1))
+
+        # 第2层：强度验证（宽松阈值）
+        strength_validation_death = (
+            (abs(macd_line - macd_signal) > dynamic_strength_threshold) |  # OR逻辑：满足任一条件
+            (abs(macd_line - macd_line.shift(1)) > dynamic_change_threshold) |
+            (macd_signal - macd_line > macd_signal.shift(1) - macd_line.shift(1))  # 差值扩大
+        )
+
+        # 第3层：趋势确认（宽松条件）
+        trend_confirmation_death = (
+            (macd_line < macd_line.shift(1)) |  # OR逻辑：当前下降
+            (macd_line < macd_line.shift(2)) |  # 或相比前2期下降
+            (macd_signal < macd_signal.shift(1))  # 或信号线下降
+        )
+
+        # 增强验证（可选）
+        enhancement_validation_death = (
+            (abs(macd_histogram) > abs(macd_histogram.shift(1))) |  # 柱状图增强
+            (macd_histogram < 0) |  # 柱状图为负
+            (macd_line < macd_line.shift(3))  # 3期内下降
+        )
+
+        # 增强噪声过滤层（与金叉相同的严格标准）
+        noise_filter_death = (
+            (abs(macd_line) > dynamic_strength_threshold * 4) &  # 更严格的MACD线强度要求
+            (abs(macd_signal) > dynamic_strength_threshold * 3) &  # 更严格的信号线强度要求
+            (abs(macd_histogram) > dynamic_change_threshold * 5)  # 更严格的柱状图变化要求
+        )
+
+        # 增强市场环境过滤
+        market_filter_death = (
+            (macd_line.rolling(window=5).std() > dynamic_change_threshold * 2) &  # 更严格的波动性要求
+            (abs(macd_line.max() - macd_line.min()) > dynamic_strength_threshold * 10) &  # 更大的价格区间要求
+            (macd_line.rolling(window=10).mean() != macd_line.rolling(window=10).mean().shift(1))  # 避免平盘
+        )
+
+        # 最终验证：核心条件 + 增强条件 + 噪声过滤
+        death_cross = (basic_death_cross &
+                      (strength_validation_death | trend_confirmation_death | enhancement_validation_death) &
+                      noise_filter_death & market_filter_death)
+        patterns_df['DEATH_CROSS'] = death_cross
+
+        # 识别MACD零轴上金叉 (平衡敏感性算法)
+        # 零轴阈值（宽松）
+        zero_axis_threshold = 0.0005  # 更宽松的零轴判断
+
+        # 第1层：基于已验证的金叉
+        validated_golden_cross = golden_cross  # 使用上面验证的金叉
+
+        # 第2层：零轴位置验证（宽松）
+        zero_axis_validation = (
+            (macd_line > -zero_axis_threshold) |  # OR逻辑：MACD线接近零轴
+            (macd_signal > -zero_axis_threshold * 2) |  # 或信号线接近零轴
+            (macd_histogram > -zero_axis_threshold)  # 或柱状图接近零
+        )
+
+        # 第3层：上升动量验证（宽松）
+        upward_momentum = (
+            (macd_line > macd_line.shift(1)) |  # OR逻辑：当前上升
+            (macd_line > macd_line.shift(2)) |  # 或相比前2期上升
+            (macd_line - macd_signal > macd_line.shift(1) - macd_signal.shift(1))  # 或差值扩大
+        )
+
+        # 增强验证（可选）
+        above_zero_enhancement = (
+            (macd_line > zero_axis_threshold) |  # 真正在零轴上方
+            (macd_histogram > 0) |  # 柱状图为正
+            (macd_line > macd_line.shift(3))  # 3期内上升
+        )
+
+        # 零轴上方特殊噪声过滤（最严格）
+        zero_axis_noise_filter = (
+            (abs(macd_line) > dynamic_strength_threshold * 6) &  # 零轴上方需要最强的MACD信号
+            (abs(macd_histogram) > dynamic_change_threshold * 8) &  # 最强的柱状图变化
+            (macd_line > dynamic_strength_threshold * 4) &  # 明确在零轴上方
+            (macd_line.rolling(window=5).std() > dynamic_change_threshold * 3)  # 足够的波动性
+        )
+
+        # 最终验证：基于金叉 + 零轴条件 + 特殊噪声过滤
+        above_zero_golden = (validated_golden_cross &
+                           (zero_axis_validation | upward_momentum | above_zero_enhancement) &
+                           zero_axis_noise_filter)
         patterns_df['MACD_ABOVE_ZERO_GOLDEN'] = above_zero_golden
 
-        # 识别MACD柱状图背离
-        histogram_divergence = (macd_histogram.diff() > 0) & (macd_histogram.shift(1) < 0)
-        patterns_df['MACD_HISTOGRAM_DIVERGENCE'] = histogram_divergence
+        # 识别MACD熊市背离形态 (平衡敏感性算法)
+        # 柱状图变化分析
+        histogram_change = macd_histogram.diff()
+
+        # 第1层：基本背离条件（宽松）
+        basic_divergence_condition = (
+            (macd_histogram.shift(2) > 0.0005) |  # OR逻辑：之前柱状图为正
+            (macd_histogram.shift(1) > macd_histogram) |  # 或柱状图下降
+            (abs(histogram_change) > dynamic_change_threshold)  # 或变化幅度足够
+        )
+
+        # 第2层：趋势背离验证（宽松）
+        trend_divergence = (
+            (macd_line.shift(2) > macd_line) |  # OR逻辑：之前MACD更高
+            (macd_signal.shift(2) > macd_signal) |  # 或之前信号线更高
+            (macd_histogram.shift(2) > macd_histogram)  # 或之前柱状图更高
+        )
+
+        # 第3层：强度验证（宽松）
+        divergence_strength = (
+            (abs(macd_histogram.shift(1) - macd_histogram) > dynamic_strength_threshold) |  # OR逻辑：柱状图变化
+            (histogram_change < -dynamic_change_threshold) |  # 或明显下降
+            (macd_histogram < macd_histogram.shift(2))  # 或相比前2期下降
+        )
+
+        # 增强验证（可选）
+        divergence_enhancement = (
+            (macd_histogram < 0) |  # 柱状图为负
+            (macd_line < macd_line.shift(1)) |  # MACD下降
+            (histogram_change < 0)  # 柱状图变化为负
+        )
+
+        # 背离特殊噪声过滤（极严格）
+        divergence_noise_filter = (
+            (abs(macd_histogram.shift(2) - macd_histogram) > dynamic_strength_threshold * 8) &  # 背离需要极明显的柱状图变化
+            (abs(macd_line) > dynamic_strength_threshold * 4) &  # MACD线有很强强度
+            (macd_line.rolling(window=10).std() > dynamic_change_threshold * 4) &  # 有很强的历史波动性
+            (abs(macd_line.shift(5) - macd_line) > dynamic_strength_threshold * 3)  # 5期内有明显变化
+        )
+
+        # 最终验证：背离条件 + 增强条件 + 严格噪声过滤
+        bearish_divergence = (basic_divergence_condition &
+                            (trend_divergence | divergence_strength | divergence_enhancement) &
+                            divergence_noise_filter)
+        patterns_df['BEARISH_DIVERGENCE'] = bearish_divergence
 
         return patterns_df
 

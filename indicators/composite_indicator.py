@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class CompositeIndicator(BaseIndicator, PatternSignalMixin):
+class CompositeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     COMPOSITE_INDICATOR 指标
     
@@ -195,3 +196,14 @@ class CompositeIndicator(BaseIndicator, PatternSignalMixin):
 
 # 为了向后兼容，创建别名
 composite_indicator = COMPOSITE_INDICATOR
+    @property
+    def minimum_periods(self) -> int:
+        """
+        CompositeIndicator指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

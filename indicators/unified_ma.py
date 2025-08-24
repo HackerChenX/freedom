@@ -4,12 +4,13 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class UnifiedMa(BaseIndicator, PatternSignalMixin):
+class UnifiedMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     UNIFIED_MA 指标
     
@@ -195,3 +196,14 @@ class UnifiedMa(BaseIndicator, PatternSignalMixin):
 
 # 为了向后兼容，创建别名
 unified_ma = UNIFIED_MA
+    @property
+    def minimum_periods(self) -> int:
+        """
+        UnifiedMa指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 25

@@ -12,6 +12,7 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 # 导入IndicatorScoreManager以支持ZXM指标
@@ -29,7 +30,7 @@ except ImportError:
 logger = get_logger(__name__)
 
 
-class ScoreManager(BaseIndicator, PatternSignalMixin):
+class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     SCORE_MANAGER 指标
     
@@ -120,3 +121,15 @@ class ScoreManager(BaseIndicator, PatternSignalMixin):
     def get_patterns_Manager(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ScoreManager指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 25

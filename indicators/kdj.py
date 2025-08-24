@@ -17,6 +17,7 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternInfo
 from utils.dependency_injection import get_logger
@@ -26,7 +27,7 @@ from utils.technical_utils import calculate_kdj
 logger = get_logger(__name__)
 
 
-class KdjKdj(BaseIndicator, PatternSignalMixin):
+class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     KDJ随机指标
     
@@ -50,10 +51,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin):
         self.m1 = m1
         self.m2 = m2
         self.is_available = True
-        self._market_environment = 'SIDEWAYS_MARKET'  # 默认市场环境
-        # 注释掉自动形态注册，避免初始化错误
-        # self._register_patterns()
-    
+
     def _register_patterns(self):
         """统一注册所有KDJ形态"""
         self.register_pattern_to_registry(
@@ -556,7 +554,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin):
         try:
             # 调用核心计算逻辑
             result_df = self._calculate_kdj(data)
-            
+
             # 检查结果是否为DataFrame
             if not isinstance(result_df, pd.DataFrame):
                 raise TypeError(f"指标 {self.name} 的_calculate方法必须返回pandas.DataFrame")
@@ -565,15 +563,12 @@ class KdjKdj(BaseIndicator, PatternSignalMixin):
             self._result = self._preserve_base_columns(data, result_df)
             self._error = None
             self.is_available = True
-            
+
             return self._result
 
         except Exception as e:
-            logger.error(f"计算指标 '{self.name}' 时出错: {e}", exc_info=True)
-            self._error = e
-            self._result = None
+            self._error = str(e)
             self.is_available = False
-            # 在出错时返回一个空的DataFrame，结构与输入数据保持一致
             return pd.DataFrame(index=data.index)
 
     def _calculate_kdj(self, data: pd.DataFrame) -> pd.DataFrame:

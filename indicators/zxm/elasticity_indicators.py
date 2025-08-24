@@ -12,12 +12,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class AmplitudeElasticity(BaseIndicator, PatternSignalMixin):
+class AmplitudeElasticity(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM弹性-振幅指标
     
@@ -654,6 +655,17 @@ class Elasticity(BaseIndicator, PatternSignalMixin):
         signals.loc[:, 'volume_confirmation'] = result["VolumeRatio"] > 1.0
         
         return signals
+    @property
+    def minimum_periods(self) -> int:
+        """
+        AmplitudeElasticity指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class BounceDetector(BaseIndicator, PatternSignalMixin):
     """

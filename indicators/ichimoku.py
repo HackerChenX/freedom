@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class Ichimoku(BaseIndicator, PatternSignalMixin):
+class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ICHIMOKU 指标 (一目均衡表)
     
@@ -712,3 +713,15 @@ class Ichimoku(BaseIndicator, PatternSignalMixin):
                 
                 # 全球金融软件巅峰级标准：同时更新实例属性
                 setattr(self, key, value)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Ichimoku指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 55

@@ -9,9 +9,10 @@ import pandas as pd
 import numpy as np
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 
 
-class PatternCombination(BaseIndicator, PatternSignalMixin):
+class PatternCombination(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     形态组合指标
     
@@ -119,3 +120,15 @@ class PatternCombination(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        PatternCombination指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

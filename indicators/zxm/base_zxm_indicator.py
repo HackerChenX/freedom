@@ -12,12 +12,13 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
 from indicators.base_indicator import BaseIndicator
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class BaseZxmindicator(BaseIndicator, ABC):
+class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
     """张新民指标基类"""
     
     def __init__(self, name: str, **kwargs):
@@ -118,3 +119,15 @@ class BaseZxmindicator(BaseIndicator, ABC):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        BaseZxmindicator指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

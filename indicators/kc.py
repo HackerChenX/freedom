@@ -13,10 +13,11 @@ from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 import logging
 logger = logging.getLogger(__name__)
 
-class KeltnerChannel(BaseIndicator, PatternSignalMixin):
+class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     肯特纳通道指标 (Keltner Channel)
     
@@ -938,3 +939,17 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        KeltnerChannel指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 period(20), atr_period(10) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = self._parameters.get('period', 20)
+        atr_period = self._parameters.get('atr_period', 10)
+        return max(period, atr_period) + 10

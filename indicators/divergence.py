@@ -14,6 +14,7 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -27,8 +28,21 @@ class DivergenceType(Enum):
     HIDDEN_POSITIVE = 3  # 隐藏正背离：价格未创新低，指标创新低，看涨信号
     HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Divergence指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 lookback_period(20), confirm_period(5) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        lookback_period = self._parameters.get('lookback_period', 20)
+        confirm_period = self._parameters.get('confirm_period', 5)
+        return max(lookback_period, confirm_period) + 10
 
-class Divergence(BaseIndicator, PatternSignalMixin):
+class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     量价背离指标
     

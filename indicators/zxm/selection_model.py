@@ -12,6 +12,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 from utils.decorators import log_calls, error_handling
 
@@ -24,7 +25,7 @@ from indicators.zxm.score_indicators import StockScoreCalculator
 logger = get_logger(__name__)
 
 
-class SelectionModel(BaseIndicator, PatternSignalMixin):
+class SelectionModel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM选股模型
     
@@ -814,3 +815,14 @@ class SelectionModel(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+    @property
+    def minimum_periods(self) -> int:
+        """
+        SelectionModel指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

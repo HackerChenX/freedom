@@ -9,6 +9,7 @@ from db.sql_manager import QueryType
 
 from utils.dependency_injection import get_container
 from utils.logger import getLogger
+import pandas as pd
 
 class DBManager:
     """数据库管理器 - 提供统一的数据库访问接口"""
@@ -64,19 +65,81 @@ class DBManager:
         return self._data_access
     
     def query_manager(self, sql: str, params=None):
-        """执行查询"""
-        self._ensure_data_access()
-        return self._data_access.query_manager(sql, params)
-    
+        """执行查询 - 使用数据访问接口"""
+        try:
+            # 使用数据访问接口执行查询
+            from db.interfaces.data_access_interface import ClickHouseDataAccess
+            if self._data_access is None:
+                self._data_access = ClickHouseDataAccess()
+
+            # 如果数据访问接口有execute_query方法，使用它
+            if hasattr(self._data_access, 'execute_query_data_access_interface'):
+                df = self._data_access.execute_query_data_access_interface(sql, params)
+                # 转换DataFrame为列表格式（兼容原有接口）
+                if not df.empty:
+                    return df.values.tolist()
+                else:
+                    return []
+            else:
+                # 降级处理：直接使用client
+                if hasattr(self._data_access, 'client'):
+                    result = self._data_access.client.execute(sql)
+                    return result if result else []
+                else:
+                    self.logger.error("数据访问接口不支持查询操作")
+                    return []
+
+        except Exception as e:
+            self.logger.error(f"查询执行失败: {e}")
+            return []
+
     def query_dataframe(self, sql: str, params=None):
-        """执行查询并返回DataFrame"""
-        self._ensure_data_access()
-        return self._data_access.query_dataframe(sql, params)
-    
+        """执行查询并返回DataFrame - 使用数据访问接口"""
+        try:
+            # 使用数据访问接口执行查询
+            from db.interfaces.data_access_interface import ClickHouseDataAccess
+            if self._data_access is None:
+                self._data_access = ClickHouseDataAccess()
+
+            # 如果数据访问接口有execute_query方法，使用它
+            if hasattr(self._data_access, 'execute_query_data_access_interface'):
+                return self._data_access.execute_query_data_access_interface(sql, params)
+            else:
+                self.logger.error("数据访问接口不支持DataFrame查询")
+                return pd.DataFrame()
+
+        except Exception as e:
+            self.logger.error(f"DataFrame查询执行失败: {e}")
+            return pd.DataFrame()
+
     def execute_dbmanager(self, sql: str, params=None):
-        """执行SQL语句"""
-        self._ensure_data_access()
-        return self._data_access.execute_dbmanager(sql, params)
+        """执行SQL语句 - 使用数据访问接口"""
+        try:
+            # 使用数据访问接口执行查询
+            from db.interfaces.data_access_interface import ClickHouseDataAccess
+            if self._data_access is None:
+                self._data_access = ClickHouseDataAccess()
+
+            # 如果数据访问接口有execute_query方法，使用它
+            if hasattr(self._data_access, 'execute_query_data_access_interface'):
+                df = self._data_access.execute_query_data_access_interface(sql, params)
+                # 转换DataFrame为列表格式（兼容原有接口）
+                if not df.empty:
+                    return df.values.tolist()
+                else:
+                    return []
+            else:
+                # 降级处理：直接使用client
+                if hasattr(self._data_access, 'client'):
+                    result = self._data_access.client.execute(sql)
+                    return result if result else []
+                else:
+                    self.logger.error("数据访问接口不支持执行操作")
+                    return []
+
+        except Exception as e:
+            self.logger.error(f"SQL执行失败: {e}")
+            return []
     
     def insert_dataframe(self, table_name: str, df, **kwargs):
         """插入DataFrame数据"""

@@ -10,12 +10,13 @@ from typing import Tuple, List, Dict, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import ma, ema, macd, kdj, ref, highest, lowest, cross, crossover, crossunder
 from enums.indicator_types import Indicator_type
 from enums.pattern_types import Buy_point_type, Absorption_pattern_type, Volume_pattern
 
 
-class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin):
+class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """ZXM体系买点和吸筹形态识别指标"""
     
     def __init__(self):
@@ -968,3 +969,15 @@ if __name__ == "__main__":
 
 # 为了向后兼容，创建别名
 zxmpatterns = ZXMPattern_indicator
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZxmpatternIndicator指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

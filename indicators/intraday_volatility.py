@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class IntradayVolatility(BaseIndicator, PatternSignalMixin):
+class IntradayVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     INTRADAY_VOLATILITY 指标
     
@@ -124,3 +125,15 @@ class IntradayVolatility(BaseIndicator, PatternSignalMixin):
     def get_patterns_Intraday_Volatility(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        IntradayVolatility指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

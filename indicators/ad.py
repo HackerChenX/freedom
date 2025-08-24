@@ -8,13 +8,14 @@ from typing import Dict, List, Union, Optional, Any
 import logging
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.signal_utils import crossover, crossunder
 from enums.signal_strength import Signal_strength
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class AD(BaseIndicator, PatternSignalMixin):
+class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     AD (Accumulation/Distribution Line) 累积分布线指标
     
@@ -162,6 +163,17 @@ class AD(BaseIndicator, PatternSignalMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """实现抽象方法"""
         pass  # AD指标通常不需要参数
+    @property
+    def minimum_periods(self) -> int:
+        """
+        AD指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class AccumulationDistribution(AD):
     """

@@ -13,12 +13,13 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class TripleExponentialAverage(BaseIndicator, PatternSignalMixin):
+class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     TRIX三重指数平滑移动平均线指标
     
@@ -1588,3 +1589,15 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin):
             **kwargs: 参数字典
         """
         self.set_parameters_Trix(**kwargs)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        TripleExponentialAverage指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 35

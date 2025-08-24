@@ -12,6 +12,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import boll as calc_boll
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
@@ -19,7 +20,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = get_logger(__name__)
 
 
-class BollBoll(BaseIndicator, PatternSignalMixin):
+class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     布林带指标类
     

@@ -1,0 +1,136 @@
+{
+  "stage": "STAGE3_CODE_QUALITY",
+  "validator": "RSI代码质量验证器",
+  "start_time": "2025-08-24T14:52:54.758489",
+  "quality_standards": {
+    "code_coverage_target": 0.95,
+    "function_complexity_max": 10,
+    "code_duplication_max": 0.05,
+    "documentation_completeness": 0.9,
+    "calculation_accuracy_target": 0.995,
+    "performance_single_stock_max": 1.0,
+    "performance_batch_max": 30.0,
+    "memory_usage_max": 100
+  },
+  "code_structure_analysis": {
+    "analysis_type": "CODE_STRUCTURE",
+    "timestamp": "2025-08-24T14:52:54.758504",
+    "class_analysis": {},
+    "method_analysis": {},
+    "inheritance_analysis": {},
+    "quality_metrics": {},
+    "error": "'RsiRsi' object has no attribute '_error'"
+  },
+  "calculation_precision": {
+    "validation_type": "CALCULATION_PRECISION",
+    "timestamp": "2025-08-24T14:52:54.758732",
+    "method_comparisons": {
+      "methods_tested": [
+        "wilder",
+        "sma",
+        "ema"
+      ],
+      "correlation_matrix": {
+        "sma_vs_wilder": 0.9196000446999294,
+        "ema_vs_wilder": 0.9515167842018051,
+        "ema_vs_sma": 0.9417157382477007
+      },
+      "difference_analysis": {
+        "mean_difference": -0.39957484919252845,
+        "max_difference": 27.611812893038874,
+        "std_difference": 9.78537307271988
+      },
+      "recommended_method": "wilder"
+    },
+    "stability_tests": {
+      "consistency_tests": [
+        {
+          "iteration": 1,
+          "final_rsi": 68.68572324433231,
+          "status": "SUCCESS"
+        },
+        {
+          "iteration": 2,
+          "final_rsi": 68.68572324433231,
+          "status": "SUCCESS"
+        },
+        {
+          "iteration": 3,
+          "final_rsi": 68.68572324433231,
+          "status": "SUCCESS"
+        },
+        {
+          "iteration": 4,
+          "final_rsi": 68.68572324433231,
+          "status": "SUCCESS"
+        },
+        {
+          "iteration": 5,
+          "final_rsi": 68.68572324433231,
+          "status": "SUCCESS"
+        }
+      ],
+      "consistency_rate": 1.0,
+      "variance_analysis": {
+        "variance": 0.0,
+        "std_dev": 0.0,
+        "range": 0.0
+      }
+    },
+    "accuracy_benchmarks": {
+      "benchmark_tests": [],
+      "average_accuracy": 0.8862438222936406,
+      "accuracy_distribution": {
+        "mean_error": 5.694156844519163,
+        "max_error": 17.36850236228949,
+        "error_std": 4.573567215652375
+      }
+    },
+    "overall_precision_score": 94.71564034030357
+  },
+  "performance_benchmarks": {
+    "test_type": "PERFORMANCE_BENCHMARKS",
+    "timestamp": "2025-08-24T14:52:54.832359",
+    "single_stock_performance": {
+      "test_iterations": 10,
+      "times": [
+        0.008249044418334961,
+        0.007954835891723633,
+        0.007768869400024414,
+        0.007980108261108398,
+        0.008270263671875,
+        0.006936788558959961,
+        0.006536960601806641,
+        0.006398200988769531,
+        0.0063631534576416016,
+        0.00632786750793457
+      ],
+      "average_time": 0.007278609275817871,
+      "min_time": 0.00632786750793457,
+      "max_time": 0.008270263671875
+    },
+    "batch_performance": {
+      "batch_size": 10,
+      "total_time": 0.0733191967010498,
+      "average_time_per_stock": 0.00733191967010498,
+      "successful_calculations": 10,
+      "time_per_100_stocks": 0.733191967010498
+    },
+    "memory_usage": {
+      "initial_memory_mb": 0.0,
+      "peak_memory_mb": 0.13292598724365234,
+      "memory_increase_mb": 0.13292598724365234
+    },
+    "concurrent_performance": {
+      "thread_count": 4,
+      "tasks_per_thread": 3,
+      "concurrent_time": 0.10637426376342773,
+      "sequential_time": 0.08689570426940918,
+      "speedup_ratio": 0.8168865399873589
+    },
+    "overall_performance_score": 83.59536497856992
+  },
+  "overall_quality_score": 62.9648656296924,
+  "quality_grade": "POOR",
+  "end_time": "2025-08-24T14:52:55.252780"
+}

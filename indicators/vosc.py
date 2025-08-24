@@ -16,6 +16,7 @@ from typing import Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
@@ -23,7 +24,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = get_logger(__name__)
 
 
-class Vosc(BaseIndicator, PatternSignalMixin):
+class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     成交量震荡指标(VOSC) (VOSC)
     
@@ -1151,3 +1152,17 @@ class Vosc(BaseIndicator, PatternSignalMixin):
         except Exception:
             # 如果验证失败，静默处理
             pass
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Vosc指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 short_period(12), long_period(26) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        short_period = self._parameters.get('short_period', 12)
+        long_period = self._parameters.get('long_period', 26)
+        return max(short_period, long_period) + 10

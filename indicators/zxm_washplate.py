@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class ZxmWashplate(BaseIndicator, PatternSignalMixin):
+class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM_WASHPLATE 指标
     
@@ -132,6 +133,17 @@ ZXM_WASHPLATE = ZxmWashplate  # 🔧 Ultra Think修复：添加缺失的别名
 
 # 定义洗盘类型枚举（为了兼容性）
 from enum import Enum
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZxmWashplate指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class WashPlateType(Enum):
     """洗盘形态类型"""

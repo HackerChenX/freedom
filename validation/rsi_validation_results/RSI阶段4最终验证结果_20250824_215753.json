@@ -1,0 +1,315 @@
+{
+  "validation_type": "STAGE4_FINAL_VALIDATION",
+  "validator": "RSI最终验证器",
+  "start_time": "2025-08-24T21:57:49.859740",
+  "final_config": {
+    "benchmark_accuracy_target": 0.995,
+    "large_scale_success_target": 0.95,
+    "production_integration_target": 1.0,
+    "user_scenario_target": 1.0,
+    "test_stocks_count": 30,
+    "performance_timeout": 30
+  },
+  "benchmark_validation": {
+    "test_type": "BENCHMARK_VALIDATION",
+    "timestamp": "2025-08-24T21:57:49.859760",
+    "target_accuracy": 0.995,
+    "test_results": [
+      {
+        "stock_code": "002578",
+        "data_points": 60,
+        "rsi_values_compared": 46,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 51.269231470277084,
+        "latest_benchmark_rsi": 51.269231470277084,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "002492",
+        "data_points": 60,
+        "rsi_values_compared": 46,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 41.041289948909395,
+        "latest_benchmark_rsi": 41.041289948909395,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "301029",
+        "data_points": 53,
+        "rsi_values_compared": 39,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 40.875702726131635,
+        "latest_benchmark_rsi": 40.875702726131635,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "600996",
+        "data_points": 53,
+        "rsi_values_compared": 39,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 36.66368750895954,
+        "latest_benchmark_rsi": 36.66368750895954,
+        "status": "PASSED"
+      },
+      {
+        "stock_code": "001373",
+        "data_points": 53,
+        "rsi_values_compared": 39,
+        "max_difference": 0.0,
+        "avg_difference": 0.0,
+        "accuracy": 1.0,
+        "latest_system_rsi": 49.95437503834467,
+        "latest_benchmark_rsi": 49.95437503834467,
+        "status": "PASSED"
+      }
+    ],
+    "overall_accuracy": 1.0,
+    "status": "PASSED"
+  },
+  "large_scale_validation": {
+    "test_type": "LARGE_SCALE_VALIDATION",
+    "timestamp": "2025-08-24T21:57:50.660398",
+    "target_success_rate": 0.95,
+    "target_stocks": 30,
+    "test_results": [
+      {
+        "stock_code": "002578",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002492",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "300678",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "000581",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "300212",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600284",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "603341",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "000756",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002062",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002469",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002408",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002003",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "601601",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "300961",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "300900",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "001373",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600996",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "301029",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "300619",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002274",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600458",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "603196",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600031",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "000755",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "605338",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "603195",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "000797",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600050",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "600935",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "stock_code": "002215",
+        "status": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      }
+    ],
+    "success_rate": 0.0,
+    "status": "FAILED"
+  },
+  "production_integration_test": {
+    "test_type": "PRODUCTION_INTEGRATION_TEST",
+    "timestamp": "2025-08-24T21:57:51.513835",
+    "tests": [
+      {
+        "test": "SERVICE_INTEGRATION",
+        "result": "FAILED",
+        "success_rate": 0.0
+      },
+      {
+        "test": "DATABASE_STABILITY",
+        "result": "PASSED",
+        "stability_rate": 1.0
+      },
+      {
+        "test": "CONCURRENT_PROCESSING",
+        "result": "FAILED",
+        "success_rate": 0.0,
+        "time": 0.05645585060119629
+      },
+      {
+        "test": "ERROR_HANDLING",
+        "result": "PASSED",
+        "handling_rate": 1.0
+      }
+    ],
+    "status": "FAILED"
+  },
+  "user_scenario_validation": {
+    "test_type": "USER_SCENARIO_VALIDATION",
+    "timestamp": "2025-08-24T21:57:52.599748",
+    "scenarios": [
+      {
+        "scenario": "ANALYST",
+        "result": "FAILED",
+        "reason": "INSUFFICIENT_DATA"
+      },
+      {
+        "scenario": "QUANT",
+        "result": "FAILED",
+        "stocks_processed": 0,
+        "processing_time": 0.0428462028503418
+      },
+      {
+        "scenario": "RISK",
+        "result": "PASSED",
+        "stocks_monitored": 3,
+        "risk_alerts": []
+      }
+    ],
+    "status": "FAILED"
+  },
+  "overall_assessment": {
+    "assessment_type": "FINAL_ASSESSMENT",
+    "individual_scores": {
+      "benchmark_validation": {
+        "status": "PASSED",
+        "score": 100
+      },
+      "large_scale_validation": {
+        "status": "FAILED",
+        "score": 70
+      },
+      "production_integration_test": {
+        "status": "FAILED",
+        "score": 70
+      },
+      "user_scenario_validation": {
+        "status": "FAILED",
+        "score": 70
+      }
+    },
+    "total_score": 77.5,
+    "production_readiness": "NOT_READY",
+    "final_status": "FAILED"
+  },
+  "final_status": "FAILED",
+  "end_time": "2025-08-24T21:57:53.875832"
+}

@@ -22,6 +22,7 @@ except ImportError:
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from utils.dependency_injection import get_logger
 
@@ -31,7 +32,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin):
+class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     平均方向指数(ADX)
     

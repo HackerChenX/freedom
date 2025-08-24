@@ -4,12 +4,13 @@ from typing import Dict, Any, List
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class RateOfChange(BaseIndicator, PatternSignalMixin):
+class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     Rate of Change变化率指标
 
@@ -583,3 +584,15 @@ class RateOfChange(BaseIndicator, PatternSignalMixin):
                 'type': 'neutral',
                 'strength': 'medium'
             })
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        RateOfChange指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 15

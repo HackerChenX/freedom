@@ -16,12 +16,13 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class PsychologicalLine(BaseIndicator, PatternSignalMixin):
+class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     心理线指标(Psychological Line)
     

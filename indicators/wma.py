@@ -16,6 +16,7 @@ import logging
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
@@ -23,7 +24,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = get_logger(__name__)
 
 
-class Wma(BaseIndicator, PatternSignalMixin):
+class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     加权移动平均线(WMA) (WMA)
     

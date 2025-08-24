@@ -1,0 +1,45 @@
+{
+  "strategy_name": "RSI_Pattern_Validation_20250512",
+  "target_date": "2025-05-12",
+  "timeframe": "日线",
+  "indicator": "RSI",
+  "patterns": [
+    "OVERBOUGHT",
+    "OVERSOLD",
+    "RSI_GOLDEN_CROSS",
+    "RSI_DEATH_CROSS"
+  ],
+  "min_stocks_per_pattern": 1,
+  "max_stocks_per_pattern": 10,
+  "validation_mode": true,
+  "require_human_verification": true,
+  "data_requirements": {
+    "min_history_days": 120,
+    "data_quality_check": true,
+    "exclude_st_stocks": true,
+    "min_price": 5.0,
+    "min_volume": 1000000
+  },
+  "output_requirements": {
+    "include_indicator_values": true,
+    "include_pattern_details": true,
+    "include_price_data": true,
+    "generate_charts": true,
+    "export_format": [
+      "json",
+      "csv",
+      "html"
+    ]
+  },
+  "human_validation": {
+    "validation_date": "2025-05-12",
+    "validator": "system",
+    "validation_criteria": [
+      "技术形态识别准确性",
+      "指标计算结果正确性",
+      "无误报或漏报情况",
+      "形态描述与市场表现一致性"
+    ],
+    "approval_required": true
+  }
+}

@@ -16,12 +16,13 @@ from functools import lru_cache
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 logger = get_logger(__name__)
 
-class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
+class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     趋向指标(DMI) (DMI)
     
@@ -1601,6 +1602,17 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin):
         else:
             return "no_trend"
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        DirectionalMovementIndex指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 def get_directionalmovementindex():
     """获取DirectionalMovementIndex实例（通过依赖注入）"""

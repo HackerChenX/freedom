@@ -12,6 +12,7 @@ from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_logger
 
@@ -62,7 +63,7 @@ class IndicatorFactory:
         return complete_registry.create_indicator_Factory_Factory_Factory_factory(name, **kwargs)
 
 
-class Factory(BaseIndicator, PatternSignalMixin):
+class Factory(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     FACTORY 指标
     
@@ -151,3 +152,15 @@ class Factory(BaseIndicator, PatternSignalMixin):
     def get_patterns_Factory_Factory(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Factory指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

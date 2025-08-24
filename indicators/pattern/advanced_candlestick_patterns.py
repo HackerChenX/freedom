@@ -13,6 +13,7 @@ from enum import Enum
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.pattern.candlestick_patterns import Pattern_type, Candlestick_patterns
 from utils.dependency_injection import get_logger
 
@@ -58,7 +59,7 @@ class AdvancedPatternType(Enum):
     CUP_WITH_HANDLE = "杯柄形态"          # U形底部+小幅回调形成柄部
 
 
-class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
+class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     高级K线形态识别指标
     
@@ -2017,3 +2018,15 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin):
         }
         
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        AdvancedCandlestickPatterns指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

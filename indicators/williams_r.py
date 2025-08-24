@@ -31,6 +31,7 @@ import time
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -69,7 +70,7 @@ def international_financial_performance_monitor(threshold_seconds: float = 0.001
     return decorator
 
 
-class WilliamsR(BaseIndicator, PatternSignalMixin):
+class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     WILLIAMS_R (威廉指标) 指标 - 国际金融级标准实现
     
@@ -605,3 +606,16 @@ class WilliamsR(BaseIndicator, PatternSignalMixin):
     def has_result(self) -> bool:
         """检查是否有计算结果"""
         return self._result is not None and not self._result.empty
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        WilliamsR指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 period(14) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = self._parameters.get('period', 14)
+        return period + max(10, period // 2)

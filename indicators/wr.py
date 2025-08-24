@@ -15,6 +15,7 @@ from typing import Dict, Any, Union, List, Dict, Optional, Tuple, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
@@ -22,7 +23,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = get_logger(__name__)
 
 
-class WrWr(BaseIndicator, PatternSignalMixin):
+class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     威廉指标(WR_Wr) (WR_Wr)
     

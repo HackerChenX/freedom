@@ -15,6 +15,7 @@ from typing import Dict, List, Union, Optional, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
@@ -22,7 +23,7 @@ from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegis
 logger = get_logger(__name__)
 
 
-class VolumeRatioVr(BaseIndicator, PatternSignalMixin):
+class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     成交量指标(Volume Ratio)
     
@@ -1416,3 +1417,15 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin):
 
 
 
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        VolumeRatioVr指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30

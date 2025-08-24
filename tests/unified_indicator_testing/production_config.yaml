@@ -1,0 +1,504 @@
+architecture_requirements:
+  abstract_method_implementation: true
+  base_class_inheritance: true
+  data_flow_validation: true
+  error_handling_coverage: true
+  parameter_schema_compliance: true
+data_generation:
+  default_history_days: 250
+  intelligent_generation: true
+  pool_size: 100
+  stockinfo_compatibility: true
+  validation_enabled: true
+indicators_test_matrix:
+  P0_core_indicators:
+    BOLL:
+      complex_conditions:
+      - BOLL_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 40
+      patterns:
+      - UPPER_BREAKOUT
+      - LOWER_BREAKOUT
+      - SQUEEZE
+      - EXPANSION
+      priority: P0
+      status: pending
+    EMA:
+      complex_conditions:
+      - EMA_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 50
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - TREND_FOLLOWING
+      priority: P0
+      status: pending
+    KDJ:
+      complex_conditions:
+      - KDJ_MACD_COMBO
+      - KDJ_VOL_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 20
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - OVERBOUGHT
+      - OVERSOLD
+      priority: P0
+      status: pending
+    MA:
+      complex_conditions:
+      - MA_VOLUME_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 60
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - SUPPORT_RESISTANCE
+      priority: P0
+      status: pending
+    MACD:
+      complex_conditions:
+      - MACD_RSI_COMBO
+      - MACD_VOLUME_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 60
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - DIVERGENCE
+      - HISTOGRAM_REVERSAL
+      priority: P0
+      status: failed
+    RSI:
+      complex_conditions:
+      - RSI_MACD_COMBO
+      - RSI_BOLL_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - DIVERGENCE
+      - CENTERLINE_CROSS
+      priority: P0
+      status: pending
+  P1_trend_indicators:
+    ADX:
+      complex_conditions:
+      - ADX_DMI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - TREND_STRENGTH
+      - TREND_WEAKNESS
+      - DIRECTIONAL_CHANGE
+      priority: P1
+      status: pending
+    AROON:
+      complex_conditions:
+      - AROON_ADX_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - AROON_UP_CROSS
+      - AROON_DOWN_CROSS
+      - PARALLEL_MOVEMENT
+      priority: P1
+      status: pending
+    CCI:
+      complex_conditions:
+      - CCI_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 25
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - ZERO_LINE_CROSS
+      priority: P1
+      status: pending
+    DMA:
+      complex_conditions:
+      - DMA_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 40
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - DIVERGENCE
+      priority: P1
+      status: pending
+    DMI:
+      complex_conditions:
+      - DMI_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - ADX_RISING
+      - DI_CROSS
+      - TREND_STRENGTH
+      priority: P1
+      status: pending
+    ICHIMOKU:
+      complex_conditions:
+      - ICHIMOKU_TREND_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 52
+      patterns:
+      - CLOUD_BREAKOUT
+      - TENKAN_KIJUN_CROSS
+      - CHIKOU_CONFIRMATION
+      priority: P1
+      status: pending
+    SAR:
+      complex_conditions:
+      - SAR_TREND_COMBO
+      - SAR_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 40
+      patterns:
+      - TREND_REVERSAL
+      - UPTREND_SIGNAL
+      - DOWNTREND_SIGNAL
+      - STOP_LOSS
+      priority: P1
+      status: pending
+    TRIX:
+      complex_conditions:
+      - TRIX_MACD_COMBO
+      - TRIX_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 45
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - DIVERGENCE
+      - MOMENTUM_SHIFT
+      priority: P1
+      status: pending
+    VORTEX:
+      complex_conditions:
+      - VORTEX_TREND_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 35
+      patterns:
+      - VI_POSITIVE_CROSS
+      - VI_NEGATIVE_CROSS
+      - TREND_STRENGTH
+      - TREND_REVERSAL
+      priority: P1
+      status: pending
+    WMA:
+      complex_conditions:
+      - WMA_EMA_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 50
+      patterns:
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      - TREND_FOLLOWING
+      priority: P1
+      status: pending
+  P2_oscillator_indicators:
+    BIAS:
+      complex_conditions:
+      - BIAS_MA_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - POSITIVE_BIAS
+      - NEGATIVE_BIAS
+      - ZERO_CROSS
+      priority: P2
+      status: pending
+    CMO:
+      complex_conditions:
+      - CMO_RSI_COMBO
+      - CMO_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 25
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - MOMENTUM_SHIFT
+      - ZERO_CROSS
+      priority: P2
+      status: pending
+    MOMENTUM:
+      complex_conditions:
+      - MOMENTUM_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 25
+      patterns:
+      - POSITIVE_MOMENTUM
+      - NEGATIVE_MOMENTUM
+      - REVERSAL
+      priority: P2
+      status: pending
+    MTM:
+      complex_conditions:
+      - MTM_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 25
+      patterns:
+      - MOMENTUM_POSITIVE
+      - MOMENTUM_NEGATIVE
+      - ZERO_CROSS
+      priority: P2
+      status: pending
+    PSY:
+      complex_conditions:
+      - PSY_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - PSYCHOLOGICAL_REVERSAL
+      - TREND_CONFIRMATION
+      priority: P2
+      status: pending
+    ROC:
+      complex_conditions:
+      - ROC_MACD_COMBO
+      - ROC_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - POSITIVE_MOMENTUM
+      - NEGATIVE_MOMENTUM
+      - ZERO_CROSS
+      - ACCELERATION
+      priority: P2
+      status: pending
+    RSIMA:
+      complex_conditions:
+      - RSIMA_TREND_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 35
+      patterns:
+      - RSI_MA_CROSS
+      - TREND_CONFIRMATION
+      - DIVERGENCE
+      priority: P2
+      status: pending
+    STOCHRSI:
+      complex_conditions:
+      - STOCHRSI_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 35
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - GOLDEN_CROSS
+      - DEATH_CROSS
+      priority: P2
+      status: pending
+    WR:
+      complex_conditions:
+      - WR_RSI_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 20
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - REVERSAL
+      priority: P2
+      status: pending
+  P3_volume_indicators:
+    AD:
+      complex_conditions:
+      - AD_PRICE_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - ACCUMULATION
+      - DISTRIBUTION
+      - DIVERGENCE
+      - TREND_CONFIRMATION
+      priority: P3
+      status: pending
+    CHAIKIN:
+      complex_conditions:
+      - CHAIKIN_VOL_COMBO
+      - CHAIKIN_MACD_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - ACCUMULATION
+      - DISTRIBUTION
+      - ZERO_CROSS
+      - DIVERGENCE
+      priority: P3
+      status: pending
+    EMV:
+      complex_conditions:
+      - EMV_VOL_COMBO
+      - EMV_PRICE_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - EASE_OF_MOVEMENT_POSITIVE
+      - EASE_OF_MOVEMENT_NEGATIVE
+      - ZERO_CROSS
+      - DIVERGENCE
+      priority: P3
+      status: pending
+    MFI:
+      complex_conditions:
+      - MFI_RSI_COMBO
+      - MFI_VOL_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 35
+      patterns:
+      - OVERBOUGHT
+      - OVERSOLD
+      - DIVERGENCE
+      - MONEY_FLOW_REVERSAL
+      priority: P3
+      status: pending
+    OBV:
+      complex_conditions:
+      - OBV_PRICE_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - VOLUME_ACCUMULATION
+      - VOLUME_DISTRIBUTION
+      - DIVERGENCE
+      priority: P3
+      status: pending
+    PVT:
+      complex_conditions:
+      - PVT_OBV_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - PRICE_VOLUME_TREND
+      - DIVERGENCE
+      - BREAKOUT
+      priority: P3
+      status: pending
+    VOLUME_RATIO:
+      complex_conditions:
+      - VOLUME_RATIO_TREND_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 20
+      patterns:
+      - HIGH_VOLUME_RATIO
+      - LOW_VOLUME_RATIO
+      - VOLUME_SPIKE
+      priority: P3
+      status: pending
+    VOSC:
+      complex_conditions:
+      - VOSC_PRICE_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - VOLUME_OSCILLATOR_POSITIVE
+      - VOLUME_OSCILLATOR_NEGATIVE
+      - ZERO_CROSS
+      priority: P3
+      status: pending
+    VR:
+      complex_conditions:
+      - VR_VOL_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 25
+      patterns:
+      - VOLUME_RATIO_HIGH
+      - VOLUME_RATIO_LOW
+      - VOLUME_TREND
+      - VOLUME_REVERSAL
+      priority: P3
+      status: pending
+  P4_volatility_indicators:
+    ATR:
+      complex_conditions:
+      - ATR_BOLL_COMBO
+      - ATR_TREND_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - HIGH_VOLATILITY
+      - LOW_VOLATILITY
+      - VOLATILITY_EXPANSION
+      - VOLATILITY_CONTRACTION
+      priority: P4
+      status: pending
+    KC:
+      complex_conditions:
+      - KC_BOLL_COMBO
+      - KC_ATR_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 35
+      patterns:
+      - UPPER_BREAKOUT
+      - LOWER_BREAKOUT
+      - SQUEEZE
+      - EXPANSION
+      priority: P4
+      status: pending
+    STDDEV:
+      complex_conditions:
+      - STDDEV_PRICE_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 30
+      patterns:
+      - HIGH_DEVIATION
+      - LOW_DEVIATION
+      - DEVIATION_EXPANSION
+      - DEVIATION_CONTRACTION
+      priority: P4
+      status: pending
+    VIX:
+      complex_conditions:
+      - VIX_MARKET_COMBO
+      expected_accuracy: 1.0
+      history_requirement: 40
+      patterns:
+      - FEAR_SPIKE
+      - COMPLACENCY_LOW
+      - VOLATILITY_EXPANSION
+      - VOLATILITY_CONTRACTION
+      priority: P4
+      status: pending
+logging:
+  backup_count: 5
+  file: logs/production_indicator_test.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: INFO
+  max_size_mb: 100
+performance_requirements:
+  max_execution_time_per_indicator: 120
+  max_memory_usage_mb: 100
+  min_throughput: 1000
+  response_time_ms: 100
+reporting:
+  alert_thresholds:
+    execution_time: 300
+    memory_usage: 0.8
+    pass_rate: 1.0
+  formats:
+  - markdown
+  - json
+  - html
+  include_charts: true
+  output_directory: test_reports
+  progress_tracking: true
+  real_time_monitoring: true
+test_framework:
+  max_retries: 3
+  parallel_execution: false
+  quality_threshold: 1.0
+  strict_mode: true
+  timeout_seconds: 600
+validation_criteria:
+  architecture_compliance_rate: 1.0
+  buypoint_recognition_accuracy: 1.0
+  closed_loop_validation_rate: 1.0
+  selection_precision: 0.95
+  selection_recall: 0.9

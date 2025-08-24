@@ -18,6 +18,7 @@ import warnings
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.dependency_injection import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
@@ -28,7 +29,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
-class VolumeIndicator(BaseIndicator, PatternSignalMixin):
+class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     成交量(VOL) (VOL)
     

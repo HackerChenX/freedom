@@ -15,12 +15,13 @@ from typing import List, Dict, Any
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class RsiRsi(BaseIndicator, PatternSignalMixin):
+class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     相对强弱指数(RSI_Rsi)
     """
@@ -41,6 +42,17 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
             # 如果形态注册失败，记录警告但不影响指标初始化
             import logging
             logging.warning(f"RSI形态注册失败: {e}")
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回RSI指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        # RSI需要period个周期计算，加上额外的缓冲期
+        return self.period + max(10, self.period // 2)
 
     def _register_rsi_patterns(self):
         """
@@ -121,16 +133,16 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         
         # 计算价格变动
         delta = data['close'].diff()
-        
-        # 计算上涨和下跌
-        gain = delta.where(delta > 0, 0).ewm(span=self.period, adjust=False).mean()
-        loss = -delta.where(delta < 0, 0).ewm(span=self.period, adjust=False).mean()
 
-        # 计算相对强度
-        rs = gain / loss.replace(0, 1e-9)
-        
+        # 分离上涨和下跌
+        gains = delta.where(delta > 0, 0)
+        losses = -delta.where(delta < 0, 0)
+
+        # 使用标准Wilder平滑方法计算RSI
+        rsi_values = self._calculate_wilder_rsi(gains, losses, self.period)
+
         # 计算RSI
-        result_df[f'rsi_{self.period}'] = 100 - (100 / (1 + rs))
+        result_df[f'rsi_{self.period}'] = rsi_values
         
         # 必须：计算RSI均线（确保形态识别正常工作）
         if self.ma_periods and len(self.ma_periods) >= 2:
@@ -155,6 +167,51 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         result_df = self.add_signal_generation(result_df)
 
         return result_df
+
+    def _calculate_wilder_rsi(self, gains: pd.Series, losses: pd.Series, period: int) -> pd.Series:
+        """
+        使用标准Wilder平滑方法计算RSI
+
+        Args:
+            gains: 上涨序列
+            losses: 下跌序列
+            period: RSI周期
+
+        Returns:
+            pd.Series: RSI值序列
+        """
+        # 初始化结果序列
+        rsi_values = pd.Series(index=gains.index, dtype=float)
+
+        # 计算初始平均值（前period个值的简单平均）
+        if len(gains) >= period:
+            # 初始平均增益和损失
+            initial_avg_gain = gains.iloc[1:period+1].mean()  # 跳过第一个NaN值
+            initial_avg_loss = losses.iloc[1:period+1].mean()
+
+            # 设置初始RSI值
+            if initial_avg_loss == 0:
+                rsi_values.iloc[period] = 100.0
+            else:
+                rs = initial_avg_gain / initial_avg_loss
+                rsi_values.iloc[period] = 100 - (100 / (1 + rs))
+
+            # 使用Wilder平滑方法计算后续值
+            avg_gain = initial_avg_gain
+            avg_loss = initial_avg_loss
+
+            for i in range(period + 1, len(gains)):
+                # Wilder平滑公式
+                avg_gain = (avg_gain * (period - 1) + gains.iloc[i]) / period
+                avg_loss = (avg_loss * (period - 1) + losses.iloc[i]) / period
+
+                if avg_loss == 0:
+                    rsi_values.iloc[i] = 100.0
+                else:
+                    rs = avg_gain / avg_loss
+                    rsi_values.iloc[i] = 100 - (100 / (1 + rs))
+
+        return rsi_values
 
     def get_patterns_Rsi_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

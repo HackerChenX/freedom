@@ -12,12 +12,13 @@ from typing import Dict, Any, List, Optional, Union
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
 
-class Vortex(BaseIndicator, PatternSignalMixin):
+class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     VORTEX (Vortex Indicator) 涡流指标
     
@@ -513,3 +514,15 @@ class Vortex(BaseIndicator, PatternSignalMixin):
         patterns['VI_MINUS_NEW_LOW'] = vi_minus <= vi_minus_low
         
         return patterns
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Vortex指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 20

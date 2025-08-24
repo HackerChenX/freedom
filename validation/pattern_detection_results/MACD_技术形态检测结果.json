@@ -1,0 +1,605 @@
+{
+  "detection_timestamp": "2025-08-24T12:35:21.120946",
+  "detection_date": "2025-05-12",
+  "stocks_processed": 50,
+  "processing_time": 5.500439882278442,
+  "patterns_detected": {
+    "GOLDEN_CROSS": {
+      "pattern_name": "MACD金叉",
+      "pattern_description": "MACD线上穿信号线，买入信号",
+      "stocks_found": 10,
+      "target_stocks": 10,
+      "stocks_list": [
+        {
+          "stock_code": "000001",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "48",
+          "macd_line": -0.12932268055892315,
+          "signal_line": -0.1462584632635206,
+          "macd_histogram": 0.03387156540919489,
+          "cross_strength": 0.016935782704597446,
+          "price_at_cross": 11.18,
+          "verification_points": [
+            "MACD线(-0.129323) > 信号线(-0.146258)",
+            "前一日MACD线(-0.151944) <= 信号线(-0.150492)",
+            "穿越强度: 0.016936",
+            "股价: 11.18"
+          ]
+        },
+        {
+          "stock_code": "000002",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "43",
+          "macd_line": -0.13261194009075528,
+          "signal_line": -0.1367916044814212,
+          "macd_histogram": 0.008359328781331832,
+          "cross_strength": 0.004179664390665916,
+          "price_at_cross": 7.08,
+          "verification_points": [
+            "MACD线(-0.132612) > 信号线(-0.136792)",
+            "前一日MACD线(-0.143001) <= 信号线(-0.137837)",
+            "穿越强度: 0.004180",
+            "股价: 7.08"
+          ]
+        },
+        {
+          "stock_code": "000006",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "74",
+          "macd_line": -0.11503588288859579,
+          "signal_line": -0.11620779502793965,
+          "macd_histogram": 0.002343824278687734,
+          "cross_strength": 0.001171912139343867,
+          "price_at_cross": 6.42,
+          "verification_points": [
+            "MACD线(-0.115036) > 信号线(-0.116208)",
+            "前一日MACD线(-0.127893) <= 信号线(-0.116501)",
+            "穿越强度: 0.001172",
+            "股价: 6.42"
+          ]
+        },
+        {
+          "stock_code": "000007",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "44",
+          "macd_line": -0.15028698633703286,
+          "signal_line": -0.1600257914185364,
+          "macd_histogram": 0.019477610163007086,
+          "cross_strength": 0.009738805081503543,
+          "price_at_cross": 6.23,
+          "verification_points": [
+            "MACD线(-0.150287) > 信号线(-0.160026)",
+            "前一日MACD线(-0.189981) <= 信号线(-0.162460)",
+            "穿越强度: 0.009739",
+            "股价: 6.23"
+          ]
+        },
+        {
+          "stock_code": "000009",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "72",
+          "macd_line": -0.20658291279490992,
+          "signal_line": -0.20876571736235408,
+          "macd_histogram": 0.004365609134888315,
+          "cross_strength": 0.0021828045674441576,
+          "price_at_cross": 7.75,
+          "verification_points": [
+            "MACD线(-0.206583) > 信号线(-0.208766)",
+            "前一日MACD线(-0.211232) <= 信号线(-0.209311)",
+            "穿越强度: 0.002183",
+            "股价: 7.75"
+          ]
+        },
+        {
+          "stock_code": "000011",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "48",
+          "macd_line": -0.10675427624872746,
+          "signal_line": -0.1098366047974229,
+          "macd_histogram": 0.006164657097390863,
+          "cross_strength": 0.0030823285486954316,
+          "price_at_cross": 8.19,
+          "verification_points": [
+            "MACD线(-0.106754) > 信号线(-0.109837)",
+            "前一日MACD线(-0.129924) <= 信号线(-0.110607)",
+            "穿越强度: 0.003082",
+            "股价: 8.19"
+          ]
+        },
+        {
+          "stock_code": "000014",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "73",
+          "macd_line": -0.06683343384255913,
+          "signal_line": -0.08088596966192466,
+          "macd_histogram": 0.02810507163873105,
+          "cross_strength": 0.014052535819365525,
+          "price_at_cross": 10.69,
+          "verification_points": [
+            "MACD线(-0.066833) > 信号线(-0.080886)",
+            "前一日MACD线(-0.089588) <= 信号线(-0.084399)",
+            "穿越强度: 0.014053",
+            "股价: 10.69"
+          ]
+        },
+        {
+          "stock_code": "000016",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "57",
+          "macd_line": -0.19910852588294503,
+          "signal_line": -0.21848072182235959,
+          "macd_histogram": 0.03874439187882911,
+          "cross_strength": 0.019372195939414555,
+          "price_at_cross": 5.1,
+          "verification_points": [
+            "MACD线(-0.199109) > 信号线(-0.218481)",
+            "前一日MACD线(-0.264914) <= 信号线(-0.223324)",
+            "穿越强度: 0.019372",
+            "股价: 5.10"
+          ]
+        },
+        {
+          "stock_code": "000017",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "71",
+          "macd_line": -0.031324871934383935,
+          "signal_line": -0.04344505482993269,
+          "macd_histogram": 0.024240365791097507,
+          "cross_strength": 0.012120182895548753,
+          "price_at_cross": 6.22,
+          "verification_points": [
+            "MACD线(-0.031325) > 信号线(-0.043445)",
+            "前一日MACD线(-0.063913) <= 信号线(-0.046475)",
+            "穿越强度: 0.012120",
+            "股价: 6.22"
+          ]
+        },
+        {
+          "stock_code": "000020",
+          "pattern_type": "GOLDEN_CROSS",
+          "detection_date": "72",
+          "macd_line": -0.40547955657801005,
+          "signal_line": -0.42012981156926815,
+          "macd_histogram": 0.02930050998251621,
+          "cross_strength": 0.014650254991258105,
+          "price_at_cross": 11.24,
+          "verification_points": [
+            "MACD线(-0.405480) > 信号线(-0.420130)",
+            "前一日MACD线(-0.433858) <= 信号线(-0.423792)",
+            "穿越强度: 0.014650",
+            "股价: 11.24"
+          ]
+        }
+      ]
+    },
+    "DEATH_CROSS": {
+      "pattern_name": "MACD死叉",
+      "pattern_description": "MACD线下穿信号线，卖出信号",
+      "stocks_found": 10,
+      "target_stocks": 10,
+      "stocks_list": [
+        {
+          "stock_code": "000002",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "55",
+          "macd_line": -0.0872867897094105,
+          "signal_line": -0.07576271491696002,
+          "macd_histogram": -0.02304814958490098,
+          "cross_strength": 0.01152407479245049,
+          "price_at_cross": 6.8100000000000005,
+          "verification_points": [
+            "MACD线(-0.087287) < 信号线(-0.075763)",
+            "前一日MACD线(-0.072321) >= 信号线(-0.072882)",
+            "穿越强度: 0.011524",
+            "股价: 6.81"
+          ]
+        },
+        {
+          "stock_code": "000009",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "78",
+          "macd_line": -0.203656276150328,
+          "signal_line": -0.19960188386180666,
+          "macd_histogram": -0.008108784577042671,
+          "cross_strength": 0.004054392288521336,
+          "price_at_cross": 7.46,
+          "verification_points": [
+            "MACD线(-0.203656) < 信号线(-0.199602)",
+            "前一日MACD线(-0.195080) >= 信号线(-0.198588)",
+            "穿越强度: 0.004054",
+            "股价: 7.46"
+          ]
+        },
+        {
+          "stock_code": "000012",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "80",
+          "macd_line": -0.043146054142672696,
+          "signal_line": -0.041409177791836206,
+          "macd_histogram": -0.0034737527016729802,
+          "cross_strength": 0.0017368763508364901,
+          "price_at_cross": 4.74,
+          "verification_points": [
+            "MACD线(-0.043146) < 信号线(-0.041409)",
+            "前一日MACD线(-0.040316) >= 信号线(-0.040975)",
+            "穿越强度: 0.001737",
+            "股价: 4.74"
+          ]
+        },
+        {
+          "stock_code": "000014",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "79",
+          "macd_line": -0.035320955670849585,
+          "signal_line": -0.02510341819348598,
+          "macd_histogram": -0.02043507495472721,
+          "cross_strength": 0.010217537477363606,
+          "price_at_cross": 10.27,
+          "verification_points": [
+            "MACD线(-0.035321) < 信号线(-0.025103)",
+            "前一日MACD线(-0.007315) >= 信号线(-0.022549)",
+            "穿越强度: 0.010218",
+            "股价: 10.27"
+          ]
+        },
+        {
+          "stock_code": "000016",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "83",
+          "macd_line": 0.07180228302395086,
+          "signal_line": 0.08838797552812742,
+          "macd_histogram": -0.03317138500835312,
+          "cross_strength": 0.01658569250417656,
+          "price_at_cross": 5.07,
+          "verification_points": [
+            "MACD线(0.071802) < 信号线(0.088388)",
+            "前一日MACD线(0.096143) >= 信号线(0.092534)",
+            "穿越强度: 0.016586",
+            "股价: 5.07"
+          ]
+        },
+        {
+          "stock_code": "000017",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "87",
+          "macd_line": 0.12704379638705277,
+          "signal_line": 0.1315563022182779,
+          "macd_histogram": -0.009025011662450289,
+          "cross_strength": 0.004512505831225144,
+          "price_at_cross": 6.45,
+          "verification_points": [
+            "MACD线(0.127044) < 信号线(0.131556)",
+            "前一日MACD线(0.137806) >= 信号线(0.132684)",
+            "穿越强度: 0.004513",
+            "股价: 6.45"
+          ]
+        },
+        {
+          "stock_code": "000019",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "73",
+          "macd_line": 0.14386397295008635,
+          "signal_line": 0.15174343021108433,
+          "macd_histogram": -0.01575891452199596,
+          "cross_strength": 0.00787945726099798,
+          "price_at_cross": 6.89,
+          "verification_points": [
+            "MACD线(0.143864) < 信号线(0.151743)",
+            "前一日MACD线(0.167515) >= 信号线(0.153713)",
+            "穿越强度: 0.007879",
+            "股价: 6.89"
+          ]
+        },
+        {
+          "stock_code": "000021",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "94",
+          "macd_line": -0.09393519556729757,
+          "signal_line": -0.06695305064946964,
+          "macd_histogram": -0.05396428983565585,
+          "cross_strength": 0.026982144917827924,
+          "price_at_cross": 17.39,
+          "verification_points": [
+            "MACD线(-0.093935) < 信号线(-0.066953)",
+            "前一日MACD线(-0.053581) >= 信号线(-0.060208)",
+            "穿越强度: 0.026982",
+            "股价: 17.39"
+          ]
+        },
+        {
+          "stock_code": "000025",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "78",
+          "macd_line": 0.3125544704104648,
+          "signal_line": 0.3925036726493934,
+          "macd_histogram": -0.1598984044778572,
+          "cross_strength": 0.0799492022389286,
+          "price_at_cross": 16.98,
+          "verification_points": [
+            "MACD线(0.312554) < 信号线(0.392504)",
+            "前一日MACD线(0.412737) >= 信号线(0.412491)",
+            "穿越强度: 0.079949",
+            "股价: 16.98"
+          ]
+        },
+        {
+          "stock_code": "000027",
+          "pattern_type": "DEATH_CROSS",
+          "detection_date": "94",
+          "macd_line": 0.05706213052885101,
+          "signal_line": 0.06366539978469199,
+          "macd_histogram": -0.013206538511681964,
+          "cross_strength": 0.006603269255840982,
+          "price_at_cross": 6.41,
+          "verification_points": [
+            "MACD线(0.057062) < 信号线(0.063665)",
+            "前一日MACD线(0.067344) >= 信号线(0.065316)",
+            "穿越强度: 0.006603",
+            "股价: 6.41"
+          ]
+        }
+      ]
+    },
+    "ABOVE_ZERO_GOLDEN": {
+      "pattern_name": "MACD零轴上金叉",
+      "pattern_description": "MACD线在零轴上方形成金叉，强买入信号",
+      "stocks_found": 4,
+      "target_stocks": 10,
+      "stocks_list": [
+        {
+          "stock_code": "000025",
+          "pattern_type": "ABOVE_ZERO_GOLDEN",
+          "detection_date": "71",
+          "macd_line": 0.17149020159706652,
+          "signal_line": 0.019258482695091415,
+          "macd_histogram": 0.3044634378039502,
+          "cross_strength": 0.1522317189019751,
+          "price_at_cross": 19.26,
+          "verification_points": [
+            "MACD线(0.171490) > 0 (零轴上方)",
+            "信号线(0.019258) > 0 (零轴上方)",
+            "MACD线 > 信号线 (金叉)",
+            "前一日MACD线(-0.052076) <= 信号线(-0.018799)",
+            "股价: 19.26"
+          ]
+        },
+        {
+          "stock_code": "000042",
+          "pattern_type": "ABOVE_ZERO_GOLDEN",
+          "detection_date": "68",
+          "macd_line": 0.035514000913767774,
+          "signal_line": 0.021114903549606233,
+          "macd_histogram": 0.02879819472832308,
+          "cross_strength": 0.01439909736416154,
+          "price_at_cross": 6.54,
+          "verification_points": [
+            "MACD线(0.035514) > 0 (零轴上方)",
+            "信号线(0.021115) > 0 (零轴上方)",
+            "MACD线 > 信号线 (金叉)",
+            "前一日MACD线(0.011994) <= 信号线(0.017515)",
+            "股价: 6.54"
+          ]
+        },
+        {
+          "stock_code": "000058",
+          "pattern_type": "ABOVE_ZERO_GOLDEN",
+          "detection_date": "90",
+          "macd_line": 0.017162246147830018,
+          "signal_line": 0.0071165564759303745,
+          "macd_histogram": 0.020091379343799287,
+          "cross_strength": 0.010045689671899644,
+          "price_at_cross": 8.48,
+          "verification_points": [
+            "MACD线(0.017162) > 0 (零轴上方)",
+            "信号线(0.007117) > 0 (零轴上方)",
+            "MACD线 > 信号线 (金叉)",
+            "前一日MACD线(-0.001325) <= 信号线(0.004605)",
+            "股价: 8.48"
+          ]
+        },
+        {
+          "stock_code": "000059",
+          "pattern_type": "ABOVE_ZERO_GOLDEN",
+          "detection_date": "68",
+          "macd_line": 0.038509803317317015,
+          "signal_line": 0.02375769279564379,
+          "macd_histogram": 0.02950422104334645,
+          "cross_strength": 0.014752110521673224,
+          "price_at_cross": 5.09,
+          "verification_points": [
+            "MACD线(0.038510) > 0 (零轴上方)",
+            "信号线(0.023758) > 0 (零轴上方)",
+            "MACD线 > 信号线 (金叉)",
+            "前一日MACD线(0.009873) <= 信号线(0.020070)",
+            "股价: 5.09"
+          ]
+        }
+      ]
+    },
+    "BEARISH_DIVERGENCE": {
+      "pattern_name": "MACD看跌背离",
+      "pattern_description": "价格创新高但MACD未创新高，顶部信号",
+      "stocks_found": 10,
+      "target_stocks": 10,
+      "stocks_list": [
+        {
+          "stock_code": "000006",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "75",
+          "price_high": 6.43,
+          "macd_at_high": -0.10285385133839764,
+          "max_macd_before": -0.10406510608443487,
+          "divergence_ratio": 0.9883606062434179,
+          "price_at_cross": 6.43,
+          "verification_points": [
+            "价格创高点: 6.43",
+            "当前MACD: -0.102854",
+            "之前MACD最高: -0.104065",
+            "背离程度: 1.2%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000014",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "83",
+          "price_high": 11.08,
+          "macd_at_high": 0.01736541445093387,
+          "max_macd_before": 0.028283741903535997,
+          "divergence_ratio": 0.6139716063793832,
+          "price_at_cross": 11.08,
+          "verification_points": [
+            "价格创高点: 11.08",
+            "当前MACD: 0.017365",
+            "之前MACD最高: 0.028284",
+            "背离程度: 38.6%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000020",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "75",
+          "price_high": 11.46,
+          "macd_at_high": -0.29281336437717975,
+          "max_macd_before": -0.32844041618743347,
+          "divergence_ratio": 0.8915265903514074,
+          "price_at_cross": 11.46,
+          "verification_points": [
+            "价格创高点: 11.46",
+            "当前MACD: -0.292813",
+            "之前MACD最高: -0.328440",
+            "背离程度: 10.8%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000021",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "75",
+          "price_high": 17.59,
+          "macd_at_high": -0.5841941244714839,
+          "max_macd_before": -0.6464057028708119,
+          "divergence_ratio": 0.9037576894463734,
+          "price_at_cross": 17.59,
+          "verification_points": [
+            "价格创高点: 17.59",
+            "当前MACD: -0.584194",
+            "之前MACD最高: -0.646406",
+            "背离程度: 9.6%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000031",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "90",
+          "price_high": 2.68,
+          "macd_at_high": -0.011307641701681526,
+          "max_macd_before": -0.008942220451284566,
+          "divergence_ratio": 1.2645228065314764,
+          "price_at_cross": 2.68,
+          "verification_points": [
+            "价格创高点: 2.68",
+            "当前MACD: -0.011308",
+            "之前MACD最高: -0.008942",
+            "背离程度: -26.5%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000039",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "81",
+          "price_high": 7.79,
+          "macd_at_high": -0.19627435855083064,
+          "max_macd_before": -0.22532144898166528,
+          "divergence_ratio": 0.8710859948659471,
+          "price_at_cross": 7.79,
+          "verification_points": [
+            "价格创高点: 7.79",
+            "当前MACD: -0.196274",
+            "之前MACD最高: -0.225321",
+            "背离程度: 12.9%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000045",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "75",
+          "price_high": 10.02,
+          "macd_at_high": -0.2968727094303354,
+          "max_macd_before": -0.19025398917876934,
+          "divergence_ratio": 1.5604020221167785,
+          "price_at_cross": 10.02,
+          "verification_points": [
+            "价格创高点: 10.02",
+            "当前MACD: -0.296873",
+            "之前MACD最高: -0.190254",
+            "背离程度: -56.0%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000049",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "75",
+          "price_high": 21.08,
+          "macd_at_high": -0.8433256319376774,
+          "max_macd_before": -0.9399568286767632,
+          "divergence_ratio": 0.8971961330658987,
+          "price_at_cross": 21.08,
+          "verification_points": [
+            "价格创高点: 21.08",
+            "当前MACD: -0.843326",
+            "之前MACD最高: -0.939957",
+            "背离程度: 10.3%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000056",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "90",
+          "price_high": 3.22,
+          "macd_at_high": -0.04059387131053027,
+          "max_macd_before": -0.043016444124269526,
+          "divergence_ratio": 0.9436826343260563,
+          "price_at_cross": 3.22,
+          "verification_points": [
+            "价格创高点: 3.22",
+            "当前MACD: -0.040594",
+            "之前MACD最高: -0.043016",
+            "背离程度: 5.6%",
+            "形成看跌背离信号"
+          ]
+        },
+        {
+          "stock_code": "000059",
+          "pattern_type": "BEARISH_DIVERGENCE",
+          "detection_date": "91",
+          "price_high": 5.61,
+          "macd_at_high": 0.12884789080860237,
+          "max_macd_before": 0.16727798239707514,
+          "divergence_ratio": 0.7702621048043875,
+          "price_at_cross": 5.61,
+          "verification_points": [
+            "价格创高点: 5.61",
+            "当前MACD: 0.128848",
+            "之前MACD最高: 0.167278",
+            "背离程度: 23.0%",
+            "形成看跌背离信号"
+          ]
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_patterns": 4,
+    "patterns_with_stocks": 4,
+    "total_stocks_found": 34,
+    "detection_success_rate": 1.0,
+    "average_stocks_per_pattern": 8.5
+  }
+}

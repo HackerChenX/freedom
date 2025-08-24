@@ -12,6 +12,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.trix import TRIX
 from utils.dependency_injection import get_logger
 from utils.technical_utils import find_peaks_and_troughs
@@ -20,7 +21,7 @@ from utils.indicator_utils import crossover, crossunder
 logger = get_logger(__name__)
 
 
-class EnhancedTrix(BaseIndicator, PatternSignalMixin):
+class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型TRIX三重指数平滑移动平均线指标
     
@@ -1608,3 +1609,15 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin):
             "strength": "WEAK",
             "score_impact": 0.0
         })
+    @property
+    def minimum_periods(self) -> int:
+        """
+        EnhancedTrix指标所需的最少数据周期数
+        
+        计算逻辑：基于参数 smoothing_period(3) 计算
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        smoothing_period = self._parameters.get('smoothing_period', 3)
+        return smoothing_period + max(10, smoothing_period // 2)

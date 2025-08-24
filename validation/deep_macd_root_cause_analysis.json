@@ -1,0 +1,8 @@
+{
+  "timestamp": "2025-08-24T14:10:21.949190",
+  "test_cases": {
+    "000017": {
+      "ema_analysis": {
+        "stock_code": "000017",
+        "target_date": "2025-05-14",
+        "target_index": 

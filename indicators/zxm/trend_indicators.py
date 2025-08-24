@@ -13,13 +13,14 @@ from scipy.stats import linregress
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
 from indicators.score_manager import IndicatorScoreManager
 
 logger = get_logger(__name__)
 
 
-class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin):
+class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM趋势-日线上移指标
     
@@ -531,6 +532,17 @@ class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin):
         # 日线上移指标没有可调参数，保持默认实现
         pass
     
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZxmdailyTrendUp指标所需的最少数据周期数
+        
+        计算逻辑：使用默认值
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 30
 
 class ZxmweeklyTrendUp(BaseIndicator, PatternSignalMixin):
     """
