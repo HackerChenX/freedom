@@ -25,23 +25,28 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     动量指标衡量价格变化的速度和幅度，用于识别趋势强度
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return getattr(self, 'period', 14) + 1
+
     def __init__(self, **kwargs):
         """
         初始化MOMENTUM指标
-        
+
         Args:
             **kwargs: 指标参数
         """
         super().__init__()
         self.name = "MOMENTUM"
         self.description = "动量指标，衡量价格变化的速度和幅度"
-        
+
         # 初始化结果存储
         self._result = None
-        
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_momentum()
-        
+
         # 应用用户参数
         self.set_parameters_Momentum(**kwargs)
     

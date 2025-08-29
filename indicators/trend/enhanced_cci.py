@@ -48,7 +48,7 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             smoothing_period (int): 平滑周期
             trend_period (int): 趋势周期
         """
-        super().__init__(name="EnhancedCCI", description="增强版商品路径指标")
+        super().__init__()
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.indicator_type = "ENHANCEDCCI"
 
@@ -57,6 +57,28 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.secondary_period = secondary_period
         self.adaptive = adaptive
         self.market_environment = "normal"
+
+        # CCI阈值常量
+        self.OVERBOUGHT = 100
+        self.OVERSOLD = -100
+        self.EXTREME_OVERBOUGHT = 200
+        self.EXTREME_OVERSOLD = -200
+
+    def _get_default_parameters_enhancedcci(self) -> dict:
+        """
+        获取Enhanced CCI指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'period': 20,
+            'factor': 0.015,
+            'secondary_period': 40,
+            'smoothing_period': 3,
+            'trend_period': 50,
+            'adaptive': True
+        }
         
         # 实际使用周期（可能会根据自适应算法调整）
         self.current_period = period
@@ -1222,3 +1244,78 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         smoothing_period = self._parameters.get('smoothing_period', 3)
         trend_period = self._parameters.get('trend_period', 50)
         return max(period, secondary_period, smoothing_period, trend_period) + 10
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Enhanced CCI指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced CCI指标的DataFrame
+        """
+        return self.calculate_Cci_Enhanced_Cci(data, **kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced CCI指标的DataFrame
+        """
+        return self._calculate_enhancedcci(data)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return self.calculate_confidence_Enhanced_Cci(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        return self.calculate_raw_score_Enhanced_Cci(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        return self.get_patterns_Enhanced_Cci(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Cci_Enhanced_Cci(**kwargs)

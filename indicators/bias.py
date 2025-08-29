@@ -41,6 +41,11 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.indicator_type = "BIAS"
         self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return max(self.periods) if self.periods else 6
+
     def set_parameters_Bias_Bias_Bias_bias(self, period: int = 14, **kwargs):
         """
         设置BIAS指标的参数

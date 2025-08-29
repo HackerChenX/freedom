@@ -906,6 +906,18 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 如果没有generate_trading_signals_Mtm方法，使用通用信号生成
             return self.generate_signals_mtm(data, **kwargs)
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        MTM指标所需的最少数据周期数
+
+        计算逻辑：基于参数 period(10) + ma_period(6) 计算
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return self.period + self.ma_period + 5
+
 
 # 类别名，供指标注册系统使用
 MomentumMTM = Momentum

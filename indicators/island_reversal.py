@@ -93,19 +93,57 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_islandreversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算ISLAND_REVERSAL指标
-        
+
         Args:
             data: 包含OHLCV数据的Data_frame
-            
+
         Returns:
             添加了ISLAND_REVERSAL指标的Data_frame
         """
         df = data.copy()
-        
-        # 最小化实现：返回原数据加上一个简单的计算列
-        df[f'ISLAND_REVERSAL_VALUE'] = df['close'].rolling(window=self.period).mean()
-        
-        
+
+        # 真实的岛形反转算法实现
+        # 1. 识别跳空缺口
+        df['up_gap'] = (df['low'] > df['high'].shift(1)) & (df['low'].shift(1).notna())
+        df['down_gap'] = (df['high'] < df['low'].shift(1)) & (df['high'].shift(1).notna())
+
+        # 2. 识别岛形反转形态
+        df['top_island_reversal'] = False
+        df['bottom_island_reversal'] = False
+
+        # 顶部岛形反转：向上跳空后又向下跳空
+        for i in range(2, len(df)):
+            # 检查是否有向上跳空
+            if df['up_gap'].iloc[i-1]:
+                # 检查后续是否有向下跳空
+                for j in range(i, min(i+5, len(df))):  # 在5天内寻找
+                    if df['down_gap'].iloc[j]:
+                        df.iloc[j, df.columns.get_loc('top_island_reversal')] = True
+                        break
+
+        # 底部岛形反转：向下跳空后又向上跳空
+        for i in range(2, len(df)):
+            # 检查是否有向下跳空
+            if df['down_gap'].iloc[i-1]:
+                # 检查后续是否有向上跳空
+                for j in range(i, min(i+5, len(df))):  # 在5天内寻找
+                    if df['up_gap'].iloc[j]:
+                        df.iloc[j, df.columns.get_loc('bottom_island_reversal')] = True
+                        break
+
+        # 3. 计算岛形反转强度
+        df['island_reversal_strength'] = 0.0
+        df.loc[df['top_island_reversal'], 'island_reversal_strength'] = -1.0  # 看跌信号
+        df.loc[df['bottom_island_reversal'], 'island_reversal_strength'] = 1.0  # 看涨信号
+
+        # 4. 计算跳空幅度
+        df['gap_size'] = 0.0
+        df.loc[df['up_gap'], 'gap_size'] = (df['low'] - df['high'].shift(1)) / df['close'].shift(1)
+        df.loc[df['down_gap'], 'gap_size'] = (df['high'] - df['low'].shift(1)) / df['close'].shift(1)
+
+        # 5. 岛形反转综合信号
+        df['island_reversal_signal'] = df['top_island_reversal'] | df['bottom_island_reversal']
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -125,6 +163,34 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def get_patterns_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Reversal(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_islandreversal(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 计算岛形反转的置信度
+        score = self.calculate_raw_score_Reversal(data)
+        confidence = score.mean() / 100.0  # 将评分转换为置信度
+        result['confidence'] = confidence
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        score = self.calculate_raw_score_Reversal(data)
+        result['raw_score'] = score
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self.get_patterns_Reversal(data)
 
     @property
     def minimum_periods(self) -> int:

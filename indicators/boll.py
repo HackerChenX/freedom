@@ -40,7 +40,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.description = "布林带"
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters_boll()
+        self._default_parameters = self._get_default_parameters()
 
         # 应用用户参数
         self.set_parameters_Boll(**kwargs)
@@ -55,7 +55,12 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.crossover = crossover
         self.crossunder = crossunder
 
-    def _get_default_parameters_boll(self) -> Dict[str, Any]:
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算BOLL指标所需的最小周期数"""
+        return self.period + 1
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 20, "std_dev": 2.0, "ma_type": "SMA"}
     
@@ -568,9 +573,16 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             计算完成的Data_frame，包含中轨、上轨和下轨
         """
         try:
-            # 检查是否有足够的数据和必要的列
-            if len(data) < self.period:
-                logger.warning(f"数据长度({len(data)})小于所需的回溯周期({self.period})，返回原始数据")
+            # 空数据处理
+            if data is None or data.empty:
+                logger.warning("BOLL计算: 输入数据为空")
+                return pd.DataFrame(columns=['middle', 'upper', 'lower', 'bandwidth', 'percent_b'])
+
+            # 检查数据长度是否足够
+            min_periods = self.period + 1
+            if len(data) < min_periods:
+                logger.warning(f"BOLL计算: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+                # 返回与输入数据长度相同的空结果
                 result = data.copy()
                 result['middle'] = np.nan
                 result['upper'] = np.nan
@@ -582,6 +594,19 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 result = self.add_pattern_detection(result)
                 result = self.add_signal_generation(result)
 
+                return result
+
+            # 检查必需列
+            required_cols = ['close']
+            missing_cols = [col for col in required_cols if col not in data.columns]
+            if missing_cols:
+                logger.error(f"BOLL计算: 缺少必需列 {missing_cols}")
+                result = data.copy()
+                result['middle'] = np.nan
+                result['upper'] = np.nan
+                result['lower'] = np.nan
+                result['bandwidth'] = np.nan
+                result['percent_b'] = np.nan
                 return result
 
             if 'close' not in data.columns:
@@ -604,20 +629,29 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if self.moving_average_type.lower() == 'ema':
                 middle = close.ewm(span=self.period).mean()
             else:  # 默认使用SMA
-                middle = close.rolling(window=self.period).mean()
-            
+                middle = close.rolling(window=self.period, min_periods=self.period).mean()
+
             # 计算标准差
-            rolling_std = close.rolling(window=self.period).std()
+            rolling_std = close.rolling(window=self.period, min_periods=self.period).std()
             
             # 计算上轨和下轨
             upper = middle + (rolling_std * self.std_dev)
             lower = middle - (rolling_std * self.std_dev)
             
-            # 计算带宽
-            bandwidth = (upper - lower) / middle
-            
-            # 计算%B值
-            percent_b = (close - lower) / (upper - lower)
+            # 计算带宽（避免除零错误）
+            bandwidth = np.where(
+                middle != 0,
+                (upper - lower) / middle,
+                np.nan
+            )
+
+            # 计算%B值（避免除零错误）
+            band_width = upper - lower
+            percent_b = np.where(
+                band_width != 0,
+                (close - lower) / band_width,
+                np.nan
+            )
             
             # 将结果添加到DataFrame
             result['middle'] = middle
@@ -1824,7 +1858,23 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        return self.set_parameters_Boll(**kwargs)
+        # 只更新_parameters字典，避免直接设置只读属性
+        for key, value in kwargs.items():
+            if key in self._parameters:
+                self._parameters[key] = value
+            elif key in ['period', 'std_dev', 'ma_type']:
+                # 对于核心参数，即使不在_parameters中也要添加
+                self._parameters[key] = value
+
+        # 如果设置了核心参数，需要重新初始化内部状态
+        if any(key in kwargs for key in ['period', 'std_dev']):
+            # 重新设置内部参数
+            self._period = self._parameters.get('period', 20)
+            self._std_dev = self._parameters.get('std_dev', 2.0)
+
+    def set_parameters(self, **kwargs):
+        """标准参数设置方法"""
+        return self.set_parameters_Indicator_Base_Indicator(**kwargs)
 
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """抽象基类要求的置信度计算方法"""

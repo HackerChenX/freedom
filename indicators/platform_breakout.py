@@ -83,19 +83,71 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_platformbreakout(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算PLATFORM_BREAKOUT指标
-        
+
         Args:
             data: 包含OHLCV数据的Data_frame
-            
+
         Returns:
             添加了PLATFORM_BREAKOUT指标的Data_frame
         """
         df = data.copy()
-        
-        # 基本实现：返回原数据加上一个简单的计算列
-        df[f'PLATFORM_BREAKOUT_VALUE'] = df['close'].rolling(window=self.period).mean()
-        
-        
+
+        # 真实的平台突破算法实现
+        # 1. 计算价格的移动平均和标准差
+        df['price_ma'] = df['close'].rolling(window=self.period).mean()
+        df['price_std'] = df['close'].rolling(window=self.period).std()
+
+        # 2. 识别平台整理（价格在均线附近小幅波动）
+        df['platform_range'] = df['price_std'] / df['price_ma']  # 相对波动率
+        df['is_platform'] = df['platform_range'] < 0.02  # 波动率小于2%认为是平台整理
+
+        # 3. 计算平台的上沿和下沿
+        df['platform_upper'] = df['close'].rolling(window=self.period).max()
+        df['platform_lower'] = df['close'].rolling(window=self.period).min()
+        df['platform_height'] = df['platform_upper'] - df['platform_lower']
+
+        # 4. 识别向上突破
+        df['upward_breakout'] = False
+        df['downward_breakout'] = False
+
+        for i in range(self.period, len(df)):
+            # 检查前期是否有平台整理
+            if df['is_platform'].iloc[i-self.period:i].sum() >= self.period * 0.6:  # 60%的时间在平台整理
+                current_close = df['close'].iloc[i]
+                platform_upper = df['platform_upper'].iloc[i-1]
+                platform_lower = df['platform_lower'].iloc[i-1]
+
+                # 向上突破：价格突破平台上沿
+                if current_close > platform_upper * 1.02:  # 突破2%以上
+                    df.iloc[i, df.columns.get_loc('upward_breakout')] = True
+
+                # 向下突破：价格跌破平台下沿
+                elif current_close < platform_lower * 0.98:  # 跌破2%以上
+                    df.iloc[i, df.columns.get_loc('downward_breakout')] = True
+
+        # 5. 计算突破强度
+        df['breakout_strength'] = 0.0
+        df.loc[df['upward_breakout'], 'breakout_strength'] = 1.0  # 看涨信号
+        df.loc[df['downward_breakout'], 'breakout_strength'] = -1.0  # 看跌信号
+
+        # 6. 计算突破幅度
+        df['breakout_magnitude'] = 0.0
+        df.loc[df['upward_breakout'], 'breakout_magnitude'] = (df['close'] - df['platform_upper']) / df['platform_upper'] * 100
+        df.loc[df['downward_breakout'], 'breakout_magnitude'] = (df['platform_lower'] - df['close']) / df['platform_lower'] * 100
+
+        # 7. 平台突破综合信号
+        df['platform_breakout_signal'] = df['upward_breakout'] | df['downward_breakout']
+
+        # 8. 计算平台持续时间
+        df['platform_duration'] = 0
+        platform_count = 0
+        for i in range(len(df)):
+            if df['is_platform'].iloc[i]:
+                platform_count += 1
+            else:
+                platform_count = 0
+            df.iloc[i, df.columns.get_loc('platform_duration')] = platform_count
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -115,6 +167,34 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def get_patterns_Breakout(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Breakout(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_platformbreakout(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 计算平台突破的置信度
+        score = self.calculate_raw_score_Breakout(data)
+        confidence = score.mean() / 100.0  # 将评分转换为置信度
+        result['confidence'] = confidence
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        score = self.calculate_raw_score_Breakout(data)
+        result['raw_score'] = score
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self.get_patterns_Breakout(data)
 
     @property
     def minimum_periods(self) -> int:

@@ -51,6 +51,17 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.ma_cols = [f'{self.ma_type}{self.period}']
         self.register_patterns_Ema()
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回EMA指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        # EMA需要的最小周期数是period + 一些预热期
+        return getattr(self, 'period', 12) + 5
+
     def _get_default_parameters_ema(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 12, "price_field": "close", "alpha": None}
@@ -102,6 +113,27 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算指数移动平均线(EMA_Ema)指标
         """
+        # 输入数据验证
+        if df is None or df.empty:
+            logger.warning("EMA计算: 输入数据为空")
+            return pd.DataFrame()
+
+        if 'close' not in df.columns:
+            logger.error("EMA计算: 缺少必需的'close'列")
+            raise ValueError("EMA计算需要'close'列数据")
+
+        # 检查数据长度是否足够
+        if len(df) < min(self.periods):
+            logger.warning(f"EMA计算: 数据长度({len(df)})小于最小周期({min(self.periods)})")
+            # 返回空结果而不是抛出异常
+            result_df = df.copy()
+            for p in self.periods:
+                result_df[f'{self.ma_type}{p}'] = np.nan
+            return result_df
+
+        # 复制数据以避免修改原始数据
+        df = df.copy()
+
         for p in self.periods:
             df[f'{self.ma_type}{p}'] = df['close'].ewm(span=p, adjust=True).mean()
         
@@ -673,6 +705,11 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period = kwargs['period']
             if isinstance(period, int) and 1 <= period <= 200:
                 self.period = period
+                self.periods = [period]  # 重置为单个周期
+                # 更新列名
+                self.ma_cols = [f'{self.ma_type}{period}']
+                # 重新注册形态
+                self.register_patterns_Ema()
             else:
                 logger.warning(f"无效的period参数: {period}, 保持原值")
 
@@ -681,11 +718,26 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             periods = kwargs['periods']
             if isinstance(periods, list) and all(isinstance(p, int) and 1 <= p <= 200 for p in periods):
                 self.periods = periods
+                # 更新列名
+                self.ma_cols = [f'{self.ma_type}{p}' for p in periods]
             else:
                 logger.warning(f"无效的periods参数: {periods}, 保持原值")
 
         # 记录参数变更
         logger.info(f"EMA参数已更新")
+
+    def _get_default_parameters(self) -> dict:
+        """
+        获取EMA指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'period': 12,
+            'periods': [12],
+            'ma_type': 'EMA'
+        }
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """真实实现：生成EMA交易信号"""

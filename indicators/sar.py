@@ -49,6 +49,16 @@ class ParabolicSar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 注册SAR形态
         # self._register_sar_patterns()
+
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return 20  # SAR指标需要至少20个周期来稳定计算
+
+    def set_parameters_Sar(self, **kwargs):
+        """设置SAR指标参数"""
+        self.acceleration = kwargs.get('acceleration', self.acceleration)
+        self.maximum = kwargs.get('maximum', self.maximum)
         
     def set_parameters_Sar_Sar_Sar_sar(self, acceleration: float = None, maximum: float = None):
         """

@@ -1504,5 +1504,16 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 如果验证失败，静默处理
             pass
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回WMA指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = getattr(self, 'period', 14)
+        return max(period, 10)  # WMA周期，最少10个周期
+
 # 类别名
 WMA = Wma

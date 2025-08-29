@@ -35,7 +35,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.description = "移动平均线"
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters_ma()
+        self._default_parameters = self._get_default_parameters()
 
         # 应用用户参数
         self.set_parameters_Ma(**kwargs)
@@ -43,7 +43,15 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # ma_cols在set_parameters_Ma中设置
         self.register_patterns_Ma()
 
-    def _get_default_parameters_ma(self) -> Dict[str, Any]:
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        # 返回最大周期数作为最小周期要求
+        periods = self._default_parameters.get('periods', [20])
+        main_period = self._default_parameters.get('period', 20)
+        return max(max(periods), main_period)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
             "periods": [5, 10, 20, 60],  # 标准多周期MA
@@ -58,17 +66,18 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典，支持以下参数：
                 - period: 移动平均线周期
+                - ma_type: MA类型 ('SMA', 'EMA', 'WMA')
                 - price_field: 价格字段选择
         """
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
             validator = IndicatorParameterValidator()
-            
+
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
-            
+
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MA_Ma', params)
             if not is_valid:
@@ -83,11 +92,12 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.period = params.get('period', 20)
         self.periods = params.get('periods', [5, 10, 20, 60])  # 多周期支持
         self.price_field = params.get('price_field', 'close')
+        self.ma_type_param = params.get('ma_type', 'SMA')  # 支持SMA、EMA、WMA
 
         # 确保主要周期在periods列表中
         if self.period not in self.periods:
             self.periods.append(self.period)
-        
+
         self.ma_type = 'MA'  # 更标准的命名
 
         # 设置MA列名
@@ -95,8 +105,15 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _calculate_ma(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        计算简单移动平均线(SMA)
+        计算移动平均线(支持SMA、EMA、WMA)
         """
+        # 边界条件检查
+        if data is None or data.empty:
+            return pd.DataFrame()
+
+        if len(data) == 0:
+            return pd.DataFrame()
+
         # 从原始数据开始，确保保留所有基础列
         result_df = data.copy()
 
@@ -105,6 +122,14 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             raise ValueError("数据中缺少'close'列")
 
         close_series = data['close']
+
+        # 处理close列包含NaN的情况
+        if close_series.isna().all():
+            # 如果所有值都是NaN，返回带有NaN的MA列的结果
+            result_df['ma'] = np.nan
+            for p in self.periods:
+                result_df[f'{self.ma_type}{p}'] = np.nan
+            return result_df
 
         # 处理close列不是Series的情况
         if not isinstance(close_series, pd.Series):
@@ -131,8 +156,12 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 计算移动平均线
         for p in self.periods:
-            ma_values = close_series.rolling(window=p).mean()
+            ma_values = self._calculate_single_ma(close_series, p, self.ma_type_param)
             result_df[f'{self.ma_type}{p}'] = ma_values
+
+        # 添加主要周期的ma列（用于测试兼容性）
+        main_ma = self._calculate_single_ma(close_series, self.period, self.ma_type_param)
+        result_df['ma'] = main_ma
 
         # 添加常用别名
         if 'MA5' in result_df.columns:
@@ -152,6 +181,55 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result_df = self._apply_ma_signal_logic(result_df)
 
         return result_df
+
+    def _calculate_single_ma(self, series: pd.Series, period: int, ma_type: str) -> pd.Series:
+        """
+        计算单一周期的移动平均线
+
+        Args:
+            series: 价格序列
+            period: 周期
+            ma_type: MA类型 ('SMA', 'EMA', 'WMA')
+
+        Returns:
+            计算后的MA序列
+        """
+        if ma_type.upper() == 'SMA':
+            # 简单移动平均
+            return series.rolling(window=period, min_periods=period).mean()
+
+        elif ma_type.upper() == 'EMA':
+            # 指数移动平均
+            return series.ewm(span=period, adjust=False).mean()
+
+        elif ma_type.upper() == 'WMA':
+            # 加权移动平均
+            return self._calculate_wma(series, period)
+
+        else:
+            # 默认使用SMA
+            return series.rolling(window=period, min_periods=period).mean()
+
+    def _calculate_wma(self, series: pd.Series, period: int) -> pd.Series:
+        """
+        计算加权移动平均线(WMA)
+
+        Args:
+            series: 价格序列
+            period: 周期
+
+        Returns:
+            WMA序列
+        """
+        weights = np.arange(1, period + 1)
+        weight_sum = weights.sum()
+
+        def wma_func(x):
+            if len(x) < period:
+                return np.nan
+            return np.dot(x[-period:], weights) / weight_sum
+
+        return series.rolling(window=period, min_periods=period).apply(wma_func, raw=True)
 
     def _apply_ma_signal_logic(self, result_df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -510,7 +588,49 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return self.calculate_confidence(score, patterns, signals)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        return self._calculate_ma(data, **kwargs)
+        """
+        计算移动平均线指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            包含MA计算结果的DataFrame
+
+        Raises:
+            ValueError: 当输入数据无效时
+        """
+        # 数据验证
+        if data is None:
+            raise ValueError("输入数据不能为None")
+
+        if data.empty:
+            raise ValueError("输入数据不能为空")
+
+        if not isinstance(data, pd.DataFrame):
+            raise ValueError("输入数据必须是pandas DataFrame")
+
+        if 'close' not in data.columns:
+            raise ValueError("数据中缺少必需的'close'列")
+
+        # 检查数据长度
+        if len(data) < 1:
+            raise ValueError("数据长度不足，至少需要1个数据点")
+
+        # 检查close列数据类型
+        try:
+            # 尝试转换为数值类型
+            close_values = pd.to_numeric(data['close'], errors='coerce')
+            if close_values.isna().all():
+                raise ValueError("close列包含无效的数值数据")
+        except Exception as e:
+            raise ValueError(f"close列数据类型无效: {str(e)}")
+
+        try:
+            return self._calculate_ma(data, **kwargs)
+        except Exception as e:
+            raise ValueError(f"MA计算失败: {str(e)}")
 
     # ========================= 兼容性方法 =========================
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:

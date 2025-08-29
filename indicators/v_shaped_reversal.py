@@ -93,19 +93,61 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_vshapedreversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         内部计算V_SHAPED_REVERSAL指标
-        
+
         Args:
             data: 包含OHLCV数据的Data_frame
-            
+
         Returns:
             添加了V_SHAPED_REVERSAL指标的Data_frame
         """
         df = data.copy()
-        
-        # 最小化实现：返回原数据加上一个简单的计算列
-        df[f'V_SHAPED_REVERSAL_VALUE'] = df['close'].rolling(window=self.period).mean()
-        
-        
+
+        # 真实的V形反转算法实现
+        # 1. 计算价格变化率
+        df['price_change'] = df['close'].pct_change()
+        df['price_change_ma'] = df['price_change'].rolling(window=5).mean()
+
+        # 2. 识别急剧下跌（V形底部的左侧）
+        df['sharp_decline'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)
+
+        # 3. 识别快速反弹（V形底部的右侧）
+        df['sharp_rebound'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)
+
+        # 4. 识别V形底部反转
+        df['v_bottom_reversal'] = False
+        for i in range(5, len(df)):
+            # 检查前5天是否有急剧下跌
+            if df['sharp_decline'].iloc[i-5:i].any():
+                # 检查当前是否有快速反弹
+                if df['sharp_rebound'].iloc[i]:
+                    df.iloc[i, df.columns.get_loc('v_bottom_reversal')] = True
+
+        # 5. 识别急剧上涨（倒V形顶部的左侧）
+        df['sharp_rise'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)
+
+        # 6. 识别快速回落（倒V形顶部的右侧）
+        df['sharp_fall'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)
+
+        # 7. 识别倒V形顶部反转
+        df['v_top_reversal'] = False
+        for i in range(5, len(df)):
+            # 检查前5天是否有急剧上涨
+            if df['sharp_rise'].iloc[i-5:i].any():
+                # 检查当前是否有快速回落
+                if df['sharp_fall'].iloc[i]:
+                    df.iloc[i, df.columns.get_loc('v_top_reversal')] = True
+
+        # 8. 计算V形反转强度
+        df['v_reversal_strength'] = 0.0
+        df.loc[df['v_bottom_reversal'], 'v_reversal_strength'] = 1.0  # 看涨信号
+        df.loc[df['v_top_reversal'], 'v_reversal_strength'] = -1.0  # 看跌信号
+
+        # 9. 计算反转幅度
+        df['reversal_magnitude'] = abs(df['price_change']) * 100  # 转换为百分比
+
+        # 10. V形反转综合信号
+        df['v_shaped_reversal_signal'] = df['v_bottom_reversal'] | df['v_top_reversal']
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -125,6 +167,34 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def get_patterns_Reversal_V_Shaped_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Reversal_V_Shaped_Reversal(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_vshapedreversal(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 计算V形反转的置信度
+        score = self.calculate_raw_score_Reversal_V_Shaped_Reversal(data)
+        confidence = score.mean() / 100.0  # 将评分转换为置信度
+        result['confidence'] = confidence
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        score = self.calculate_raw_score_Reversal_V_Shaped_Reversal(data)
+        result['raw_score'] = score
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self.get_patterns_Reversal_V_Shaped_Reversal(data)
 
     @property
     def minimum_periods(self) -> int:

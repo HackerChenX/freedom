@@ -14,7 +14,7 @@ from enum import Enum
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from indicators.pattern.candlestick_patterns import Pattern_type, Candlestick_patterns
+from indicators.pattern.candlestick_patterns import Pattern_type, CandlestickPatterns
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
@@ -70,8 +70,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化高级K线形态识别指标"""
-        super().__init__(name="AdvancedCandlestickPatterns", description="高级K线形态识别指标，识别更复杂的组合K线形态和复合形态")
-        self.basic_patterns = Candlestick_patterns()
+        super().__init__()
+        self.name = "AdvancedCandlestickPatterns"
+        self.description = "高级K线形态识别指标，识别更复杂的组合K线形态和复合形态"
+        self.basic_patterns = CandlestickPatterns()
     
     def set_parameters_Patterns_Advanced_Candlestick_Patterns(self, **kwargs):
         """
@@ -79,6 +81,49 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
         """
         # 高级K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Patterns_Advanced_Candlestick_Patterns(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_advancedcandlestickpatterns(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 为每个形态添加置信度列
+        for col in result.columns:
+            if col not in ['date', 'code'] and result[col].dtype == 'bool':
+                result[f'{col}_confidence'] = result[col].astype(float) * 0.9  # 高级形态识别置信度
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        # 计算高级形态识别的原始评分
+        pattern_count = 0
+        for col in result.columns:
+            if col not in ['date', 'code'] and result[col].dtype == 'bool':
+                pattern_count += result[col].sum()
+
+        result['raw_score'] = pattern_count / len(result) * 100
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self._calculate_baseindicator(data)
+
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算高级K线形态识别指标"""
+        return self._calculate_advancedcandlestickpatterns(data)
+
+    def ensure_columns(self, data: pd.DataFrame, required_columns: list):
+        """确保数据包含必需的列"""
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"数据缺少必需的列: {missing_columns}")
     
     def ensure_columns_advanced_candlestick_patterns(self, data: pd.DataFrame, required_columns: List[str]) -> None:
         """
@@ -347,8 +392,8 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                 three_outside_down[i] = True
         
         # 添加到结果
-        result[Advanced_pattern_type.THREE_WHITE_SOLDIERS.value] = three_white_soldiers
-        result[Advanced_pattern_type.THREE_BLACK_CROWS.value] = three_black_crows
+        result[AdvancedPatternType.THREE_WHITE_SOLDIERS.value] = three_white_soldiers
+        result[AdvancedPatternType.THREE_BLACK_CROWS.value] = three_black_crows
         result[Advanced_pattern_type.THREE_INSIDE_UP.value] = three_inside_up
         result[Advanced_pattern_type.THREE_INSIDE_DOWN.value] = three_inside_down
         result[Advanced_pattern_type.THREE_OUTSIDE_UP.value] = three_outside_up

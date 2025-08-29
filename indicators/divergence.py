@@ -49,31 +49,73 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     用于识别价格与技术指标之间的背离，预示可能的趋势反转
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return max(self.lookback_period, self.confirm_period) + 5
+
     def __init__(self, lookback_period: int = 20, confirm_period: int = 5):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化量价背离指标
-        
+
         Args:
             lookback_period: 回溯周期，默认为20
             confirm_period: 确认周期，默认为5
         """
-        super().__init__(name="DIVERGENCE", description="量价背离指标")
+        super().__init__()
+        self.name = "DIVERGENCE"
+        self.description = "量价背离指标"
         self.lookback_period = lookback_period
         self.confirm_period = confirm_period
     
     def compute_Divergence(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算量价背离指标
-        
+
         Args:
             df: 输入数据，包含价格和成交量数据
-                
+
         Returns:
             包含量价背离指标的Data_frame
         """
         # 计算价格与成交量背离
         return self.price_volume_divergence(df, self.lookback_period, self.confirm_period)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        self.lookback_period = kwargs.get('lookback_period', self.lookback_period)
+        self.confirm_period = kwargs.get('confirm_period', self.confirm_period)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_divergence(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 计算背离分析的置信度
+        score = self.calculate_raw_score_Divergence(data)
+        confidence = score / 100.0  # 将评分转换为置信度
+        result['confidence'] = confidence
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        score = self.calculate_raw_score_Divergence(data)
+        result['raw_score'] = score
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self.generate_signals_Divergence(data)
+
+    def ensure_columns(self, data: pd.DataFrame, required_columns: list):
+        """确保数据包含必需的列"""
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"数据缺少必需的列: {missing_columns}")
     
     def price_volume_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
         """

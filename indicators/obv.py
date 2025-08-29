@@ -694,6 +694,16 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否有计算结果"""
         return self._result is not None
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回OBV指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 2  # OBV只需要2个数据点就可以开始计算
+
 
 # 类别名，供指标注册系统使用
 OnBalanceVolumeOBV = OnBalanceVolume

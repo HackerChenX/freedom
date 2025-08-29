@@ -72,6 +72,11 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if not hasattr(self, 'period'):
             self.period = 12
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return self.period if hasattr(self, 'period') else 12
+
     def _get_default_parameters_psy(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {'period': 12, 'enhanced': False}

@@ -991,12 +991,180 @@ class ZxmweeklyKdjdtrendUp(BaseIndicator, PatternSignalMixin):
     判断周线KDJ指标的D值是否向上移动
     """
     
-class ZxmmonthlyMacd(BaseIndicator, PatternSignalMixin):
+class ZxmmonthlyMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM趋势-月MACD指标
 
     判断月线MACD金叉
     """
+
+    def __init__(self):
+        """初始化ZXM月线MACD指标"""
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMMonthlyMACD"
+        self.description = "ZXM月线MACD指标，判断月线MACD金叉"
+        self.short_period = 12
+        self.long_period = 26
+        self.signal_period = 9
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM月线MACD指标所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 60  # 月线MACD需要更多数据
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ZXM月线MACD指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM月线MACD指标的DataFrame
+        """
+        result = data.copy()
+        close = result['close']
+
+        # 计算标准MACD
+        ema_12 = close.ewm(span=self.short_period).mean()
+        ema_26 = close.ewm(span=self.long_period).mean()
+        dif = ema_12 - ema_26
+        dea = dif.ewm(span=self.signal_period).mean()
+        macd = (dif - dea) * 2
+
+        result['DIF'] = dif
+        result['DEA'] = dea
+        result['MACD'] = macd
+
+        # 计算月线MACD金叉信号
+        golden_cross = (dif > dea) & (dif.shift(1) <= dea.shift(1))
+        death_cross = (dif < dea) & (dif.shift(1) >= dea.shift(1))
+
+        result['monthly_macd_golden_cross'] = golden_cross
+        result['monthly_macd_death_cross'] = death_cross
+
+        return result
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM月线MACD指标的DataFrame
+        """
+        return self.calculate(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return 0.85  # ZXM月线MACD置信度较高
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        result = self.calculate(data, **kwargs)
+
+        # 基于月线MACD信号计算评分
+        score = pd.Series(0.0, index=data.index)
+
+        if 'DIF' in result.columns and 'DEA' in result.columns:
+            dif = result['DIF']
+            dea = result['DEA']
+
+            # 金叉加分，死叉减分
+            golden_cross = (dif > dea) & (dif.shift(1) <= dea.shift(1))
+            death_cross = (dif < dea) & (dif.shift(1) >= dea.shift(1))
+
+            score[golden_cross] = 30.0  # 月线金叉权重更高
+            score[death_cross] = -30.0
+
+            # 强势多头/空头信号
+            strong_bullish = (dif > 0) & (dea > 0) & (result['MACD'] > 0)
+            strong_bearish = (dif < 0) & (dea < 0) & (result['MACD'] < 0)
+
+            score[strong_bullish] = 20.0
+            score[strong_bearish] = -20.0
+
+        return score
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        result = self.calculate(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+
+        if 'DIF' in result.columns and 'DEA' in result.columns:
+            dif = result['DIF']
+            dea = result['DEA']
+
+            # 月线MACD交叉形态
+            patterns['ZXM_MONTHLY_MACD_GOLDEN_CROSS'] = (dif > dea) & (dif.shift(1) <= dea.shift(1))
+            patterns['ZXM_MONTHLY_MACD_DEATH_CROSS'] = (dif < dea) & (dif.shift(1) >= dea.shift(1))
+
+            # 月线MACD强势形态
+            patterns['ZXM_MONTHLY_MACD_STRONG_BULLISH'] = (dif > 0) & (dea > 0) & (result['MACD'] > 0)
+            patterns['ZXM_MONTHLY_MACD_STRONG_BEARISH'] = (dif < 0) & (dea < 0) & (result['MACD'] < 0)
+
+        return patterns
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.short_period = kwargs.get('short_period', 12)
+        self.long_period = kwargs.get('long_period', 26)
+        self.signal_period = kwargs.get('signal_period', 9)
+
+    def _get_default_parameters_zxmmonthlymacd(self) -> dict:
+        """
+        获取ZXM月线MACD指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'short_period': 12,
+            'long_period': 26,
+            'signal_period': 9
+        }
     
 class TrendDetector(BaseIndicator, PatternSignalMixin):
     """
@@ -1279,3 +1447,159 @@ class ZxmweeklyMacd(BaseIndicator, PatternSignalMixin):
         }
 
         return pattern_info_map.get(pattern_id, default_pattern)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM周线MACD指标所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 50  # 周线MACD需要更多数据
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ZXM周线MACD指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM周线MACD指标的DataFrame
+        """
+        result = data.copy()
+        close = result['close']
+
+        # 计算标准MACD
+        ema_12 = close.ewm(span=12).mean()
+        ema_26 = close.ewm(span=26).mean()
+        dif = ema_12 - ema_26
+        dea = dif.ewm(span=9).mean()
+        macd = (dif - dea) * 2
+
+        result['DIF'] = dif
+        result['DEA'] = dea
+        result['MACD'] = macd
+
+        # 计算背离
+        self._calculate_divergence_Trend_Indicators(result)
+
+        return result
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM周线MACD指标的DataFrame
+        """
+        return self.calculate(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return 0.8  # ZXM周线MACD置信度较高
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        result = self.calculate(data, **kwargs)
+
+        # 基于MACD信号计算评分
+        score = pd.Series(0.0, index=data.index)
+
+        if 'DIF' in result.columns and 'DEA' in result.columns:
+            dif = result['DIF']
+            dea = result['DEA']
+
+            # 金叉加分，死叉减分
+            golden_cross = (dif > dea) & (dif.shift(1) <= dea.shift(1))
+            death_cross = (dif < dea) & (dif.shift(1) >= dea.shift(1))
+
+            score[golden_cross] = 20.0
+            score[death_cross] = -20.0
+
+            # 背离信号加分
+            if 'bullish_divergence' in result.columns:
+                score[result['bullish_divergence']] = 30.0
+            if 'bearish_divergence' in result.columns:
+                score[result['bearish_divergence']] = -30.0
+
+        return score
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        result = self.calculate(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+
+        if 'DIF' in result.columns and 'DEA' in result.columns:
+            dif = result['DIF']
+            dea = result['DEA']
+
+            # MACD交叉形态
+            patterns['ZXM_WEEKLY_MACD_GOLDEN_CROSS'] = (dif > dea) & (dif.shift(1) <= dea.shift(1))
+            patterns['ZXM_WEEKLY_MACD_DEATH_CROSS'] = (dif < dea) & (dif.shift(1) >= dea.shift(1))
+
+            # 背离形态
+            if 'bullish_divergence' in result.columns:
+                patterns['ZXM_WEEKLY_MACD_BULLISH_DIVERGENCE'] = result['bullish_divergence']
+            if 'bearish_divergence' in result.columns:
+                patterns['ZXM_WEEKLY_MACD_BEARISH_DIVERGENCE'] = result['bearish_divergence']
+
+        return patterns
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        # ZXM周线MACD使用标准参数，无需设置
+        pass
+
+    def _get_default_parameters_zxmweeklymacd(self) -> dict:
+        """
+        获取ZXM周线MACD指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'short_period': 12,
+            'long_period': 26,
+            'signal_period': 9,
+            'divergence_window': 8
+        }

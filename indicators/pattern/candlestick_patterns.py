@@ -57,6 +57,10 @@ class PatterntypePatterns(Enum):
     V_REVERSAL = "V形反转"            # 急速下跌后快速反弹
 
 
+# 定义Pattern_type别名
+Pattern_type = PatterntypePatterns
+
+
 class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     K线形态识别指标
@@ -64,10 +68,17 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
     识别各种单日和组合K线形态
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return 3  # K线形态识别至少需要3个周期
+
     def __init__(self):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化K线形态识别指标"""
-        super().__init__(name="CandlestickPatterns", description="K线形态识别指标，识别各种单日和组合K线形态")
+        super().__init__()
+        self.name = "CandlestickPatterns"
+        self.description = "K线形态识别指标，识别各种单日和组合K线形态"
     
     def set_parameters_Patterns(self, **kwargs):
         """
@@ -75,6 +86,43 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         """
         # K线形态识别通常没有可变参数，但为了符合接口要求，提供此方法
         pass
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Patterns(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_candlestickpatterns(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 为每个形态添加置信度列
+        for col in result.columns:
+            if col.endswith('_pattern') or col in ['doji', 'hammer', 'shooting_star']:
+                result[f'{col}_confidence'] = result[col].astype(float) * 0.8  # 形态识别置信度
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        # 计算形态识别的原始评分
+        pattern_count = 0
+        for col in result.columns:
+            if col.endswith('_pattern') or col in ['doji', 'hammer', 'shooting_star']:
+                pattern_count += result[col].sum()
+
+        result['raw_score'] = pattern_count / len(result) * 100
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self._calculate_baseindicator(data)
+
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算K线形态识别指标"""
+        return self._calculate_candlestickpatterns(data)
     
     def _calculate_candlestickpatterns(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

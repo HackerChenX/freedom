@@ -969,10 +969,171 @@ class StockScoreCalculator(BaseIndicator, PatternSignalMixin):
     def minimum_periods(self) -> int:
         """
         ZxmelasticityScore指标所需的最少数据周期数
-        
+
         计算逻辑：使用默认值
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
         return 30
+
+    def __init__(self):
+        """初始化ZXM股票综合评分指标"""
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMTrendScore"
+        self.description = "ZXM股票综合评分指标，计算股票的综合评分"
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM股票综合评分指标所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return 60  # 需要足够数据计算各种评分
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ZXM股票综合评分指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM股票综合评分指标的DataFrame
+        """
+        result = data.copy()
+
+        # 计算各项评分
+        result = self._calculate_trend_score(data, result)
+        result = self._calculate_momentum_score(data, result)
+        result = self._calculate_volatility_score(data, result)
+        result = self._calculate_volume_score(data, result)
+
+        # 如果有基本面数据，计算价值评分
+        if any(col in data.columns for col in ['pe_ratio', 'pb_ratio', 'roe', 'dividend_yield']):
+            result = self._calculate_value_score(data, result)
+
+        # 计算综合评分
+        score_columns = ['TrendScore', 'MomentumScore', 'VolatilityScore', 'VolumeScore']
+        if 'ValueScore' in result.columns:
+            score_columns.append('ValueScore')
+
+        # 加权平均计算综合评分
+        weights = [0.3, 0.25, 0.2, 0.25]  # 趋势30%，动量25%，波动20%，成交量25%
+        if 'ValueScore' in result.columns:
+            weights = [0.25, 0.2, 0.15, 0.2, 0.2]  # 加入价值评分20%
+
+        final_score = pd.Series(0.0, index=data.index)
+        for i, col in enumerate(score_columns):
+            final_score += result[col] * weights[i]
+
+        result['FinalScore'] = final_score
+
+        # 生成买卖信号
+        result['BuySignal'] = final_score >= 75
+        result['SellSignal'] = final_score <= 25
+
+        # 评分等级
+        result['ScoreGrade'] = 'C'
+        result.loc[final_score >= 80, 'ScoreGrade'] = 'A'
+        result.loc[(final_score >= 60) & (final_score < 80), 'ScoreGrade'] = 'B'
+        result.loc[(final_score >= 40) & (final_score < 60), 'ScoreGrade'] = 'C'
+        result.loc[final_score < 40, 'ScoreGrade'] = 'D'
+
+        return result
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM股票综合评分指标的DataFrame
+        """
+        return self.calculate(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return 0.8  # ZXM综合评分置信度较高
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        result = self.calculate(data, **kwargs)
+        return result['FinalScore']
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        result = self.calculate(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+
+        # ZXM评分形态
+        final_score = result['FinalScore']
+        patterns['ZXM_HIGH_SCORE'] = final_score >= 80
+        patterns['ZXM_MEDIUM_HIGH_SCORE'] = (final_score >= 60) & (final_score < 80)
+        patterns['ZXM_MEDIUM_SCORE'] = (final_score >= 40) & (final_score < 60)
+        patterns['ZXM_LOW_SCORE'] = final_score < 40
+
+        # 买卖信号形态
+        patterns['ZXM_BUY_SIGNAL'] = result['BuySignal']
+        patterns['ZXM_SELL_SIGNAL'] = result['SellSignal']
+
+        return patterns
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        # ZXM综合评分使用固定权重，无需设置参数
+        pass
+
+    def _get_default_parameters_stockscorecalculator(self) -> dict:
+        """
+        获取ZXM股票综合评分指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'trend_weight': 0.3,
+            'momentum_weight': 0.25,
+            'volatility_weight': 0.2,
+            'volume_weight': 0.25,
+            'value_weight': 0.2
+        }

@@ -38,7 +38,12 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     - fast_period: 快速EMA周期，默认为3
     - slow_period: 慢速EMA周期，默认为10
     """
-    
+
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return max(getattr(self, 'fast_period', 3), getattr(self, 'slow_period', 10)) + 1
+
     def __init__(self, **kwargs):
         """
         初始化CHAIKIN指标

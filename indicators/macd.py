@@ -303,7 +303,32 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含MACD线、信号线和柱状图的Data_frame
         """
-        price_col = self._parameters['price_col']
+        # 空数据处理
+        if data is None or data.empty:
+            logger.warning("MACD计算: 输入数据为空")
+            return pd.DataFrame(columns=['macd_line', 'macd_signal', 'macd_histogram'])
+
+        # 检查数据长度是否足够
+        min_periods = max(self.slow_period, self.signal_period) + 10
+        if len(data) < min_periods:
+            logger.warning(f"MACD计算: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+            # 返回与输入数据长度相同的空结果
+            result = pd.DataFrame(index=data.index)
+            result['macd_line'] = np.nan
+            result['macd_signal'] = np.nan
+            result['macd_histogram'] = np.nan
+            return result
+
+        price_col = self._parameters.get('price_col', 'close')
+
+        # 检查必需列是否存在
+        if price_col not in data.columns:
+            logger.error(f"MACD计算: 缺少必需列 '{price_col}'")
+            result = pd.DataFrame(index=data.index)
+            result['macd_line'] = np.nan
+            result['macd_signal'] = np.nan
+            result['macd_histogram'] = np.nan
+            return result
 
         # 使用专业修复的MACD计算方法
         from utils.technical_utils import calculate_macd_Utils
@@ -1087,43 +1112,14 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=22.0,
             polarity="POSITIVE"
         )
-    def _get_default_parameters_macd(self) -> Dict[str, Any]:
+    def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
-    
-    def set_parameters_Macd_Macd_Macd_macd_duplicate(self, **kwargs):
-        """
-        设置指标参数
-        
-        Args:
-            **kwargs: 参数字典
-        """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('MACD_Macd', params)
-            if not is_valid:
-                from utils.dependency_injection import get_logger
-                logger = get_logger(__name__)
-                logger.warning(f"MACD参数验证失败: {'; '.join(errors)}")
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数（保持向后兼容）
-            for key, value in params.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-                    
-        except Exception:
-            # 如果验证失败，静默处理
-            pass
+        return {
+            "fast_period": 12,
+            "slow_period": 26,
+            "signal_period": 9,
+            "price_col": "close"
+        }
 
 
     # ==================== 抽象方法实现 ====================
@@ -1461,13 +1457,24 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        # 设置MACD参数
-        if 'fast_period' in kwargs:
-            self.fast_period = kwargs['fast_period']
-        if 'slow_period' in kwargs:
-            self.slow_period = kwargs['slow_period']
-        if 'signal_period' in kwargs:
-            self.signal_period = kwargs['signal_period']
+        # 只更新_parameters字典，不直接设置属性（因为它们是只读property）
+        for key, value in kwargs.items():
+            if key in self._parameters:
+                self._parameters[key] = value
+            elif key in ['fast_period', 'slow_period', 'signal_period', 'price_col']:
+                # 对于核心参数，即使不在_parameters中也要添加
+                self._parameters[key] = value
+
+        # 如果设置了核心参数，需要重新初始化内部状态
+        if any(key in kwargs for key in ['fast_period', 'slow_period', 'signal_period']):
+            # 重新设置内部参数
+            self._fast_period = self._parameters.get('fast_period', 12)
+            self._slow_period = self._parameters.get('slow_period', 26)
+            self._signal_period = self._parameters.get('signal_period', 9)
+
+    def set_parameters(self, **kwargs):
+        """标准参数设置方法"""
+        return self.set_parameters_Indicator_Base_Indicator(**kwargs)
 
     # ==================== 兼容性方法 ====================
 

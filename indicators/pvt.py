@@ -30,11 +30,16 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述：通过价格变化与成交量相结合，反映价格趋势的强度和持续性
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return self.ma_period + 1
+
     def __init__(self, ma_period: int = 12):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化价格成交量趋势指标(PVT)指标
-        
+
         Args:
             ma_period: 移动平均周期，默认为12
         """
@@ -42,7 +47,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.name = "PVT"
         self.description = "价格成交量趋势指标，通过价格变化与成交量相结合，反映价格趋势的强度和持续性"
         self.ma_period = ma_period
-        
+
         # 初始化结果存储
         self._result = None
         

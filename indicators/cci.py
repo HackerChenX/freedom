@@ -95,6 +95,16 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置参数
         self.period = params.get('period', 20)
         self.constant = params.get('constant', 0.015)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回CCI指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.period + 5, 25)  # CCI周期 + 缓冲，最少25个周期
     
     def calculate_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

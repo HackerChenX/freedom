@@ -31,6 +31,11 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         ama_period: 差值平均线周期，默认为10
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return max(self.fast_period, self.slow_period) + self.ama_period
+
     def __init__(self, fast_period: int = 10, slow_period: int = 50, ama_period: int = 10,
                  name: str = "DMA", description: str = "轨道线指标"):
         """初始化DMA指标"""

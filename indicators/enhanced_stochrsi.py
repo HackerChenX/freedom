@@ -521,6 +521,111 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         
         return patterns
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        Enhanced StochRSI指标所需的最少数据周期数
+
+        计算逻辑：基于参数 rsi_period(14), stoch_period(14), k_period(3), d_period(3) 计算
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.rsi_period, self.stoch_period) + max(self.k_period, self.d_period) + 10
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Enhanced StochRSI指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced StochRSI指标的DataFrame
+        """
+        return self.calculate_Stochrsi_Enhanced_Stochrsi(data, **kwargs)
+
+    def _get_default_parameters_enhancedstochrsi(self) -> dict:
+        """
+        获取Enhanced StochRSI指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'rsi_period': 14,
+            'stoch_period': 14,
+            'k_period': 3,
+            'd_period': 3,
+            'overbought': 80.0,
+            'oversold': 20.0,
+            'multi_periods': [(14, 14), (21, 21), (9, 9)],
+            'adaptive_thresholds': True
+        }
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced StochRSI指标的DataFrame
+        """
+        return self._calculate_enhancedstochrsi(data)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return self.calculate_confidence_Enhanced_Stochrsi(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        return self.calculate_raw_score_Enhanced_Stochrsi(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        return self.get_patterns_Enhanced_Stochrsi(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
+
 
 # 为了向后兼容，创建别名
 enhanced_stochastic_rsi = EnhancedStochasticRSI

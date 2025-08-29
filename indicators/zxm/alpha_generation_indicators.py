@@ -1,0 +1,408 @@
+"""
+ZXM体系Alpha生成指标模块
+
+实现ZXM体系的Alpha生成分析指标
+"""
+
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Union, Optional, Any, Tuple
+
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from utils.dependency_injection import get_logger
+
+logger = get_logger(__name__)
+
+
+class ZXMAlphaGeneration(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+    """
+    ZXM Alpha生成指标
+    
+    分析投资组合Alpha生成能力，提供超额收益分析
+    """
+    
+    def __init__(self, **kwargs):
+        """
+        初始化ZXM Alpha生成指标
+        
+        Args:
+            **kwargs: 指标参数
+        """
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMAlphaGeneration"
+        self.description = "ZXM Alpha生成指标，分析投资组合Alpha生成能力"
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_zxmalphagenerati()
+        
+        # 应用用户参数
+        self.set_parameters_Alpha_Generation(**kwargs)
+    
+    def _get_default_parameters_zxmalphagenerati(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {
+            "lookback_period": 60,
+            "benchmark_period": 252,
+            "risk_free_rate": 0.03,
+            "alpha_threshold": 0.02,
+            "factor_count": 5,
+            "rolling_window": 30
+        }
+    
+    def set_parameters_Alpha_Generation(self, **kwargs):
+        """
+        设置指标参数
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        self.lookback_period = kwargs.get('lookback_period', 60)
+        self.benchmark_period = kwargs.get('benchmark_period', 252)
+        self.risk_free_rate = kwargs.get('risk_free_rate', 0.03)
+        self.alpha_threshold = kwargs.get('alpha_threshold', 0.02)
+        self.factor_count = kwargs.get('factor_count', 5)
+        self.rolling_window = kwargs.get('rolling_window', 30)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM Alpha生成指标所需的最少数据周期数
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.lookback_period, self.benchmark_period, self.rolling_window) + 20
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ZXM Alpha生成指标的主要入口方法
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            包含ZXM Alpha生成指标的DataFrame
+        """
+        result = data.copy()
+        
+        # 计算收益率和基准
+        result = self._calculate_returns_and_benchmark(result)
+        
+        # 计算Alpha值
+        result = self._calculate_alpha_values(result)
+        
+        # 计算因子贡献
+        result = self._calculate_factor_contributions(result)
+        
+        # 计算Alpha评分
+        result = self._calculate_alpha_score(result)
+        
+        # 生成Alpha信号
+        result = self._generate_alpha_signals(result)
+        
+        return result
+
+    def _calculate_returns_and_benchmark(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算收益率和基准"""
+        result = data.copy()
+        
+        close = result['close']
+        volume = result['volume']
+        
+        # 日收益率
+        daily_returns = close.pct_change()
+        
+        # 基准收益率（使用市场平均收益率模拟）
+        market_returns = daily_returns.rolling(window=self.lookback_period).mean()
+        
+        # 超额收益率
+        excess_returns = daily_returns - market_returns
+        
+        # 累积收益率
+        cumulative_returns = (1 + daily_returns).cumprod()
+        cumulative_benchmark = (1 + market_returns).cumprod()
+        
+        # 相对收益率
+        relative_returns = cumulative_returns / cumulative_benchmark - 1
+        
+        result['DailyReturns'] = daily_returns
+        result['MarketReturns'] = market_returns
+        result['ExcessReturns'] = excess_returns
+        result['CumulativeReturns'] = cumulative_returns
+        result['CumulativeBenchmark'] = cumulative_benchmark
+        result['RelativeReturns'] = relative_returns
+        
+        return result
+
+    def _calculate_alpha_values(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算Alpha值"""
+        result = data.copy()
+        
+        daily_returns = result['DailyReturns']
+        market_returns = result['MarketReturns']
+        excess_returns = result['ExcessReturns']
+        
+        # 滚动Alpha计算
+        rolling_alpha = pd.Series(index=data.index, dtype=float)
+        rolling_beta = pd.Series(index=data.index, dtype=float)
+        
+        for i in range(self.lookback_period, len(data)):
+            # 获取滚动窗口数据
+            window_returns = daily_returns.iloc[i-self.lookback_period:i].dropna()
+            window_market = market_returns.iloc[i-self.lookback_period:i].dropna()
+            
+            # 确保两个序列长度一致且不为空
+            if len(window_returns) > 10 and len(window_market) > 10:
+                # 取较短的长度
+                min_length = min(len(window_returns), len(window_market))
+                window_returns = window_returns.iloc[-min_length:]
+                window_market = window_market.iloc[-min_length:]
+                
+                try:
+                    # 计算协方差和方差
+                    covariance = np.cov(window_returns, window_market)[0, 1]
+                    market_variance = np.var(window_market)
+                    
+                    # Beta计算
+                    if market_variance > 0:
+                        beta = covariance / market_variance
+                    else:
+                        beta = 1.0
+                    
+                    # Alpha计算（CAPM模型）
+                    portfolio_return = window_returns.mean() * 252
+                    market_return = window_market.mean() * 252
+                    alpha = portfolio_return - (self.risk_free_rate + beta * (market_return - self.risk_free_rate))
+                    
+                    rolling_alpha.iloc[i] = alpha
+                    rolling_beta.iloc[i] = beta
+                except:
+                    # 如果计算失败，使用默认值
+                    rolling_alpha.iloc[i] = 0.0
+                    rolling_beta.iloc[i] = 1.0
+            else:
+                # 数据不足，使用默认值
+                rolling_alpha.iloc[i] = 0.0
+                rolling_beta.iloc[i] = 1.0
+        
+        # Alpha值标准化
+        alpha_value = rolling_alpha / 252  # 日化Alpha
+        
+        # 信息比率
+        tracking_error = excess_returns.rolling(window=self.rolling_window).std() * np.sqrt(252)
+        information_ratio = (excess_returns.rolling(window=self.rolling_window).mean() * 252) / tracking_error
+        
+        result['RollingAlpha'] = rolling_alpha.fillna(0.0)
+        result['RollingBeta'] = rolling_beta.fillna(1.0)
+        result['AlphaValue'] = alpha_value.fillna(0.0)
+        result['InformationRatio'] = information_ratio.fillna(0.0)
+        
+        return result
+
+    def _calculate_factor_contributions(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算因子贡献"""
+        result = data.copy()
+        
+        daily_returns = result['DailyReturns']
+        volume = result['volume']
+        close = result['close']
+        alpha_value = result['AlphaValue']
+        
+        # 因子1: 规模因子
+        size_factor = np.log(volume / volume.rolling(window=self.rolling_window).mean())
+        size_contribution = size_factor * alpha_value * 0.2
+        
+        # 因子2: 价值因子
+        value_factor = close.pct_change(self.rolling_window)
+        value_contribution = value_factor * alpha_value * 0.25
+        
+        # 因子3: 动量因子
+        momentum_factor = daily_returns.rolling(window=self.rolling_window).mean()
+        momentum_contribution = momentum_factor * alpha_value * 0.25
+        
+        # 因子4: 质量因子
+        quality_factor = daily_returns.rolling(window=self.rolling_window).std()
+        quality_contribution = (1 / (1 + quality_factor)) * alpha_value * 0.15
+        
+        # 因子5: 低波动因子
+        volatility_factor = daily_returns.rolling(window=self.rolling_window).std()
+        volatility_contribution = (1 / (1 + volatility_factor)) * alpha_value * 0.15
+        
+        # 总因子贡献
+        total_factor_contribution = (
+            size_contribution.fillna(0) +
+            value_contribution.fillna(0) +
+            momentum_contribution.fillna(0) +
+            quality_contribution.fillna(0) +
+            volatility_contribution.fillna(0)
+        )
+        
+        result['SizeContribution'] = size_contribution.fillna(0)
+        result['ValueContribution'] = value_contribution.fillna(0)
+        result['MomentumContribution'] = momentum_contribution.fillna(0)
+        result['QualityContribution'] = quality_contribution.fillna(0)
+        result['VolatilityContribution'] = volatility_contribution.fillna(0)
+        result['FactorContribution'] = total_factor_contribution
+        
+        return result
+
+    def _calculate_alpha_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算Alpha评分"""
+        result = data.copy()
+        
+        alpha_value = result['AlphaValue']
+        information_ratio = result['InformationRatio']
+        factor_contribution = result['FactorContribution']
+        rolling_alpha = result['RollingAlpha']
+        
+        # Alpha值评分 (0-40分)
+        alpha_score = np.clip(rolling_alpha * 1000 + 20, 0, 40)
+        
+        # 信息比率评分 (0-30分)
+        info_ratio_score = np.clip(information_ratio * 15 + 15, 0, 30)
+        
+        # 因子贡献评分 (0-20分)
+        factor_score = np.clip(abs(factor_contribution) * 1000 + 10, 0, 20)
+        
+        # 稳定性评分 (0-10分)
+        alpha_stability = 1 / (1 + alpha_value.rolling(window=self.rolling_window).std().fillna(1))
+        stability_score = alpha_stability * 10
+        
+        # 综合Alpha评分
+        alpha_total_score = (
+            alpha_score.fillna(20) +
+            info_ratio_score.fillna(15) +
+            factor_score.fillna(10) +
+            stability_score.fillna(5)
+        )
+        
+        # 标准化到0-100范围
+        alpha_total_score = np.clip(alpha_total_score, 0, 100)
+        
+        result['AlphaValueScore'] = alpha_score.fillna(20)
+        result['InfoRatioScore'] = info_ratio_score.fillna(15)
+        result['FactorScore'] = factor_score.fillna(10)
+        result['StabilityScore'] = stability_score.fillna(5)
+        result['AlphaScore'] = alpha_total_score.fillna(50)
+        
+        return result
+
+    def _generate_alpha_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """生成Alpha信号"""
+        result = data.copy()
+        
+        alpha_value = result['AlphaValue']
+        alpha_score = result['AlphaScore']
+        rolling_alpha = result['RollingAlpha']
+        information_ratio = result['InformationRatio']
+        factor_contribution = result['FactorContribution']
+        
+        # Alpha信号
+        result['AlphaSignal'] = alpha_score >= 75
+        
+        # 正Alpha信号
+        result['PositiveAlphaSignal'] = (
+            (rolling_alpha >= self.alpha_threshold) &  # 显著正Alpha
+            (alpha_value >= 0.001)  # Alpha值显著
+        )
+        
+        # 信息比率信号
+        result['InfoRatioSignal'] = information_ratio >= 0.5
+        
+        # 因子贡献信号
+        factor_change = factor_contribution.diff()
+        result['FactorSignal'] = abs(factor_change) >= 0.005
+        
+        # Alpha改进信号
+        score_improvement = alpha_score.diff()
+        result['AlphaImprovement'] = score_improvement > 10
+        
+        # 综合Alpha判断
+        result['IsGoodAlpha'] = alpha_score >= 70
+        result['IsPoorAlpha'] = alpha_score <= 30
+        
+        return result
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            包含ZXM Alpha生成指标的DataFrame
+        """
+        return self.calculate(data, **kwargs)
+    
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+        
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+            
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return 0.87  # ZXM Alpha生成指标置信度
+    
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        result = self.calculate(data, **kwargs)
+        return result['AlphaScore']
+    
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+        
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        result = self.calculate(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+        
+        # Alpha生成形态
+        alpha_score = result['AlphaScore']
+        patterns['ZXM_EXCELLENT_ALPHA'] = alpha_score >= 85
+        patterns['ZXM_GOOD_ALPHA'] = (alpha_score >= 65) & (alpha_score < 85)
+        patterns['ZXM_NEUTRAL_ALPHA'] = (alpha_score >= 45) & (alpha_score < 65)
+        patterns['ZXM_POOR_ALPHA'] = (alpha_score >= 25) & (alpha_score < 45)
+        patterns['ZXM_BAD_ALPHA'] = alpha_score < 25
+        
+        # Alpha生成信号形态
+        patterns['ZXM_ALPHA_SIGNAL'] = result['AlphaSignal']
+        patterns['ZXM_POSITIVE_ALPHA'] = result['PositiveAlphaSignal']
+        patterns['ZXM_INFO_RATIO_SIGNAL'] = result['InfoRatioSignal']
+        patterns['ZXM_FACTOR_SIGNAL'] = result['FactorSignal']
+        patterns['ZXM_ALPHA_IMPROVEMENT'] = result['AlphaImprovement']
+        
+        return patterns
+    
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+        
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Alpha_Generation(**kwargs)

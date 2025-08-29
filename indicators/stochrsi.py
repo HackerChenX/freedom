@@ -78,6 +78,21 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置参数
         for key, value in params.items():
             setattr(self, key, value)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回STOCHRSI指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        # STOCHRSI需要RSI周期 + 随机指标周期 + K周期 + D周期的数据
+        rsi_period = getattr(self, 'rsi_period', 14)
+        stoch_period = getattr(self, 'stoch_period', 14)
+        k_period = getattr(self, 'k_period', 3)
+        d_period = getattr(self, 'd_period', 3)
+        return max(rsi_period + stoch_period + k_period + d_period, 50)  # 最少50个周期
     
     def has_result(self) -> bool:
         """

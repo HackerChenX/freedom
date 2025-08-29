@@ -222,3 +222,298 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
 # 为了向后兼容，创建别名
 INSTITUTIONAL_BEHAVIOR = InstitutionalBehavior
 institutional_behavior = InstitutionalBehavior
+
+
+class FundFlow(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+    """
+    ZXM资金流向指标
+
+    分析机构资金流入流出情况，识别主力资金动向
+    """
+
+    def __init__(self, **kwargs):
+        """
+        初始化ZXM资金流向指标
+
+        Args:
+            **kwargs: 指标参数
+        """
+        # 移除super().__init__调用，直接设置属性
+        self.name = "ZXMFundFlow"
+        self.description = "ZXM资金流向指标，分析机构资金流入流出情况"
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_fundflow()
+
+        # 应用用户参数
+        self.set_parameters_Fund_Flow(**kwargs)
+
+    def _get_default_parameters_fundflow(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {
+            "short_period": 5,
+            "long_period": 20,
+            "volume_period": 10
+        }
+
+    def set_parameters_Fund_Flow(self, **kwargs):
+        """
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.short_period = kwargs.get('short_period', 5)
+        self.long_period = kwargs.get('long_period', 20)
+        self.volume_period = kwargs.get('volume_period', 10)
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM资金流向指标所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.short_period, self.long_period, self.volume_period) + 10
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ZXM资金流向指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM资金流向指标的DataFrame
+        """
+        result = data.copy()
+
+        # 计算资金流向
+        result = self._calculate_money_flow(result)
+
+        # 计算机构行为
+        result = self._calculate_institutional_behavior(result)
+
+        # 计算资金流向强度
+        result = self._calculate_flow_strength(result)
+
+        # 计算综合资金流向评分
+        result = self._calculate_composite_flow_score(result)
+
+        # 生成资金流向信号
+        result = self._generate_fund_flow_signals(result)
+
+        return result
+
+    def _calculate_money_flow(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算资金流向"""
+        result = data.copy()
+
+        close = result['close']
+        high = result['high']
+        low = result['low']
+        volume = result['volume']
+
+        # 计算典型价格
+        typical_price = (high + low + close) / 3
+
+        # 计算资金流量
+        money_flow = typical_price * volume
+
+        # 计算正负资金流
+        positive_flow = pd.Series(0.0, index=data.index)
+        negative_flow = pd.Series(0.0, index=data.index)
+
+        for i in range(1, len(typical_price)):
+            if typical_price.iloc[i] > typical_price.iloc[i-1]:
+                positive_flow.iloc[i] = money_flow.iloc[i]
+            elif typical_price.iloc[i] < typical_price.iloc[i-1]:
+                negative_flow.iloc[i] = money_flow.iloc[i]
+
+        # 计算资金流向比率
+        positive_flow_ma = positive_flow.rolling(window=self.short_period).sum()
+        negative_flow_ma = negative_flow.rolling(window=self.short_period).sum()
+
+        money_flow_ratio = (positive_flow_ma - negative_flow_ma) / (positive_flow_ma + negative_flow_ma + 1e-10) * 100
+
+        result['MoneyFlowRatio'] = money_flow_ratio.fillna(0)
+        result['PositiveFlow'] = positive_flow_ma
+        result['NegativeFlow'] = negative_flow_ma
+
+        return result
+
+    def _calculate_institutional_behavior(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算机构行为"""
+        result = data.copy()
+
+        close = result['close']
+        volume = result['volume']
+
+        # 计算价量关系
+        price_change = close.pct_change()
+        volume_change = volume.pct_change()
+
+        # 机构行为指标：价涨量增为正，价跌量增为负
+        institutional_behavior = pd.Series(0.0, index=data.index)
+
+        # 价涨量增（机构买入）
+        institutional_behavior[(price_change > 0) & (volume_change > 0)] = 1
+
+        # 价跌量增（机构卖出）
+        institutional_behavior[(price_change < 0) & (volume_change > 0)] = -1
+
+        # 价涨量缩（散户跟风）
+        institutional_behavior[(price_change > 0) & (volume_change < 0)] = 0.5
+
+        # 价跌量缩（恐慌抛售）
+        institutional_behavior[(price_change < 0) & (volume_change < 0)] = -0.5
+
+        # 平滑处理
+        institutional_behavior_smooth = institutional_behavior.rolling(window=self.volume_period).mean()
+
+        result['InstitutionalBehavior'] = institutional_behavior_smooth.fillna(0)
+
+        return result
+
+    def _calculate_flow_strength(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算资金流向强度"""
+        result = data.copy()
+
+        money_flow_ratio = result['MoneyFlowRatio']
+        institutional_behavior = result['InstitutionalBehavior']
+
+        # 计算流向强度
+        flow_strength = (money_flow_ratio * 0.6 + institutional_behavior * 40 * 0.4)
+
+        # 标准化到0-100范围
+        flow_strength_normalized = ((flow_strength - flow_strength.min()) / (flow_strength.max() - flow_strength.min()) * 100).fillna(50)
+
+        result['FlowStrength'] = flow_strength_normalized
+
+        return result
+
+    def _calculate_composite_flow_score(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算综合资金流向评分"""
+        result = data.copy()
+
+        # 综合各项资金流向指标
+        money_flow_ratio = result['MoneyFlowRatio']
+        institutional_behavior = result['InstitutionalBehavior']
+        flow_strength = result['FlowStrength']
+
+        # 加权平均计算综合评分
+        composite_score = (
+            money_flow_ratio * 0.4 +
+            institutional_behavior * 30 * 0.3 +
+            flow_strength * 0.3
+        )
+
+        # 标准化到0-100范围
+        composite_score_normalized = ((composite_score - composite_score.min()) / (composite_score.max() - composite_score.min()) * 100).fillna(50)
+
+        result['CompositeFundFlowScore'] = composite_score_normalized
+
+        return result
+
+    def _generate_fund_flow_signals(self, data: pd.DataFrame) -> pd.DataFrame:
+        """生成资金流向信号"""
+        result = data.copy()
+
+        composite_score = result['CompositeFundFlowScore']
+        institutional_behavior = result['InstitutionalBehavior']
+
+        # 强资金流入信号（买入机会）
+        result['StrongInflowSignal'] = (composite_score >= 70) & (institutional_behavior > 0.5)
+
+        # 强资金流出信号（卖出警告）
+        result['StrongOutflowSignal'] = (composite_score <= 30) & (institutional_behavior < -0.5)
+
+        # 资金流向转折信号
+        score_change = composite_score.diff()
+        result['FlowReversalSignal'] = (
+            (score_change > 15) |  # 资金流向快速好转
+            (score_change < -15)   # 资金流向快速恶化
+        )
+
+        return result
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含ZXM资金流向指标的DataFrame
+        """
+        return self.calculate(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return 0.8  # ZXM资金流向指标置信度
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        result = self.calculate(data, **kwargs)
+        return result['CompositeFundFlowScore']
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        result = self.calculate(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+
+        # 资金流向形态
+        composite_score = result['CompositeFundFlowScore']
+        patterns['ZXM_STRONG_INFLOW'] = composite_score >= 80
+        patterns['ZXM_MODERATE_INFLOW'] = (composite_score >= 60) & (composite_score < 80)
+        patterns['ZXM_NEUTRAL_FLOW'] = (composite_score >= 40) & (composite_score < 60)
+        patterns['ZXM_MODERATE_OUTFLOW'] = (composite_score >= 20) & (composite_score < 40)
+        patterns['ZXM_STRONG_OUTFLOW'] = composite_score < 20
+
+        # 资金流向信号形态
+        patterns['ZXM_STRONG_INFLOW_SIGNAL'] = result['StrongInflowSignal']
+        patterns['ZXM_STRONG_OUTFLOW_SIGNAL'] = result['StrongOutflowSignal']
+        patterns['ZXM_FLOW_REVERSAL'] = result['FlowReversalSignal']
+
+        return patterns
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Fund_Flow(**kwargs)

@@ -435,6 +435,17 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return patterns
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回AROON指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = getattr(self, 'period', 14)
+        return max(period + 5, 20)  # AROON周期 + 缓冲，最少20个周期
+
 
 # 类别名
 AROON = Aroon

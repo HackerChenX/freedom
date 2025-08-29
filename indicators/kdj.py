@@ -52,6 +52,11 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.m2 = m2
         self.is_available = True
 
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算KDJ指标所需的最小周期数"""
+        return max(self.n, self.m1, self.m2) + 1
+
     def _register_patterns(self):
         """统一注册所有KDJ形态"""
         self.register_pattern_to_registry(
@@ -575,30 +580,68 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         核心计算逻辑
         """
+        # 空数据处理
+        if data is None or data.empty:
+            logger.warning("KDJ计算: 输入数据为空")
+            return pd.DataFrame(columns=['K', 'D', 'J'])
+
+        # 检查数据长度是否足够
+        min_periods = max(self.n, self.m1, self.m2) + 1
+        if len(data) < min_periods:
+            logger.warning(f"KDJ计算: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+            # 返回与输入数据长度相同的空结果
+            result = pd.DataFrame(index=data.index)
+            result['K'] = np.nan
+            result['D'] = np.nan
+            result['J'] = np.nan
+            return result
+
         # 检查必需列
-        if data.empty or not all(col in data.columns for col in ['high', 'low', 'close']):
-            return pd.DataFrame(index=data.index)
+        required_cols = ['high', 'low', 'close']
+        missing_cols = [col for col in required_cols if col not in data.columns]
+        if missing_cols:
+            logger.error(f"KDJ计算: 缺少必需列 {missing_cols}")
+            result = pd.DataFrame(index=data.index)
+            result['K'] = np.nan
+            result['D'] = np.nan
+            result['J'] = np.nan
+            return result
 
         df = data.copy()
 
-        # 计算RSV
+        # 计算RSV（改进边界条件处理）
         low_n = df['low'].rolling(window=self.n, min_periods=1).min()
         high_n = df['high'].rolling(window=self.n, min_periods=1).max()
-        rsv = (df['close'] - low_n) / (high_n - low_n) * 100
-        rsv = rsv.fillna(0)
 
-        # 使用pandas的ewm方法计算K, D, J
-        # K值: RSV的指数移动平均
-        df['K'] = rsv.ewm(com=self.m1 - 1, adjust=False).mean()
-        
-        # D值: K值的指数移动平均
-        df['D'] = df['K'].ewm(com=self.m2 - 1, adjust=False).mean()
+        # 避免除零错误：当high_n == low_n时，RSV设为50
+        denominator = high_n - low_n
+        rsv = np.where(
+            denominator != 0,
+            (df['close'] - low_n) / denominator * 100,
+            50.0  # 当分母为0时，RSV设为50（中性值）
+        )
+        rsv = pd.Series(rsv, index=df.index)
+        rsv = rsv.fillna(50.0)  # 将NaN值也设为50
+
+        # 使用标准SMA方法计算K, D, J（符合标准KDJ公式）
+        # K值: RSV的简单移动平均
+        df['K'] = rsv.rolling(window=self.m1, min_periods=1).mean()
+
+        # D值: K值的简单移动平均
+        df['D'] = df['K'].rolling(window=self.m2, min_periods=1).mean()
 
         # J值
         df['J'] = 3 * df['K'] - 2 * df['D']
 
-        # 将初始的NaN值设置为50.0，这是常见做法
-        df = df.fillna(50.0)
+        # 标准KDJ初始值处理：K和D的初始值通常设为50
+        df['K'] = df['K'].fillna(50.0)
+        df['D'] = df['D'].fillna(50.0)
+        df['J'] = df['J'].fillna(50.0)
+
+        # 确保K、D值在合理范围内（0-100）
+        df['K'] = df['K'].clip(0, 100)
+        df['D'] = df['D'].clip(0, 100)
+        # J值可以超出0-100范围，这是正常的
 
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -1247,43 +1290,18 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=-25.0,
             polarity="NEGATIVE"
         )
-    def _get_default_parameters_kdj(self) -> Dict[str, Any]:
+    def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {'n': 9, 'm1': 3, 'm2': 3}
+        return {
+            'n': 9,
+            'm1': 3,
+            'm2': 3,
+            'k_period': 9,
+            'k_slowing': 3,
+            'd_period': 3
+        }
     
-    def set_parameters_Kdj_Kdj_Kdj_kdj_duplicate(self, **kwargs):
-        """
-        设置指标参数
-        
-        Args:
-            **kwargs: 参数字典
-        """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('KDJ_Kdj', params)
-            if not is_valid:
-                from utils.dependency_injection import get_logger
-                logger = get_logger(__name__)
-                logger.warning(f"KDJ参数验证失败: {'; '.join(errors)}")
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数（保持向后兼容）
-            for key, value in params.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-                    
-        except Exception:
-            # 如果验证失败，静默处理
-            pass
+
 
     # ==================== 抽象方法实现 ====================
 
@@ -1301,7 +1319,24 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        return self.set_parameters_Kdj_Kdj_Kdj_kdj(**kwargs)
+        # 只更新_parameters字典，避免直接设置只读属性
+        for key, value in kwargs.items():
+            if key in self._parameters:
+                self._parameters[key] = value
+            elif key in ['n', 'm1', 'm2', 'k_period', 'k_slowing', 'd_period']:
+                # 对于核心参数，即使不在_parameters中也要添加
+                self._parameters[key] = value
+
+        # 如果设置了核心参数，需要重新初始化内部状态
+        if any(key in kwargs for key in ['n', 'm1', 'm2']):
+            # 重新设置内部参数
+            self._n = self._parameters.get('n', 9)
+            self._m1 = self._parameters.get('m1', 3)
+            self._m2 = self._parameters.get('m2', 3)
+
+    def set_parameters(self, **kwargs):
+        """标准参数设置方法"""
+        return self.set_parameters_Indicator_Base_Indicator(**kwargs)
 
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """抽象基类要求的置信度计算方法"""

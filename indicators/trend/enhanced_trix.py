@@ -13,7 +13,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from indicators.trix import TRIX
+from indicators.trix import TripleExponentialAverage as TRIX
 from utils.dependency_injection import get_logger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
@@ -1621,3 +1621,109 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         smoothing_period = self._parameters.get('smoothing_period', 3)
         return smoothing_period + max(10, smoothing_period // 2)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Enhanced TRIX指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced TRIX指标的DataFrame
+        """
+        return self.calculate_Trix_Enhanced_Trix(data, **kwargs)
+
+    def calculate_Trix_Enhanced_Trix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算Enhanced TRIX指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced TRIX指标的DataFrame
+        """
+        return self._calculate_enhancedtrix(data)
+
+    def _get_default_parameters_enhancedtrix(self) -> dict:
+        """
+        获取Enhanced TRIX指标的默认参数
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return {
+            'n': 12,
+            'm': 9,
+            'secondary_n': 24,
+            'multi_periods': [6, 12, 24],
+            'adaptive_period': True,
+            'volatility_lookback': 20,
+            'use_smoothed_trix': True,
+            'smoothing_period': 3
+        }
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含Enhanced TRIX指标的DataFrame
+        """
+        return self._calculate_enhancedtrix(data)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return self.calculate_confidence_Trix_Enhanced_Trix(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        return self.calculate_raw_score_Trix_Enhanced_Trix(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        return self.get_patterns_Trix_Enhanced_Trix(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Trix_Enhanced_Trix(**kwargs)

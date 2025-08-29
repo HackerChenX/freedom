@@ -1443,6 +1443,17 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.error(f"WR形态注册失败: {e}")
             return False
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回WR指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = getattr(self, 'period', 14)
+        return max(period + 5, 20)  # WR周期 + 缓冲，最少20个周期
+
 
 # 为了兼容指标注册表，创建别名
 WR = WrWr

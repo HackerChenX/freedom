@@ -17,10 +17,15 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     自动生成的标准化实现
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return getattr(self, 'period', 14) + 1
+
     def __init__(self, **kwargs):
         """
         初始化FIBONACCI指标
-        
+
         Args:
             **kwargs: 指标参数
         """
@@ -28,10 +33,10 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.name = "FIBONACCI"
         self.description = "斐波那契指标，用于识别支撑阻力位和回调目标"
         self._result = None  # 初始化结果存储
-        
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_fibonacci()
-        
+
         # 应用用户参数
         self.set_parameters_Fibonacci(**kwargs)
     

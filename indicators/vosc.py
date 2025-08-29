@@ -33,15 +33,15 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, short_period: int = 12, long_period: int = 26):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化成交量震荡指标(VOSC)指标
-        
+
         Args:
             short_period: 短期移动平均周期，默认为12
             long_period: 长期移动平均周期，默认为26
         """
-        super().__init__(name="VOSC", description="成交量震荡指标，通过对成交量的长短期移动平均差值的百分比来衡量成交量的变化和趋势")
+        super().__init__()
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.short_period = short_period
         self.long_period = long_period
         
@@ -1166,3 +1166,82 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         short_period = self._parameters.get('short_period', 12)
         long_period = self._parameters.get('long_period', 26)
         return max(short_period, long_period) + 10
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算VOSC指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含VOSC指标的DataFrame
+        """
+        return self.calculate_Vosc(data, **kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的抽象方法实现
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含VOSC指标的DataFrame
+        """
+        return self._calculate_vosc(data)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 得分序列
+            patterns: 检测到的形态DataFrame
+            signals: 生成的信号字典
+
+        Returns:
+            float: 置信度分数 (0-1)
+        """
+        return self.calculate_confidence_Vosc(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始评分序列
+        """
+        return self.calculate_raw_score_Vosc(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态DataFrame
+        """
+        return self.get_patterns_Vosc(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Vosc_Vosc_Vosc_vosc(**kwargs)
+
+
+# 类别名
+VOSC = Vosc

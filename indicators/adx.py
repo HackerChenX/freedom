@@ -1423,6 +1423,17 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         """兼容性方法：计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回ADX指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        period = getattr(self, 'period', 14)
+        return max(period * 2 + 5, 35)  # ADX需要更多数据进行平滑，最少35个周期
+
 
 # 为了兼容指标注册表，创建别名
 ADX = AverageDirectionalIndex

@@ -26,19 +26,24 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     主要识别推动浪和调整浪的形态特征
     """
     
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return getattr(self, 'period', 20) + 5
+
     def __init__(self, **kwargs):
         """
         初始化ELLIOTT_WAVE指标
-        
+
         Args:
             **kwargs: 指标参数
         """
         super().__init__()
         self.name = "ELLIOTT_WAVE"
-        
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_elliottwave()
-        
+
         # 应用用户参数
         self.set_parameters_Wave(**kwargs)
     
@@ -54,7 +59,7 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Wave(self, **kwargs):
         """
         设置指标参数
-        
+
         Args:
             **kwargs: 参数字典
         """
@@ -62,11 +67,11 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
             validator = IndicatorParameterValidator()
-            
+
             # 合并默认参数和用户参数
             params = self._default_parameters.copy()
             params.update(kwargs)
-            
+
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ELLIOTT_WAVE', params)
             if not is_valid:
@@ -74,19 +79,47 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
-            
+
             # 设置参数
             self.period = params.get('period', 20)
             self.min_wave_length = params.get('min_wave_length', 5)
             self.fibonacci_ratios = params.get('fibonacci_ratios', [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618])
             self.wave_tolerance = params.get('wave_tolerance', 0.1)
-                    
+
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
             self.period = 20
             self.min_wave_length = 5
             self.fibonacci_ratios = [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618]
             self.wave_tolerance = 0.1
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置基础指标参数"""
+        return self.set_parameters_Wave(**kwargs)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """基础指标计算方法"""
+        return self._calculate_elliottwave(data, *args, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算指标置信度"""
+        result = self._calculate_baseindicator(data)
+        # 计算波浪理论的置信度
+        score = self.calculate_raw_score_Wave(data)
+        confidence = score / 100.0  # 将评分转换为置信度
+        result['confidence'] = confidence
+        return result
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """计算原始评分"""
+        result = self._calculate_baseindicator(data)
+        score = self.calculate_raw_score_Wave(data)
+        result['raw_score'] = score
+        return result
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        """获取形态识别结果"""
+        return self.get_patterns_Wave(data)
     
     def calculate_Wave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
