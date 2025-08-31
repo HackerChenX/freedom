@@ -352,7 +352,25 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         BaseIndicator要求的参数设置方法
-        
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Enhanced_Boll(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_enhancedboll()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
+
         Args:
             **kwargs: 参数字典
         """

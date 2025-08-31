@@ -82,20 +82,91 @@ class ZxmAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _calculate_zxmabsorb(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        内部计算ZXM_ABSORB指标
-        
+        内部计算ZXM_ABSORB指标 - 严格按照ZXM体系教程中的通达信公式
+
+        基于ZXM体系3.0版教程中的核心公式：
+        V11:=3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1)-2*SMA(SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1),3,1)
+        V12:=(EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100
+        吸筹信号: AA:=(EMA(V11,3)<=13) AND FILTER((EMA(V11,3)<=13),15)
+        买入信号: BB:=(EMA(V11,3)<=13 AND V12>13) AND FILTER((EMA(V11,3)<=13 AND V12>13),10)
+
         Args:
             data: 包含OHLCV数据的Data_frame
-            
+
         Returns:
             添加了ZXM_ABSORB指标的Data_frame
         """
         df = data.copy()
-        
-        # 基本实现：返回原数据加上一个简单的计算列
-        df[f'ZXM_ABSORB_VALUE'] = df['close'].rolling(window=self.period).mean()
-        
-        
+
+        # 获取OHLC数据
+        high = df['high']
+        low = df['low']
+        close = df['close']
+
+        # 计算ZXM体系核心公式 V11
+        # 步骤1: 计算 (C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100
+        llv_55 = low.rolling(window=55).min()  # LLV(L,55)
+        hhv_55 = high.rolling(window=55).max()  # HHV(H,55)
+        rsv = (close - llv_55) / (hhv_55 - llv_55) * 100
+
+        # 步骤2: 通达信SMA函数实现
+        def sma_tdx(series, n, m):
+            """通达信SMA函数: SMA(X,N,M) = (M*X + (N-M)*Y)/N"""
+            result = pd.Series(index=series.index, dtype=float)
+            for i in range(len(series)):
+                if i == 0:
+                    result.iloc[i] = series.iloc[i] if pd.notna(series.iloc[i]) else 0
+                else:
+                    if pd.notna(series.iloc[i]):
+                        prev_val = result.iloc[i-1] if pd.notna(result.iloc[i-1]) else 0
+                        result.iloc[i] = (m * series.iloc[i] + (n - m) * prev_val) / n
+                    else:
+                        result.iloc[i] = result.iloc[i-1] if pd.notna(result.iloc[i-1]) else 0
+            return result
+
+        sma_5_1 = sma_tdx(rsv, 5, 1)  # SMA(rsv, 5, 1)
+        sma_3_1 = sma_tdx(sma_5_1, 3, 1)  # SMA(SMA(rsv, 5, 1), 3, 1)
+
+        # 步骤3: 计算V11
+        v11 = 3 * sma_5_1 - 2 * sma_3_1
+
+        # 计算V12
+        ema_v11_3 = v11.ewm(span=3).mean()  # EMA(V11,3)
+        ema_v11_3_ref = ema_v11_3.shift(1)  # REF(EMA(V11,3),1)
+        v12 = (ema_v11_3 - ema_v11_3_ref) / ema_v11_3_ref * 100
+
+        # 计算吸筹信号 (简化FILTER函数)
+        absorb_condition = ema_v11_3 <= 13
+        absorb_signal = pd.Series(False, index=df.index)
+        last_signal_idx = -16
+        for i in range(len(absorb_condition)):
+            if absorb_condition.iloc[i] and (i - last_signal_idx) >= 15:
+                absorb_signal.iloc[i] = True
+                last_signal_idx = i
+
+        # 计算买入信号 (简化FILTER函数)
+        buy_condition = (ema_v11_3 <= 13) & (v12 > 13)
+        buy_signal = pd.Series(False, index=df.index)
+        last_buy_idx = -11
+        for i in range(len(buy_condition)):
+            if buy_condition.iloc[i] and (i - last_buy_idx) >= 10:
+                buy_signal.iloc[i] = True
+                last_buy_idx = i
+
+        # 计算综合信号
+        combined_signal = absorb_signal | buy_signal
+        signal_count = combined_signal.rolling(window=6).sum()
+
+        # 添加ZXM指标到结果中
+        df['ZXM_V11'] = v11
+        df['ZXM_V12'] = v12
+        df['ZXM_EMA_V11'] = ema_v11_3
+        df['ZXM_ABSORB_SIGNAL'] = absorb_signal.astype(int)
+        df['ZXM_BUY_SIGNAL'] = buy_signal.astype(int)
+        df['ZXM_COMBINED_SIGNAL'] = combined_signal.astype(int)
+        df['ZXM_SIGNAL_COUNT'] = signal_count
+        df['ZXM_ABSORB_VALUE'] = v11  # 主要指标值
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -120,10 +191,103 @@ class ZxmAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """
         ZxmAbsorb指标所需的最少数据周期数
-        
+
         计算逻辑：使用默认值
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
         return 25
+
+    # ===== BaseIndicator抽象方法实现 =====
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的计算方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            添加了ZXM_ABSORB指标的DataFrame
+        """
+        return self._calculate_zxmabsorb(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        BaseIndicator要求的原始评分计算方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            原始评分Series
+        """
+        return self.calculate_raw_score_Absorb(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        BaseIndicator要求的置信度计算方法
+
+        Args:
+            score: 评分Series
+            patterns: 形态DataFrame
+            signals: 信号字典
+
+        Returns:
+            置信度值
+        """
+        return self.calculate_confidence_Absorb(score, patterns, signals)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        BaseIndicator要求的形态获取方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            形态DataFrame
+        """
+        return self.get_patterns_Absorb(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Absorb(**kwargs)
+
+    # ===== 标准接口方法 =====
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        标准计算方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            添加了ZXM_ABSORB指标的DataFrame
+        """
+        return self.calculate_Absorb(data, **kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        标准默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_zxmabsorb()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Absorb(**kwargs)

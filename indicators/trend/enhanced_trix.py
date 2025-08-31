@@ -1613,12 +1613,16 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """
         EnhancedTrix指标所需的最少数据周期数
-        
+
         计算逻辑：基于参数 smoothing_period(3) 计算
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
+        # 确保_parameters存在，如果不存在则使用默认值
+        if not hasattr(self, '_parameters') or not self._parameters:
+            return 40  # 返回默认的最小周期数
+
         smoothing_period = self._parameters.get('smoothing_period', 3)
         return smoothing_period + max(10, smoothing_period // 2)
 
@@ -1722,6 +1726,24 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Trix_Enhanced_Trix(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_enhancedtrix()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
 
         Args:
             **kwargs: 参数字典

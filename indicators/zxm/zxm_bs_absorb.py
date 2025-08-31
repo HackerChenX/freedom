@@ -1,25 +1,65 @@
+#!/usr/bin/env python3
+"""
+ZXM_BS_ABSORB 指标
+
+基于ZXM体系教程的真实买卖吸筹算法
+实现V11、V12指标计算和主力吸筹信号识别
+"""
+
+import pandas as pd
+import numpy as np
+from typing import Dict, Any, List, Optional
+
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-import pandas as pd
-from typing import Dict
+from utils.dependency_injection import get_logger
+
+logger = get_logger(__name__)
 
 class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
-    主力吸筹指标 (ZXM Buy/Sell Absorb)
-    
-    通过分析成交量和价格的变化，判断主力资金是否在吸筹或派发。
-    """
-    def __init__(self, short_period=12, long_period=26, mid_period=9):
-        super().__init__(name="ZXMBSAbsorb", description="主力吸筹指标")
-        self.short_period = short_period
-        self.long_period = long_period
-        self.mid_period = mid_period
+    ZXM买卖吸筹指标 (ZXM Buy/Sell Absorb)
 
-    def set_parameters_Absorb_Zxm_Bs_Absorb(self, short_period=12, long_period=26, mid_period=9):
-        self.short_period = short_period
-        self.long_period = long_period
-        self.mid_period = mid_period
+    基于ZXM体系教程的真实算法：
+    V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)
+    V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100
+    吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)
+    """
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.name = "ZXMBSAbsorb"
+        self.description = "ZXM买卖吸筹指标"
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_zxmbsabsorb()
+
+        # 应用用户参数
+        self.set_parameters_Absorb_Zxm_Bs_Absorb(**kwargs)
+
+    def _get_default_parameters_zxmbsabsorb(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {
+            "v11_threshold": 13,  # V11阈值
+            "v12_threshold": 13,  # V12阈值
+            "count_period": 6,    # 计数周期
+            "filter_period_aa": 15,  # AA信号过滤周期
+            "filter_period_bb": 10   # BB信号过滤周期
+        }
+
+    def set_parameters_Absorb_Zxm_Bs_Absorb(self, **kwargs):
+        """设置参数"""
+        defaults = self._get_default_parameters_zxmbsabsorb()
+
+        # 更新参数
+        for key, value in kwargs.items():
+            if key in defaults:
+                setattr(self, key, value)
+
+        # 确保所有默认参数都被设置
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def calculate_confidence_Absorb_Zxm_Bs_Absorb(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return 0.5
@@ -46,18 +86,18 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return patterns
 
         # 基于计算结果创建形态
-        if 'absorb_signal' in self._result.columns:
-            patterns['ZXM_BS_ABSORB_SIGNAL'] = self._result['absorb_signal']
+        if 'ZXM_BS_ABSORB_SIGNAL' in self._result.columns:
+            patterns['ZXM_BS_ABSORB_SIGNAL'] = self._result['ZXM_BS_ABSORB_SIGNAL']
         else:
             patterns['ZXM_BS_ABSORB_SIGNAL'] = False
 
-        if 'buy_signal' in self._result.columns:
-            patterns['ZXM_BS_BUY_SIGNAL'] = self._result['buy_signal']
+        if 'ZXM_BS_BUY_SIGNAL' in self._result.columns:
+            patterns['ZXM_BS_BUY_SIGNAL'] = self._result['ZXM_BS_BUY_SIGNAL']
         else:
             patterns['ZXM_BS_BUY_SIGNAL'] = False
 
-        if 'sell_signal' in self._result.columns:
-            patterns['ZXM_BS_SELL_SIGNAL'] = self._result['sell_signal']
+        if 'ZXM_BS_SELL_SIGNAL' in self._result.columns:
+            patterns['ZXM_BS_SELL_SIGNAL'] = self._result['ZXM_BS_SELL_SIGNAL']
         else:
             patterns['ZXM_BS_SELL_SIGNAL'] = False
 
@@ -102,41 +142,120 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _calculate_zxmbsabsorb(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算主力吸筹指标
+        计算ZXM买卖吸筹指标 - 基于ZXM体系教程的真实算法
+
+        核心公式：
+        V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)
+        V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100
+        吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)
         """
-        if 'close' not in data.columns or 'volume' not in data.columns:
-            raise ValueError("Data must contain 'close' and 'volume' columns.")
+        if len(data) < 60:
+            # 数据不足时返回空结果
+            result = data.copy()
+            result['ZXM_BS_V11'] = np.nan
+            result['ZXM_BS_V12'] = np.nan
+            result['ZXM_BS_EMA_V11'] = np.nan
+            result['ZXM_BS_ABSORB_SIGNAL'] = 0
+            result['ZXM_BS_BUY_SIGNAL'] = 0
+            result['ZXM_BS_SELL_SIGNAL'] = 0
+            result['ZXM_BS_COMBINED_SIGNAL'] = 0
+            self._result = result
+            return result
 
-        # 初始化结果DataFrame
-        result = data.copy()
+        # 确保必要的列存在
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"Data must contain '{col}' column.")
 
-        # 计算简单的主力吸筹信号
-        # 基于价格和成交量的关系
-        price_change = data['close'].pct_change()
-        volume_ma = data['volume'].rolling(window=self.mid_period).mean()
-        volume_ratio = data['volume'] / volume_ma
+        df = data.copy()
 
-        # 吸筹信号：价格小幅下跌或横盘，成交量放大
-        absorb_signal = (price_change.abs() < 0.02) & (volume_ratio > 1.2)
+        # 计算ZXM V11指标
+        close = df['close']
+        high = df['high']
+        low = df['low']
 
-        # 买入信号：价格上涨，成交量放大
-        buy_signal = (price_change > 0.01) & (volume_ratio > 1.5)
+        # 步骤1: 计算LLV(L,55)和HHV(H,55)
+        llv_55 = low.rolling(window=55).min()
+        hhv_55 = high.rolling(window=55).max()
 
-        # 卖出信号：价格下跌，成交量放大
-        sell_signal = (price_change < -0.01) & (volume_ratio > 1.5)
+        # 步骤2: 计算RSV = (C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100
+        rsv = (close - llv_55) / (hhv_55 - llv_55) * 100
+        rsv = rsv.fillna(0)  # 处理除零情况
 
-        result['absorb_signal'] = absorb_signal
-        result['buy_signal'] = buy_signal
-        result['sell_signal'] = sell_signal
-        result['volume_ratio'] = volume_ratio
+        # 步骤3: 实现通达信SMA函数
+        def sma_tdx(series, n, m):
+            """通达信SMA函数实现"""
+            alpha = m / n
+            return series.ewm(alpha=alpha, adjust=False).mean()
 
-        self._result = result
-        
+        # 计算SMA(RSV, 5, 1)和SMA(SMA(RSV, 5, 1), 3, 1)
+        sma_5_1 = sma_tdx(rsv, 5, 1)
+        sma_3_1 = sma_tdx(sma_5_1, 3, 1)
+
+        # 步骤4: 计算V11
+        v11 = 3 * sma_5_1 - 2 * sma_3_1
+
+        # 步骤5: 计算EMA(V11,3)
+        ema_v11_3 = v11.ewm(span=3).mean()
+
+        # 步骤6: 计算V12
+        ema_v11_3_ref = ema_v11_3.shift(1)
+        v12 = (ema_v11_3 - ema_v11_3_ref) / ema_v11_3_ref * 100
+        v12 = v12.fillna(0)  # 处理除零情况
+
+        # 步骤7: 计算吸筹信号
+        # AA条件：EMA(V11,3) <= 13
+        aa_condition = ema_v11_3 <= self.v11_threshold
+
+        # BB条件：EMA(V11,3) <= 13 AND V12 > 13
+        bb_condition = (ema_v11_3 <= self.v11_threshold) & (v12 > self.v12_threshold)
+
+        # 简化FILTER函数实现
+        absorb_signal = pd.Series(False, index=df.index)
+        buy_signal = pd.Series(False, index=df.index)
+
+        # AA信号过滤
+        last_aa_idx = -self.filter_period_aa - 1
+        for i in range(len(aa_condition)):
+            if aa_condition.iloc[i] and (i - last_aa_idx) >= self.filter_period_aa:
+                absorb_signal.iloc[i] = True
+                last_aa_idx = i
+
+        # BB信号过滤
+        last_bb_idx = -self.filter_period_bb - 1
+        for i in range(len(bb_condition)):
+            if bb_condition.iloc[i] and (i - last_bb_idx) >= self.filter_period_bb:
+                buy_signal.iloc[i] = True
+                last_bb_idx = i
+
+        # 计算综合信号
+        combined_signal = absorb_signal | buy_signal
+
+        # 计算XG（近期信号计数）
+        signal_count = combined_signal.rolling(window=self.count_period).sum()
+
+        # 卖出信号（简化实现）
+        sell_signal = (ema_v11_3 > 80) & (v12 < -10)  # 高位且下降
+
+        # 添加结果到DataFrame
+        df['ZXM_BS_V11'] = v11
+        df['ZXM_BS_V12'] = v12
+        df['ZXM_BS_EMA_V11'] = ema_v11_3
+        df['ZXM_BS_ABSORB_SIGNAL'] = absorb_signal.astype(int)
+        df['ZXM_BS_BUY_SIGNAL'] = buy_signal.astype(int)
+        df['ZXM_BS_SELL_SIGNAL'] = sell_signal.astype(int)
+        df['ZXM_BS_COMBINED_SIGNAL'] = combined_signal.astype(int)
+        df['ZXM_BS_SIGNAL_COUNT'] = signal_count
+
+        # 缓存结果
+        self._result = df
+
         # 添加形态识别和信号生成
-        result = self.add_pattern_detection(result)
-        result = self.add_signal_generation(result)
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
 
-        return result
+        return df
 
     def get_pattern_info_Absorb(self, pattern_id: str) -> dict:
         """
@@ -181,4 +300,83 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 60  # ZXM买卖吸筹需要更多历史数据
+
+    # 实现BaseIndicator的抽象方法
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """计算ZXM买卖吸筹指标"""
+        return self._calculate_zxmbsabsorb(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取买卖吸筹形态"""
+        return self.get_patterns_Absorb_Zxm_Bs_Absorb(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        # 基于信号强度计算评分
+        if hasattr(self, '_result') and self._result is not None:
+            if 'ZXM_BS_SIGNAL_COUNT' in self._result.columns:
+                base_score = 50.0
+                signal_bonus = self._result['ZXM_BS_SIGNAL_COUNT'] * 10.0
+                return pd.Series(base_score + signal_bonus, index=data.index)
+
+        return pd.Series(50.0, index=data.index)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return self.calculate_confidence_Absorb_Zxm_Bs_Absorb(score, patterns, signals)
+
+    def set_parameters(self, **kwargs):
+        """设置参数"""
+        return self.set_parameters_Absorb_Zxm_Bs_Absorb(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return self._get_default_parameters_zxmbsabsorb()
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None and not self._result.empty
+
+    def register_patterns(self):
+        """注册形态到全局注册表"""
+        return self.register_patterns_Absorb()
+
+    # 实现BaseIndicator的其他抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self._calculate_zxmbsabsorb(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator的抽象方法实现"""
+        return self.calculate_confidence_Absorb_Zxm_Bs_Absorb(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator的抽象方法实现"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        # 基于信号强度计算评分
+        if hasattr(self, '_result') and self._result is not None:
+            if 'ZXM_BS_SIGNAL_COUNT' in self._result.columns:
+                base_score = 50.0
+                signal_bonus = self._result['ZXM_BS_SIGNAL_COUNT'] * 10.0
+                return pd.Series(base_score + signal_bonus, index=data.index)
+
+        return pd.Series(50.0, index=data.index)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self.get_patterns_Absorb_Zxm_Bs_Absorb(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator的抽象方法实现"""
+        return self.set_parameters_Absorb_Zxm_Bs_Absorb(**kwargs)
+
+
+# 为了向后兼容，创建别名
+ZXMBSAbsorb = ZxmbsabsorbAbsorb
+ZXM_BS_ABSORB = ZxmbsabsorbAbsorb

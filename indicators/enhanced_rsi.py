@@ -18,7 +18,7 @@ from utils.dependency_injection import get_logger
 logger = get_logger(__name__)
 
 
-class EnhancedRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class EnhancedRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型RSI指标
     
@@ -52,10 +52,10 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.adaptive_thresholds = adaptive_thresholds
         
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters_enhancedrsi()
-        
+        self._default_parameters = self._get_default_parameters()
+
         # 应用用户参数
-        self.set_parameters_Rsi(**kwargs)
+        self.set_parameters(**kwargs)
     
     def _get_default_parameters_enhancedrsi(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -64,41 +64,93 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "overbought": 70.0,
             "oversold": 30.0
         }
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数（标准接口）"""
+        return self._get_default_parameters_enhancedrsi()
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数（标准接口）
+        """
+        return self.set_parameters_Rsi(**kwargs)
+
     def set_parameters_Rsi(self, **kwargs):
         """
         设置指标参数
-        
+
         Args:
             **kwargs: 参数字典
+
+        Raises:
+            ValueError: 当参数值无效时抛出异常
         """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('ENHANCED_RSI', params)
-            if not is_valid:
-                # 静默处理验证失败，避免过多警告
-                pass
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数
-            self.period = params.get('period', 14)
-            self.overbought = params.get('overbought', 70.0)
-            self.oversold = params.get('oversold', 30.0)
-                    
-        except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
-            self.overbought = 70.0
-            self.oversold = 30.0
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)
+
+        # 严格参数验证
+        self._validate_parameters_strict(params)
+
+        # 设置参数
+        self.period = params.get('period', 14)
+        self.overbought = params.get('overbought', 70.0)
+        self.oversold = params.get('oversold', 30.0)
+        self.multi_periods = params.get('multi_periods', [9, 14, 21])
+        self.adaptive_thresholds = params.get('adaptive_thresholds', True)
+
+    def _validate_parameters_strict(self, params: dict):
+        """
+        严格参数验证
+
+        Args:
+            params: 参数字典
+
+        Raises:
+            ValueError: 当参数值无效时抛出异常
+        """
+        # 验证period参数
+        period = params.get('period', 14)
+        if not isinstance(period, (int, float)) or period <= 0:
+            raise ValueError(f"period必须是正数，当前值: {period}")
+        if period < 2:
+            raise ValueError(f"period必须≥2，当前值: {period}")
+        if period > 100:
+            raise ValueError(f"period不能超过100，当前值: {period}")
+
+        # 验证overbought参数
+        overbought = params.get('overbought', 70.0)
+        if not isinstance(overbought, (int, float)):
+            raise ValueError(f"overbought必须是数值，当前值: {overbought}")
+        if not (50 <= overbought <= 100):
+            raise ValueError(f"overbought必须在50-100之间，当前值: {overbought}")
+
+        # 验证oversold参数
+        oversold = params.get('oversold', 30.0)
+        if not isinstance(oversold, (int, float)):
+            raise ValueError(f"oversold必须是数值，当前值: {oversold}")
+        if not (0 <= oversold <= 50):
+            raise ValueError(f"oversold必须在0-50之间，当前值: {oversold}")
+
+        # 验证overbought > oversold
+        if overbought <= oversold:
+            raise ValueError(f"overbought({overbought})必须大于oversold({oversold})")
+
+        # 验证multi_periods参数
+        multi_periods = params.get('multi_periods', [9, 14, 21])
+        if multi_periods is not None:
+            if not isinstance(multi_periods, (list, tuple)):
+                raise ValueError(f"multi_periods必须是列表或元组，当前值: {multi_periods}")
+            if len(multi_periods) == 0:
+                raise ValueError("multi_periods不能为空")
+            for p in multi_periods:
+                if not isinstance(p, (int, float)) or p <= 0:
+                    raise ValueError(f"multi_periods中的值必须是正数，当前值: {p}")
+
+        # 验证adaptive_thresholds参数
+        adaptive_thresholds = params.get('adaptive_thresholds', True)
+        if not isinstance(adaptive_thresholds, bool):
+            raise ValueError(f"adaptive_thresholds必须是布尔值，当前值: {adaptive_thresholds}")
     
     def calculate_Rsi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -621,4 +673,4 @@ class EnhancedRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
 
 # 为了向后兼容，创建别名
-enhanced_rsi = EnhancedRsi
+enhanced_rsi = EnhancedRSI

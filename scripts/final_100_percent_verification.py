@@ -31,7 +31,7 @@ def test_final_indicators():
             module = importlib.import_module(module_path)
             indicator_class = getattr(module, class_name, None)
             
-            if indicator_class is_Final_100_Percent_Verification None:
+            if indicator_class is None:
                 print(f"  ❌ 类 {class_name} 不存在")
                 failed += 1
                 continue
@@ -52,7 +52,7 @@ def test_final_indicators():
                 print(f"  ⚠️  {indicator_name}: 可用但实例化有问题 - {e}")
                 successful += 1  # 仍然算作可用
                 
-        except Import_error as e:
+        except ImportError as e:
             print(f"  ❌ {indicator_name}: 导入失败 - {e}")
             failed += 1
         except Exception as e:
@@ -188,5 +188,5 @@ def main_final_100_percent_verification():
     return success
 
 if __name__ == "__main__":
-    success = main()
+    success = main_final_100_percent_verification()
     sys.exit(0 if success else 1)

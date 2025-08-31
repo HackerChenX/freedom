@@ -1,0 +1,57 @@
+{
+  "indicator_name": "DMI",
+  "validator_name": "DMI指标5阶段验证器",
+  "start_time": "2025-08-30T15:02:42.557411",
+  "stages": {
+    "stage1": {
+      "stage_name": "算法差异预分析",
+      "start_time": "2025-08-30T15:02:42.557459",
+      "tests": {
+        "indicator_import": {
+          "status": "PASSED",
+          "score": 100
+        },
+        "algorithm_authenticity": {
+          "status": "PASSED",
+          "score": 100.0,
+          "details": "DMI算法必须使用真实数学计算，不允许模拟"
+        },
+        "base_indicator_inheritance": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "abstract_methods": {
+          "status": "PASSED",
+          "score": 100.0
+        }
+      },
+      "score": 100.0,
+      "status": "PASSED",
+      "end_time": "2025-08-30T15:02:42.558033"
+    },
+    "stage2": {
+      "stage_name": "基础功能验证",
+      "start_time": "2025-08-30T15:02:42.558073",
+      "tests": {
+        "calculation": {
+          "status": "FAILED",
+          "score": 0.0
+        },
+        "parameters": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "nan_handling": {
+          "status": "FAILED",
+          "score": 0.0
+        }
+      },
+      "score": 33.333333333333336,
+      "status": "FAILED",
+      "end_time": "2025-08-30T15:02:42.681571"
+    }
+  },
+  "overall_assessment": {},
+  "status": "FAILED_STAGE2",
+  "end_time": "2025-08-30T15:02:42.681612"
+}

@@ -1233,12 +1233,16 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """
         EnhancedCci指标所需的最少数据周期数
-        
+
         计算逻辑：基于参数 period(20), secondary_period(40), smoothing_period(3), trend_period(50) 计算
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
+        # 确保_parameters存在，如果不存在则使用默认值
+        if not hasattr(self, '_parameters') or not self._parameters:
+            return 60  # 返回默认的最小周期数
+
         period = self._parameters.get('period', 20)
         secondary_period = self._parameters.get('secondary_period', 40)
         smoothing_period = self._parameters.get('smoothing_period', 3)
@@ -1314,6 +1318,24 @@ class EnhancedCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Cci_Enhanced_Cci(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_enhancedcci()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
 
         Args:
             **kwargs: 参数字典

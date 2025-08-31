@@ -42,16 +42,32 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.name = "DMI"
         self.description = "趋向指标，判断趋势强度与方向"
 
+        # 先设置默认值，确保属性存在
+        self.period = 14
+        self.adx_threshold = 25.0
+        self.adx_period = self.period
+        # minimum_periods 是 @property，不需要手动设置
+
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters_dmi()
+        self._default_parameters = self._get_default_parameters()
 
         # 应用用户参数
-        self.set_parameters_Dmi(**kwargs)
+        self.set_parameters(**kwargs)
 
     def _get_default_parameters_dmi(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14, "adx_threshold": 25.0}
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数（标准接口）"""
+        return self._get_default_parameters_dmi()
     
+    def set_parameters(self, **kwargs):
+        """
+        设置指标参数（标准接口）
+        """
+        return self.set_parameters_Dmi(**kwargs)
+
     def set_parameters_Dmi(self, **kwargs):
         """
         设置指标参数

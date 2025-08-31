@@ -720,6 +720,15 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象方法实现：设置参数"""
         return self.set_parameters_mtm(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_mtm()
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """抽象方法实现：计算置信度"""

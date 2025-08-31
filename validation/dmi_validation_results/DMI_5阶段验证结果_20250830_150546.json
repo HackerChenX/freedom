@@ -1,0 +1,84 @@
+{
+  "indicator_name": "DMI",
+  "validator_name": "DMI指标5阶段验证器",
+  "start_time": "2025-08-30T15:05:46.108946",
+  "stages": {
+    "stage1": {
+      "stage_name": "算法差异预分析",
+      "start_time": "2025-08-30T15:05:46.108962",
+      "tests": {
+        "indicator_import": {
+          "status": "PASSED",
+          "score": 100
+        },
+        "algorithm_authenticity": {
+          "status": "PASSED",
+          "score": 100.0,
+          "details": "DMI算法必须使用真实数学计算，不允许模拟"
+        },
+        "base_indicator_inheritance": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "abstract_methods": {
+          "status": "PASSED",
+          "score": 100.0
+        }
+      },
+      "score": 100.0,
+      "status": "PASSED",
+      "end_time": "2025-08-30T15:05:46.109177"
+    },
+    "stage2": {
+      "stage_name": "基础功能验证",
+      "start_time": "2025-08-30T15:05:46.109193",
+      "tests": {
+        "calculation": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "parameters": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "nan_handling": {
+          "status": "PASSED",
+          "score": 100.0
+        }
+      },
+      "score": 100.0,
+      "status": "PASSED",
+      "end_time": "2025-08-30T15:05:46.177146"
+    },
+    "stage3": {
+      "stage_name": "信号识别验证",
+      "start_time": "2025-08-30T15:05:46.177181",
+      "tests": {
+        "trend_strength": {
+          "status": "PASSED",
+          "score": 90.0
+        },
+        "di_crossover": {
+          "status": "FAILED",
+          "score": 85.0
+        },
+        "adx_strength": {
+          "status": "FAILED",
+          "score": 80.0
+        }
+      },
+      "score": 85.0,
+      "status": "FAILED",
+      "end_time": "2025-08-30T15:05:46.229755"
+    }
+  },
+  "overall_assessment": {
+    "total_score": 95.0,
+    "stage1_score": 100.0,
+    "stage2_score": 100.0,
+    "stage3_score": 85.0,
+    "final_status": "CONDITIONAL_PASS"
+  },
+  "status": "PASSED_ARCHITECTURE_COMPLIANT",
+  "end_time": "2025-08-30T15:05:46.229776"
+}

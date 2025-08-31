@@ -19,19 +19,43 @@ from enums.pattern_types import Buy_point_type, Absorption_pattern_type, Volume_
 class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """ZXM体系买点和吸筹形态识别指标"""
     
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM体系模式识别指标"""
         super().__init__()
         self.name = "ZXMPattern"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
-    
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_zxmpatterns()
+
+        # 应用用户参数
+        self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
+
+    def _get_default_parameters_zxmpatterns(self) -> dict:
+        """获取默认参数"""
+        return {
+            "ma_periods": [5, 10, 20, 30, 60],  # 均线周期
+            "macd_fast": 12,     # MACD快线周期
+            "macd_slow": 26,     # MACD慢线周期
+            "macd_signal": 9,    # MACD信号线周期
+            "kdj_period": 9,     # KDJ周期
+            "volume_ma_periods": [5, 10]  # 成交量均线周期
+        }
+
     def set_parameters_Patterns_Zxm_Patterns(self, **kwargs):
-        """
-        设置指标参数
-        """
-        # ZXM形态识别通常没有可变参数，但为了符合接口要求，提供此方法
-        pass
+        """设置指标参数"""
+        defaults = self._get_default_parameters_zxmpatterns()
+
+        # 更新参数
+        for key, value in kwargs.items():
+            if key in defaults:
+                setattr(self, key, value)
+
+        # 确保所有默认参数都被设置
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
 
     def get_patterns_Patterns_Zxm_Patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -966,18 +990,73 @@ if __name__ == "__main__":
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
-
-# 为了向后兼容，创建别名
-zxmpatterns = ZXMPattern_indicator
-
     @property
     def minimum_periods(self) -> int:
         """
         ZxmpatternIndicator指标所需的最少数据周期数
-        
-        计算逻辑：使用默认值
-        
+
+        计算逻辑：ZXM形态识别需要更多历史数据
+
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 60  # ZXM形态识别需要更多历史数据
+
+    # 实现BaseIndicator的抽象方法
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """计算ZXM形态指标"""
+        return self._calculate_zxmpatterns(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取ZXM形态"""
+        return self.get_patterns_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        return self.calculate_raw_score_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return self.calculate_confidence_Patterns_Zxm_Patterns(score, patterns, signals)
+
+    def set_parameters(self, **kwargs):
+        """设置参数"""
+        return self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
+
+    def _get_default_parameters(self) -> dict:
+        """获取默认参数"""
+        return self._get_default_parameters_zxmpatterns()
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None and not self._result.empty
+
+    def register_patterns(self):
+        """注册形态到全局注册表"""
+        return self.register_patterns_Patterns_Zxm_Patterns()
+
+    # 实现BaseIndicator的抽象方法 - 使用正确的方法名
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self._calculate_zxmpatterns(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator的抽象方法实现"""
+        return self.calculate_confidence_Patterns_Zxm_Patterns(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator的抽象方法实现"""
+        return self.calculate_raw_score_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self.get_patterns_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator的抽象方法实现"""
+        return self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
+
+
+# 为了向后兼容，创建别名
+ZXMPattern = ZxmpatternIndicator
+ZXM_PATTERNS = ZxmpatternIndicator

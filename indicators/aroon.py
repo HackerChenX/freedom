@@ -51,6 +51,15 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _get_default_parameters_aroon(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_aroon()
     
     def set_parameters_Aroon(self, **kwargs):
         """
@@ -125,6 +134,15 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters(self, **kwargs):
         """公共接口：设置参数"""
+        return self.set_parameters_Aroon(**kwargs)
+
+    def set_parameters_Aroon_Aroon_Aroon_aroon(self, **kwargs):
+        """
+        设置AROON指标参数（验证脚本兼容方法）
+
+        Args:
+            **kwargs: 参数字典，可包含period
+        """
         return self.set_parameters_Aroon(**kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:

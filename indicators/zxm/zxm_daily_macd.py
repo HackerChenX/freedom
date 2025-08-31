@@ -1,25 +1,69 @@
+#!/usr/bin/env python3
+"""
+ZXM_DAILY_MACD 指标
+
+基于ZXM体系教程的真实日线MACD算法
+核心买点信号：MACD < 0.9
+"""
+
 import pandas as pd
+import numpy as np
+from typing import Dict, Any, List, Optional
+
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from typing import Dict
+from utils.dependency_injection import get_logger
+
+logger = get_logger(__name__)
 
 class ZxmdailymacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
-    主力资金日MACD (ZXM Daily MACD)
-    
-    分析主力资金的日线MACD，判断资金流向。
-    """
-    def __init__(self, short_period=12, long_period=26, mid_period=9):
-        super().__init__(name="ZXMDailyMACD", description="主力资金日MACD")
-        self.short_period = short_period
-        self.long_period = long_period
-        self.mid_period = mid_period
+    ZXM日线MACD指标 (ZXM Daily MACD)
 
-    def set_parameters_Macd_Zxm_Daily_Macd(self, short_period=12, long_period=26, mid_period=9):
-        self.short_period = short_period
-        self.long_period = long_period
-        self.mid_period = mid_period
+    基于ZXM体系教程的真实算法：
+    DIFF = EMA(CLOSE,12) - EMA(CLOSE,26)
+    DEA = EMA(DIFF,9)
+    MACD = 2*(DIFF-DEA)
+    买点信号：MACD < 0.9
+    """
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.name = "ZXMDailyMACD"
+        self.description = "ZXM日线MACD指标"
+
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_zxmdailymacd()
+
+        # 应用用户参数
+        self.set_parameters_Macd_Zxm_Daily_Macd(**kwargs)
+
+    def _get_default_parameters_zxmdailymacd(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {
+            "short_period": 12,    # 短期EMA周期
+            "long_period": 26,     # 长期EMA周期
+            "signal_period": 9,    # DEA信号周期
+            "buy_threshold": 0.9   # ZXM买点阈值
+        }
+
+    def set_parameters_Macd_Zxm_Daily_Macd(self, **kwargs):
+        """设置参数"""
+        defaults = self._get_default_parameters_zxmdailymacd()
+
+        # 更新参数
+        for key, value in kwargs.items():
+            if key in defaults:
+                setattr(self, key, value)
+
+        # 确保所有默认参数都被设置
+        for key, value in defaults.items():
+            if not hasattr(self, key):
+                setattr(self, key, value)
+
+        # 兼容旧参数名
+        if hasattr(self, 'mid_period'):
+            self.signal_period = self.mid_period
 
     def calculate_confidence_Macd_Zxm_Daily_Macd(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return 0.5
@@ -46,18 +90,23 @@ class ZxmdailymacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return patterns
 
         # 基于计算结果创建形态
-        if 'macd_golden_cross' in self._result.columns:
-            patterns['ZXM_DAILY_MACD_GOLDEN_CROSS'] = self._result['macd_golden_cross']
+        if 'ZXM_DAILY_MACD_BUY_SIGNAL' in self._result.columns:
+            patterns['ZXM_DAILY_MACD_BUY_SIGNAL'] = self._result['ZXM_DAILY_MACD_BUY_SIGNAL']
+        else:
+            patterns['ZXM_DAILY_MACD_BUY_SIGNAL'] = False
+
+        if 'ZXM_DAILY_MACD_GOLDEN_CROSS' in self._result.columns:
+            patterns['ZXM_DAILY_MACD_GOLDEN_CROSS'] = self._result['ZXM_DAILY_MACD_GOLDEN_CROSS']
         else:
             patterns['ZXM_DAILY_MACD_GOLDEN_CROSS'] = False
 
-        if 'macd_death_cross' in self._result.columns:
-            patterns['ZXM_DAILY_MACD_DEATH_CROSS'] = self._result['macd_death_cross']
+        if 'ZXM_DAILY_MACD_DEATH_CROSS' in self._result.columns:
+            patterns['ZXM_DAILY_MACD_DEATH_CROSS'] = self._result['ZXM_DAILY_MACD_DEATH_CROSS']
         else:
             patterns['ZXM_DAILY_MACD_DEATH_CROSS'] = False
 
-        if 'macd_positive' in self._result.columns:
-            patterns['ZXM_DAILY_MACD_POSITIVE'] = self._result['macd_positive']
+        if 'ZXM_DAILY_MACD_POSITIVE' in self._result.columns:
+            patterns['ZXM_DAILY_MACD_POSITIVE'] = self._result['ZXM_DAILY_MACD_POSITIVE']
         else:
             patterns['ZXM_DAILY_MACD_POSITIVE'] = False
 
@@ -102,45 +151,89 @@ class ZxmdailymacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _calculate_zxmdailymacd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算主力资金日MACD
+        计算ZXM日线MACD指标 - 基于ZXM体系教程的真实算法
+
+        核心公式：
+        DIFF = EMA(CLOSE,12) - EMA(CLOSE,26)
+        DEA = EMA(DIFF,9)
+        MACD = 2*(DIFF-DEA)
+        买点信号：MACD < 0.9
         """
+        if len(data) < 30:
+            # 数据不足时返回空结果
+            result = data.copy()
+            result['ZXM_DIFF'] = np.nan
+            result['ZXM_DEA'] = np.nan
+            result['ZXM_MACD'] = np.nan
+            result['ZXM_DAILY_MACD_BUY_SIGNAL'] = 0
+            result['ZXM_DAILY_MACD_GOLDEN_CROSS'] = False
+            result['ZXM_DAILY_MACD_DEATH_CROSS'] = False
+            result['ZXM_DAILY_MACD_POSITIVE'] = False
+            self._result = result
+            return result
+
+        # 确保必要的列存在
         if 'close' not in data.columns:
             raise ValueError("Data must contain 'close' column.")
 
-        # 初始化结果DataFrame
-        result = data.copy()
+        df = data.copy()
+        close = df['close']
 
-        # 计算MACD指标
-        close = data['close']
+        # 步骤1: 计算EMA(CLOSE,12)和EMA(CLOSE,26)
+        ema_12 = close.ewm(span=self.short_period, adjust=False).mean()
+        ema_26 = close.ewm(span=self.long_period, adjust=False).mean()
 
-        # 计算EMA
-        ema_short = close.ewm(span=self.short_period).mean()
-        ema_long = close.ewm(span=self.long_period).mean()
+        # 步骤2: 计算DIFF = EMA(CLOSE,12) - EMA(CLOSE,26)
+        diff = ema_12 - ema_26
 
-        # 计算DIF和DEA
-        dif = ema_short - ema_long
-        dea = dif.ewm(span=self.mid_period).mean()
-        macd = (dif - dea) * 2
+        # 步骤3: 计算DEA = EMA(DIFF,9)
+        dea = diff.ewm(span=self.signal_period, adjust=False).mean()
 
-        # 计算形态信号
-        macd_golden_cross = (dif > dea) & (dif.shift(1) <= dea.shift(1))
-        macd_death_cross = (dif < dea) & (dif.shift(1) >= dea.shift(1))
-        macd_positive = dif > 0
+        # 步骤4: 计算MACD = 2*(DIFF-DEA)
+        macd = 2 * (diff - dea)
 
-        result['dif'] = dif
-        result['dea'] = dea
-        result['macd'] = macd
-        result['macd_golden_cross'] = macd_golden_cross
-        result['macd_death_cross'] = macd_death_cross
-        result['macd_positive'] = macd_positive
+        # 步骤5: 计算ZXM买点信号
+        # 核心条件：MACD < 0.9
+        buy_signal = macd < self.buy_threshold
 
-        self._result = result
-        
+        # 步骤6: 计算传统MACD形态信号
+        golden_cross = (diff > dea) & (diff.shift(1) <= dea.shift(1))
+        death_cross = (diff < dea) & (diff.shift(1) >= dea.shift(1))
+        macd_positive = diff > 0
+
+        # 步骤7: 计算综合信号强度
+        signal_strength = pd.Series(0.0, index=df.index)
+
+        # 买点信号权重最高
+        signal_strength[buy_signal] += 1.0
+
+        # 金叉信号加分
+        signal_strength[golden_cross] += 0.5
+
+        # MACD为正加分
+        signal_strength[macd_positive] += 0.3
+
+        # 死叉信号减分
+        signal_strength[death_cross] -= 0.5
+
+        # 添加结果到DataFrame
+        df['ZXM_DIFF'] = diff
+        df['ZXM_DEA'] = dea
+        df['ZXM_MACD'] = macd
+        df['ZXM_DAILY_MACD_BUY_SIGNAL'] = buy_signal.astype(int)
+        df['ZXM_DAILY_MACD_GOLDEN_CROSS'] = golden_cross
+        df['ZXM_DAILY_MACD_DEATH_CROSS'] = death_cross
+        df['ZXM_DAILY_MACD_POSITIVE'] = macd_positive
+        df['ZXM_DAILY_MACD_SIGNAL_STRENGTH'] = signal_strength
+
+        # 缓存结果
+        self._result = df
+
         # 添加形态识别和信号生成
-        result = self.add_pattern_detection(result)
-        result = self.add_signal_generation(result)
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
 
-        return result
+        return df
 
     def get_pattern_info_Macd_Zxm_Daily_Macd(self, pattern_id: str) -> dict:
         """
@@ -185,4 +278,83 @@ class ZxmdailymacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 40
+        return 30  # ZXM日线MACD需要足够的历史数据
+
+    # 实现BaseIndicator的抽象方法
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """计算ZXM日线MACD指标"""
+        return self._calculate_zxmdailymacd(data, **kwargs)
+
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取日线MACD形态"""
+        return self.get_patterns_Macd_Zxm_Daily_Macd(data, **kwargs)
+
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        # 基于信号强度计算评分
+        if hasattr(self, '_result') and self._result is not None:
+            if 'ZXM_DAILY_MACD_SIGNAL_STRENGTH' in self._result.columns:
+                base_score = 50.0
+                signal_bonus = self._result['ZXM_DAILY_MACD_SIGNAL_STRENGTH'] * 30.0
+                return pd.Series(base_score + signal_bonus, index=data.index)
+
+        return pd.Series(50.0, index=data.index)
+
+    def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return self.calculate_confidence_Macd_Zxm_Daily_Macd(score, patterns, signals)
+
+    def set_parameters(self, **kwargs):
+        """设置参数"""
+        return self.set_parameters_Macd_Zxm_Daily_Macd(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return self._get_default_parameters_zxmdailymacd()
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None and not self._result.empty
+
+    def register_patterns(self):
+        """注册形态到全局注册表"""
+        return self.register_patterns_Macd_Zxm_Daily_Macd()
+
+    # 实现BaseIndicator的其他抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self._calculate_zxmdailymacd(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator的抽象方法实现"""
+        return self.calculate_confidence_Macd_Zxm_Daily_Macd(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """BaseIndicator的抽象方法实现"""
+        if not self.has_result():
+            self.calculate(data, **kwargs)
+
+        # 基于信号强度计算评分
+        if hasattr(self, '_result') and self._result is not None:
+            if 'ZXM_DAILY_MACD_SIGNAL_STRENGTH' in self._result.columns:
+                base_score = 50.0
+                signal_bonus = self._result['ZXM_DAILY_MACD_SIGNAL_STRENGTH'] * 30.0
+                return pd.Series(base_score + signal_bonus, index=data.index)
+
+        return pd.Series(50.0, index=data.index)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator的抽象方法实现"""
+        return self.get_patterns_Macd_Zxm_Daily_Macd(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator的抽象方法实现"""
+        return self.set_parameters_Macd_Zxm_Daily_Macd(**kwargs)
+
+
+# 为了向后兼容，创建别名
+ZXMDailyMACD = ZxmdailymacdMacd
+ZXM_DAILY_MACD = ZxmdailymacdMacd

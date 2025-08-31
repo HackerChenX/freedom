@@ -626,6 +626,24 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         """
         self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
 
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_enhancedstochrsi()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
+
 
 # 为了向后兼容，创建别名
 enhanced_stochastic_rsi = EnhancedStochasticRSI

@@ -1,0 +1,36 @@
+{
+  "indicator_name": "DMI",
+  "validator_name": "DMI指标5阶段验证器",
+  "start_time": "2025-08-30T14:58:40.298041",
+  "stages": {
+    "stage1": {
+      "stage_name": "算法差异预分析",
+      "start_time": "2025-08-30T14:58:40.298057",
+      "tests": {
+        "indicator_import": {
+          "status": "PASSED",
+          "score": 100
+        },
+        "algorithm_authenticity": {
+          "status": "FAILED",
+          "score": 70.0,
+          "details": "DMI算法必须使用真实数学计算，不允许模拟"
+        },
+        "base_indicator_inheritance": {
+          "status": "PASSED",
+          "score": 100.0
+        },
+        "abstract_methods": {
+          "status": "FAILED",
+          "score": 50.0
+        }
+      },
+      "score": 80.0,
+      "status": "FAILED",
+      "end_time": "2025-08-30T14:58:40.356554"
+    }
+  },
+  "overall_assessment": {},
+  "status": "FAILED_STAGE1",
+  "end_time": "2025-08-30T14:58:40.356583"
+}

@@ -464,13 +464,18 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """
         Rsima指标所需的最少数据周期数
-        
+
         计算逻辑：基于参数 rsi_period(14) 计算
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
-        rsi_period = self._parameters.get('rsi_period', 14)
+        # 确保_parameters存在，如果不存在则使用实例属性或默认值
+        if hasattr(self, '_parameters') and self._parameters:
+            rsi_period = self._parameters.get('rsi_period', 14)
+        else:
+            rsi_period = getattr(self, 'rsi_period', 14)
+
         return rsi_period + max(10, rsi_period // 2)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -542,6 +547,24 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         BaseIndicator要求的参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Rsima_Rsima_Rsima_rsima(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_rsima()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
 
         Args:
             **kwargs: 参数字典

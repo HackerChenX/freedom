@@ -1420,10 +1420,10 @@ class UnifiedDataManager:
             pd.DataFrame: 股票数据
         """
         try:
-            # 构建查询SQL
+            # 构建查询SQL - 移除不存在的turnover列
             query = f"""
-            SELECT code, name, date, level, open, high, low, close, volume, turnover
-            FROM stock_info 
+            SELECT code, name, date, level, open, high, low, close, volume
+            FROM stock_info
             WHERE code = '{code}'
             AND level = '{level}'
             AND date >= '{start_date}' AND date <= '{end_date}'
@@ -1438,11 +1438,11 @@ class UnifiedDataManager:
                 if results:
                     # 转换为DataFrame
                     df = pd.DataFrame(results, columns=[
-                        'code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+                        'code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 'volume'
                     ])
                     
                     # 数据类型转换
-                    for col in ['open', 'high', 'low', 'close', 'volume', 'turnover']:
+                    for col in ['open', 'high', 'low', 'close', 'volume']:
                         if col in df.columns:
                             df[col] = pd.to_numeric(df[col], errors='coerce')
                     

@@ -1311,3 +1311,21 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 参数字典
         """
         self.set_parameters_Kdj_Enhanced_Kdj(**kwargs)
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_enhancedkdj()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Kdj_Enhanced_Kdj(**kwargs)

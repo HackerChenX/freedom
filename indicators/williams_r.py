@@ -594,6 +594,24 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         for key, value in kwargs.items():
             if key in ['period', 'overbought', 'oversold']:
                 self._default_parameters[key] = value
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的默认参数获取方法
+
+        Returns:
+            dict: 默认参数字典
+        """
+        return self._get_default_parameters_williams_r()
+
+    def set_parameters(self, **kwargs):
+        """
+        标准参数设置方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Williams_R_Williams_R_Williams_R_williams_r(**kwargs)
     
     def _get_default_parameters_williams_r(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -611,11 +629,30 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """
         WilliamsR指标所需的最少数据周期数
-        
+
         计算逻辑：基于参数 period(14) 计算
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
-        period = self._parameters.get('period', 14)
+        # 确保_parameters存在，如果不存在则使用实例属性或默认值
+        if hasattr(self, '_parameters') and self._parameters:
+            period = self._parameters.get('period', 14)
+        else:
+            period = getattr(self, 'period', 14)
+
         return period + max(10, period // 2)
+
+    def set_parameters_Williams_R_Williams_R_Williams_R_williams_r(self, **kwargs):
+        """
+        设置WILLIAMS_R指标参数
+
+        Args:
+            **kwargs: 参数字典，可包含period, overbought, oversold
+        """
+        # 更新参数
+        for key, value in kwargs.items():
+            if key in ['period', 'overbought', 'oversold']:
+                if hasattr(self, '_default_parameters'):
+                    self._default_parameters[key] = value
+                setattr(self, key, value)
