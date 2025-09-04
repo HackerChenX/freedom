@@ -6,6 +6,59 @@
 
 本文档体系为技术指标系统的开发和维护提供全面指导。当前系统已达到**100%完美状态**，包含167个验证通过的技术指标，所有新增内容必须严格遵循本文档体系以维持系统的高质量和一致性。
 
+## 🆕 以选股为核心的综合股票分析系统
+
+**系统定位**: 以选股为核心的综合股票技术分析平台，一切都是为了最终在生产级执行选股做配合。
+
+**核心理念**:
+- 🎯 **选股是核心功能** - 技术分析、买点回测、实时监控都为选股服务
+- 🔧 **参考通达信思路** - 支持灵活的公式化选股策略配置
+- 🚀 **生产级执行** - 高性能、高可靠性的实时选股引擎
+
+### 📋 系统文档
+#### 需求和设计文档
+- **[系统能力总览文档](project_reports/system_capabilities_overview.md)** - 系统定位和核心能力全景
+- **[选股策略设计文档](architecture/stock_selection_strategy_design.md)** - 🎯 **核心功能** 生产级选股策略设计
+- **[统一技术标准规范](standards/unified_technical_standards.md)** - ⚠️ **强制执行** 统一技术标准避免功能冲突
+- **[技术标准快速开始指南](standards/technical_standards_quick_start.md)** - 🚀 **5分钟上手** 技术标准应用指南
+- **[形态命名规范文档](architecture/pattern_naming_standards.md)** - ⚠️ **重要规范** 指标形态命名标准
+- **[综合股票分析系统需求文档](project_reports/comprehensive_stock_analysis_system_requirements.md)** - 综合系统需求和功能架构
+- **[综合系统架构文档](architecture/comprehensive_stock_analysis_system_architecture.md)** - 综合系统架构设计
+
+#### 各模块详细需求文档
+- **[四大模块需求总览](modules/modules_requirements_overview.md)** - 🎯 **模块协同总览** 四大模块需求汇总
+- **[技术指标分析模块需求](modules/technical_indicator_analysis_requirements.md)** - 📊 技术分析基础设施详细需求
+- **[策略选股分析模块需求](modules/strategy_selection_analysis_requirements.md)** - 🎯 **核心模块** 生产级选股详细需求
+- **[买点回测分析模块需求](modules/buypoint_backtest_analysis_requirements.md)** - 📈 历史买点分析详细需求
+- **[市场监控模块需求](modules/market_monitoring_requirements.md)** - 🔔 实时监控预警详细需求
+
+#### 买点回测模块文档
+- **[买点回测系统需求文档](project_reports/buypoint_backtest_system_requirements.md)** - 买点回测模块需求分析
+- **[买点回测系统完整实现文档](project_reports/buypoint_backtest_system_implementation.md)** - 买点回测模块实现记录
+- **[买点回测快速开始指南](user_guides/buypoint_backtest_quick_start.md)** - 5分钟快速体验指南
+- **[买点系统功能模块设计](architecture/buypoint_system_functional_design.md)** - 功能模块详细设计
+- **[系统优化路线图](project_reports/system_optimization_roadmap.md)** - 优化方向和实施计划
+
+### 🎯 系统核心能力 (以选股为中心)
+- 🎯 **策略选股分析** (核心功能): 生产级选股执行引擎，支持复杂策略组合
+- 📊 **技术指标分析** (选股支撑): 103个技术指标为选股提供技术条件
+- 📈 **买点回测分析** (策略验证): 历史买点分析为选股策略提供验证依据
+- 🔔 **实时市场监控** (执行支撑): 实时监控为选股执行提供数据支撑
+- 🗄️ **数据管理服务** (基础设施): 高质量数据为选股提供可靠基础
+- ⚙️ **系统管理平台** (运维保障): 系统稳定运行保障选股服务可用性
+
+### 🚀 快速开始
+```bash
+# 运行买点回测分析
+python bin/run_buypoint_backtest.py --verbose
+
+# 运行策略选股分析 (规划中)
+python bin/run_strategy_selection.py --strategy config/strategy.json
+
+# 运行技术指标分析 (规划中)
+python bin/run_technical_analysis.py --stock 000001 --period daily
+```
+
 ## 📁 文档目录结构
 
 ### 🏗️ 架构文档 (`architecture/`)
