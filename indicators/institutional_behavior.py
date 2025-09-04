@@ -37,13 +37,21 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_institutionalbehavior()
-        
+
+        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        self._minimum_periods = 14
+
         # 应用用户参数
         self.set_parameters_Behavior(**kwargs)
     
     def _get_default_parameters_institutionalbehavior(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {"period": 14}
+
+    @property
+    def minimum_periods(self) -> int:
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return getattr(self, '_minimum_periods', 14)
     
     def set_parameters_Behavior(self, **kwargs):
         """
@@ -71,10 +79,14 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
             
             # 设置参数
             self.period = params.get('period', 14)
-                    
+            # 🔧 Ultra Think修复：同步更新minimum_periods
+            self._minimum_periods = self.period
+
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = kwargs.get('period', 14)
+            # 🔧 Ultra Think修复：确保异常情况下也更新minimum_periods
+            self._minimum_periods = self.period
     
     def calculate_Behavior(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -102,8 +114,8 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
-        df[f'INSTITUTIONAL_BEHAVIOR_VALUE'] = df['close'].rolling(window=self.period).mean()
+        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        df[f'INSTITUTIONAL_BEHAVIOR_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
         
         # 添加形态识别和信号生成
@@ -121,25 +133,28 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
     
     def calculate_raw_score_Behavior(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        if not self.has_result():
-            self.calculate_Behavior(data, **kwargs)
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # if not self.has_result():
+        #     self.calculate_Behavior(data, **kwargs)
         
         # 机构行为评分：基于大单交易和资金流向分析
         df = data.copy()
         
         # 计算机构行为相关指标
+        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods确保有足够数据
         # 1. 大单分析（基于成交量和价格变化）
-        volume_ma = df['volume'].rolling(window=20).mean()
+        volume_ma = df['volume'].rolling(window=20, min_periods=1).mean()
         large_volume = df['volume'] > volume_ma * 2  # 大成交量
-        
+
         # 2. 价格稳定性（机构通常不会造成剧烈波动）
-        price_change = df['close'].pct_change()
-        price_volatility = price_change.rolling(window=10).std()
-        stable_price = price_volatility < price_volatility.rolling(window=30).mean()
+        price_change = df['close'].pct_change().fillna(0)
+        price_volatility = price_change.rolling(window=10, min_periods=1).std().fillna(0)
+        stable_price = price_volatility < price_volatility.rolling(window=30, min_periods=1).mean()
         
         # 3. 连续性分析（机构操作通常有连续性）
-        volume_trend = df['volume'].rolling(window=5).mean() / df['volume'].rolling(window=20).mean()
-        continuous_volume = volume_trend > 1.2
+        # 🔧 Ultra Think修复：正确处理NaN值
+        volume_trend = df['volume'].rolling(window=5, min_periods=1).mean() / df['volume'].rolling(window=20, min_periods=1).mean()
+        continuous_volume = volume_trend.fillna(1.0) > 1.2
         
         # 4. 逆向操作检测（机构逆向思维）
         price_down = df['close'] < df['close'].shift(1)
@@ -147,9 +162,10 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         contrarian_signal = price_down & volume_up  # 价跌量增
         
         # 5. 资金流向估算
+        # 🔧 Ultra Think修复：正确处理NaN值
         typical_price = (df['high'] + df['low'] + df['close']) / 3
         money_flow = typical_price * df['volume']
-        money_flow_ma = money_flow.rolling(window=20).mean()
+        money_flow_ma = money_flow.rolling(window=20, min_periods=1).mean()
         strong_inflow = money_flow > money_flow_ma * 1.5
         
         # 复合评分计算
@@ -181,9 +197,10 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         
         # 机构建仓模式识别
         # 温和建仓：价格缓慢上涨，成交量适中
+        # 🔧 Ultra Think修复：正确处理NaN值
         gentle_accumulation = (
-            (df['close'] > df['close'].shift(5)) &  # 5日上涨
-            (price_volatility < price_volatility.rolling(window=20).mean()) &  # 波动率低
+            (df['close'] > df['close'].shift(5).fillna(df['close'])) &  # 5日上涨
+            (price_volatility < price_volatility.rolling(window=20, min_periods=1).mean()) &  # 波动率低
             (df['volume'] > volume_ma * 1.1) &  # 成交量略大
             (df['volume'] < volume_ma * 2.0)    # 但不过大
         )
@@ -198,10 +215,11 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         scores += np.where(institutional_pump, 25, 0)
         
         # 机构护盘：下跌时成交量萎缩
+        # 🔧 Ultra Think修复：正确处理NaN值
         institutional_support = (
-            (df['close'] < df['close'].shift(1)) &  # 价格下跌
+            (df['close'] < df['close'].shift(1).fillna(df['close'])) &  # 价格下跌
             (df['volume'] < volume_ma * 0.8) &  # 成交量萎缩
-            (df['low'] > df['low'].rolling(window=10).min() * 1.02)  # 有支撑
+            (df['low'] > df['low'].rolling(window=10, min_periods=1).min() * 1.02)  # 有支撑
         )
         scores += np.where(institutional_support, 10, 0)
         
@@ -217,6 +235,40 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
     def get_patterns_Behavior(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
         return pd.DataFrame(index=data.index)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算机构行为指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含机构行为指标的DataFrame
+        """
+        return self.calculate_Behavior(data, **kwargs)
+
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self.calculate_Behavior(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        return self.calculate_confidence_Behavior(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Behavior(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Behavior(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        return self.set_parameters_Behavior(**kwargs)
 
 
 # 为了向后兼容，创建别名

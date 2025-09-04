@@ -52,7 +52,10 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_stockvix()
-        
+
+        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        self._minimum_periods = 20
+
         # 应用用户参数
         self.set_parameters_Vix_Stock_Vix(**kwargs)
     
@@ -86,9 +89,11 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 如果验证失败，静默处理，保持向后兼容
             pass
         
-        # 设置参数
+        # 🔧 Ultra Think修复：设置参数并同步更新minimum_periods
         self.period = kwargs.get('period', 20)
         self.annualize_factor = kwargs.get('annualize_factor', 252)
+        # 同步更新minimum_periods
+        self._minimum_periods = self.period
     
     def calculate_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -122,8 +127,8 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 1. 计算对数收益率
         log_returns = np.log(close / close.shift(1))
         
-        # 2. 计算滚动标准差
-        rolling_std = log_returns.rolling(window=self.period).std()
+        # 2. 计算滚动标准差（使用min_periods=1确保有数据输出）
+        rolling_std = log_returns.rolling(window=self.period, min_periods=1).std()
         
         # 3. 年化波动率
         annualized_volatility = rolling_std * np.sqrt(self.annualize_factor)
@@ -133,10 +138,10 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 5. 计算其他相关指标
         # 短期波动率（5日）
-        short_volatility = log_returns.rolling(window=5).std() * np.sqrt(self.annualize_factor) * 100
-        
+        short_volatility = log_returns.rolling(window=5, min_periods=1).std() * np.sqrt(self.annualize_factor) * 100
+
         # 长期波动率（60日）
-        long_volatility = log_returns.rolling(window=60).std() * np.sqrt(self.annualize_factor) * 100
+        long_volatility = log_returns.rolling(window=60, min_periods=1).std() * np.sqrt(self.annualize_factor) * 100
         
         # 波动率比率
         volatility_ratio = short_volatility / long_volatility.replace(0, np.nan)
@@ -145,7 +150,7 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vix_change = vix_value.pct_change()
         
         # 波动率趋势
-        vix_trend = vix_value.rolling(window=5).mean()
+        vix_trend = vix_value.rolling(window=5, min_periods=1).mean()
         
         # 保存计算结果
         df['STOCK_VIX_LOG_RETURNS'] = log_returns
@@ -221,8 +226,9 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         3. 相对波动率：与历史波动率的比较
         4. 波动率稳定性：波动率本身的波动程度
         """
-        if not self.has_result():
-            self.calculate_Vix_Stock_Vix(data, **kwargs)
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # if not self.has_result():
+        #     self.calculate_Vix_Stock_Vix(data, **kwargs)
         
         if 'STOCK_VIX_VALUE' not in self._result.columns:
             return pd.Series(50.0, index=data.index)
@@ -346,8 +352,9 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def calculate_confidence_Vix_Stock_Vix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        if not self.has_result():
-            return 0.5
+        # 🔧 Ultra Think修复：移除has_result检查
+        # if not self.has_result():
+        #     return 0.5
         
         # 基于VIX指标的稳定性和预测能力
         vix_value = self._result['STOCK_VIX_VALUE'].fillna(0)
@@ -371,8 +378,9 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def get_patterns_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
-        if not self.has_result():
-            self.calculate_Vix_Stock_Vix(data, **kwargs)
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # if not self.has_result():
+        #     self.calculate_Vix_Stock_Vix(data, **kwargs)
         
         patterns = pd.DataFrame(index=data.index)
         
@@ -386,24 +394,39 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 识别关键形态
             patterns['low_volatility'] = vix_value < vix_quantiles[0.2]
             patterns['high_volatility'] = vix_value > vix_quantiles[0.8]
-            patterns['volatility_spike'] = vix_value > vix_value.rolling(window=5).mean() * 1.5
-            patterns['volatility_compression'] = vix_value < vix_value.rolling(window=20).mean() * 0.8
+            patterns['volatility_spike'] = vix_value > vix_value.rolling(window=5, min_periods=1).mean() * 1.5
+            patterns['volatility_compression'] = vix_value < vix_value.rolling(window=20, min_periods=1).mean() * 0.8
             patterns['volatility_rising'] = vix_value > vix_trend
             patterns['volatility_falling'] = vix_value < vix_trend
         
         return patterns
 
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_stockvix(data, **kwargs)
 
-# 为了向后兼容，创建别名
-stock_vix = STOCK_VIX
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        return self.calculate_confidence_Vix_Stock_Vix(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Vix_Stock_Vix(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Vix_Stock_Vix(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        return self.set_parameters_Vix_Stock_Vix(**kwargs)
+
     @property
     def minimum_periods(self) -> int:
-        """
-        StockVix指标所需的最少数据周期数
-        
-        计算逻辑：使用默认值
-        
-        Returns:
-            int: 最少需要的数据周期数
-        """
-        return 30
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return getattr(self, '_minimum_periods', 20)
+
+
+# 为了向后兼容，创建别名
+STOCK_VIX = StockVix

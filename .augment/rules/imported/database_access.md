@@ -1,0 +1,533 @@
+---
+type: "always_apply"
+---
+
+# 数据库访问规范（ClickHouse专用）
+
+## 🗄️ 数据库表结构标准
+
+### stock_info表结构
+```sql
+CREATE TABLE stock_info (
+    code String,           -- 股票代码
+    name String,           -- 股票名称  
+    date Date,             -- 交易日期
+    level String,          -- 数据级别（日线/分钟线等）
+    open Float64,          -- 开盘价
+    close Float64,         -- 收盘价
+    high Float64,          -- 最高价
+    low Float64,           -- 最低价
+    volume UInt64,         -- 成交量
+    turnover_rate Float64, -- 换手率
+    price_change Float64,  -- 价格变化
+    price_range Float64,   -- 价格区间
+    industry String,       -- 行业
+    datetime DateTime,     -- 时间戳
+    seq UInt64            -- 序号
+) ENGINE = MergeTree()
+ORDER BY (code, date, level);
+```
+
+## 🔧 连接池管理规范
+
+### ClickHouse连接池配置
+参考 [enhanced_connection_pool.py](mdc:db/enhanced_connection_pool.py) 的标准实现：
+
+```python
+from clickhouse_driver import Client
+from typing import Optional, Dict, Any, List
+import pandas as pd
+from utils.logger import get_logger
+from config.database_config_manager import DatabaseConfigManager
+
+logger = get_logger(__name__)
+
+class ClickHouseConnectionPool:
+    """ClickHouse连接池管理器"""
+    
+    def __init__(self, min_connections: int = 5, max_connections: int = 20):
+        """
+        初始化连接池
+        
+        Args:
+            min_connections: 最小连接数
+            max_connections: 最大连接数
+        """
+        self.config_manager = DatabaseConfigManager()
+        self.min_connections = min_connections
+        self.max_connections = max_connections
+        self._pool: List[PooledConnection] = []
+        self._active_connections = 0
+        self._initialize_pool()
+    
+    def _initialize_pool(self):
+        """初始化连接池"""
+        db_config = self.config_manager.get_clickhouse_config()
+        
+        for _ in range(self.min_connections):
+            try:
+                client = Client(
+                    host=db_config['host'],
+                    port=db_config['port'],
+                    user=db_config['user'],
+                    password=db_config['password'],
+                    database=db_config['database']
+                )
+                
+                connection = PooledConnection(client, self)
+                self._pool.append(connection)
+                logger.info(f"ClickHouse连接池初始化: 添加连接 {len(self._pool)}")
+                
+            except Exception as e:
+                logger.error(f"创建ClickHouse连接失败: {e}")
+                raise
+    
+    def get_connection(self) -> 'PooledConnection':
+        """获取连接"""
+        if self._pool:
+            connection = self._pool.pop()
+            self._active_connections += 1
+            logger.debug(f"从连接池获取连接，剩余: {len(self._pool)}")
+            return connection
+        
+        if self._active_connections < self.max_connections:
+            # 创建新连接
+            db_config = self.config_manager.get_clickhouse_config()
+            client = Client(
+                host=db_config['host'],
+                port=db_config['port'], 
+                user=db_config['user'],
+                password=db_config['password'],
+                database=db_config['database']
+            )
+            connection = PooledConnection(client, self)
+            self._active_connections += 1
+            logger.info(f"创建新连接，当前活跃连接数: {self._active_connections}")
+            return connection
+        
+        raise Exception("连接池已满，无法创建新连接")
+    
+    def return_connection(self, connection: 'PooledConnection'):
+        """归还连接"""
+        if len(self._pool) < self.max_connections:
+            self._pool.append(connection)
+            self._active_connections -= 1
+            logger.debug(f"连接归还到池中，池大小: {len(self._pool)}")
+        else:
+            connection.close()
+            self._active_connections -= 1
+            logger.debug(f"连接池已满，关闭连接，活跃连接数: {self._active_connections}")
+```
+
+### 连接封装类
+```python
+class PooledConnection:
+    """连接池连接封装"""
+    
+    def __init__(self, client: Client, pool: ClickHouseConnectionPool):
+        self.client = client
+        self.pool = pool
+    
+    def execute(self, query: str, params: Optional[Dict] = None) -> List[Any]:
+        """执行查询"""
+        try:
+            return self.client.execute(query, params or {})
+        except Exception as e:
+            logger.error(f"查询执行失败: {e}")
+            raise
+    
+    def query_dataframe(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """查询并返回DataFrame"""
+        try:
+            result = self.client.execute(query, params or {})
+            if not result:
+                return pd.DataFrame()
+            
+            # 获取列名
+            columns = self._extract_columns_from_query(query)
+            return pd.DataFrame(result, columns=columns)
+            
+        except Exception as e:
+            logger.error(f"DataFrame查询失败: {e}")
+            raise
+    
+    def _extract_columns_from_query(self, query: str) -> List[str]:
+        """从查询中提取列名"""
+        # 标准列名映射
+        standard_columns = ['code', 'name', 'date', 'open', 'high', 'low', 'close', 'volume', 'turnover_rate']
+        
+        # 简化实现，实际应该解析SQL
+        if 'SELECT *' in query.upper():
+            return standard_columns
+        
+        # 提取SELECT和FROM之间的列名
+        import re
+        select_match = re.search(r'SELECT\s+(.*?)\s+FROM', query, re.IGNORECASE | re.DOTALL)
+        if select_match:
+            columns_str = select_match.group(1)
+            columns = [col.strip() for col in columns_str.split(',')]
+            return columns
+        
+        return standard_columns
+    
+    def close(self):
+        """关闭连接"""
+        try:
+            self.client.disconnect()
+        except Exception as e:
+            logger.warning(f"关闭连接时出错: {e}")
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.pool.return_connection(self)
+```
+
+## 📝 查询规范标准
+
+### 强制查询要求
+所有股票数据查询必须满足以下条件：
+
+1. **必须包含code条件**
+2. **必须包含date范围**  
+3. **必须指定level**
+4. **禁止SELECT ***
+5. **必须使用ORDER BY**
+
+### 标准查询模板
+```python
+class StandardQueries:
+    """标准查询模板集合"""
+    
+    @staticmethod
+    def get_stock_data(code: str, start_date: str, end_date: str, level: str = '日线') -> str:
+        """
+        获取股票基础数据的标准查询
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期 (YYYY-MM-DD)
+            end_date: 结束日期 (YYYY-MM-DD)
+            level: 数据级别，默认'日线'
+            
+        Returns:
+            str: SQL查询语句
+        """
+        return f"""
+        SELECT code, name, date, open, high, low, close, volume, turnover_rate
+        FROM stock_info 
+        WHERE code = '{code}'
+        AND level = '{level}'
+        AND date >= '{start_date}' AND date <= '{end_date}'
+        ORDER BY date ASC
+        """
+    
+    @staticmethod
+    def get_multiple_stocks_data(codes: List[str], start_date: str, end_date: str, level: str = '日线') -> str:
+        """获取多只股票数据"""
+        codes_str = "', '".join(codes)
+        return f"""
+        SELECT code, name, date, open, high, low, close, volume, turnover_rate
+        FROM stock_info 
+        WHERE code IN ('{codes_str}')
+        AND level = '{level}'
+        AND date >= '{start_date}' AND date <= '{end_date}'
+        ORDER BY code, date ASC
+        """
+    
+    @staticmethod
+    def get_stock_count(level: str = '日线') -> str:
+        """获取股票数量统计"""
+        return f"""
+        SELECT COUNT(DISTINCT code) as stock_count
+        FROM stock_info
+        WHERE level = '{level}'
+        """
+    
+    @staticmethod
+    def get_latest_trading_date(code: str, level: str = '日线') -> str:
+        """获取最新交易日期"""
+        return f"""
+        SELECT MAX(date) as latest_date
+        FROM stock_info
+        WHERE code = '{code}' AND level = '{level}'
+        """
+
+# 使用示例
+def query_stock_data_example():
+    """查询使用示例"""
+    pool = ClickHouseConnectionPool()
+    
+    try:
+        with pool.get_connection() as conn:
+            # 使用标准查询模板
+            query = StandardQueries.get_stock_data('000001', '2024-01-01', '2024-12-31')
+            df = conn.query_dataframe(query)
+            
+            logger.info(f"查询成功，获取数据 {len(df)} 行")
+            return df
+            
+    except Exception as e:
+        logger.error(f"查询股票数据失败: {e}")
+        raise
+```
+
+### 禁止的查询模式
+```python
+# ❌ 禁止的查询示例
+
+# 1. 缺少code条件
+bad_query_1 = """
+SELECT * FROM stock_info 
+WHERE date >= '2024-01-01'
+"""
+
+# 2. 缺少date范围
+bad_query_2 = """
+SELECT * FROM stock_info 
+WHERE code = '000001'
+"""
+
+# 3. 使用SELECT *
+bad_query_3 = """
+SELECT * FROM stock_info 
+WHERE code = '000001' AND date >= '2024-01-01'
+"""
+
+# 4. 缺少ORDER BY
+bad_query_4 = """
+SELECT code, close FROM stock_info 
+WHERE code = '000001' AND date >= '2024-01-01'
+"""
+
+# 5. 缺少level条件
+bad_query_5 = """
+SELECT code, close FROM stock_info 
+WHERE code = '000001' AND date >= '2024-01-01'
+ORDER BY date
+"""
+```
+
+## 🚀 性能优化规范
+
+### 连接池性能配置
+```python
+# 推荐的连接池配置
+CLICKHOUSE_POOL_CONFIG = {
+    'min_connections': 5,     # 最小连接数
+    'max_connections': 20,    # 最大连接数  
+    'connection_timeout': 30, # 连接超时（秒）
+    'query_timeout': 60,      # 查询超时（秒）
+    'retry_attempts': 3,      # 重试次数
+    'pool_recycle': 3600     # 连接回收时间（秒）
+}
+```
+
+### 查询性能优化
+```python
+class OptimizedQueryBuilder:
+    """优化的查询构建器"""
+    
+    @staticmethod
+    def build_batch_query(codes: List[str], start_date: str, end_date: str, 
+                         batch_size: int = 100) -> List[str]:
+        """
+        构建批量查询，避免单次查询数据量过大
+        
+        Args:
+            codes: 股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            batch_size: 批次大小
+            
+        Returns:
+            List[str]: 批量查询语句列表
+        """
+        queries = []
+        
+        for i in range(0, len(codes), batch_size):
+            batch_codes = codes[i:i + batch_size]
+            codes_str = "', '".join(batch_codes)
+            
+            query = f"""
+            SELECT code, name, date, open, high, low, close, volume, turnover_rate
+            FROM stock_info 
+            WHERE code IN ('{codes_str}')
+            AND level = '日线'
+            AND date >= '{start_date}' AND date <= '{end_date}'
+            ORDER BY code, date ASC
+            """
+            queries.append(query)
+        
+        return queries
+    
+    @staticmethod
+    def build_paginated_query(code: str, start_date: str, end_date: str,
+                            page: int = 1, page_size: int = 1000) -> str:
+        """
+        构建分页查询
+        
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+            end_date: 结束日期
+            page: 页码（从1开始）
+            page_size: 每页大小
+            
+        Returns:
+            str: 分页查询语句
+        """
+        offset = (page - 1) * page_size
+        
+        return f"""
+        SELECT code, name, date, open, high, low, close, volume, turnover_rate
+        FROM stock_info 
+        WHERE code = '{code}'
+        AND level = '日线'
+        AND date >= '{start_date}' AND date <= '{end_date}'
+        ORDER BY date ASC
+        LIMIT {page_size} OFFSET {offset}
+        """
+```
+
+### 缓存策略
+```python
+from functools import lru_cache
+from cachetools import TTLCache
+import hashlib
+
+class CachedQueryExecutor:
+    """带缓存的查询执行器"""
+    
+    def __init__(self, pool: ClickHouseConnectionPool):
+        self.pool = pool
+        self.cache = TTLCache(maxsize=1000, ttl=300)  # 5分钟缓存
+    
+    def _get_cache_key(self, query: str, params: Optional[Dict] = None) -> str:
+        """生成缓存键"""
+        content = query + str(params or {})
+        return hashlib.md5(content.encode()).hexdigest()
+    
+    def query_dataframe_cached(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """带缓存的查询"""
+        cache_key = self._get_cache_key(query, params)
+        
+        if cache_key in self.cache:
+            logger.debug(f"缓存命中: {cache_key[:8]}...")
+            return self.cache[cache_key]
+        
+        with self.pool.get_connection() as conn:
+            result = conn.query_dataframe(query, params)
+            self.cache[cache_key] = result
+            logger.debug(f"查询结果已缓存: {cache_key[:8]}...")
+            return result
+```
+
+## 🛡️ 错误处理和监控
+
+### 连接错误处理
+```python
+from enum import Enum
+import time
+
+class ConnectionError(Enum):
+    TIMEOUT = "连接超时"
+    REFUSED = "连接被拒绝"
+    NETWORK = "网络错误"
+    AUTH = "认证失败"
+
+class RobustQueryExecutor:
+    """健壮的查询执行器"""
+    
+    def __init__(self, pool: ClickHouseConnectionPool, max_retries: int = 3):
+        self.pool = pool
+        self.max_retries = max_retries
+    
+    def execute_with_retry(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """带重试的查询执行"""
+        last_exception = None
+        
+        for attempt in range(self.max_retries):
+            try:
+                with self.pool.get_connection() as conn:
+                    return conn.query_dataframe(query, params)
+                    
+            except Exception as e:
+                last_exception = e
+                wait_time = 2 ** attempt  # 指数退避
+                logger.warning(f"查询失败，第{attempt + 1}次重试，等待{wait_time}秒: {e}")
+                
+                if attempt < self.max_retries - 1:
+                    time.sleep(wait_time)
+        
+        logger.error(f"查询最终失败，已重试{self.max_retries}次")
+        raise last_exception
+```
+
+### 查询监控
+```python
+from utils.performance_monitor import performance_monitor
+
+class MonitoredQueryExecutor:
+    """监控查询性能的执行器"""
+    
+    def __init__(self, pool: ClickHouseConnectionPool):
+        self.pool = pool
+        self.query_stats = {}
+    
+    @performance_monitor(threshold_seconds=5.0)
+    def execute_monitored_query(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """执行被监控的查询"""
+        query_hash = hashlib.md5(query.encode()).hexdigest()[:8]
+        
+        start_time = time.time()
+        try:
+            with self.pool.get_connection() as conn:
+                result = conn.query_dataframe(query, params)
+                
+            execution_time = time.time() - start_time
+            
+            # 更新统计信息
+            if query_hash not in self.query_stats:
+                self.query_stats[query_hash] = {
+                    'count': 0,
+                    'total_time': 0,
+                    'avg_time': 0,
+                    'max_time': 0
+                }
+            
+            stats = self.query_stats[query_hash]
+            stats['count'] += 1
+            stats['total_time'] += execution_time
+            stats['avg_time'] = stats['total_time'] / stats['count']
+            stats['max_time'] = max(stats['max_time'], execution_time)
+            
+            logger.info(f"查询 {query_hash} 执行完成: {execution_time:.2f}s, 平均: {stats['avg_time']:.2f}s")
+            return result
+            
+        except Exception as e:
+            logger.error(f"监控查询 {query_hash} 失败: {e}")
+            raise
+```
+
+## ✅ 数据库访问检查清单
+
+新的数据库访问代码必须满足：
+
+- [ ] 使用连接池管理连接
+- [ ] 查询包含必要的WHERE条件（code, date范围, level）
+- [ ] 避免SELECT *，明确指定列名
+- [ ] 包含ORDER BY子句
+- [ ] 添加异常处理和重试机制
+- [ ] 实现查询性能监控
+- [ ] 使用参数化查询防止SQL注入
+- [ ] 适当使用缓存策略
+- [ ] 遵循批量查询最佳实践
+- [ ] 包含完整的日志记录
+
+这些规范确保我们的数据库访问层高效、安全、可维护。
+description:
+globs:
+alwaysApply: true
+---

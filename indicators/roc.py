@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
@@ -305,6 +305,18 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了ROC指标的Data_frame
         """
+        # 数据验证
+        if data is None or data.empty:
+            logger.warning("ROC: 输入数据为空")
+            return pd.DataFrame()
+
+        # 检查必需的列
+        required_columns = ['close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"ROC: 缺少必需的列 {missing_columns}")
+            return pd.DataFrame()
+
         df = data.copy()
 
         # 计算ROC (Rate of Change)
@@ -585,14 +597,207 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'strength': 'medium'
             })
 
+    def get_signals(self, data: pd.DataFrame) -> Optional[Dict[str, Any]]:
+        """
+        获取ROC指标的交易信号
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Optional[Dict[str, Any]]: 交易信号字典
+        """
+        try:
+            if data is None or data.empty:
+                return None
+
+            result = self.calculate(data)
+            if result is None or result.empty:
+                return None
+
+            # 获取ROC值
+            roc_cols = [col for col in result.columns if 'roc' in col.lower()]
+            if not roc_cols:
+                return None
+
+            roc_values = result[roc_cols[0]].dropna()
+            if len(roc_values) < 3:
+                return None
+
+            current_roc = roc_values.iloc[-1]
+            prev_roc = roc_values.iloc[-2]
+
+            # ROC信号逻辑
+            signal_type = 'neutral'
+            signal_strength = 'medium'
+
+            if current_roc > 5 and prev_roc <= 5:
+                signal_type = 'bullish'
+                signal_strength = 'strong'
+            elif current_roc < -5 and prev_roc >= -5:
+                signal_type = 'bearish'
+                signal_strength = 'strong'
+            elif current_roc > 0 and prev_roc <= 0:
+                signal_type = 'bullish'
+                signal_strength = 'medium'
+            elif current_roc < 0 and prev_roc >= 0:
+                signal_type = 'bearish'
+                signal_strength = 'medium'
+
+            return {
+                'signal_type': signal_type,
+                'signal_strength': signal_strength,
+                'current_roc': current_roc,
+                'previous_roc': prev_roc,
+                'description': f'ROC变化率信号: {signal_type} ({signal_strength})'
+            }
+
+        except Exception as e:
+            logger.error(f"ROC get_signals计算失败: {e}")
+            return None
+
+    def calculate_raw_score(self, data: pd.DataFrame) -> Optional[float]:
+        """
+        计算ROC指标的原始评分
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Optional[float]: ROC原始评分，范围0-100
+        """
+        try:
+            if data is None or data.empty:
+                return None
+
+            result = self.calculate(data)
+            if result is None or result.empty:
+                return None
+
+            # 获取ROC值
+            roc_cols = [col for col in result.columns if 'roc' in col.lower()]
+            if not roc_cols:
+                return None
+
+            roc_values = result[roc_cols[0]].dropna()
+            if len(roc_values) == 0:
+                return None
+
+            current_roc = roc_values.iloc[-1]
+
+            # ROC评分逻辑：基于ROC值的强度
+            # ROC > 10: 强势上涨，评分80-100
+            # ROC 0-10: 温和上涨，评分60-80
+            # ROC -10-0: 温和下跌，评分40-60
+            # ROC < -10: 强势下跌，评分0-40
+
+            if current_roc > 10:
+                score = 80 + min(20, current_roc - 10)
+            elif current_roc > 0:
+                score = 60 + current_roc * 2
+            elif current_roc > -10:
+                score = 40 + (current_roc + 10) * 2
+            else:
+                score = max(0, 40 + current_roc + 10)
+
+            return min(100, max(0, score))
+
+        except Exception as e:
+            logger.error(f"ROC calculate_raw_score计算失败: {e}")
+            return None
+
     @property
     def minimum_periods(self) -> int:
         """
         RateOfChange指标所需的最少数据周期数
-        
+
         计算逻辑：使用默认值
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
         return 15
+
+    # ==================== BaseIndicator抽象方法实现 ====================
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """BaseIndicator抽象方法实现：核心计算逻辑"""
+        try:
+            # 数据验证
+            if data is None or data.empty:
+                logger.warning("ROC _calculate_baseindicator: 输入数据为空")
+                return pd.DataFrame()
+
+            # 检查必需的列
+            required_columns = ['close']
+            missing_columns = [col for col in required_columns if col not in data.columns]
+            if missing_columns:
+                logger.error(f"ROC _calculate_baseindicator: 缺少必需的列 {missing_columns}")
+                return pd.DataFrame()
+
+            # 调用原有的calculate方法
+            result = self.calculate(data, **kwargs)
+
+            return result if isinstance(result, pd.DataFrame) else pd.DataFrame()
+
+        except Exception as e:
+            logger.error(f"ROC _calculate_baseindicator失败: {e}")
+            return pd.DataFrame(index=data.index if not data.empty else [])
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """BaseIndicator抽象方法实现：计算置信度"""
+        try:
+            # 基础置信度
+            base_confidence = 0.6
+
+            # 根据数据量调整置信度
+            data_length = len(score)
+            if data_length >= 252:  # 一年数据
+                data_confidence = 0.9
+            elif data_length >= 60:  # 两个月数据
+                data_confidence = 0.8
+            elif data_length >= 30:  # 一个月数据
+                data_confidence = 0.7
+            else:
+                data_confidence = 0.5
+
+            # 根据ROC值的稳定性调整置信度
+            roc_confidence = 0.7
+            if hasattr(self, '_result') and self._result is not None and 'roc' in self._result.columns:
+                roc_values = self._result['roc'].dropna()
+                if len(roc_values) > 0:
+                    # ROC绝对值越大，置信度越高
+                    recent_roc = abs(roc_values.iloc[-1]) if len(roc_values) > 0 else 0
+                    roc_strength = min(recent_roc / 20, 1.0)  # 标准化到0-1
+                    roc_confidence = 0.5 + roc_strength * 0.4
+
+            # 根据形态数量调整置信度
+            pattern_confidence = 0.7
+            if isinstance(patterns, pd.DataFrame) and not patterns.empty:
+                pattern_count = patterns.sum().sum()
+                if pattern_count > 0:
+                    pattern_confidence = min(0.9, 0.6 + pattern_count * 0.01)
+
+            # 综合置信度
+            final_confidence = (base_confidence + data_confidence + roc_confidence + pattern_confidence) / 4
+
+            return max(0.0, min(1.0, final_confidence))
+
+        except Exception as e:
+            logger.error(f"ROC计算置信度失败: {e}")
+            return 0.6
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """BaseIndicator抽象方法实现：设置参数"""
+        try:
+            # 更新参数
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+                    logger.debug(f"ROC参数更新: {key} = {value}")
+
+            # 重置结果，强制重新计算
+            self._result = None
+
+        except Exception as e:
+            logger.error(f"ROC设置参数失败: {e}")

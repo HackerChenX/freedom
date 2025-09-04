@@ -13,10 +13,15 @@ logger = get_logger(__name__)
 class EnhancedMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ENHANCED_MACD 指标
-    
+
     自动生成的标准化实现
     """
-    
+
+    @property
+    def minimum_periods(self) -> int:
+        """返回计算指标所需的最小周期数"""
+        return max(getattr(self, 'fast_period', 12), getattr(self, 'slow_period', 26)) + getattr(self, 'signal_period', 9)
+
     def __init__(self, **kwargs):
         """
         初始化ENHANCED_MACD指标

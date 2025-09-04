@@ -68,6 +68,18 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 内部参数
         self._result = None
         self._price_data = None
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        # Enhanced OBV需要考虑多周期分析和平滑处理
+        max_period = max(self.multi_periods) if self.multi_periods else self.ma_period
+        return max_period + self.smooth_period + 10  # 添加缓冲期
     
     def get_indicator_type_Obv(self) -> str:
         """
@@ -81,14 +93,76 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_enhancedobv(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         实现BaseIndicator的抽象方法
-        
+
         Args:
             data: 输入数据
-            
+
         Returns:
             pd.DataFrame: 计算结果
         """
         return self.calculate_Obv_Enhanced_Obv(data)
+
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        基础指标计算方法 - 实现必须的抽象方法
+
+        Args:
+            data: 价格数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        return self.calculate_Obv_Enhanced_Obv(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """
+        计算置信度 - 实现必须的抽象方法
+
+        Args:
+            score: 指标得分
+            patterns: 形态数据
+            signals: 信号数据
+
+        Returns:
+            float: 置信度
+        """
+        return self.calculate_confidence_Obv_Enhanced_Obv(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """
+        计算原始得分 - 实现必须的抽象方法
+
+        Args:
+            data: 价格数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.Series: 原始得分
+        """
+        return self.calculate_raw_score_Obv_Enhanced_Obv(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        获取形态 - 实现必须的抽象方法
+
+        Args:
+            data: 价格数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 形态数据
+        """
+        return self._get_patterns_impl(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """
+        设置参数 - 实现必须的抽象方法
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters_Obv_Enhanced_Obv(**kwargs)
 
     def calculate_Obv_Enhanced_Obv(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -237,7 +311,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.Series: 原始评分序列（0-100分）
         """
         # 确保已计算OBV
-        if not self.has_result():
+        if self._result is None:
             self.calculate_Obv_Enhanced_Obv(data, **kwargs)
         
         if self._result is None:
@@ -379,7 +453,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 多周期一致性评分
         """
-        if not self.has_result():
+        if self._result is None:
             return pd.Series(0.0, index=data.index)
         
         score = pd.Series(0.0, index=data.index)
@@ -425,7 +499,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             float: 信号质量得分 (0-1)
         """
-        if not self.has_result() or signal.sum() == 0:
+        if self._result is None or signal.sum() == 0:
             return 0.5
         
         # 获取信号点
@@ -464,7 +538,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 信号Data_frame
         """
         # 确保已计算OBV
-        if not self.has_result():
+        if self._result is None:
             self.calculate_Obv_Enhanced_Obv(data, *args, **kwargs)
             
         result = self._result.copy()
@@ -951,7 +1025,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含形态信息的Data_frame
         """
         # 确保已计算指标
-        if not self.has_result():
+        if self._result is None:
             self.calculate_Obv_Enhanced_Obv(data)
 
         if self._result is None:
@@ -1087,7 +1161,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             Dict[str, pd.Series]: 包含买卖信号的字典
         """
         # 确保已计算指标
-        if not self.has_result():
+        if self._result is None:
             self.calculate_Obv_Enhanced_Obv(data)
 
         if self._result is None:

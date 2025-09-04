@@ -350,6 +350,8 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         double_bottom = np.zeros(n, dtype=bool)
         island_reversal = np.zeros(n, dtype=bool)
         v_reversal = np.zeros(n, dtype=bool)
+        flag_bullish = np.zeros(n, dtype=bool)
+        flag_bearish = np.zeros(n, dtype=bool)
         
         # 计算复合形态
         window = 20  # 形态识别窗口
@@ -435,14 +437,99 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                     island_reversal[i] = True
             
             # V形反转：急速下跌后快速反弹
-            if i >= 5:
-                # 计算前5天的跌幅
-                drop_pct = (close_prices[i-5] - low_prices[i-1]) / close_prices[i-5]
-                # 计算当日的涨幅
-                rise_pct = (close_prices[i] - low_prices[i-1]) / low_prices[i-1]
-                
-                if drop_pct > 0.05 and rise_pct > 0.03:
-                    v_reversal[i] = True
+            if i >= 10:
+                # 寻找最近的低点
+                lookback = min(10, i)
+                start_idx = i - lookback
+
+                # 计算下跌阶段
+                recent_lows = low_prices[start_idx:i+1]
+                recent_closes = close_prices[start_idx:i+1]
+
+                if len(recent_lows) >= 5:
+                    # 找到最低点位置
+                    min_low_idx = np.argmin(recent_lows)
+                    min_low_price = recent_lows[min_low_idx]
+                    actual_min_idx = start_idx + min_low_idx
+
+                    # 确保最低点不在边界
+                    if 2 <= min_low_idx <= len(recent_lows) - 3:
+                        # 计算下跌阶段的跌幅
+                        if min_low_idx >= 2:
+                            pre_decline_price = recent_closes[0]
+                            decline_pct = (pre_decline_price - min_low_price) / pre_decline_price
+
+                            # 计算反弹阶段的涨幅
+                            if min_low_idx < len(recent_closes) - 1:
+                                current_price = close_prices[i]
+                                rebound_pct = (current_price - min_low_price) / min_low_price
+
+                                # V型反转条件：
+                                # 1. 前期有明显下跌（>4%）
+                                # 2. 后期有明显反弹（>3%）
+                                # 3. 下跌和反弹都比较急速
+                                if decline_pct > 0.04 and rebound_pct > 0.03:
+                                    # 检查下跌的急速性（连续下跌天数）
+                                    decline_days = 0
+                                    for j in range(1, min_low_idx + 1):
+                                        if recent_closes[j] < recent_closes[j-1]:
+                                            decline_days += 1
+
+                                    # 检查反弹的急速性
+                                    rebound_days = 0
+                                    for j in range(min_low_idx + 1, len(recent_closes)):
+                                        if recent_closes[j] > recent_closes[j-1]:
+                                            rebound_days += 1
+
+                                    # V型特征：下跌和反弹都相对急速
+                                    if decline_days >= 2 and rebound_days >= 1:
+                                        v_reversal[i] = True
+
+            # 牛旗形：上升趋势中的小幅调整，形成旗形整理
+            if i >= 15:
+                # 检查前期是否有明显上涨（旗杆）
+                pole_start = max(0, i - 15)
+                pole_end = i - 5
+                pole_gain = (close_prices[pole_end] - close_prices[pole_start]) / close_prices[pole_start]
+
+                if pole_gain > 0.03:  # 前期有3%以上的涨幅
+                    # 检查后续是否有小幅整理（旗面）
+                    flag_data = close_prices[pole_end:i+1]
+                    if len(flag_data) >= 5:
+                        flag_high = np.max(flag_data)
+                        flag_low = np.min(flag_data)
+                        flag_range = (flag_high - flag_low) / flag_low
+
+                        # 整理幅度相对较小，且呈现轻微下倾趋势
+                        if flag_range < 0.05:  # 整理幅度小于5%
+                            # 检查是否有轻微下倾（旗形特征）
+                            flag_start_price = flag_data[0]
+                            flag_end_price = flag_data[-1]
+                            if flag_end_price <= flag_start_price * 1.02:  # 轻微下倾或横盘
+                                flag_bullish[i] = True
+
+            # 熊旗形：下降趋势中的小幅反弹，形成旗形整理
+            if i >= 15:
+                # 检查前期是否有明显下跌（旗杆）
+                pole_start = max(0, i - 15)
+                pole_end = i - 5
+                pole_drop = (close_prices[pole_start] - close_prices[pole_end]) / close_prices[pole_start]
+
+                if pole_drop > 0.03:  # 前期有3%以上的跌幅
+                    # 检查后续是否有小幅整理（旗面）
+                    flag_data = close_prices[pole_end:i+1]
+                    if len(flag_data) >= 5:
+                        flag_high = np.max(flag_data)
+                        flag_low = np.min(flag_data)
+                        flag_range = (flag_high - flag_low) / flag_low
+
+                        # 整理幅度相对较小，且呈现轻微上倾趋势
+                        if flag_range < 0.05:  # 整理幅度小于5%
+                            # 检查是否有轻微上倾（旗形特征）
+                            flag_start_price = flag_data[0]
+                            flag_end_price = flag_data[-1]
+                            if flag_end_price >= flag_start_price * 0.98:  # 轻微上倾或横盘
+                                flag_bearish[i] = True
         
         # 添加到结果
         result[Pattern_type.HEAD_SHOULDERS_TOP.name.lower()] = head_shoulders_top
@@ -451,6 +538,8 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         result[Pattern_type.DOUBLE_BOTTOM.name.lower()] = double_bottom
         result[Pattern_type.ISLAND_REVERSAL.name.lower()] = island_reversal
         result[Pattern_type.V_REVERSAL.name.lower()] = v_reversal
+        result[Pattern_type.FLAG_BULLISH.name.lower()] = flag_bullish
+        result[Pattern_type.FLAG_BEARISH.name.lower()] = flag_bearish
         
         return result
     

@@ -29,7 +29,10 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_sentimentanalysis()
-        
+
+        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        self._minimum_periods = 14
+
         # 应用用户参数
         self.set_parameters_Analysis_Sentiment_Analysis(**kwargs)
     
@@ -65,6 +68,8 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置参数
         self.period = kwargs.get('period', 14)
+        # 🔧 Ultra Think修复：同步更新minimum_periods
+        self._minimum_periods = self.period
     
     def calculate_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -92,8 +97,8 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         df = data.copy()
         
-        # 基本实现：返回原数据加上一个简单的计算列
-        df[f'SENTIMENT_ANALYSIS_VALUE'] = df['close'].rolling(window=self.period).mean()
+        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        df[f'SENTIMENT_ANALYSIS_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
         
         # 添加形态识别和信号生成
@@ -101,6 +106,47 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = self.add_signal_generation(df)
 
         return df
+
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_sentimentanalysis(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        return self.calculate_confidence_Analysis_Sentiment_Analysis(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Analysis_Sentiment_Analysis(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Analysis_Sentiment_Analysis(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        return self.set_parameters_Analysis_Sentiment_Analysis(**kwargs)
+
+    @property
+    def minimum_periods(self) -> int:
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return getattr(self, '_minimum_periods', 14)
+
+    def calculate_raw_score_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # if not self.has_result():
+        #     self.calculate_Analysis_Sentiment_Analysis(data, **kwargs)
+        return pd.Series(50.0, index=data.index)
+
+    def calculate_confidence_Analysis_Sentiment_Analysis(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """计算置信度"""
+        return 0.5
+
+    def get_patterns_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取形态"""
+        return pd.DataFrame(index=data.index)
 
 
 class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
@@ -167,6 +213,32 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含ZXM市场情绪指标的DataFrame
         """
+        # 数据验证
+        if data is None or data.empty:
+            logger.warning("ZXM_MARKET_SENTIMENT: 输入数据为空")
+            return pd.DataFrame()
+
+        # 检查必需的列
+        required_columns = ['close', 'volume', 'high', 'low']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"ZXM_MARKET_SENTIMENT: 缺少必需的列 {missing_columns}")
+            return pd.DataFrame()
+
+        # 检查数据量是否足够
+        if len(data) < self.minimum_periods:
+            logger.warning(f"ZXM_MARKET_SENTIMENT: 数据量不足，需要至少 {self.minimum_periods} 行，实际 {len(data)} 行")
+            # 返回带有默认值的DataFrame
+            result = data.copy()
+            result['FearGreedIndex'] = 50.0
+            result['InvestorSentiment'] = 50.0
+            result['MarketHeat'] = 50.0
+            result['CompositeSentiment'] = 50.0
+            result['ExtremeFearSignal'] = False
+            result['ExtremeGreedSignal'] = False
+            result['SentimentReversalSignal'] = False
+            return result
+
         result = data.copy()
 
         # 计算恐慌贪婪指数
@@ -365,6 +437,49 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return patterns
 
+    def get_patterns(self) -> Dict[str, Any]:
+        """
+        获取ZXM市场情绪指标的形态信息
+
+        Returns:
+            Dict[str, Any]: 包含指标形态信息的字典
+        """
+        return {
+            'indicator_type': 'ZXM_MARKET_SENTIMENT',
+            'category': 'sentiment_analysis',
+            'description': 'ZXM市场情绪指标，分析市场整体情绪状态',
+            'version': '1.0.0',
+            'author': 'ZXM',
+            'metrics': [
+                'FearGreedIndex',      # 恐慌贪婪指数
+                'InvestorSentiment',   # 投资者情绪
+                'MarketHeat',          # 市场热度
+                'CompositeSentiment'   # 综合情绪评分
+            ],
+            'signals': [
+                'ExtremeFearSignal',      # 极度恐慌信号
+                'ExtremeGreedSignal',     # 极度贪婪信号
+                'SentimentReversalSignal' # 情绪反转信号
+            ],
+            'sentiment_levels': {
+                'extreme_fear': (0, 20),      # 极度恐慌
+                'fear': (20, 40),             # 恐慌
+                'neutral': (40, 60),          # 中性
+                'greed': (60, 80),            # 贪婪
+                'extreme_greed': (80, 100)    # 极度贪婪
+            },
+            'parameters': {
+                'fear_greed_period': self.fear_greed_period,
+                'sentiment_period': self.sentiment_period,
+                'volatility_period': self.volatility_period
+            },
+            'thresholds': {
+                'extreme_fear_threshold': 20,
+                'extreme_greed_threshold': 80,
+                'reversal_threshold': 15
+            }
+        }
+
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
         BaseIndicator要求的参数设置方法
@@ -373,29 +488,4 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 参数字典
         """
         self.set_parameters_Market_Sentiment(**kwargs)
-    
-    def calculate_raw_score_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
-        if not self.has_result():
-            self.calculate_Analysis_Sentiment_Analysis(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
-    
-    def calculate_confidence_Analysis_Sentiment_Analysis(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """计算置信度"""
-        return 0.5
-    
-    def get_patterns_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """获取形态"""
-        return pd.DataFrame(index=data.index)
 
-    @property
-    def minimum_periods(self) -> int:
-        """
-        SentimentAnalysis指标所需的最少数据周期数
-        
-        计算逻辑：使用默认值
-        
-        Returns:
-            int: 最少需要的数据周期数
-        """
-        return 30

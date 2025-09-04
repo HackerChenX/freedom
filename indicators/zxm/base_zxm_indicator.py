@@ -59,10 +59,11 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
         Returns:
             float: 标准化后的得分
         """
-        min_score, max_score = self._score_range
-        # 将原始分数标准化到范围内
+        min_score, max_score = self._score_range  # 获取评分范围
+        # 将原始分数标准化到范围内，确保不超出边界
+        # 使用max和min函数进行边界限制
         normalized = max(min(raw_score, max_score), min_score)
-        return normalized
+        return normalized  # 返回标准化后的评分
         
     def calculate_indicator_score(self, data: pd.DataFrame, **kwargs) -> float:
         """
@@ -76,16 +77,17 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
             float: 指标得分
         """
         try:
-            # 计算原始得分
+            # 计算原始得分 - 调用子类实现的具体评分逻辑
             raw_score = self.calculate_raw_score_Indicator_Base_Zxm_Indicator(data, **kwargs)
-            
-            # 标准化得分
+
+            # 标准化得分 - 将原始得分映射到标准范围内
             normalized_score = self.normalize_score(raw_score)
-            
-            return normalized_score
+
+            return normalized_score  # 返回最终的标准化评分
         except Exception as e:
+            # 异常处理：记录错误并返回默认分数
             logger.error(f"计算指标 {self.name} 得分时出错: {e}")
-            return 0.0  # 错误情况下返回0分 
+            return 0.0  # 默认返回最低分  # 错误情况下返回0分
 
     def get_pattern_info_Indicator_Base_Zxm_Indicator(self, pattern_id: str) -> dict:
         """
@@ -97,7 +99,8 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
         Returns:
             dict: 形态信息字典
         """
-        # 默认形态信息映射
+        # 默认形态信息映射 - 定义常用的技术分析形态
+        # 这个映射表包含了ZXM指标体系中常见的形态类型
         pattern_info_map = {
             # 基础形态
             'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
@@ -111,13 +114,15 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
             'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
         }
         
-        # 默认形态信息
+        # 默认形态信息 - 当找不到特定形态时使用
+        # 提供通用的ZXM技术分析形态描述
         default_pattern = {
-            'name': 'ZXM技术分析',
-            'description': f'基于ZXM指标体系的技术分析: {pattern_id}',
-            'type': 'NEUTRAL'
+            'name': 'ZXM技术分析',  # 形态名称
+            'description': f'基于ZXM指标体系的技术分析: {pattern_id}',  # 详细描述
+            'type': 'NEUTRAL'  # 默认为中性类型
         }
-        
+
+        # 返回匹配的形态信息，如果找不到则返回默认形态
         return pattern_info_map.get(pattern_id, default_pattern)
 
     @property

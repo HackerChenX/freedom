@@ -82,6 +82,20 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """通用形态识别接口"""
         return self.get_patterns_Vix(data, **kwargs)
+
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """通用信号生成接口"""
+        signals_df = self.generate_signals_Vix(data)
+
+        # 转换为字典格式
+        signals = {}
+        if not signals_df.empty:
+            latest_signals = signals_df.iloc[-1]
+            for col in signals_df.columns:
+                if col.endswith('_signal'):
+                    signals[col] = latest_signals[col]
+
+        return signals
     
     def calculate_confidence_Indicator_Base_Indicator(self, raw_score: pd.Series, patterns: pd.DataFrame, signals: Dict) -> float:
         """计算置信度"""
@@ -804,16 +818,67 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 如果验证失败，静默处理
             pass
 
+    def calculate_raw_score(self, data: pd.DataFrame) -> Optional[float]:
+        """
+        计算VIX指标的原始评分
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Optional[float]: VIX原始评分，范围0-100
+        """
+        try:
+            if data is None or data.empty:
+                return None
+
+            result = self.calculate(data)
+            if result is None or result.empty:
+                return None
+
+            # 获取VIX值
+            vix_cols = [col for col in result.columns if 'vix' in col.lower()]
+            if not vix_cols:
+                return None
+
+            vix_values = result[vix_cols[0]].dropna()
+            if len(vix_values) == 0:
+                return None
+
+            # 计算VIX评分：基于当前VIX值相对于历史分位数
+            current_vix = vix_values.iloc[-1]
+
+            # VIX评分逻辑：
+            # - VIX < 15: 低恐慌，评分80-100
+            # - VIX 15-25: 正常恐慌，评分50-80
+            # - VIX 25-35: 高恐慌，评分20-50
+            # - VIX > 35: 极度恐慌，评分0-20
+
+            if current_vix < 15:
+                score = 80 + (15 - current_vix) * 20 / 15
+            elif current_vix < 25:
+                score = 50 + (25 - current_vix) * 30 / 10
+            elif current_vix < 35:
+                score = 20 + (35 - current_vix) * 30 / 10
+            else:
+                score = max(0, 20 - (current_vix - 35) * 20 / 15)
+
+            return min(100, max(0, score))
+
+        except Exception as e:
+            logger.error(f"VIX calculate_raw_score计算失败: {e}")
+            return None
+
     @property
     def minimum_periods(self) -> int:
         """
         Vix指标所需的最少数据周期数
-        
+
         计算逻辑：基于参数 period(10), smooth_period(5) 计算
-        
+
         Returns:
             int: 最少需要的数据周期数
         """
-        period = self._parameters.get('period', 10)
-        smooth_period = self._parameters.get('smooth_period', 5)
+        period = getattr(self, 'period', 10)
+        smooth_period = getattr(self, 'smooth_period', 5)
         return max(period, smooth_period) + 10

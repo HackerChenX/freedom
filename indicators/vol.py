@@ -12,7 +12,7 @@ import numpy as np
 from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
-from scipy import signal, stats
+# from scipy import signal, stats  # 移除scipy依赖
 import warnings
 # import talib  # 移除talib依赖
 
@@ -53,6 +53,9 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.period = period
         self.enable_cycles_analysis = enable_cycles_analysis
         self.enable_standardization = enable_standardization
+
+        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        self._minimum_periods = 5  # VOL指标最少需要5个数据点
     
     def set_parameters_Vol_Vol_Vol_vol(self, period: int = None, enable_cycles_analysis: bool = None, enable_standardization: bool = None):
         """
@@ -1714,6 +1717,11 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """兼容性方法：计算置信度"""
         return self.calculate_confidence_Vol(score, patterns, signals)
+
+    @property
+    def minimum_periods(self) -> int:
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return getattr(self, '_minimum_periods', 5)
 
 
 # 为了兼容指标注册表，创建别名

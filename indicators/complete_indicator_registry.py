@@ -85,15 +85,17 @@ class CompleteIndicatorRegistry:
         
         trend_indicators = {
             'DMA': 'indicators.dma.DMA',
-            'DMI': 'indicators.dmi.DMI', 
+            'DMI': 'indicators.dmi.DMI',
             'ADX': 'indicators.adx.ADX',
             'AROON': 'indicators.aroon.AROON',
             'SAR': 'indicators.sar.SAR',
+            'PSAR': 'indicators.sar.SAR',  # 别名
             'TRIX': 'indicators.trix.TRIX',
             'CCI': 'indicators.cci.CCI',
-            'EnhancedCCI': 'indicators.trend.enhanced_cci.EnhancedCCI',
-            'EnhancedTRIX': 'indicators.trend.enhanced_trix.EnhancedTRIX',
+            'ENHANCED_CCI': 'indicators.trend.enhanced_cci.EnhancedCCI',
+            'ENHANCED_TRIX': 'indicators.trend.enhanced_trix.EnhancedTRIX',
             'WMA': 'indicators.wma.WMA',
+            'SUPERTREND': 'indicators.supertrend.SuperTrend',
         }
         
         return self._batch_register(trend_indicators, "趋势指标")
@@ -105,13 +107,17 @@ class CompleteIndicatorRegistry:
         oscillator_indicators = {
             'KDJ': 'indicators.kdj.KDJ',
             'WR': 'indicators.wr.WR',
+            'WILLIAMS_R': 'indicators.wr.WR',  # 别名
             'CMO': 'indicators.cmo.CMO',
             'STOCHRSI': 'indicators.stochrsi.STOCHRSI',
-            'EnhancedRSI': 'indicators.enhanced_rsi.EnhancedRSI',
-            'EnhancedKDJ': 'indicators.oscillator.enhanced_kdj.EnhancedKDJ',
-            'EnhancedWR': 'indicators.enhanced_wr.EnhancedWR',
+            'STOCH': 'indicators.stochrsi.STOCHRSI',  # 别名
+            'ENHANCED_RSI': 'indicators.enhanced_rsi.EnhancedRSI',
+            'ENHANCED_KDJ': 'indicators.oscillator.enhanced_kdj.EnhancedKDJ',
+            'ENHANCED_WR': 'indicators.enhanced_wr.EnhancedWR',
             'MOMENTUM': 'indicators.momentum.MOMENTUM',
             'ROC': 'indicators.roc.ROC',
+            'ROC_OSCILLATOR': 'indicators.roc.ROC',  # 别名
+            'ULTIMATE': 'indicators.ultimate.Ultimate',
         }
         
         return self._batch_register(oscillator_indicators, "振荡器指标")
@@ -130,6 +136,7 @@ class CompleteIndicatorRegistry:
             'MFI': 'indicators.mfi.MFI',
             'PVT': 'indicators.pvt.PVT',
             'CHAIKIN': 'indicators.chaikin.CHAIKIN',
+            'FORCE_INDEX': 'indicators.force_index.ForceIndex',
         }
         
         return self._batch_register(volume_indicators, "成交量指标")
@@ -143,6 +150,9 @@ class CompleteIndicatorRegistry:
             'KC': 'indicators.kc.KC',
             'VIX': 'indicators.vix.VIX',
             'STDDEV': 'indicators.vol.STDDEV',
+            'VOLATILITY': 'indicators.vol.STDDEV',  # 别名
+            'CHAIKIN_VOLATILITY': 'indicators.chaikin_volatility.ChaikinVolatility',
+            'GARMAN_KLASS': 'indicators.garman_klass.GarmanKlass',
         }
         
         return self._batch_register(volatility_indicators, "波动性指标")
@@ -181,7 +191,7 @@ class CompleteIndicatorRegistry:
             'ZXM_VOLUME_ENERGY': 'indicators.zxm.market_breadth.ZxmmarketBreadth',
             'ZXM_PRICE_POSITION': 'indicators.zxm.diagnostics.ZXMDiagnostics',
             'ZXM_TECHNICAL_FORM': 'indicators.zxm.selection_model.SelectionModel',
-            'ZXM_MARKET_SENTIMENT': 'indicators.sentiment_analysis.MarketSentiment',
+            'ZXM_MARKET_SENTIMENT': 'indicators.zxm.market_breadth.ZxmmarketBreadth',
             'ZXM_CHIP_DISTRIBUTION': 'indicators.chip_distribution.ChipDistribution',
             'ZXM_FUND_FLOW': 'indicators.institutional_behavior.FundFlow',
             'ZXM_INSTITUTION_BEHAVIOR': 'indicators.institutional_behavior.InstitutionalBehavior',
@@ -196,6 +206,11 @@ class CompleteIndicatorRegistry:
             'ZXM_PERFORMANCE_ATTRIBUTION': 'indicators.scoring_framework.PerformanceAttribution',
             'ZXM_ALPHA_GENERATION': 'indicators.scoring_framework.AlphaGeneration',
             'ZXM_BETA_HEDGING': 'indicators.scoring_framework.BetaHedging',
+
+            # 新增的ZXM指标
+            'ZXM_LIQUIDITY_ANALYSIS': 'indicators.zxm.zxm_liquidity_analysis.ZXMLiquidityAnalysis',
+            'ZXM_VOLATILITY_FORECAST': 'indicators.zxm.zxm_volatility_forecast.ZXMVolatilityForecast',
+            'ZXM_CORRELATION_MATRIX': 'indicators.zxm.zxm_correlation_matrix.ZXMCorrelationMatrix',
         }
         
         return self._batch_register(zxm_indicators, "ZXM体系指标")
@@ -226,6 +241,8 @@ class CompleteIndicatorRegistry:
             'WEDGE': 'indicators.pattern.advanced_candlestick_patterns.Wedge',
             'FLAG': 'indicators.pattern.advanced_candlestick_patterns.Flag',
             'PENNANT': 'indicators.pattern.advanced_candlestick_patterns.Pennant',
+            'RECTANGLE': 'indicators.pattern.rectangle.Rectangle',
+            'CUP_AND_HANDLE': 'indicators.pattern.cup_and_handle.CupAndHandle',
         }
         
         return self._batch_register(pattern_indicators, "形态识别指标")
@@ -235,9 +252,9 @@ class CompleteIndicatorRegistry:
         logger.info("注册增强指标...")
         
         enhanced_indicators = {
-            'EnhancedMACD': 'indicators.enhanced_macd.EnhancedMACD',
-            'EnhancedBOLL': 'indicators.boll.EnhancedBOLL',
-            'EnhancedSTOCHRSI': 'indicators.enhanced_stochrsi.EnhancedSTOCHRSI',
+            'ENHANCED_MACD': 'indicators.enhanced_macd.EnhancedMACD',
+            'ENHANCED_BOLL': 'indicators.boll.EnhancedBOLL',
+            'ENHANCED_STOCHRSI': 'indicators.enhanced_stochrsi.EnhancedSTOCHRSI',
         }
         
         return self._batch_register(enhanced_indicators, "增强指标")
@@ -259,9 +276,10 @@ class CompleteIndicatorRegistry:
             'MTM': 'indicators.mtm.MTM',
             'RSIMA': 'indicators.rsima.RSIMA',
             
-            # 复合指标  
+            # 复合指标
             'COMPOSITE': 'indicators.composite.Composite',
             'SYNERGY': 'indicators.synergy.SynergyIndicator',
+            'UNIFIED_MA': 'indicators.unified_ma.UNIFIED_MA',
             
             # 评分框架
             'MACD_SCORE': 'indicators.macd_score.MACDScore',

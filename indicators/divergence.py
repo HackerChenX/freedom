@@ -187,10 +187,12 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         # 如果没有提供指标名称，则默认计算价格与成交量的背离
         if indicator_name is None:
+            # 计算价格与成交量的背离
+            result = self.price_volume_divergence(data, lookback_period, confirm_period)
             # 添加形态识别和信号生成
-            self = self.add_pattern_detection(self)
-            self = self.add_signal_generation(self)
-            return self.price_volume_divergence(data, lookback_period, confirm_period)
+            result = self.add_pattern_detection(result)
+            result = self.add_signal_generation(result)
+            return result
         
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low", indicator_name])

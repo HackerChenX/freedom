@@ -51,7 +51,7 @@ class EnhancedMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.fast_period = fast_period
         self.slow_period = slow_period
         self.signal_period = signal_period
-        self.name = "EnhancedMACD"
+        self.name = "ENHANCED_MACD_TREND"
         self.description = "增强型MACD指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.indicator_type = "trend"  # 指标类型：趋势类
         self.sensitivity = sensitivity
@@ -156,11 +156,12 @@ class EnhancedMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 评分序列，取值范围0-100
         """
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
         # 确保已计算指标
-        if not self.has_result():
-            result = self.calculate_Macd_Enhanced_Macd(data)
-        else:
-            result = self._result
+        # if not self.has_result():
+        result = self.calculate_Macd_Enhanced_Macd(data)
+        # else:
+        #     result = self._result
         
         # 初始化评分，默认为50分（中性）
         score = pd.Series(50.0, index=data.index)
@@ -1152,3 +1153,45 @@ class EnhancedMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'strength': 'medium',
             'type': 'neutral'
         })
+
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_enhancedmacd(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        # 基于MACD信号强度计算置信度
+        if len(score) == 0:
+            return 0.5
+
+        # 计算评分的标准差，标准差越小置信度越高
+        score_std = score.std()
+        if pd.isna(score_std) or score_std == 0:
+            return 0.8
+
+        # 标准差越小，置信度越高
+        confidence = max(0.3, min(0.9, 1.0 - score_std / 50.0))
+        return confidence
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Macd_Enhanced_Macd_Enhanced_Macd(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Macd_Enhanced_Macd(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        if 'fast_period' in kwargs:
+            self.fast_period = kwargs['fast_period']
+        if 'slow_period' in kwargs:
+            self.slow_period = kwargs['slow_period']
+        if 'signal_period' in kwargs:
+            self.signal_period = kwargs['signal_period']
+
+    @property
+    def minimum_periods(self) -> int:
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return max(self.slow_period, 26) + self.signal_period

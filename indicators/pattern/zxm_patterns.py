@@ -23,7 +23,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM体系模式识别指标"""
         super().__init__()
-        self.name = "ZXMPattern"
+        self.name = "ZXM_PATTERNS"
         self.description = "基于ZXM体系的买点和吸筹形态识别指标"
 
         # 设置默认参数
@@ -1019,6 +1019,29 @@ if __name__ == "__main__":
         """计算置信度"""
         return self.calculate_confidence_Patterns_Zxm_Patterns(score, patterns, signals)
 
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_zxmpatterns(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        # 转换patterns格式以适配原有方法
+        patterns_df = pd.DataFrame({'patterns': patterns}) if patterns else pd.DataFrame()
+        return self.calculate_confidence_Patterns_Zxm_Patterns(score, patterns_df, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Patterns_Zxm_Patterns(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        return self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
+
     def set_parameters(self, **kwargs):
         """设置参数"""
         return self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
@@ -1035,26 +1058,7 @@ if __name__ == "__main__":
         """注册形态到全局注册表"""
         return self.register_patterns_Patterns_Zxm_Patterns()
 
-    # 实现BaseIndicator的抽象方法 - 使用正确的方法名
-    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """BaseIndicator的抽象方法实现"""
-        return self._calculate_zxmpatterns(data, **kwargs)
 
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """BaseIndicator的抽象方法实现"""
-        return self.calculate_confidence_Patterns_Zxm_Patterns(score, patterns, signals)
-
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """BaseIndicator的抽象方法实现"""
-        return self.calculate_raw_score_Patterns_Zxm_Patterns(data, **kwargs)
-
-    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """BaseIndicator的抽象方法实现"""
-        return self.get_patterns_Patterns_Zxm_Patterns(data, **kwargs)
-
-    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
-        """BaseIndicator的抽象方法实现"""
-        return self.set_parameters_Patterns_Zxm_Patterns(**kwargs)
 
 
 # 为了向后兼容，创建别名

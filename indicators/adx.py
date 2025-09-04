@@ -63,7 +63,13 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         # 更新自定义参数
         if params:
             self.params.update(params)
-        
+
+        # 处理kwargs中的参数
+        if 'period' in kwargs:
+            self.params['period'] = kwargs['period']
+        if 'strong_trend' in kwargs:
+            self.params['strong_trend'] = kwargs['strong_trend']
+
         # 注册ADX形态
         self._register_adx_patterns()
 
@@ -71,6 +77,24 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         from indicators.common import crossover, crossunder
         self.crossover = crossover
         self.crossunder = crossunder
+
+    @property
+    def period(self) -> int:
+        """获取ADX计算周期"""
+        return self.params.get("period", 14)
+
+    @period.setter
+    def period(self, value: int):
+        """设置ADX计算周期"""
+        if isinstance(value, int) and 5 <= value <= 50:
+            self.params["period"] = value
+        else:
+            logger.warning(f"无效的period参数: {value}, 保持原值")
+
+    @property
+    def strong_trend(self) -> float:
+        """获取强趋势阈值"""
+        return self.params.get("strong_trend", 25)
 
     def _register_adx_patterns(self):
         """
@@ -1431,7 +1455,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         Returns:
             int: 最少需要的数据周期数
         """
-        period = getattr(self, 'period', 14)
+        period = self.period
         return max(period * 2 + 5, 35)  # ADX需要更多数据进行平滑，最少35个周期
 
 

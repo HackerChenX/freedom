@@ -52,25 +52,25 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典
         """
+        # 合并默认参数和用户参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)
+
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
             validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
+
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MFI', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
-                
+
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
             pass
-        
+
         # 设置参数
         self.period = params.get('period', 14)
         self.overbought = params.get('overbought', 80.0)
@@ -629,13 +629,131 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return patterns
 
+    def get_signals(self, data: pd.DataFrame) -> Optional[Dict[str, Any]]:
+        """
+        获取MFI指标的交易信号
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Optional[Dict[str, Any]]: 交易信号字典
+        """
+        try:
+            if data is None or data.empty:
+                return None
+
+            result = self.calculate(data)
+            if result is None or result.empty:
+                return None
+
+            # 获取MFI值
+            mfi_cols = [col for col in result.columns if 'mfi' in col.lower()]
+            if not mfi_cols:
+                return None
+
+            mfi_values = result[mfi_cols[0]].dropna()
+            if len(mfi_values) < 3:
+                return None
+
+            current_mfi = mfi_values.iloc[-1]
+            prev_mfi = mfi_values.iloc[-2]
+
+            # MFI信号逻辑
+            signal_type = 'neutral'
+            signal_strength = 'medium'
+
+            if current_mfi < 20 and prev_mfi >= 20:
+                signal_type = 'bullish'  # 超卖反弹
+                signal_strength = 'strong'
+            elif current_mfi > 80 and prev_mfi <= 80:
+                signal_type = 'bearish'  # 超买回调
+                signal_strength = 'strong'
+            elif current_mfi < 30 and prev_mfi >= 30:
+                signal_type = 'bullish'
+                signal_strength = 'medium'
+            elif current_mfi > 70 and prev_mfi <= 70:
+                signal_type = 'bearish'
+                signal_strength = 'medium'
+
+            return {
+                'signal_type': signal_type,
+                'signal_strength': signal_strength,
+                'current_mfi': current_mfi,
+                'previous_mfi': prev_mfi,
+                'overbought': current_mfi > 80,
+                'oversold': current_mfi < 20,
+                'description': f'MFI资金流量信号: {signal_type} ({signal_strength})'
+            }
+
+        except Exception as e:
+            logger.error(f"MFI get_signals计算失败: {e}")
+            return None
+
+    def calculate_raw_score(self, data: pd.DataFrame) -> Optional[float]:
+        """
+        计算MFI指标的原始评分
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Optional[float]: MFI原始评分，范围0-100
+        """
+        try:
+            if data is None or data.empty:
+                return None
+
+            result = self.calculate(data)
+            if result is None or result.empty:
+                return None
+
+            # 获取MFI值
+            mfi_cols = [col for col in result.columns if 'mfi' in col.lower()]
+            if not mfi_cols:
+                return None
+
+            mfi_values = result[mfi_cols[0]].dropna()
+            if len(mfi_values) == 0:
+                return None
+
+            current_mfi = mfi_values.iloc[-1]
+
+            # MFI评分逻辑：基于MFI值的位置
+            # MFI 40-60: 中性区域，评分80-100
+            # MFI 20-40, 60-80: 偏离中性，评分60-80
+            # MFI 0-20, 80-100: 极端区域，评分40-60
+
+            if 40 <= current_mfi <= 60:
+                # 中性区域，评分最高
+                distance_from_center = abs(current_mfi - 50)
+                score = 100 - distance_from_center * 2
+            elif 20 <= current_mfi < 40:
+                # 偏向超卖
+                score = 60 + (current_mfi - 20) * 1
+            elif 60 < current_mfi <= 80:
+                # 偏向超买
+                score = 60 + (80 - current_mfi) * 1
+            elif current_mfi < 20:
+                # 超卖区域
+                score = 40 + current_mfi * 1
+            else:  # current_mfi > 80
+                # 超买区域
+                score = 40 + (100 - current_mfi) * 1
+
+            return min(100, max(0, score))
+
+        except Exception as e:
+            logger.error(f"MFI calculate_raw_score计算失败: {e}")
+            return None
+
     @property
     def minimum_periods(self) -> int:
         """
         Mfi指标所需的最少数据周期数
-        
+
         计算逻辑：使用默认值
-        
+
         Returns:
             int: 最少需要的数据周期数
         """

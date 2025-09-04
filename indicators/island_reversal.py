@@ -164,13 +164,26 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算岛形反转指标的主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            包含岛形反转指标的DataFrame
+        """
+        return self.calculate_Reversal(data, **kwargs)
+
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """设置基础指标参数"""
         return self.set_parameters_Reversal(**kwargs)
 
     def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """基础指标计算方法"""
-        return self._calculate_islandreversal(data, *args, **kwargs)
+        return self.calculate_Reversal(data, *args, **kwargs)
 
     def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算指标置信度"""

@@ -36,7 +36,60 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'volume_breadth': 0.15,       # 成交量宽度
             'momentum_breadth': 0.15      # 动量宽度
         }
-        
+
+    def calculate(self, data: pd.DataFrame, *args, **kwargs) -> Dict[str, any]:
+        """
+        计算ZXM市场情绪指标
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            *args: 位置参数
+            **kwargs: 关键字参数
+
+        Returns:
+            Dict[str, any]: 包含市场情绪指标的字典
+        """
+        try:
+            if data is None or data.empty:
+                return {}
+
+            # 调用内部计算方法
+            result_df = self._calculate_marketbreadth(data, *args, **kwargs)
+
+            if result_df.empty:
+                return {}
+
+            # 转换为字典格式
+            result = {}
+
+            # 添加主要指标
+            if 'market_breadth_indicator' in result_df.columns:
+                result['market_sentiment'] = result_df['market_breadth_indicator'].iloc[-1] if len(result_df) > 0 else 50.0
+            else:
+                result['market_sentiment'] = 50.0  # 默认中性情绪
+
+            # 添加其他关键指标
+            if 'ad_ratio' in result_df.columns:
+                result['advance_decline_ratio'] = result_df['ad_ratio'].iloc[-1] if len(result_df) > 0 else 1.0
+
+            if 'market_state' in result_df.columns:
+                result['market_state'] = result_df['market_state'].iloc[-1] if len(result_df) > 0 else 'neutral'
+
+            # 添加情绪强度
+            sentiment_value = result.get('market_sentiment', 50.0)
+            if sentiment_value > 70:
+                result['sentiment_strength'] = 'bullish'
+            elif sentiment_value < 30:
+                result['sentiment_strength'] = 'bearish'
+            else:
+                result['sentiment_strength'] = 'neutral'
+
+            return result
+
+        except Exception as e:
+            logger.error(f"ZXM_MARKET_SENTIMENT计算失败: {e}")
+            return {}
+
     def _calculate_marketbreadth(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         计算市场宽度指标
@@ -140,11 +193,11 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         scores = pd.Series(50.0, index=dates, name='raw_score')  # 默认评分50分（中性）
         
         # 计算市场宽度指标
-        breadth_result = self.calculate(data, *args, **kwargs)
-        
+        breadth_result = self._calculate_marketbreadth(data, *args, **kwargs)
+
         if breadth_result.empty:
             return scores
-        
+
         # 如果有市场宽度指标，直接使用
         if 'market_breadth_indicator' in breadth_result.columns:
             scores = breadth_result['market_breadth_indicator']
@@ -985,13 +1038,44 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             result['market_state'] = 'neutral'
 
         return result
+    def get_patterns(self) -> Dict[str, any]:
+        """
+        获取ZXM市场情绪指标的形态信息
+
+        Returns:
+            Dict[str, any]: 包含形态信息的字典
+        """
+        try:
+            return {
+                'indicator_type': 'ZXM_MARKET_SENTIMENT',
+                'category': 'market_sentiment',
+                'description': 'ZXM市场情绪分析指标',
+                'signals': ['bullish', 'bearish', 'neutral'],
+                'thresholds': {
+                    'bullish': 70,
+                    'bearish': 30,
+                    'neutral_range': [30, 70]
+                },
+                'components': [
+                    'advance_decline_ratio',
+                    'new_highs_lows_ratio',
+                    'percentage_above_ma',
+                    'sector_strength',
+                    'volume_breadth',
+                    'momentum_breadth'
+                ]
+            }
+        except Exception as e:
+            logger.error(f"ZXM_MARKET_SENTIMENT get_patterns失败: {e}")
+            return {}
+
     @property
     def minimum_periods(self) -> int:
         """
         ZxmmarketBreadth指标所需的最少数据周期数
-        
+
         计算逻辑：使用默认值
-        
+
         Returns:
             int: 最少需要的数据周期数
         """

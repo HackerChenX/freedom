@@ -193,7 +193,7 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
             result = self._calculate_complex_patterns_Advanced_Candlestick_Patterns(data, result)
 
         # 确保所有高级形态列都存在（即使数据不足）
-        all_advanced_pattern_names = [pattern.value for pattern in Advanced_pattern_type]
+        all_advanced_pattern_names = [pattern.value for pattern in AdvancedPatternType]
         for pattern_name in all_advanced_pattern_names:
             if pattern_name not in result.columns:
                 result[pattern_name] = False
@@ -228,40 +228,40 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
         
         # 分类定义各种形态的交易信号
         bullish_patterns = [
-            Advanced_pattern_type.THREE_WHITE_SOLDIERS.value,
-            Advanced_pattern_type.THREE_INSIDE_UP.value,
-            Advanced_pattern_type.THREE_OUTSIDE_UP.value,
-            Advanced_pattern_type.RISING_THREE_METHODS.value,
-            Advanced_pattern_type.MAT_HOLD.value,
-            Advanced_pattern_type.LADDER_BOTTOM.value,
-            Advanced_pattern_type.BREAKAWAY.value,
-            Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value,
-            Advanced_pattern_type.DOUBLE_BOTTOM.value,
-            Advanced_pattern_type.TRIPLE_BOTTOM.value,
-            Advanced_pattern_type.DIAMOND_BOTTOM.value,
-            Advanced_pattern_type.CUP_WITH_HANDLE.value
+            AdvancedPatternType.THREE_WHITE_SOLDIERS.value,
+            AdvancedPatternType.THREE_INSIDE_UP.value,
+            AdvancedPatternType.THREE_OUTSIDE_UP.value,
+            AdvancedPatternType.RISING_THREE_METHODS.value,
+            AdvancedPatternType.MAT_HOLD.value,
+            AdvancedPatternType.LADDER_BOTTOM.value,
+            AdvancedPatternType.BREAKAWAY.value,
+            AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value,
+            AdvancedPatternType.DOUBLE_BOTTOM.value,
+            AdvancedPatternType.TRIPLE_BOTTOM.value,
+            AdvancedPatternType.DIAMOND_BOTTOM.value,
+            AdvancedPatternType.CUP_WITH_HANDLE.value
         ]
-        
+
         bearish_patterns = [
-            Advanced_pattern_type.THREE_BLACK_CROWS.value,
-            Advanced_pattern_type.THREE_INSIDE_DOWN.value,
-            Advanced_pattern_type.THREE_OUTSIDE_DOWN.value,
-            Advanced_pattern_type.FALLING_THREE_METHODS.value,
-            Advanced_pattern_type.TOWER_TOP.value,
-            Advanced_pattern_type.HEAD_SHOULDERS_TOP.value,
-            Advanced_pattern_type.DOUBLE_TOP.value,
-            Advanced_pattern_type.TRIPLE_TOP.value,
-            Advanced_pattern_type.DIAMOND_TOP.value
+            AdvancedPatternType.THREE_BLACK_CROWS.value,
+            AdvancedPatternType.THREE_INSIDE_DOWN.value,
+            AdvancedPatternType.THREE_OUTSIDE_DOWN.value,
+            AdvancedPatternType.FALLING_THREE_METHODS.value,
+            AdvancedPatternType.TOWER_TOP.value,
+            AdvancedPatternType.HEAD_SHOULDERS_TOP.value,
+            AdvancedPatternType.DOUBLE_TOP.value,
+            AdvancedPatternType.TRIPLE_TOP.value,
+            AdvancedPatternType.DIAMOND_TOP.value
         ]
-        
+
         neutral_patterns = [
-            Advanced_pattern_type.STICK_SANDWICH.value,
-            Advanced_pattern_type.KICKING.value,
-            Advanced_pattern_type.UNIQUE_THREE_RIVER.value,
-            Advanced_pattern_type.TRIANGLE_ASCENDING.value,
-            Advanced_pattern_type.TRIANGLE_DESCENDING.value,
-            Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value,
-            Advanced_pattern_type.RECTANGLE.value
+            AdvancedPatternType.STICK_SANDWICH.value,
+            AdvancedPatternType.KICKING.value,
+            AdvancedPatternType.UNIQUE_THREE_RIVER.value,
+            AdvancedPatternType.TRIANGLE_ASCENDING.value,
+            AdvancedPatternType.TRIANGLE_DESCENDING.value,
+            AdvancedPatternType.TRIANGLE_SYMMETRICAL.value,
+            AdvancedPatternType.RECTANGLE.value
         ]
         
         # 创建买入信号
@@ -321,7 +321,8 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
         
         # 计算实体大小
         body_size = np.abs(close_prices - open_prices)
-        
+        avg_body_size = np.mean(body_size)  # 平均实体大小
+
         # 初始化结果数组
         n = len(data)
         three_white_soldiers = np.zeros(n, dtype=bool)
@@ -347,18 +348,19 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                 (high_prices[i] - close_prices[i]) < body_size[i] * 0.3):
                 three_white_soldiers[i] = True
             
-            # 三黑鸦：连续三根阴线，每根都收于接近最低点，开盘价在前一根实体内
+            # 三黑鸦：连续三根阴线，每根都收于接近最低点，呈现下降趋势
             if (bearish[i-2] and bearish[i-1] and bearish[i] and
-                open_prices[i-2] > close_prices[i-2] * 1.01 and  # 第一根实体足够大
-                open_prices[i-1] > close_prices[i-1] * 1.01 and  # 第二根实体足够大
-                open_prices[i] > close_prices[i] * 1.01 and      # 第三根实体足够大
-                open_prices[i-1] < open_prices[i-2] and        # 每根的开盘价低于前一根
-                open_prices[i] < open_prices[i-1] and
+                body_size[i-2] > avg_body_size * 0.5 and  # 第一根实体足够大
+                body_size[i-1] > avg_body_size * 0.5 and  # 第二根实体足够大
+                body_size[i] > avg_body_size * 0.5 and    # 第三根实体足够大
                 close_prices[i-1] < close_prices[i-2] and      # 每根的收盘价低于前一根
                 close_prices[i] < close_prices[i-1] and
-                (close_prices[i-2] - low_prices[i-2]) < body_size[i-2] * 0.3 and  # 下影线短
-                (close_prices[i-1] - low_prices[i-1]) < body_size[i-1] * 0.3 and
-                (close_prices[i] - low_prices[i]) < body_size[i] * 0.3):
+                (close_prices[i-2] - low_prices[i-2]) < body_size[i-2] * 0.5 and  # 下影线相对较短
+                (close_prices[i-1] - low_prices[i-1]) < body_size[i-1] * 0.5 and
+                (close_prices[i] - low_prices[i]) < body_size[i] * 0.5 and
+                # 开盘价条件：第二根和第三根开盘价在前一根实体范围内或略低
+                open_prices[i-1] <= open_prices[i-2] and
+                open_prices[i] <= open_prices[i-1]):
                 three_black_crows[i] = True
             
             # 三内涨：大阴线+小阳线在阴线实体内+突破阴线收盘价的阳线
@@ -394,10 +396,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
         # 添加到结果
         result[AdvancedPatternType.THREE_WHITE_SOLDIERS.value] = three_white_soldiers
         result[AdvancedPatternType.THREE_BLACK_CROWS.value] = three_black_crows
-        result[Advanced_pattern_type.THREE_INSIDE_UP.value] = three_inside_up
-        result[Advanced_pattern_type.THREE_INSIDE_DOWN.value] = three_inside_down
-        result[Advanced_pattern_type.THREE_OUTSIDE_UP.value] = three_outside_up
-        result[Advanced_pattern_type.THREE_OUTSIDE_DOWN.value] = three_outside_down
+        result[AdvancedPatternType.THREE_INSIDE_UP.value] = three_inside_up
+        result[AdvancedPatternType.THREE_INSIDE_DOWN.value] = three_inside_down
+        result[AdvancedPatternType.THREE_OUTSIDE_UP.value] = three_outside_up
+        result[AdvancedPatternType.THREE_OUTSIDE_DOWN.value] = three_outside_down
         
         return result
     
@@ -494,10 +496,10 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                 logger.debug(f"计算棍心三明治时出错: {e}")
         
         # 添加到结果
-        result[Advanced_pattern_type.RISING_THREE_METHODS.value] = rising_three_methods
-        result[Advanced_pattern_type.FALLING_THREE_METHODS.value] = falling_three_methods
-        result[Advanced_pattern_type.MAT_HOLD.value] = mat_hold
-        result[Advanced_pattern_type.STICK_SANDWICH.value] = stick_sandwich
+        result[AdvancedPatternType.RISING_THREE_METHODS.value] = rising_three_methods
+        result[AdvancedPatternType.FALLING_THREE_METHODS.value] = falling_three_methods
+        result[AdvancedPatternType.MAT_HOLD.value] = mat_hold
+        result[AdvancedPatternType.STICK_SANDWICH.value] = stick_sandwich
         
         return result
     
@@ -652,11 +654,11 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                     logger.debug(f"计算奇特三河时出错: {e}")
         
         # 添加到结果
-        result[Advanced_pattern_type.LADDER_BOTTOM.value] = ladder_bottom
-        result[Advanced_pattern_type.TOWER_TOP.value] = tower_top
-        result[Advanced_pattern_type.BREAKAWAY.value] = breakaway
-        result[Advanced_pattern_type.KICKING.value] = kicking
-        result[Advanced_pattern_type.UNIQUE_THREE_RIVER.value] = unique_three_river
+        result[AdvancedPatternType.LADDER_BOTTOM.value] = ladder_bottom
+        result[AdvancedPatternType.TOWER_TOP.value] = tower_top
+        result[AdvancedPatternType.BREAKAWAY.value] = breakaway
+        result[AdvancedPatternType.KICKING.value] = kicking
+        result[AdvancedPatternType.UNIQUE_THREE_RIVER.value] = unique_three_river
         
         return result
     
@@ -829,22 +831,62 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                     triangle_symmetrical[i+19] = True
         
         # 将识别结果添加到结果数据框
-        result[Advanced_pattern_type.HEAD_SHOULDERS_TOP.value] = head_shoulders_top
-        result[Advanced_pattern_type.HEAD_SHOULDERS_BOTTOM.value] = head_shoulders_bottom
-        result[Advanced_pattern_type.DOUBLE_TOP.value] = double_top
-        result[Advanced_pattern_type.DOUBLE_BOTTOM.value] = double_bottom
-        result[Advanced_pattern_type.TRIPLE_TOP.value] = triple_top
-        result[Advanced_pattern_type.TRIPLE_BOTTOM.value] = triple_bottom
-        result[Advanced_pattern_type.TRIANGLE_ASCENDING.value] = triangle_ascending
-        result[Advanced_pattern_type.TRIANGLE_DESCENDING.value] = triangle_descending
-        result[Advanced_pattern_type.TRIANGLE_SYMMETRICAL.value] = triangle_symmetrical
-        result[Advanced_pattern_type.RECTANGLE.value] = rectangle
-        result[Advanced_pattern_type.DIAMOND_TOP.value] = diamond_top
-        result[Advanced_pattern_type.DIAMOND_BOTTOM.value] = diamond_bottom
-        result[Advanced_pattern_type.CUP_WITH_HANDLE.value] = cup_with_handle
+        result[AdvancedPatternType.HEAD_SHOULDERS_TOP.value] = head_shoulders_top
+        result[AdvancedPatternType.HEAD_SHOULDERS_BOTTOM.value] = head_shoulders_bottom
+        result[AdvancedPatternType.DOUBLE_TOP.value] = double_top
+        result[AdvancedPatternType.DOUBLE_BOTTOM.value] = double_bottom
+        result[AdvancedPatternType.TRIPLE_TOP.value] = triple_top
+        result[AdvancedPatternType.TRIPLE_BOTTOM.value] = triple_bottom
+        result[AdvancedPatternType.TRIANGLE_ASCENDING.value] = triangle_ascending
+        result[AdvancedPatternType.TRIANGLE_DESCENDING.value] = triangle_descending
+        result[AdvancedPatternType.TRIANGLE_SYMMETRICAL.value] = triangle_symmetrical
+        result[AdvancedPatternType.RECTANGLE.value] = rectangle
+        result[AdvancedPatternType.DIAMOND_TOP.value] = diamond_top
+        result[AdvancedPatternType.DIAMOND_BOTTOM.value] = diamond_bottom
+        result[AdvancedPatternType.CUP_WITH_HANDLE.value] = cup_with_handle
         
         return result
-    
+
+    def get_patterns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        获取形态识别结果
+
+        Args:
+            data: 包含OHLC数据的DataFrame
+
+        Returns:
+            pd.DataFrame: 包含形态识别结果的DataFrame
+        """
+        try:
+            # 调用calculate方法获取完整结果
+            result = self.calculate(data)
+
+            if result is None or result.empty:
+                return pd.DataFrame()
+
+            # 返回形态相关的列
+            pattern_columns = []
+            for col in result.columns:
+                # 包含中文形态名称和英文形态名称
+                if any(pattern in col.lower() for pattern in [
+                    'doji', 'hammer', 'star', 'engulfing', 'harami', 'piercing',
+                    'cloud', 'morning', 'evening', 'soldiers', 'crows', 'triangle',
+                    'head', 'shoulders', 'double', 'triple', 'diamond', 'cup'
+                ]) or any(pattern in col for pattern in [
+                    '三白兵', '三黑鸦', '三内', '三外', '三法', '头肩', '双顶', '双底',
+                    '三重', '三角', '矩形', '钻石', '杯柄'
+                ]):
+                    pattern_columns.append(col)
+
+            if pattern_columns:
+                return result[pattern_columns].copy()
+            else:
+                return result.copy()
+
+        except Exception as e:
+            logger.error(f"获取形态识别结果失败: {e}")
+            return pd.DataFrame()
+
     def _calculate_signal_strength_Advanced_Candlestick_Patterns(self, indicator_values: pd.DataFrame) -> pd.Series:
         """
         计算信号强度
@@ -1997,8 +2039,8 @@ class AdvancedCandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeri
                     signal_strength[pattern_mask] = -0.7
 
         # 处理特殊形态
-        if Advanced_pattern_type.BREAKAWAY.value in self._result.columns:
-            breakaway_mask = self._result[Advanced_pattern_type.BREAKAWAY.value]
+        if AdvancedPatternType.BREAKAWAY.value in self._result.columns:
+            breakaway_mask = self._result[AdvancedPatternType.BREAKAWAY.value]
             if breakaway_mask.any() and len(data) >= 5:
                 # 简单趋势判断
                 price_change_5d = data['close'].pct_change(5)

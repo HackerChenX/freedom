@@ -32,17 +32,20 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, params: Dict[str, Any] = None):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化趋势强度指标
-        
+
         Args:
             params: 参数字典，可包含：
                 - lookback_period: 回溯周期，默认为20
                 - min_strength: 最小强度阈值，默认为30
                 - strong_threshold: 强趋势阈值，默认为70
         """
-        super().__init__(name="TrendStrength", description="趋势强度指标")
+        # 🔧 Ultra Think修复：修复初始化问题
+        super().__init__()
+        self.name = "TREND_STRENGTH"
+        self.description = "趋势强度指标"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
         # 设置默认参数
         self.params = {
@@ -54,7 +57,20 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 更新自定义参数
         if params:
             self.params.update(params)
-    
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算趋势强度指标 - 主要入口方法
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+
+        Returns:
+            添加了趋势强度指标的DataFrame
+        """
+        return self._calculate_trendstrength(data, **kwargs)
+
     def _calculate_trendstrength(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算趋势强度指标
@@ -73,13 +89,89 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         min_strength = self.params["min_strength"]
         strong_threshold = self.params["strong_threshold"]
         
+        # 🔧 Ultra Think修复：移除提前返回，确保核心计算代码能执行
         # 确保数据有足够的长度
         if len(df) < lookback_period + 1:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({lookback_period + 1})，返回原始数据")
-            df['trend_strength'] = np.nan
-            df['trend_direction'] = np.nan
-            df['trend_category'] = np.nan
-            
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({lookback_period + 1})，使用可用数据计算")
+            # 不提前返回，继续执行计算
+
+        # 🔧 Ultra Think修复：添加真实的趋势强度计算算法
+        # 1. 计算价格变化率
+        df['price_change'] = df['close'].pct_change()
+
+        # 2. 计算移动平均趋势
+        short_ma = df['close'].rolling(window=min(10, len(df)), min_periods=1).mean()
+        long_ma = df['close'].rolling(window=min(lookback_period, len(df)), min_periods=1).mean()
+
+        # 3. 计算趋势方向
+        trend_direction = []
+        for i in range(len(df)):
+            if i < 1:
+                trend_direction.append('neutral')
+            else:
+                if short_ma.iloc[i] > long_ma.iloc[i]:
+                    if short_ma.iloc[i] > short_ma.iloc[i-1]:
+                        trend_direction.append('uptrend')
+                    else:
+                        trend_direction.append('neutral')
+                elif short_ma.iloc[i] < long_ma.iloc[i]:
+                    if short_ma.iloc[i] < short_ma.iloc[i-1]:
+                        trend_direction.append('downtrend')
+                    else:
+                        trend_direction.append('neutral')
+                else:
+                    trend_direction.append('neutral')
+
+        df['trend_direction'] = trend_direction
+
+        # 4. 计算趋势强度 (0-100)
+        trend_strength = []
+        for i in range(len(df)):
+            if i < lookback_period:
+                trend_strength.append(50.0)  # 默认中性强度
+                continue
+
+            # 计算价格相对于移动平均的偏离程度
+            price_deviation = abs(df['close'].iloc[i] - long_ma.iloc[i]) / long_ma.iloc[i]
+
+            # 计算价格变化的一致性
+            recent_changes = df['price_change'].iloc[i-min(5, i):i+1]
+            if len(recent_changes) > 0:
+                consistency = abs(recent_changes.mean()) / (recent_changes.std() + 1e-8)
+            else:
+                consistency = 0
+
+            # 综合计算趋势强度
+            strength = min(100, max(0, (price_deviation * 1000 + consistency * 20) * 2))
+            trend_strength.append(strength)
+
+        df['trend_strength'] = trend_strength
+
+        # 5. 计算趋势类别
+        trend_category = []
+        for i in range(len(df)):
+            strength = trend_strength[i]
+            direction = trend_direction[i]
+
+            if strength > 70:
+                if direction == 'uptrend':
+                    trend_category.append('strong_bullish')
+                elif direction == 'downtrend':
+                    trend_category.append('strong_bearish')
+                else:
+                    trend_category.append('strong_neutral')
+            elif strength > 40:
+                if direction == 'uptrend':
+                    trend_category.append('moderate_bullish')
+                elif direction == 'downtrend':
+                    trend_category.append('moderate_bearish')
+                else:
+                    trend_category.append('moderate_neutral')
+            else:
+                trend_category.append('weak')
+
+        df['trend_category'] = trend_category
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -151,11 +243,12 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 评分序列，取值范围0-100
         """
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
         # 确保已计算指标
-        if not self.has_result():
-            result = self.calculate(data)
-        else:
-            result = self._result
+        # if not self.has_result():
+        result = self._calculate_trendstrength(data)
+        # else:
+        #     result = self._result
         
         # 初始化评分，默认为50分（中性）
         score = pd.Series(50.0, index=data.index)
@@ -224,14 +317,53 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return pattern_info_map.get(pattern_id, default_pattern)
 
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_trendstrength(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        # 基于趋势强度计算置信度
+        if len(score) == 0:
+            return 0.5
+
+        # 计算评分的标准差，标准差越小置信度越高
+        score_std = score.std()
+        if pd.isna(score_std) or score_std == 0:
+            return 0.8
+
+        # 标准差越小，置信度越高
+        confidence = max(0.3, min(0.9, 1.0 - score_std / 50.0))
+        return confidence
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Strength(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        # 基于趋势强度生成形态
+        result = self._calculate_trendstrength(data, **kwargs)
+        patterns = pd.DataFrame(index=data.index)
+
+        if 'trend_strength' in result.columns and 'trend_direction' in result.columns:
+            # 强趋势形态
+            strong_up = (result['trend_strength'] > 70) & (result['trend_direction'] == 'uptrend')
+            strong_down = (result['trend_strength'] > 70) & (result['trend_direction'] == 'downtrend')
+
+            patterns['strong_uptrend'] = strong_up
+            patterns['strong_downtrend'] = strong_down
+            patterns['weak_trend'] = result['trend_strength'] < 30
+
+        return patterns
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        if kwargs:
+            self.params.update(kwargs)
+
     @property
     def minimum_periods(self) -> int:
-        """
-        TrendStrength指标所需的最少数据周期数
-        
-        计算逻辑：使用默认值
-        
-        Returns:
-            int: 最少需要的数据周期数
-        """
-        return 30
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return self.params.get("lookback_period", 20) + 10

@@ -52,6 +52,18 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 应用用户参数
         self.set_parameters_Wr(**kwargs)
 
+    @property
+    def minimum_periods(self) -> int:
+        """
+        返回指标计算所需的最少数据周期数
+
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        # Enhanced WR需要考虑多周期分析和平滑处理
+        max_period = max(self.multi_periods) if self.multi_periods else self.period
+        return max_period + self.smooth_period + 10  # 添加缓冲期
+
     def _get_default_parameters_enhancedwr(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
@@ -435,15 +447,19 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算置信度"""
         if score.empty:
             return 0.5
-        
+
         # 基于评分的变化和极值计算置信度
         score_std = score.std()
         score_range = score.max() - score.min()
-        
+
         # 评分变化越大，置信度越高
         confidence = min(1.0, (score_std / 25.0 + score_range / 100.0) / 2)
-        
+
         return max(0.3, confidence)
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None
 
     def get_patterns_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""

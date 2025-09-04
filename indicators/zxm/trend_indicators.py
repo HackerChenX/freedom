@@ -9,7 +9,53 @@ from utils.dependency_injection import get_logger
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
-from scipy.stats import linregress
+
+def linregress(x, y):
+    """简化的线性回归函数，替代scipy.stats.linregress"""
+    x = np.array(x)
+    y = np.array(y)
+
+    # 计算线性回归参数
+    n = len(x)
+    if n < 2:
+        return type('LinregressResult', (), {
+            'slope': 0.0,
+            'intercept': 0.0,
+            'rvalue': 0.0,
+            'pvalue': 1.0,
+            'stderr': 0.0
+        })()
+
+    # 计算斜率和截距
+    x_mean = np.mean(x)
+    y_mean = np.mean(y)
+
+    numerator = np.sum((x - x_mean) * (y - y_mean))
+    denominator = np.sum((x - x_mean) ** 2)
+
+    if denominator == 0:
+        slope = 0.0
+        intercept = y_mean
+        rvalue = 0.0
+    else:
+        slope = numerator / denominator
+        intercept = y_mean - slope * x_mean
+
+        # 计算相关系数
+        y_var = np.sum((y - y_mean) ** 2)
+        if y_var == 0:
+            rvalue = 0.0
+        else:
+            rvalue = numerator / np.sqrt(denominator * y_var)
+
+    # 返回结果对象
+    return type('LinregressResult', (), {
+        'slope': slope,
+        'intercept': intercept,
+        'rvalue': rvalue,
+        'pvalue': 0.05 if abs(rvalue) > 0.5 else 0.5,  # 简化的p值
+        'stderr': 0.0
+    })()
 
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin

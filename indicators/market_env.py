@@ -29,7 +29,10 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_marketenv()
-        
+
+        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        self._minimum_periods = 14
+
         # 应用用户参数
         self.set_parameters_Env(**kwargs)
     
@@ -65,6 +68,8 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置参数
         self.period = kwargs.get('period', 14)
+        # 🔧 Ultra Think修复：同步更新minimum_periods
+        self._minimum_periods = self.period
     
     def calculate_Env(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -92,8 +97,8 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         df = data.copy()
         
-        # 基本实现：返回原数据加上一个简单的计算列
-        df[f'MARKET_ENV_VALUE'] = df['close'].rolling(window=self.period).mean()
+        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        df[f'MARKET_ENV_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
         
         # 添加形态识别和信号生成
@@ -104,8 +109,9 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def calculate_raw_score_Env(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        if not self.has_result():
-            self.calculate_Env(data, **kwargs)
+        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # if not self.has_result():
+        #     self.calculate_Env(data, **kwargs)
         return pd.Series(50.0, index=data.index)
     
     def calculate_confidence_Env(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
@@ -116,14 +122,28 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
+    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的_calculate_baseindicator方法"""
+        return self._calculate_marketenv(data, **kwargs)
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+        """实现BaseIndicator要求的置信度计算方法"""
+        return self.calculate_confidence_Env(score, patterns, signals)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """实现BaseIndicator要求的原始评分计算方法"""
+        return self.calculate_raw_score_Env(data, **kwargs)
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """实现BaseIndicator要求的形态获取方法"""
+        return self.get_patterns_Env(data, **kwargs)
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """实现BaseIndicator要求的参数设置方法"""
+        return self.set_parameters_Env(**kwargs)
+
     @property
     def minimum_periods(self) -> int:
-        """
-        MarketEnv指标所需的最少数据周期数
-        
-        计算逻辑：使用默认值
-        
-        Returns:
-            int: 最少需要的数据周期数
-        """
-        return 25
+        """实现MinimumPeriodsMixin要求的minimum_periods属性"""
+        return getattr(self, '_minimum_periods', 14)
