@@ -75,10 +75,15 @@ class ADXValidator:
         logger.info("🔍 阶段1: ADX算法真实性验证...")
         
         try:
-            from indicators.adx import AverageDirectionalIndex
-            
-            # 创建ADX指标实例
-            adx_indicator = AverageDirectionalIndex()
+            # 尝试从指标注册表创建DMI指标
+            from indicators.complete_indicator_registry import get_indicator_registry
+            registry = get_indicator_registry()
+            adx_indicator = registry.create_indicator('DMI')
+
+            # 如果注册表失败，直接导入
+            if adx_indicator is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_indicator = DirectionalMovementIndex()
             
             # 使用测试数据计算ADX
             result = adx_indicator.calculate(self.test_data)
@@ -202,12 +207,19 @@ class ADXValidator:
         logger.info("🔧 阶段2: ADX基础功能验证...")
         
         try:
-            from indicators.adx import AverageDirectionalIndex
-            
-            adx_indicator = AverageDirectionalIndex()
+            # 尝试从指标注册表创建DMI指标
+            from indicators.complete_indicator_registry import get_indicator_registry
+            registry = get_indicator_registry()
+            adx_indicator = registry.create_indicator('DMI')
+
+            # 如果注册表失败，直接导入
+            if adx_indicator is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_indicator = DirectionalMovementIndex()
+
             score = 0
             max_score = 100
-            
+
             # 1. 基本计算功能 (30分)
             result = adx_indicator.calculate(self.test_data)
             if result is not None and not result.empty:
@@ -221,10 +233,13 @@ class ADXValidator:
                     logger.info("✅ 输出包含必要列")
             
             # 2. 参数设置功能 (20分)
-            custom_params = {'period': 21, 'strong_trend': 30}
-            adx_custom = AverageDirectionalIndex(params=custom_params)
+            custom_params = {'period': 21, 'adx_threshold': 30}
+            adx_custom = registry.create_indicator('DMI', **custom_params)
+            if adx_custom is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_custom = DirectionalMovementIndex(**custom_params)
             
-            if adx_custom.params['period'] == 21:
+            if hasattr(adx_custom, 'period') and adx_custom.period == 21:
                 score += 10
                 logger.info("✅ 参数设置功能正常")
             
@@ -284,9 +299,16 @@ class ADXValidator:
         logger.info("🎯 阶段3: ADX形态识别验证...")
 
         try:
-            from indicators.adx import AverageDirectionalIndex
+            # 尝试从指标注册表创建DMI指标
+            from indicators.complete_indicator_registry import get_indicator_registry
+            registry = get_indicator_registry()
+            adx_indicator = registry.create_indicator('DMI')
 
-            adx_indicator = AverageDirectionalIndex()
+            # 如果注册表失败，直接导入
+            if adx_indicator is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_indicator = DirectionalMovementIndex()
+
             result = adx_indicator.calculate(self.test_data)
 
             score = 0
@@ -409,13 +431,20 @@ class ADXValidator:
         logger.info("🏗️ 阶段4: ADX架构合规性验证...")
 
         try:
-            from indicators.adx import AverageDirectionalIndex
+            # 尝试从指标注册表创建DMI指标
+            from indicators.complete_indicator_registry import get_indicator_registry
+            registry = get_indicator_registry()
+            adx_indicator = registry.create_indicator('DMI')
+
+            # 如果注册表失败，直接导入
+            if adx_indicator is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_indicator = DirectionalMovementIndex()
 
             score = 0
             max_score = 100
 
             # 1. BaseIndicator继承检查 (25分)
-            adx_indicator = AverageDirectionalIndex()
             from indicators.base_indicator import BaseIndicator
 
             if isinstance(adx_indicator, BaseIndicator):
@@ -493,14 +522,21 @@ class ADXValidator:
         logger.info("🚀 阶段5: ADX生产就绪性验证...")
 
         try:
-            from indicators.adx import AverageDirectionalIndex
+            # 尝试从指标注册表创建DMI指标
+            from indicators.complete_indicator_registry import get_indicator_registry
+            registry = get_indicator_registry()
+            adx_indicator = registry.create_indicator('DMI')
+
+            # 如果注册表失败，直接导入
+            if adx_indicator is None:
+                from indicators.dmi import DirectionalMovementIndex
+                adx_indicator = DirectionalMovementIndex()
 
             score = 0
             max_score = 100
 
             # 1. 性能测试 (30分)
             import time
-            adx_indicator = AverageDirectionalIndex()
 
             start_time = time.time()
             result = adx_indicator.calculate(self.test_data)
@@ -553,7 +589,11 @@ class ADXValidator:
 
             # 5. 文档和注释检查 (10分)
             import inspect
-            source = inspect.getsource(AverageDirectionalIndex)
+            try:
+                from indicators.dmi import DirectionalMovementIndex
+                source = inspect.getsource(DirectionalMovementIndex)
+            except Exception:
+                source = ""
 
             if '"""' in source and 'Args:' in source:
                 score += 10
@@ -705,9 +745,19 @@ ADX指标验证{'✅ 通过' if result['status'] == 'PASSED' else '❌ 失败'}�
         f.write(report_content)
     
     logger.info(f"📄 验证报告已保存: {report_file}")
-    
-    return result
+
+    # 设置退出码
+    if result['status'] == 'PASSED':
+        exit_code = 0
+    elif result['overall_score'] >= 90:
+        exit_code = 1  # 警告级别
+    else:
+        exit_code = 2  # 失败级别
+
+    return result, exit_code
 
 
 if __name__ == "__main__":
-    main()
+    result, exit_code = main()
+    import sys
+    sys.exit(exit_code)

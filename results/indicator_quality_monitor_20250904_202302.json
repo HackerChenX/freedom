@@ -1,0 +1,307 @@
+{
+  "summary": {
+    "total_indicators": 10,
+    "passed_indicators": 0,
+    "failed_indicators": 2,
+    "warning_indicators": 8,
+    "execution_time": 0.69207763671875,
+    "test_timestamp": "2025-09-04T20:23:02.019341"
+  },
+  "results": {
+    "MA": {
+      "indicator_name": "MA",
+      "total_score": 62,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.002s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.439036"
+    },
+    "EMA": {
+      "indicator_name": "EMA",
+      "total_score": 67,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 17,
+          "message": "volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.001s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.452075"
+    },
+    "MACD": {
+      "indicator_name": "MACD",
+      "total_score": 73,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 20,
+          "message": "算法正确"
+        },
+        "numerical_reasonableness": {
+          "score": 15,
+          "message": "数值合理"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.006s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.522114"
+    },
+    "RSI": {
+      "indicator_name": "RSI",
+      "total_score": 66,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 15,
+          "message": "包含NaN值"
+        },
+        "numerical_reasonableness": {
+          "score": 15,
+          "message": "数值合理"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.004s"
+        },
+        "stability": {
+          "score": 8,
+          "message": "最小数据集测试失败"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.562400"
+    },
+    "BOLL": {
+      "indicator_name": "BOLL",
+      "total_score": 58,
+      "status": "FAILED",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 14,
+          "message": "calculate_raw_score_Indicator_Base_Indicator异常; get_patterns_Indicator_Base_Indicator异常; calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.001s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.579387"
+    },
+    "PSY": {
+      "indicator_name": "PSY",
+      "total_score": 62,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.001s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.593696"
+    },
+    "DMA": {
+      "indicator_name": "DMA",
+      "total_score": 62,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.000s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.599907"
+    },
+    "DMI": {
+      "indicator_name": "DMI",
+      "total_score": 58,
+      "status": "FAILED",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 14,
+          "message": "calculate_raw_score_Indicator_Base_Indicator异常; get_patterns_Indicator_Base_Indicator异常; calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.003s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.629530"
+    },
+    "ADX": {
+      "indicator_name": "ADX",
+      "total_score": 62,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.004s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.673257"
+    },
+    "AROON": {
+      "indicator_name": "AROON",
+      "total_score": 62,
+      "status": "POOR",
+      "stages": {
+        "algorithm_correctness": {
+          "score": 12,
+          "message": "包含NaN值; volume列数值过大"
+        },
+        "numerical_reasonableness": {
+          "score": 12,
+          "message": "volume存在极值; volume波动过大"
+        },
+        "functional_completeness": {
+          "score": 18,
+          "message": "calculate_confidence_Indicator_Base_Indicator异常"
+        },
+        "performance": {
+          "score": 10,
+          "message": "执行时间良好: 0.004s"
+        },
+        "stability": {
+          "score": 10,
+          "message": "稳定性良好"
+        }
+      },
+      "test_timestamp": "2025-09-04T20:23:02.711528"
+    }
+  },
+  "test_config": {
+    "stage_weights": {
+      "algorithm_correctness": 20,
+      "numerical_reasonableness": 15,
+      "functional_completeness": 20,
+      "performance": 10,
+      "stability": 10
+    },
+    "quality_thresholds": {
+      "excellent": 95,
+      "good": 85,
+      "acceptable": 75,
+      "poor": 60
+    }
+  }
+}
