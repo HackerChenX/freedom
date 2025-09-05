@@ -58,9 +58,9 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         注册RSI形态到全局形态注册表
         """
-        # 注册RSI超买形态
+        # 注册RSI超买形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_OVERBOUGHT",
+            pattern_id=StandardPatternNames.OVERBOUGHT,
             display_name="RSI超买",
             description="RSI指标超过70，进入超买区域，存在回调压力",
             pattern_type="BEARISH",
@@ -68,10 +68,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=-10.0,
             polarity="NEGATIVE"
         )
-        
-        # 注册RSI超卖形态
+
+        # 注册RSI超卖形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_OVERSOLD",
+            pattern_id=StandardPatternNames.OVERSOLD,
             display_name="RSI超卖",
             description="RSI指标低于30，进入超卖区域，存在反弹机会",
             pattern_type="BULLISH",
@@ -79,10 +79,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=10.0,
             polarity="POSITIVE"
         )
-        
-        # 注册RSI底背离形态
+
+        # 注册RSI底背离形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_BULLISH_DIVERGENCE",
+            pattern_id=StandardPatternNames.BULLISH_DIVERGENCE,
             display_name="RSI底背离",
             description="价格创新低而RSI未创新低，形成底背离",
             pattern_type="BULLISH",
@@ -90,10 +90,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=20.0,
             polarity="POSITIVE"
         )
-        
-        # 注册RSI顶背离形态
+
+        # 注册RSI顶背离形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_BEARISH_DIVERGENCE",
+            pattern_id="BEARISH_DIVERGENCE",
             display_name="RSI顶背离",
             description="价格创新高而RSI未创新高，警示上涨动能不足",
             pattern_type="BEARISH",
@@ -218,15 +218,19 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         获取RSI相关形态 - 生产级标准实现
         保持技术指标的准确性和专业性
         """
-        calculated_data = self._calculate_rsi(data)
+        # 检查数据是否已经包含RSI计算结果
+        if f'rsi_{self.period}' in data.columns:
+            calculated_data = data
+        else:
+            calculated_data = self._calculate_rsi(data)
         patterns_df = pd.DataFrame(index=data.index)
 
         if f'rsi_{self.period}' not in calculated_data.columns:
-            # 返回空形态但确保列存在
-            patterns_df['RSI_OVERSOLD'] = False
-            patterns_df['RSI_OVERBOUGHT'] = False
-            patterns_df['RSI_GOLDEN_CROSS'] = False
-            patterns_df['RSI_DEATH_CROSS'] = False
+            # 返回空形态但确保列存在 - 使用标准形态名称
+            patterns_df[StandardPatternNames.OVERSOLD] = False
+            patterns_df[StandardPatternNames.OVERBOUGHT] = False
+            patterns_df[StandardPatternNames.GOLDEN_CROSS] = False
+            patterns_df[StandardPatternNames.DEATH_CROSS] = False
             return patterns_df
 
         rsi = calculated_data[f'rsi_{self.period}']
@@ -235,17 +239,17 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         rsi_ma_short = calculated_data.get('rsi_ma_short', rsi.rolling(window=self.ma_periods[0], min_periods=1).mean())
         rsi_ma_long = calculated_data.get('rsi_ma_long', rsi.rolling(window=self.ma_periods[1], min_periods=1).mean())
 
-        # 初始化形态列
-        patterns_df['RSI_OVERSOLD'] = False
-        patterns_df['RSI_OVERBOUGHT'] = False
-        patterns_df['RSI_GOLDEN_CROSS'] = False
-        patterns_df['RSI_DEATH_CROSS'] = False
+        # 初始化形态列 - 使用标准形态名称
+        patterns_df['OVERSOLD'] = False
+        patterns_df['OVERBOUGHT'] = False
+        patterns_df['GOLDEN_CROSS'] = False
+        patterns_df['DEATH_CROSS'] = False
 
         try:
-            # 🔧 生产级修复1：标准RSI超买超卖条件
+            # 🔧 生产级修复1：标准RSI超买超卖条件 - 使用标准形态名称
             # 超买：RSI持续在超买区域（不仅仅是刚突破）
-            patterns_df['RSI_OVERBOUGHT'] = rsi > self.overbought
-            patterns_df['RSI_OVERSOLD'] = rsi < self.oversold
+            patterns_df['OVERBOUGHT'] = rsi > self.overbought
+            patterns_df['OVERSOLD'] = rsi < self.oversold
 
             # 🔧 生产级修复2：标准RSI均线金叉死叉
             # 方法1：标准crossover检测
@@ -263,39 +267,47 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             rsi_centerline_cross_down = (rsi < 50) & (rsi.shift(1) >= 50)
 
             # 方法3：RSI背离检测（简化版）
-            # 检测价格新高但RSI未新高（顶背离）
-            price_high = data['close'].rolling(window=5).max()
-            rsi_high = rsi.rolling(window=5).max()
-            price_new_high = (data['close'] == price_high) & (data['close'] > data['close'].shift(5))
-            rsi_no_new_high = (rsi < rsi_high.shift(1))
-            rsi_bearish_divergence = price_new_high & rsi_no_new_high
+            # 检查是否有close列用于背离检测
+            if 'close' in calculated_data.columns:
+                close_price = calculated_data['close']
 
-            # 检测价格新低但RSI未新低（底背离）
-            price_low = data['close'].rolling(window=5).min()
-            rsi_low = rsi.rolling(window=5).min()
-            price_new_low = (data['close'] == price_low) & (data['close'] < data['close'].shift(5))
-            rsi_no_new_low = (rsi > rsi_low.shift(1))
-            rsi_bullish_divergence = price_new_low & rsi_no_new_low
+                # 检测价格新高但RSI未新高（顶背离）
+                price_high = close_price.rolling(window=5).max()
+                rsi_high = rsi.rolling(window=5).max()
+                price_new_high = (close_price == price_high) & (close_price > close_price.shift(5))
+                rsi_no_new_high = (rsi < rsi_high.shift(1))
+                rsi_bearish_divergence = price_new_high & rsi_no_new_high
 
-            # 🔧 生产级修复3：合并标准信号
-            patterns_df['RSI_GOLDEN_CROSS'] = golden_cross_standard | rsi_centerline_cross_up | rsi_bullish_divergence
-            patterns_df['RSI_DEATH_CROSS'] = death_cross_standard | rsi_centerline_cross_down | rsi_bearish_divergence
+                # 检测价格新低但RSI未新低（底背离）
+                price_low = close_price.rolling(window=5).min()
+                rsi_low = rsi.rolling(window=5).min()
+                price_new_low = (close_price == price_low) & (close_price < close_price.shift(5))
+                rsi_no_new_low = (rsi > rsi_low.shift(1))
+                rsi_bullish_divergence = price_new_low & rsi_no_new_low
+            else:
+                # 如果没有close列，设置背离为False
+                rsi_bearish_divergence = pd.Series(False, index=calculated_data.index)
+                rsi_bullish_divergence = pd.Series(False, index=calculated_data.index)
 
-            # 添加背离形态
-            patterns_df['RSI_BULLISH_DIVERGENCE'] = rsi_bullish_divergence
-            patterns_df['RSI_BEARISH_DIVERGENCE'] = rsi_bearish_divergence
+            # 🔧 生产级修复3：合并标准信号 - 使用标准形态名称
+            patterns_df['GOLDEN_CROSS'] = golden_cross_standard | rsi_centerline_cross_up | rsi_bullish_divergence
+            patterns_df['DEATH_CROSS'] = death_cross_standard | rsi_centerline_cross_down | rsi_bearish_divergence
+
+            # 添加背离形态 - 使用标准形态名称
+            patterns_df['BULLISH_DIVERGENCE'] = rsi_bullish_divergence
+            patterns_df['BEARISH_DIVERGENCE'] = rsi_bearish_divergence
 
         except Exception as e:
             logger.warning(f"RSI形态识别失败: {e}")
-            # 🔧 生产级兜底：标准RSI逻辑
-            patterns_df['RSI_OVERSOLD'] = rsi < self.oversold
-            patterns_df['RSI_OVERBOUGHT'] = rsi > self.overbought
+            # 🔧 生产级兜底：标准RSI逻辑 - 使用标准形态名称
+            patterns_df['OVERSOLD'] = rsi < self.oversold
+            patterns_df['OVERBOUGHT'] = rsi > self.overbought
 
-            # 简单的金叉死叉逻辑
-            patterns_df['RSI_GOLDEN_CROSS'] = (rsi > 50) & (rsi.shift(1) <= 50)
-            patterns_df['RSI_DEATH_CROSS'] = (rsi < 50) & (rsi.shift(1) >= 50)
-            patterns_df['RSI_BULLISH_DIVERGENCE'] = False
-            patterns_df['RSI_BEARISH_DIVERGENCE'] = False
+            # 简单的金叉死叉逻辑 - 使用标准形态名称
+            patterns_df['GOLDEN_CROSS'] = (rsi > 50) & (rsi.shift(1) <= 50)
+            patterns_df['DEATH_CROSS'] = (rsi < 50) & (rsi.shift(1) >= 50)
+            patterns_df['BULLISH_DIVERGENCE'] = False
+            patterns_df['BEARISH_DIVERGENCE'] = False
 
         # 🔧 生产级修复4：确保所有列都是布尔类型，填充NaN为False
         for col in patterns_df.columns:
@@ -311,8 +323,8 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = self.get_patterns_Rsi_Rsi(data)
 
         signals = pd.DataFrame(index=data.index)
-        signals['buy_signal'] = patterns['RSI_GOLDEN_CROSS'] | (patterns['RSI_OVERSOLD'])
-        signals['sell_signal'] = patterns['RSI_DEATH_CROSS'] | (patterns['RSI_OVERBOUGHT'])
+        signals['buy_signal'] = patterns['GOLDEN_CROSS'] | (patterns['OVERSOLD'])
+        signals['sell_signal'] = patterns['DEATH_CROSS'] | (patterns['OVERBOUGHT'])
 
         return signals
 
@@ -445,9 +457,9 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         注册RSI指标的形态到全局形态注册表
         """
-        # 注册RSI超买形态
+        # 注册RSI超买形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_OVERBOUGHT",
+            pattern_id="OVERBOUGHT",
             display_name="RSI超买",
             description="RSI指标超过70，进入超买区域，存在回调压力",
             pattern_type="BEARISH",
@@ -455,10 +467,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=-10.0,
             polarity="NEGATIVE"
         )
-        
-        # 注册RSI超卖形态
+
+        # 注册RSI超卖形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_OVERSOLD",
+            pattern_id="OVERSOLD",
             display_name="RSI超卖",
             description="RSI指标低于30，进入超卖区域，存在反弹机会",
             pattern_type="BULLISH",
@@ -466,10 +478,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=10.0,
             polarity="POSITIVE"
         )
-        
-        # 注册RSI底背离形态
+
+        # 注册RSI底背离形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_BULLISH_DIVERGENCE",
+            pattern_id="BULLISH_DIVERGENCE",
             display_name="RSI底背离",
             description="价格创新低而RSI未创新低，形成底背离",
             pattern_type="BULLISH",
@@ -477,10 +489,10 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=20.0,
             polarity="POSITIVE"
         )
-        
-        # 注册RSI顶背离形态
+
+        # 注册RSI顶背离形态 - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_BEARISH_DIVERGENCE",
+            pattern_id="BEARISH_DIVERGENCE",
             display_name="RSI顶背离",
             description="价格创新高而RSI未创新高，警示上涨动能不足",
             pattern_type="BEARISH",
@@ -489,9 +501,9 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             polarity="NEGATIVE"
         )
 
-        # 🔧 注册RSI金叉形态 (关键修复)
+        # 🔧 注册RSI金叉形态 (关键修复) - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_GOLDEN_CROSS",
+            pattern_id="GOLDEN_CROSS",
             display_name="RSI金叉",
             description="RSI从超卖区域回升或中线上穿，表明趋势转为看涨",
             pattern_type="BULLISH",
@@ -500,9 +512,9 @@ class RsiRsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             polarity="POSITIVE"
         )
 
-        # 🔧 注册RSI死叉形态 (关键修复)
+        # 🔧 注册RSI死叉形态 (关键修复) - 使用标准形态名称
         self.register_pattern_to_registry(
-            pattern_id="RSI_DEATH_CROSS",
+            pattern_id="DEATH_CROSS",
             display_name="RSI死叉",
             description="RSI从超买区域回落或中线下穿，表明趋势转为看跌",
             pattern_type="BEARISH",

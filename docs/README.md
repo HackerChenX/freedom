@@ -39,6 +39,10 @@
 - **[买点系统功能模块设计](architecture/buypoint_system_functional_design.md)** - 功能模块详细设计
 - **[系统优化路线图](project_reports/system_optimization_roadmap.md)** - 优化方向和实施计划
 
+#### 实施计划文档
+- **[详细任务计划](implementation/detailed_task_plan.md)** - 🚀 **11周实施计划** 生产级系统实现路线图
+- **[任务执行跟踪看板](implementation/task_tracking_board.md)** - 📊 **实时跟踪** 任务进度和里程碑
+
 ### 🎯 系统核心能力 (以选股为中心)
 - 🎯 **策略选股分析** (核心功能): 生产级选股执行引擎，支持复杂策略组合
 - 📊 **技术指标分析** (选股支撑): 103个技术指标为选股提供技术条件

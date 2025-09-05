@@ -51,9 +51,12 @@ def get_all_stock_codes(target_date: str) -> List[str]:
         ORDER BY code
         """
         
-        from db.clickhouse_db import get_clickhouse_db
-        db = get_clickhouse_db()
-        result = db.execute(query)
+        from utils.unified_container import get_container
+        from db.interfaces.data_access_interface import DataAccessInterface
+
+        container = get_container()
+        data_access = container.resolve(DataAccessInterface)
+        result = data_access.execute_query(query)
         
         if result:
             # 处理不同类型的返回结果
