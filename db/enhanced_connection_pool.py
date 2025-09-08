@@ -285,6 +285,10 @@ class ClickHouseConnectionPool:
             self.stats['current_idle'] = self.available_connections.qsize()
             self.stats['total_connections'] = len(self.all_connections)
             return self.stats.copy()
+
+    def get_stats(self) -> Dict[str, Any]:
+        """获取连接池统计信息（标准接口）"""
+        return self.get_stats_Pool()
     
     def close_Pool(self):
         """关闭连接池"""

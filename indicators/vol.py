@@ -29,6 +29,154 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 logger = get_logger(__name__)
 
 
+class STDDEV(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+    """
+    标准差(Standard Deviation)指标
+
+    分类：波动性指标
+    描述：衡量价格相对于其平均值的离散程度
+    """
+
+    def __init__(self, period: int = 20, **kwargs):
+        """
+        初始化标准差指标
+
+        Args:
+            period: 计算周期，默认20
+            **kwargs: 其他参数
+        """
+        super().__init__(**kwargs)
+        self.period = period
+        self.REQUIRED_COLUMNS = ['close']
+
+    def _get_default_parameters(self) -> Dict[str, Any]:
+        """获取默认参数"""
+        return {'period': 20}
+
+    def set_parameters(self, **kwargs):
+        """设置参数"""
+        self.period = kwargs.get('period', self.period)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算标准差
+
+        Args:
+            data: 包含close列的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含标准差的DataFrame
+        """
+        try:
+            if not self._validate_data(data):
+                return pd.DataFrame()
+
+            df = data.copy()
+
+            # 计算收盘价的标准差
+            df['stddev'] = df['close'].rolling(window=self.period).std()
+
+            # 计算标准差的百分位数
+            df['stddev_percentile'] = df['stddev'].rolling(window=252).apply(
+                lambda x: (x.iloc[-1] <= x).mean() * 100 if len(x) > 0 else 50
+            ).fillna(50)
+
+            # 生成信号
+            df['stddev_signal'] = self._generate_signals(df)
+
+            return df
+
+        except Exception as e:
+            logger.error(f"标准差计算失败: {e}")
+            return pd.DataFrame()
+
+    def _generate_signals(self, df: pd.DataFrame) -> pd.Series:
+        """生成交易信号"""
+        signals = pd.Series(0, index=df.index)
+
+        if 'stddev_percentile' in df.columns:
+            percentiles = df['stddev_percentile']
+            # 波动率突破信号
+            signals[(percentiles > 80) & (percentiles.shift(1) <= 80)] = 1
+            signals[(percentiles < 20) & (percentiles.shift(1) >= 20)] = -1
+
+        return signals
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """获取最新的交易信号"""
+        if data.empty or 'stddev_signal' not in data.columns:
+            return {'signal': 0, 'strength': 0, 'description': '无信号'}
+
+        latest_signal = data['stddev_signal'].iloc[-1]
+        latest_stddev = data['stddev'].iloc[-1] if 'stddev' in data.columns else 0
+
+        if latest_signal == 1:
+            return {'signal': 1, 'strength': 0.8, 'description': f'波动率增加，标准差：{latest_stddev:.4f}'}
+        elif latest_signal == -1:
+            return {'signal': -1, 'strength': 0.8, 'description': f'波动率减少，标准差：{latest_stddev:.4f}'}
+        else:
+            return {'signal': 0, 'strength': 0, 'description': f'波动率正常，标准差：{latest_stddev:.4f}'}
+
+    def get_pattern_info(self) -> Dict[str, Any]:
+        """获取指标模式信息"""
+        return {
+            'name': 'STDDEV',
+            'description': '标准差指标',
+            'type': 'volatility',
+            'parameters': {'period': self.period}
+        }
+
+    # 实现BaseIndicator的抽象方法
+    def _calculate_baseindicator(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+        """核心计算逻辑"""
+        return self.calculate(data, **kwargs)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        if 'stddev_percentile' not in data.columns:
+            return pd.Series(50.0, index=data.index)
+
+        # 直接使用标准差分位数作为评分
+        return data['stddev_percentile']
+
+    def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取技术形态"""
+        patterns = pd.DataFrame(index=data.index)
+
+        if 'stddev_percentile' in data.columns:
+            percentiles = data['stddev_percentile']
+            # 波动率状态形态
+            patterns['STDDEV_高波动'] = percentiles >= 80
+            patterns['STDDEV_中波动'] = (percentiles >= 40) & (percentiles < 80)
+            patterns['STDDEV_低波动'] = percentiles < 40
+            # 波动率变化形态
+            patterns['STDDEV_波动增加'] = (percentiles > 60) & (percentiles.shift(1) <= 60)
+            patterns['STDDEV_波动减少'] = (percentiles < 40) & (percentiles.shift(1) >= 40)
+
+        return patterns
+
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
+        """计算置信度"""
+        if len(score) == 0:
+            return 0.0
+
+        # 基于评分稳定性计算置信度
+        score_stability = 1.0 - (score.rolling(5).std().iloc[-1] / 100.0) if len(score) >= 5 else 0.5
+        pattern_strength = min(len(patterns) * 0.2, 1.0)
+
+        return (score_stability + pattern_strength) / 2
+
+    def set_parameters_Indicator_Base_Indicator(self, **kwargs):
+        """设置参数"""
+        self.set_parameters(**kwargs)
+
+    @property
+    def minimum_periods(self) -> int:
+        """最小周期数"""
+        return self.period + 20  # 需要额外数据计算分位数
+
+
 class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     成交量(VOL) (VOL)

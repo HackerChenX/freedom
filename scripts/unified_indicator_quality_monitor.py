@@ -279,7 +279,12 @@ class UnifiedIndicatorQualityMonitor:
                 return None
             
             # 创建验证器实例并运行验证
-            validator = validator_class()
+            # 尝试传递指标名称参数
+            try:
+                validator = validator_class(indicator_name)
+            except TypeError:
+                # 如果构造函数不接受参数，使用无参构造
+                validator = validator_class()
             
             # 查找验证方法
             validation_methods = [
@@ -323,6 +328,9 @@ class UnifiedIndicatorQualityMonitor:
             # 一些脚本支持指标参数
             if '--indicator' in open(script_path).read():
                 cmd.extend(['--indicator', indicator_name])
+            elif 'validate_enhanced_indicators.py' in script_path or 'validate_synergy_indicator_strict.py' in script_path or 'validate_unified_ma_indicator_strict.py' in script_path or 'validate_enhanced_stochrsi.py' in script_path:
+                # 通用验证脚本使用位置参数
+                cmd.append(indicator_name)
             
             # 执行命令
             result = subprocess.run(
@@ -375,11 +383,20 @@ class UnifiedIndicatorQualityMonitor:
             ]
 
             for pattern in total_score_patterns:
+                # 先在stdout中查找
                 match = re.search(pattern, stdout)
                 if match:
                     result['score'] = float(match.group(1))
                     score_found = True
-                    logger.debug(f"找到总体分数: {result['score']} (模式: {pattern})")
+                    logger.debug(f"找到总体分数(stdout): {result['score']} (模式: {pattern})")
+                    break
+
+                # 如果stdout中没有，再在stderr中查找
+                match = re.search(pattern, stderr)
+                if match:
+                    result['score'] = float(match.group(1))
+                    score_found = True
+                    logger.debug(f"找到总体分数(stderr): {result['score']} (模式: {pattern})")
                     break
 
             # 如果没有找到总体得分，查找其他分数模式
@@ -391,31 +408,49 @@ class UnifiedIndicatorQualityMonitor:
                 ]
 
                 for pattern in other_patterns:
+                    # 先在stdout中查找
                     match = re.search(pattern, stdout)
                     if match:
                         result['score'] = float(match.group(1))
                         score_found = True
-                        logger.debug(f"找到其他分数: {result['score']} (模式: {pattern})")
+                        logger.debug(f"找到其他分数(stdout): {result['score']} (模式: {pattern})")
+                        break
+
+                    # 如果stdout中没有，再在stderr中查找
+                    match = re.search(pattern, stderr)
+                    if match:
+                        result['score'] = float(match.group(1))
+                        score_found = True
+                        logger.debug(f"找到其他分数(stderr): {result['score']} (模式: {pattern})")
                         break
 
             # 最后尝试宽泛模式
             if not score_found:
-                # 查找所有 数字/100 的模式，取最后一个
-                broad_matches = re.findall(r'(\d+(?:\.\d+)?)/100', stdout)
-                if broad_matches:
-                    result['score'] = float(broad_matches[-1])
+                # 特殊模式：验证通过，得分XX分
+                special_pattern = r'验证通过，得分(\d+(?:\.\d+)?)分'
+                match = re.search(special_pattern, stdout)
+                if match:
+                    result['score'] = float(match.group(1))
                     score_found = True
-                    logger.debug(f"宽泛模式找到分数: {result['score']}")
-                else:
-                    # 查找所有数字，取最后一个可能的分数
-                    number_matches = re.findall(r'(\d+(?:\.\d+)?)', stdout)
-                    for num_str in reversed(number_matches):
-                        num = float(num_str)
-                        if 0 <= num <= 100:  # 合理的分数范围
-                            result['score'] = num
-                            score_found = True
-                            logger.debug(f"数字模式找到分数: {result['score']}")
-                            break
+                    logger.debug(f"特殊模式找到分数: {result['score']}")
+
+                if not score_found:
+                    # 查找所有 数字/100 的模式，取最后一个
+                    broad_matches = re.findall(r'(\d+(?:\.\d+)?)/100', stdout)
+                    if broad_matches:
+                        result['score'] = float(broad_matches[-1])
+                        score_found = True
+                        logger.debug(f"宽泛模式找到分数: {result['score']}")
+                    else:
+                        # 查找所有数字，取最后一个可能的分数
+                        number_matches = re.findall(r'(\d+(?:\.\d+)?)', stdout)
+                        for num_str in reversed(number_matches):
+                            num = float(num_str)
+                            if 0 <= num <= 100:  # 合理的分数范围
+                                result['score'] = num
+                                score_found = True
+                                logger.debug(f"数字模式找到分数: {result['score']}")
+                                break
 
             # 查找状态信息
             status_patterns = [
@@ -425,7 +460,20 @@ class UnifiedIndicatorQualityMonitor:
             ]
 
             for pattern in status_patterns:
+                # 先在stdout中查找
                 match = re.search(pattern, stdout)
+                if match:
+                    status_text = match.group(1)
+                    if status_text in ['PASSED', 'SUCCESS', '通过']:
+                        result['status'] = 'PASSED'
+                    elif status_text in ['FAILED', 'FAILURE', '失败']:
+                        result['status'] = 'FAILED'
+                    elif status_text in ['WARNING', '警告']:
+                        result['status'] = 'WARNING'
+                    break
+
+                # 如果stdout中没有，再在stderr中查找
+                match = re.search(pattern, stderr)
                 if match:
                     status_text = match.group(1)
                     if status_text in ['PASSED', 'SUCCESS', '通过']:
@@ -495,6 +543,8 @@ class UnifiedIndicatorQualityMonitor:
             standardized['score'] = result['score']
         elif 'total_score' in result:
             standardized['score'] = result['total_score']
+        elif 'overall_score' in result:
+            standardized['score'] = result['overall_score']
         
         # 提取状态
         if 'status' in result:
@@ -576,7 +626,11 @@ class UnifiedIndicatorQualityMonitor:
             logger.info(f"    {emoji} {status} - 分数: {score} - 耗时: {exec_time:.2f}s")
 
             if result.get('error'):
-                logger.warning(f"    错误: {result['error']}")
+                try:
+                    error_msg = str(result['error'])[:200]  # 限制错误消息长度
+                    logger.warning(f"    错误: {error_msg}")
+                except Exception:
+                    logger.warning("    错误: [无法显示错误信息]")
 
         # 计算执行时间
         self.summary['execution_time'] = time.time() - start_time

@@ -99,6 +99,12 @@ class UnifiedDataManager:
             'total_queries': 0,
             'cache_hits': 0,
             'cache_misses': 0,
+            'query_errors': 0,
+            'total_execution_time': 0.0,
+            'avg_query_time': 0.0,
+            'connection_pool_hits': 0,
+            'connection_pool_misses': 0,
+            'cache_misses': 0,
             'cache_evictions': 0,
             'total_query_time': 0.0,
             'avg_query_time': 0.0,
@@ -1548,6 +1554,203 @@ class DataManagerAdapter(UnifiedDataManager):
     pass
 
 
+class ProductionDataAccessLayer(UnifiedDataManager):
+    """
+    生产级数据访问层
+
+    基于UnifiedDataManager，添加生产环境所需的高级功能：
+    - 高级健康检查
+    - 详细性能监控
+    - 自动故障恢复
+    - 连接池优化
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._health_check_interval = 60  # 健康检查间隔（秒）
+        self._last_health_check = 0
+        self._health_status = "unknown"
+
+    def health_check(self) -> Dict[str, Any]:
+        """
+        生产级健康检查
+
+        Returns:
+            Dict[str, Any]: 健康检查结果
+        """
+        current_time = time.time()
+
+        # 如果距离上次检查时间不足间隔，返回缓存结果
+        if current_time - self._last_health_check < self._health_check_interval:
+            return {
+                'status': self._health_status,
+                'cached': True,
+                'last_check': self._last_health_check
+            }
+
+        health_result = {
+            'timestamp': current_time,
+            'status': 'healthy',
+            'components': {},
+            'metrics': {},
+            'warnings': [],
+            'errors': []
+        }
+
+        try:
+            # 1. 数据库连接检查
+            with self.connection_pool.get_connection() as conn:
+                conn.execute("SELECT 1")
+            health_result['components']['database'] = 'healthy'
+
+        except Exception as e:
+            health_result['components']['database'] = 'unhealthy'
+            health_result['errors'].append(f"数据库连接失败: {str(e)}")
+            health_result['status'] = 'unhealthy'
+
+        # 2. 连接池状态检查
+        try:
+            pool_stats = self.connection_pool.get_stats()
+            health_result['components']['connection_pool'] = 'healthy'
+            health_result['metrics']['connection_pool'] = pool_stats
+
+            # 检查连接池使用率
+            if pool_stats.get('active_connections', 0) > pool_stats.get('max_connections', 20) * 0.8:
+                health_result['warnings'].append("连接池使用率过高")
+
+        except Exception as e:
+            health_result['components']['connection_pool'] = 'unhealthy'
+            health_result['errors'].append(f"连接池状态检查失败: {str(e)}")
+
+        # 3. 缓存状态检查
+        try:
+            cache_stats = self.get_cache_stats()
+            health_result['components']['cache'] = 'healthy'
+            health_result['metrics']['cache'] = cache_stats
+
+            # 检查缓存命中率
+            hit_rate = cache_stats.get('hit_rate', 0)
+            if hit_rate < 0.5:  # 命中率低于50%
+                health_result['warnings'].append(f"缓存命中率较低: {hit_rate:.2%}")
+
+        except Exception as e:
+            health_result['components']['cache'] = 'degraded'
+            health_result['warnings'].append(f"缓存状态检查失败: {str(e)}")
+
+        # 4. 性能指标检查
+        try:
+            perf_stats = self.get_performance_stats()
+            health_result['metrics']['performance'] = perf_stats
+
+            # 检查平均查询时间
+            avg_time = perf_stats.get('avg_query_time', 0)
+            if avg_time > 2.0:  # 平均查询时间超过2秒
+                health_result['warnings'].append(f"平均查询时间过长: {avg_time:.2f}秒")
+
+        except Exception as e:
+            health_result['warnings'].append(f"性能指标检查失败: {str(e)}")
+
+        # 更新健康状态
+        if health_result['errors']:
+            self._health_status = 'unhealthy'
+        elif health_result['warnings']:
+            self._health_status = 'degraded'
+        else:
+            self._health_status = 'healthy'
+
+        health_result['status'] = self._health_status
+        self._last_health_check = current_time
+
+        return health_result
+
+    def get_performance_stats(self) -> Dict[str, Any]:
+        """获取详细性能统计"""
+        stats = self.stats.copy()
+
+        # 计算衍生指标
+        if stats['total_queries'] > 0:
+            stats['cache_hit_rate'] = stats['cache_hits'] / (stats['cache_hits'] + stats['cache_misses'])
+            stats['error_rate'] = stats['query_errors'] / stats['total_queries']
+            stats['avg_query_time'] = stats['total_execution_time'] / stats['total_queries']
+        else:
+            stats['cache_hit_rate'] = 0.0
+            stats['error_rate'] = 0.0
+            stats['avg_query_time'] = 0.0
+
+        return stats
+
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """获取缓存统计信息"""
+        with self.cache_lock:
+            total_entries = len(self.query_cache)
+            expired_entries = 0
+            current_time = time.time()
+
+            for key, timestamp in self.cache_timestamps.items():
+                if current_time - timestamp > self.default_ttl:
+                    expired_entries += 1
+
+            return {
+                'total_entries': total_entries,
+                'expired_entries': expired_entries,
+                'active_entries': total_entries - expired_entries,
+                'hit_rate': self.stats['cache_hits'] / (self.stats['cache_hits'] + self.stats['cache_misses']) if (self.stats['cache_hits'] + self.stats['cache_misses']) > 0 else 0.0,
+                'memory_usage_mb': total_entries * 0.001  # 估算内存使用
+            }
+
+    def optimize_performance(self) -> Dict[str, Any]:
+        """自动性能优化"""
+        optimization_result = {
+            'actions_taken': [],
+            'recommendations': [],
+            'before_stats': self.get_performance_stats(),
+            'after_stats': None
+        }
+
+        # 1. 清理过期缓存
+        expired_count = self._cleanup_expired_cache()
+        if expired_count > 0:
+            optimization_result['actions_taken'].append(f"清理了 {expired_count} 个过期缓存项")
+
+        # 2. 连接池优化建议
+        try:
+            pool_stats = self.connection_pool.get_stats()
+            active_ratio = pool_stats.get('active_connections', 0) / pool_stats.get('max_connections', 20)
+
+            if active_ratio > 0.8:
+                optimization_result['recommendations'].append("建议增加连接池最大连接数")
+            elif active_ratio < 0.2:
+                optimization_result['recommendations'].append("可以考虑减少连接池最小连接数")
+
+        except Exception as e:
+            logger.warning(f"连接池优化检查失败: {e}")
+
+        # 3. 缓存优化建议
+        cache_stats = self.get_cache_stats()
+        if cache_stats['hit_rate'] < 0.5:
+            optimization_result['recommendations'].append("缓存命中率较低，建议调整缓存策略")
+
+        optimization_result['after_stats'] = self.get_performance_stats()
+        return optimization_result
+
+    def _cleanup_expired_cache(self) -> int:
+        """清理过期缓存"""
+        with self.cache_lock:
+            current_time = time.time()
+            expired_keys = []
+
+            for key, timestamp in self.cache_timestamps.items():
+                if current_time - timestamp > self.default_ttl:
+                    expired_keys.append(key)
+
+            for key in expired_keys:
+                self.query_cache.pop(key, None)
+                self.cache_timestamps.pop(key, None)
+                self.cache_access_count.pop(key, None)
+
+            return len(expired_keys)
+
+
 # 向后兼容的获取函数
 def get_data_manager() -> UnifiedDataManager:
     """获取数据管理器（向后兼容）"""
@@ -1560,3 +1763,41 @@ def get_enhanced_data_manager() -> UnifiedDataManager:
 def get_data_manager_adapter() -> UnifiedDataManager:
     """获取数据管理器适配器（向后兼容）"""
     return get_unified_data_manager()
+
+
+# 生产级数据访问层实例
+_production_data_access_layer = None
+
+
+def get_production_data_access_layer(config: Optional[Dict[str, Any]] = None) -> ProductionDataAccessLayer:
+    """
+    获取生产级数据访问层实例
+
+    Args:
+        config: 可选配置参数
+
+    Returns:
+        ProductionDataAccessLayer: 生产级数据访问层实例
+    """
+    global _production_data_access_layer
+    if _production_data_access_layer is None:
+        _production_data_access_layer = ProductionDataAccessLayer(**(config or {}))
+    return _production_data_access_layer
+
+
+def initialize_production_data_access_layer(config: Optional[Dict[str, Any]] = None):
+    """
+    初始化生产级数据访问层
+
+    Args:
+        config: 可选配置参数
+    """
+    global _production_data_access_layer
+    _production_data_access_layer = ProductionDataAccessLayer(**(config or {}))
+    logger.info("生产级数据访问层已初始化")
+
+
+def reset_production_data_access_layer():
+    """重置生产级数据访问层实例（主要用于测试）"""
+    global _production_data_access_layer
+    _production_data_access_layer = None

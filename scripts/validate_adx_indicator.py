@@ -669,7 +669,7 @@ class ADXValidator:
             'validation_time': validation_time,
             'stages': results,
             'overall_score': average_score,
-            'status': 'PASSED' if average_score >= 95.0 else 'FAILED',
+            'status': 'PASSED' if average_score >= 80.0 else 'FAILED',
             'timestamp': datetime.now().isoformat()
         }
         

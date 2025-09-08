@@ -16,48 +16,6 @@
 - **待开始**: 16个 ⏳
 - **完成率**: 0%
 
-## 🔥 当前优先任务 (立即开始)
-
-### 任务1.1：技术标准统一修正 ⏳
-**优先级**: 🔥 **最高**  
-**工期**: 3天  
-**状态**: ⏳ 待开始  
-**负责人**: 待分配
-
-#### 子任务进度
-- [ ] **Day 1**: RSI指标形态命名修正
-  - [ ] 检查当前RSI指标实现
-  - [ ] 修正形态命名 (RSI_OVERBOUGHT → OVERBOUGHT)
-  - [ ] 运行RSI指标测试验证
-  
-- [ ] **Day 2**: KDJ指标形态命名修正  
-  - [ ] 检查当前KDJ指标实现
-  - [ ] 修正形态命名 (KDJ_GOLDEN_CROSS → GOLDEN_CROSS)
-  - [ ] 运行KDJ指标测试验证
-  
-- [ ] **Day 3**: 全量验证和测试
-  - [ ] 运行全量标准检查
-  - [ ] 运行103个指标测试
-  - [ ] 验证跨模块兼容性
-
-#### 验收标准
-- [ ] 所有指标形态命名符合StandardPatternNames
-- [ ] 103个指标测试全部通过
-- [ ] 技术标准验证脚本无错误
-- [ ] 跨模块兼容性测试通过
-
-#### 立即可执行命令
-```bash
-# 1. 检查当前状态
-python scripts/validate_technical_standards.py
-
-# 2. 开始修正任务
-git checkout -b feature/technical-standards-fix
-
-# 3. 检查RSI指标
-python scripts/validate_technical_standards.py -d indicators/rsi/
-```
-
 ## 📋 阶段一：基础设施完善 (2周)
 
 ### 任务1.2：模块接口标准化 ⏳
@@ -180,7 +138,6 @@ python scripts/validate_technical_standards.py -d indicators/rsi/
 
 | 里程碑 | 目标日期 | 状态 | 关键交付物 |
 |--------|----------|------|------------|
-| 技术标准统一 | Week 1 | ⏳ | 103个指标标准化 |
 | 基础设施完善 | Week 2 | ⏳ | 模块接口标准化 |
 | 策略选股核心 | Week 6 | ⏳ | 生产级选股引擎 |
 | 支撑功能完善 | Week 9 | ⏳ | 监控预警系统 |

@@ -42,37 +42,6 @@
 
 ### 阶段一：基础设施完善 (2周)
 
-#### 任务1.1：技术标准统一修正 (3天)
-**优先级**: 🔥 **最高** - 避免功能冲突
-**负责模块**: 技术指标分析模块
-
-**具体任务**:
-1. **修正指标形态命名** (1天)
-   ```bash
-   # 运行标准检查
-   python scripts/validate_technical_standards.py --strict
-   
-   # 修正RSI指标
-   RSI_OVERBOUGHT → StandardPatternNames.OVERBOUGHT
-   RSI_OVERSOLD → StandardPatternNames.OVERSOLD
-   
-   # 修正KDJ指标  
-   KDJ_GOLDEN_CROSS → StandardPatternNames.GOLDEN_CROSS
-   KDJ_DEATH_CROSS → StandardPatternNames.DEATH_CROSS
-   ```
-
-2. **统一周期命名** (1天)
-   ```python
-   # 标准化所有周期引用
-   "15分钟" → StandardPeriods.MIN_15
-   "日线" → StandardPeriods.DAILY
-   ```
-
-3. **验证修正结果** (1天)
-   - 运行全量指标测试
-   - 确保103个指标正常工作
-   - 验证跨模块兼容性
-
 #### 任务1.2：模块接口标准化 (4天)
 **优先级**: 🔥 **高** - 确保模块协同
 **负责模块**: 所有模块
@@ -316,7 +285,6 @@
 
 | 任务 | 优先级 | 工期 | 依赖关系 | 风险等级 |
 |------|--------|------|----------|----------|
-| 技术标准统一修正 | 🔥 最高 | 3天 | 无 | 低 |
 | 策略选股核心实现 | 🎯 最高 | 2周 | 技术标准 | 中 |
 | 买点回测完善 | 🔥 高 | 1周 | 技术标准 | 低 |
 | 模块接口标准化 | 🔥 高 | 4天 | 技术标准 | 中 |

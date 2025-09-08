@@ -88,12 +88,12 @@ class CompleteIndicatorRegistry:
             'DMI': 'indicators.dmi.DMI',
             'ADX': 'indicators.adx.ADX',
             'AROON': 'indicators.aroon.AROON',
-            'SAR': 'indicators.sar.SAR',
-            'PSAR': 'indicators.sar.SAR',  # 别名
-            'TRIX': 'indicators.trix.TRIX',
+            'SAR': 'indicators.sar.Sar',
+            'PSAR': 'indicators.sar.Sar',  # 别名
+            'TRIX': 'indicators.trix.TripleExponentialAverage',
             'CCI': 'indicators.cci.CCI',
-            'ENHANCED_CCI': 'indicators.trend.enhanced_cci.EnhancedCCI',
-            'ENHANCED_TRIX': 'indicators.trend.enhanced_trix.EnhancedTRIX',
+            'ENHANCED_CCI': 'indicators.trend.enhanced_cci.EnhancedCci',
+            'ENHANCED_TRIX': 'indicators.trend.enhanced_trix.EnhancedTrix',
             'WMA': 'indicators.wma.WMA',
             'SUPERTREND': 'indicators.supertrend.SuperTrend',
         }
@@ -108,15 +108,15 @@ class CompleteIndicatorRegistry:
             'KDJ': 'indicators.kdj.KDJ',
             'WR': 'indicators.wr.WR',
             'WILLIAMS_R': 'indicators.wr.WR',  # 别名
-            'CMO': 'indicators.cmo.CMO',
+            'CMO': 'indicators.cmo.ChandeMomentumOscillator',
             'STOCHRSI': 'indicators.stochrsi.STOCHRSI',
             'STOCH': 'indicators.stochrsi.STOCHRSI',  # 别名
             'ENHANCED_RSI': 'indicators.enhanced_rsi.EnhancedRSI',
             'ENHANCED_KDJ': 'indicators.oscillator.enhanced_kdj.EnhancedKDJ',
             'ENHANCED_WR': 'indicators.enhanced_wr.EnhancedWR',
             'MOMENTUM': 'indicators.momentum.MOMENTUM',
-            'ROC': 'indicators.roc.ROC',
-            'ROC_OSCILLATOR': 'indicators.roc.ROC',  # 别名
+            'ROC': 'indicators.roc.RateOfChange',
+            'ROC_OSCILLATOR': 'indicators.roc.RateOfChange',  # 别名
             'ULTIMATE': 'indicators.ultimate.Ultimate',
         }
         
@@ -129,7 +129,7 @@ class CompleteIndicatorRegistry:
         volume_indicators = {
             'OBV': 'indicators.obv.OBV',
             'AD': 'indicators.ad.AD',
-            'EMV': 'indicators.emv.EMV',
+            'EMV': 'indicators.emv.EmvEmv',
             'VOL': 'indicators.vol.VOL',
             'VR': 'indicators.vr.VR',
             'VOSC': 'indicators.vosc.VOSC',
@@ -274,11 +274,11 @@ class CompleteIndicatorRegistry:
             # 市场微观结构
             'BIAS': 'indicators.bias.BIAS',
             'MTM': 'indicators.mtm.MTM',
-            'RSIMA': 'indicators.rsima.RSIMA',
+            'RSIMA': 'indicators.rsima.Rsima',
             
             # 复合指标
             'COMPOSITE': 'indicators.composite.Composite',
-            'SYNERGY': 'indicators.synergy.SynergyIndicator',
+            'SYNERGY': 'indicators.synergy.Synergy',
             'UNIFIED_MA': 'indicators.unified_ma.UNIFIED_MA',
             
             # 评分框架
@@ -328,8 +328,27 @@ class CompleteIndicatorRegistry:
             return False
     
     def get_indicator(self, name: str):
-        """获取指标"""
-        return self._indicators.get(name)
+        """获取指标实例"""
+        indicator_path = self._indicators.get(name)
+        if not indicator_path:
+            return None
+
+        try:
+            # 如果已经是实例，直接返回
+            if hasattr(indicator_path, 'calculate'):
+                return indicator_path
+
+            # 如果是字符串路径，创建实例
+            if isinstance(indicator_path, str):
+                module_path, class_name = indicator_path.rsplit('.', 1)
+                module = importlib.import_module(module_path)
+                indicator_class = getattr(module, class_name)
+                return indicator_class()
+
+            return indicator_path
+        except Exception as e:
+            logger.warning(f"创建指标 {name} 实例失败: {e}")
+            return None
     
     def create_indicator(self, name: str, **kwargs):
         """
@@ -389,12 +408,32 @@ class CompleteIndicatorRegistry:
         """向后兼容方法"""
         return self.register_all_indicators()
 
+    def get_registration_stats(self) -> Dict[str, Any]:
+        """获取注册统计信息"""
+        total_indicators = len(self._indicators) + len(self._failed_indicators)
+        success_count = len(self._indicators)
+        failed_count = len(self._failed_indicators)
+
+        return {
+            'total_indicators': total_indicators,
+            'successful_indicators': success_count,
+            'failed_indicators': failed_count,
+            'success_rate': success_count / total_indicators if total_indicators > 0 else 0.0,
+            'indicator_names': list(self._indicators.keys()),
+            'failed_names': self._failed_indicators
+        }
+
 # 创建全局实例
 _instance = CompleteIndicatorRegistry()
 
 def get_indicator_registry():
     """获取指标注册表实例"""
     return _instance
+
+
+def get_indicator(name: str):
+    """获取指标实例"""
+    return _instance.get_indicator(name)
 
 # 执行注册
 def initialize_indicators():

@@ -51,7 +51,20 @@ class Sar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 这里需要根据具体指标实现真实的计算逻辑
         
         return df
-    
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算SAR指标 - 标准接口
+
+        Args:
+            data: 输入数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含SAR指标的DataFrame
+        """
+        return self._calculate_baseindicator(data, **kwargs)
+
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """计算置信度"""
         return 0.8

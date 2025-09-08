@@ -121,6 +121,19 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取形态识别结果"""
         return self.get_patterns_Wave(data)
     
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算ELLIOTT_WAVE指标 - 标准接口
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 包含艾略特波浪分析结果的DataFrame
+        """
+        return self.calculate_Wave(data, **kwargs)
+
     def calculate_Wave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ELLIOTT_WAVE指标
