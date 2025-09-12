@@ -1,0 +1,249 @@
+{
+  "analysis_result": {
+    "analysis_id": "analysis_20250912_164835",
+    "analysis_date": "2025-09-12T16:48:35.611454",
+    "backtest_summary": {
+      "total_buypoints": 1,
+      "successful_analyses": 1,
+      "success_rate": 1.0,
+      "average_score": 80.0,
+      "top_patterns": [
+        [
+          "日线_MACD_pattern1",
+          1
+        ],
+        [
+          "日线_MACD_pattern2",
+          1
+        ],
+        [
+          "日线_MACD_SignalType.BUY_signal",
+          1
+        ],
+        [
+          "日线_KDJ_pattern1",
+          1
+        ],
+        [
+          "日线_KDJ_pattern2",
+          1
+        ],
+        [
+          "日线_KDJ_SignalType.BUY_signal",
+          1
+        ],
+        [
+          "日线_RSI_pattern1",
+          1
+        ],
+        [
+          "日线_RSI_pattern2",
+          1
+        ],
+        [
+          "日线_RSI_SignalType.BUY_signal",
+          1
+        ],
+        [
+          "日线_MA_pattern1",
+          1
+        ]
+      ],
+      "execution_time": 0.008945226669311523,
+      "performance_metrics": {
+        "score_statistics": {
+          "mean": 80.0,
+          "median": 80.0,
+          "std": 0.0,
+          "min": 80.0,
+          "max": 80.0
+        },
+        "execution_statistics": {
+          "mean_time": 0.00879216194152832,
+          "total_time": 0.00879216194152832,
+          "min_time": 0.00879216194152832,
+          "max_time": 0.00879216194152832
+        },
+        "signal_distribution": {
+          "强烈买入": 1
+        }
+      }
+    },
+    "detected_signals": [
+      {
+        "signal_id": "000001_2025-09-12_pattern_breakout",
+        "stock_code": "000001",
+        "detection_date": "2025-09-12",
+        "buypoint_type": "BuyPointType.PATTERN_BREAKOUT",
+        "quality": "BuyPointQuality.GOOD",
+        "confidence": 0.7999999999999999,
+        "score": "80",
+        "price": 9.334054665610362,
+        "volume": "1372431",
+        "technical_indicators": {
+          "pattern_types": [
+            "triangle"
+          ]
+        },
+        "pattern_analysis": {
+          "breakout_patterns": [
+            "triangle"
+          ]
+        },
+        "risk_assessment": {
+          "risk_level": "medium"
+        },
+        "recommendations": [
+          "关注突破有效性",
+          "设置合理止损"
+        ]
+      }
+    ],
+    "evaluation_result": {
+      "evaluation_id": "eval_20250912_164835",
+      "evaluation_date": "2025-09-12T16:48:35.611384",
+      "performance_metrics": {
+        "total_trades": 1,
+        "winning_trades": 1,
+        "losing_trades": 0,
+        "win_rate": 1.0,
+        "average_win": 0.07377687406100193,
+        "average_loss": 0.0,
+        "profit_factor": Infinity,
+        "total_return": 0.07377687406100193,
+        "annualized_return": 61707743.67803979,
+        "max_drawdown": 0.0,
+        "sharpe_ratio": NaN,
+        "sortino_ratio": NaN,
+        "calmar_ratio": 0.0,
+        "volatility": NaN
+      },
+      "risk_metrics": {
+        "var_95": 0.07377687406100193,
+        "cvar_95": 0.07377687406100193,
+        "maximum_drawdown": 0.0,
+        "drawdown_duration": 0,
+        "downside_deviation": 0.0,
+        "beta": 1.0,
+        "tracking_error": 0.05,
+        "information_ratio": 0.2
+      },
+      "detailed_analysis": {
+        "trade_distribution": {
+          "return_distribution": {
+            "mean": 0.07377687406100193,
+            "std": NaN,
+            "skewness": NaN,
+            "kurtosis": NaN
+          },
+          "percentiles": {
+            "5%": 0.07377687406100193,
+            "25%": 0.07377687406100193,
+            "50%": 0.07377687406100193,
+            "75%": 0.07377687406100193,
+            "95%": 0.07377687406100193
+          }
+        },
+        "time_analysis": {
+          "monthly_patterns": {
+            "9": 0.07377687406100193
+          },
+          "weekly_patterns": {
+            "4": 0.07377687406100193
+          },
+          "total_period_days": 0
+        },
+        "performance_consistency": {
+          "consistency_score": 0.5,
+          "message": "数据不足"
+        },
+        "risk_analysis": {
+          "consecutive_losses": {
+            "max_consecutive": 0,
+            "current_consecutive": 0,
+            "average_consecutive": 0
+          },
+          "tail_risk": 0.0,
+          "negative_return_frequency": 0.0
+        }
+      },
+      "recommendations": [
+        "胜率较高，策略表现良好",
+        "夏普比率偏低，需要控制风险",
+        "回撤控制良好，风险管理有效",
+        "盈亏比优秀，策略具有良好的风险收益特征"
+      ],
+      "overall_rating": "B",
+      "confidence_level": 0.75
+    },
+    "performance_metrics": {
+      "backtest_metrics": {
+        "total_buypoints": 1,
+        "success_rate": 1.0,
+        "average_score": 80.0,
+        "execution_time": 0.008945226669311523
+      },
+      "detection_metrics": {
+        "total_signals": 1,
+        "high_quality_signals": 1,
+        "average_confidence": 0.7999999999999999
+      },
+      "evaluation_metrics": {
+        "overall_rating": "B",
+        "confidence_level": 0.75,
+        "win_rate": 1.0,
+        "sharpe_ratio": NaN
+      }
+    },
+    "recommendations": [
+      "历史回测表现优秀，策略具有较强的稳定性",
+      "检测到 1 个高质量买点信号，建议重点关注",
+      "策略评级良好，建议适度配置",
+      "建议设置合理的止损位，控制单笔损失",
+      "建议分散投资，避免集中持仓风险"
+    ],
+    "execution_time": 0.06464600563049316
+  },
+  "config": {
+    "backtest_config": {
+      "periods": [
+        "日线",
+        "30分钟",
+        "60分钟"
+      ],
+      "indicators": [
+        "MACD",
+        "KDJ",
+        "RSI",
+        "MA",
+        "VOL"
+      ],
+      "lookback_days": 250,
+      "min_data_points": 50,
+      "parallel_workers": 4,
+      "cache_enabled": true
+    },
+    "detection_config": {
+      "min_confidence": 0.6,
+      "min_score": 60.0,
+      "lookback_periods": 20,
+      "volume_threshold": 1.5,
+      "price_change_threshold": 0.02,
+      "enable_ml_detection": false,
+      "detection_types": [
+        "BuyPointType.VOLUME_BREAKOUT",
+        "BuyPointType.PULLBACK_SUPPORT",
+        "BuyPointType.TREND_REVERSAL",
+        "BuyPointType.PATTERN_BREAKOUT",
+        "BuyPointType.MOMENTUM_ACCELERATION",
+        "BuyPointType.OVERSOLD_REBOUND",
+        "BuyPointType.MULTI_TIMEFRAME_CONFLUENCE"
+      ]
+    },
+    "enable_realtime_detection": true,
+    "enable_performance_evaluation": true,
+    "output_directory": "reports/test_buypoint_analysis",
+    "max_concurrent_analyses": 10
+  },
+  "generated_at": "2025-09-12T16:48:35.611695"
+}

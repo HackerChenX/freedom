@@ -78,32 +78,45 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算增强布林带指标的主要入口方法
-        
+
         Args:
             data: 包含OHLCV数据的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             包含增强布林带指标的DataFrame
         """
+        # 处理空数据
+        if data.empty:
+            return pd.DataFrame()
+
+        # 检查必需列
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return data.copy()
+
+        # 检查数据长度
+        if len(data) < self.minimum_periods:
+            return data.copy()
+
         result = data.copy()
-        
+
         # 计算基础布林带
         result = self._calculate_basic_bollinger_bands(result)
-        
+
         # 计算自适应标准差
         if self.adaptive_std:
             result = self._calculate_adaptive_std(result)
-        
+
         # 计算带宽指标
         result = self._calculate_bandwidth_indicators(result)
-        
+
         # 计算%B和相对位置
         result = self._calculate_percent_b_and_position(result)
-        
+
         # 生成增强信号
         result = self._generate_enhanced_signals(result)
-        
+
         return result
 
     def _calculate_basic_bollinger_bands(self, data: pd.DataFrame) -> pd.DataFrame:

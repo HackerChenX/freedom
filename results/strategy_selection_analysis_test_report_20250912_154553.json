@@ -1,0 +1,108 @@
+{
+  "test_summary": {
+    "total_tests": 13,
+    "passed_tests": 9,
+    "failed_tests": 4,
+    "success_rate": 0.6923076923076923,
+    "execution_time": 0.00791025161743164
+  },
+  "test_details": [
+    {
+      "test_name": "公式解析功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功解析 2 个条件",
+      "timestamp": "2025-09-12T15:45:53.108092"
+    },
+    {
+      "test_name": "策略配置创建",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功创建策略: strategy_20250912_154553",
+      "timestamp": "2025-09-12T15:45:53.108234"
+    },
+    {
+      "test_name": "策略配置验证",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "验证通过，得分: 100.0",
+      "timestamp": "2025-09-12T15:45:53.108322"
+    },
+    {
+      "test_name": "配置导出导入",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "导出导入功能正常",
+      "timestamp": "2025-09-12T15:45:53.108626"
+    },
+    {
+      "test_name": "选股执行功能",
+      "status": "❌ FAILED",
+      "passed": false,
+      "details": "选股执行失败: name 'asdict' is not defined",
+      "timestamp": "2025-09-12T15:45:53.109312"
+    },
+    {
+      "test_name": "性能统计功能",
+      "status": "❌ FAILED",
+      "passed": false,
+      "details": "性能统计数据不完整",
+      "timestamp": "2025-09-12T15:45:53.109405"
+    },
+    {
+      "test_name": "策略评估功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "评估完成，得分: 92.25, 评级: A+",
+      "timestamp": "2025-09-12T15:45:53.111507"
+    },
+    {
+      "test_name": "评估报告导出",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "报告导出功能正常",
+      "timestamp": "2025-09-12T15:45:53.111711"
+    },
+    {
+      "test_name": "公式创建策略",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功创建策略: strategy_20250912_154553",
+      "timestamp": "2025-09-12T15:45:53.112111"
+    },
+    {
+      "test_name": "完整分析流程",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "完整分析流程正常",
+      "timestamp": "2025-09-12T15:45:53.113586"
+    },
+    {
+      "test_name": "系统状态获取",
+      "status": "❌ FAILED",
+      "passed": false,
+      "details": "系统状态异常",
+      "timestamp": "2025-09-12T15:45:53.113665"
+    },
+    {
+      "test_name": "多策略并行处理",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功率: 100.0%",
+      "timestamp": "2025-09-12T15:45:53.114981"
+    },
+    {
+      "test_name": "大股票池性能",
+      "status": "❌ FAILED",
+      "passed": false,
+      "details": "性能测试失败: name 'asdict' is not defined",
+      "timestamp": "2025-09-12T15:45:53.115709"
+    }
+  ],
+  "test_metadata": {
+    "start_time": "2025-09-12T15:45:53.107832",
+    "end_time": "2025-09-12T15:45:53.115744",
+    "test_environment": "development",
+    "test_version": "1.0.0"
+  }
+}

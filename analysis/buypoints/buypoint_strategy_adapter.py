@@ -16,7 +16,7 @@ from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class BuyPointToStrategyAdapter:
@@ -444,9 +444,9 @@ class BuyPointToStrategyAdapter:
             return "hold"  # 默认推荐
 
 
-def get_buypoint_strategy_adapter() -> Buy_point_to_strategy_adapter:
+def get_buypoint_strategy_adapter() -> BuyPointToStrategyAdapter:
     """获取买点分析到选股策略适配器实例"""
-    return Buy_point_to_strategy_adapter()
+    return BuyPointToStrategyAdapter()
 
 
 # 使用示例

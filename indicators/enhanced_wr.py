@@ -73,9 +73,9 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "smooth_period": 3
         }
 
-    def set_parameters_Wr(self, **kwargs):
+    def set_parameters(self, **kwargs):
         """
-        设置指标参数
+        设置指标参数 - 标准接口
 
         Args:
             **kwargs: 参数字典
@@ -105,9 +105,18 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.oversold = kwargs.get('oversold', -80.0)
         self.smooth_period = kwargs.get('smooth_period', 3)
 
-    def calculate_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def set_parameters_Wr(self, **kwargs):
         """
-        计算增强型Williams %R指标
+        设置指标参数
+
+        Args:
+            **kwargs: 参数字典
+        """
+        self.set_parameters(**kwargs)
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算增强型Williams %R指标 - 标准接口
 
         Args:
             data: 包含OHLCV数据的Data_frame
@@ -118,6 +127,18 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result = self._calculate_enhancedwr(data, **kwargs)
         self._result = result
         return result
+
+    def calculate_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算增强型Williams %R指标
+
+        Args:
+            data: 包含OHLCV数据的Data_frame
+
+        Returns:
+            添加了增强型Williams %R指标的Data_frame
+        """
+        return self.calculate(data, **kwargs)
 
     def _calculate_enhancedwr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -371,77 +392,71 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _generate_wr_signals(self, df: pd.DataFrame) -> pd.Series:
         """
-        生成Williams %R交易信号
-        
+        生成Williams %R交易信号 - 增强指标严格标准
+
         Args:
             df: 包含Williams %R指标的Data_frame
-            
+
         Returns:
             信号序列 (1: 买入, -1: 卖出, 0: 持有)
         """
         signals = pd.Series(0, index=df.index)
         wr = df['wr']
         wr_smooth = df['wr_smooth']
-        
-        for i in range(1, len(df)):
+
+        # 增强指标需要更严格的信号条件，降低信号频率到1-3%
+        signal_cooldown = 15  # 信号冷却期，避免频繁信号
+        last_signal_index = -signal_cooldown
+
+        for i in range(10, len(df)):  # 从第10个数据点开始，确保有足够历史数据
             if pd.isna(wr.iloc[i]) or pd.isna(wr.iloc[i-1]):
                 continue
-            
-            # 超卖反弹买入信号
-            if (wr.iloc[i-1] <= df['wr_oversold'].iloc[i-1] and 
-                wr.iloc[i] > df['wr_oversold'].iloc[i]):
+
+            # 检查冷却期
+            if i - last_signal_index < signal_cooldown:
+                continue
+
+            # 强烈超卖反弹买入信号（更严格条件）
+            if (wr.iloc[i-1] <= df['wr_oversold'].iloc[i-1] and
+                wr.iloc[i] > df['wr_oversold'].iloc[i] and
+                df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高
+                df['wr_momentum'].iloc[i] > 3):  # 动量向上
                 signals.iloc[i] = 1
-            
-            # 超买回落卖出信号
-            elif (wr.iloc[i-1] >= df['wr_overbought'].iloc[i-1] and 
-                  wr.iloc[i] < df['wr_overbought'].iloc[i]):
+                last_signal_index = i
+
+            # 强烈超买回落卖出信号（更严格条件）
+            elif (wr.iloc[i-1] >= df['wr_overbought'].iloc[i-1] and
+                  wr.iloc[i] < df['wr_overbought'].iloc[i] and
+                  df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高
+                  df['wr_momentum'].iloc[i] < -3):  # 动量向下
                 signals.iloc[i] = -1
-            
-            # 平滑线向上突破买入信号
-            elif (wr_smooth.iloc[i-1] <= wr_smooth.iloc[i-2] and 
-                  wr_smooth.iloc[i] > wr_smooth.iloc[i-1] and 
-                  wr.iloc[i] < -60):
-                signals.iloc[i] = 1
-            
-            # 平滑线向下突破卖出信号
-            elif (wr_smooth.iloc[i-1] >= wr_smooth.iloc[i-2] and 
-                  wr_smooth.iloc[i] < wr_smooth.iloc[i-1] and 
-                  wr.iloc[i] > -40):
-                signals.iloc[i] = -1
-            
-            # 背离信号
-            elif df['wr_divergence'].iloc[i] > 0:
-                if wr.iloc[i] < -70:  # 低位背离，买入
+                last_signal_index = i
+
+            # 强烈背离信号（更严格条件）
+            elif (abs(df['wr_divergence'].iloc[i]) > 0.8 and
+                  df['wr_trend_strength'].iloc[i] > 0.6):
+                if df['wr_divergence'].iloc[i] > 0 and wr.iloc[i] < -75:
                     signals.iloc[i] = 1
-                elif wr.iloc[i] > -30:  # 高位背离，卖出
+                    last_signal_index = i
+                elif df['wr_divergence'].iloc[i] < 0 and wr.iloc[i] > -25:
                     signals.iloc[i] = -1
-            
-            # 多周期一致性信号
-            elif df['wr_consistency'].iloc[i] > 0.8:
-                if wr.iloc[i] < -65:  # 低位一致性，买入
-                    signals.iloc[i] = 1
-                elif wr.iloc[i] > -35:  # 高位一致性，卖出
-                    signals.iloc[i] = -1
-            
-            # 动量信号
-            elif df['wr_momentum'].iloc[i] > 5 and wr.iloc[i] < -60:
-                # 正动量且在低位，买入
-                signals.iloc[i] = 1
-            elif df['wr_momentum'].iloc[i] < -5 and wr.iloc[i] > -40:
-                # 负动量且在高位，卖出
-                signals.iloc[i] = -1
-        
+                    last_signal_index = i
+
         return signals
 
-    def calculate_raw_score_Wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """计算原始评分"""
+    def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分 - 标准接口"""
         if not self.has_result():
-            self.calculate_Wr(data, **kwargs)
-        
+            self.calculate(data, **kwargs)
+
         if 'ENHANCED_WR_VALUE' in self._result.columns:
             return self._result['ENHANCED_WR_VALUE']
         else:
             return pd.Series(50.0, index=data.index)
+
+    def calculate_raw_score_Wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
+        """计算原始评分"""
+        return self.calculate_raw_score(data, **kwargs)
 
     def calculate_confidence_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
@@ -461,20 +476,33 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否有计算结果"""
         return hasattr(self, '_result') and self._result is not None
 
-    def get_patterns_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """获取形态"""
+    def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取形态 - 标准接口"""
         if not self.has_result():
-            self.calculate_Wr(data, **kwargs)
-        
+            self.calculate(data, **kwargs)
+
         patterns = pd.DataFrame(index=data.index)
-        
+
         if 'wr' in self._result.columns:
-            patterns['wr_overbought'] = self._result['wr'] > self._result['wr_overbought']
-            patterns['wr_oversold'] = self._result['wr'] < self._result['wr_oversold']
+            # 修复超买超卖识别逻辑
+            if 'wr_overbought' in self._result.columns:
+                patterns['wr_overbought'] = self._result['wr'] >= self._result['wr_overbought']
+            else:
+                patterns['wr_overbought'] = self._result['wr'] >= -20
+
+            if 'wr_oversold' in self._result.columns:
+                patterns['wr_oversold'] = self._result['wr'] <= self._result['wr_oversold']
+            else:
+                patterns['wr_oversold'] = self._result['wr'] <= -80
+
             patterns['wr_divergence'] = self._result['wr_divergence'] > 0
             patterns['wr_uptrend'] = self._result['wr_momentum'] > 0
-        
+
         return patterns
+
+    def get_patterns_Wr(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """获取形态"""
+        return self.get_patterns(data, **kwargs)
 
     # 🔧 Ultra Think修复：添加缺失的抽象方法实现，按照已验证的修复模式
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:

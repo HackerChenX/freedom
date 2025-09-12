@@ -1,0 +1,39 @@
+{
+  "summary": {
+    "total_buypoints": 1,
+    "successful_analyses": 0,
+    "success_rate": 0.0,
+    "average_score": 0.0,
+    "top_patterns": [],
+    "execution_time": 0.0002529621124267578,
+    "performance_metrics": {}
+  },
+  "results": [],
+  "metadata": {
+    "generated_at": "2025-09-12T16:48:38.495583",
+    "config": {
+      "periods": [
+        "日线",
+        "30分钟",
+        "60分钟"
+      ],
+      "indicators": [
+        "MACD",
+        "KDJ",
+        "RSI",
+        "MA",
+        "VOL"
+      ],
+      "lookback_days": 250,
+      "min_data_points": 50,
+      "parallel_workers": 4,
+      "cache_enabled": true
+    },
+    "performance_stats": {
+      "total_analyses": 0,
+      "cache_hits": 0,
+      "average_execution_time": 0.0,
+      "indicator_performance": {}
+    }
+  }
+}
