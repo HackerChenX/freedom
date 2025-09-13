@@ -253,7 +253,7 @@ class CompleteIndicatorRegistry:
         
         enhanced_indicators = {
             'ENHANCED_MACD': 'indicators.enhanced_macd.EnhancedMACD',
-            'ENHANCED_BOLL': 'indicators.boll.EnhancedBOLL',
+            'ENHANCED_BOLL': 'indicators.trend.enhanced_boll_indicators.EnhancedBoll',
             'ENHANCED_STOCHRSI': 'indicators.enhanced_stochrsi.EnhancedSTOCHRSI',
         }
         

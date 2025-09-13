@@ -1,0 +1,98 @@
+{
+  "evaluation_summary": {
+    "evaluation_id": "eval_20250912_164835",
+    "evaluation_date": "2025-09-12T16:48:35.543594",
+    "performance_metrics": {
+      "total_trades": 5,
+      "winning_trades": 3,
+      "losing_trades": 2,
+      "win_rate": 0.6,
+      "average_win": 0.03,
+      "average_loss": -0.015,
+      "profit_factor": 3.0,
+      "total_return": 0.05999999999999999,
+      "annualized_return": 17.64412729761953,
+      "max_drawdown": -0.020000000000000122,
+      "sharpe_ratio": 6.586346874921973,
+      "sortino_ratio": 26.672671942859957,
+      "calmar_ratio": 882.2063648809711,
+      "volatility": 0.4545767261970195
+    },
+    "risk_metrics": {
+      "var_95": -0.018000000000000002,
+      "cvar_95": -0.02,
+      "maximum_drawdown": -0.020000000000000122,
+      "drawdown_duration": 1,
+      "downside_deviation": 0.007071067811865475,
+      "beta": 1.0,
+      "tracking_error": 0.05,
+      "information_ratio": 0.2
+    },
+    "detailed_analysis": {
+      "trade_distribution": {
+        "return_distribution": {
+          "mean": 0.011999999999999999,
+          "std": 0.02863564212655271,
+          "skewness": 0.30662793472810784,
+          "kurtosis": -1.543723973825104
+        },
+        "percentiles": {
+          "5%": -0.018000000000000002,
+          "25%": -0.01,
+          "50%": 0.01,
+          "75%": 0.03,
+          "95%": 0.046
+        }
+      },
+      "time_analysis": {
+        "monthly_patterns": {
+          "12": 0.012
+        },
+        "weekly_patterns": {
+          "0": -0.02,
+          "1": 0.03,
+          "2": 0.01,
+          "3": -0.01,
+          "6": 0.05
+        },
+        "total_period_days": 4
+      },
+      "performance_consistency": {
+        "consistency_score": 0.5,
+        "message": "数据不足"
+      },
+      "risk_analysis": {
+        "consecutive_losses": {
+          "max_consecutive": 1,
+          "current_consecutive": 1,
+          "average_consecutive": 1.0
+        },
+        "tail_risk": 0.2,
+        "negative_return_frequency": 0.4
+      }
+    },
+    "recommendations": [
+      "胜率中等，需要优化止损策略",
+      "夏普比率优秀，风险调整后收益良好",
+      "回撤控制良好，风险管理有效",
+      "盈亏比优秀，策略具有良好的风险收益特征"
+    ],
+    "overall_rating": "B+",
+    "confidence_level": 0.8
+  },
+  "generated_at": "2025-09-12T16:48:35.543775",
+  "evaluation_config": {
+    "risk_free_rate": 0.03,
+    "benchmark_return": 0.08,
+    "confidence_levels": [
+      0.95,
+      0.99
+    ],
+    "evaluation_periods": [
+      30,
+      90,
+      180,
+      365
+    ]
+  }
+}

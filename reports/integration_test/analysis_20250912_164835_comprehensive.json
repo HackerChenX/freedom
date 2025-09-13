@@ -1,0 +1,281 @@
+{
+  "analysis_result": {
+    "analysis_id": "analysis_20250912_164835",
+    "analysis_date": "2025-09-12T16:48:35.838020",
+    "backtest_summary": {
+      "total_buypoints": 3,
+      "successful_analyses": 3,
+      "success_rate": 1.0,
+      "average_score": 80.0,
+      "top_patterns": [
+        [
+          "日线_MACD_pattern1",
+          3
+        ],
+        [
+          "日线_MACD_pattern2",
+          3
+        ],
+        [
+          "日线_MACD_SignalType.BUY_signal",
+          3
+        ],
+        [
+          "日线_KDJ_pattern1",
+          3
+        ],
+        [
+          "日线_KDJ_pattern2",
+          3
+        ],
+        [
+          "日线_KDJ_SignalType.BUY_signal",
+          3
+        ],
+        [
+          "日线_RSI_pattern1",
+          3
+        ],
+        [
+          "日线_RSI_pattern2",
+          3
+        ],
+        [
+          "日线_RSI_SignalType.BUY_signal",
+          3
+        ],
+        [
+          "日线_MA_pattern1",
+          3
+        ]
+      ],
+      "execution_time": 0.025480031967163086,
+      "performance_metrics": {
+        "score_statistics": {
+          "mean": 80.0,
+          "median": 80.0,
+          "std": 0.0,
+          "min": 80.0,
+          "max": 80.0
+        },
+        "execution_statistics": {
+          "mean_time": 0.01480722427368164,
+          "total_time": 0.04442167282104492,
+          "min_time": 0.008980989456176758,
+          "max_time": 0.01793670654296875
+        },
+        "signal_distribution": {
+          "强烈买入": 3
+        }
+      }
+    },
+    "detected_signals": [
+      {
+        "signal_id": "002415_2025-09-12_pattern_breakout",
+        "stock_code": "002415",
+        "detection_date": "2025-09-12",
+        "buypoint_type": "BuyPointType.PATTERN_BREAKOUT",
+        "quality": "BuyPointQuality.EXCELLENT",
+        "confidence": 0.8999999999999999,
+        "score": "95",
+        "price": 9.479628227837145,
+        "volume": "1338972",
+        "technical_indicators": {
+          "pattern_types": [
+            "triangle",
+            "double_bottom"
+          ]
+        },
+        "pattern_analysis": {
+          "breakout_patterns": [
+            "triangle",
+            "double_bottom"
+          ]
+        },
+        "risk_assessment": {
+          "risk_level": "medium"
+        },
+        "recommendations": [
+          "关注突破有效性",
+          "设置合理止损"
+        ]
+      },
+      {
+        "signal_id": "000858_2025-09-12_pattern_breakout",
+        "stock_code": "000858",
+        "detection_date": "2025-09-12",
+        "buypoint_type": "BuyPointType.PATTERN_BREAKOUT",
+        "quality": "BuyPointQuality.EXCELLENT",
+        "confidence": 0.7999999999999999,
+        "score": "85",
+        "price": 10.059126744060038,
+        "volume": "1378971",
+        "technical_indicators": {
+          "pattern_types": [
+            "double_bottom"
+          ]
+        },
+        "pattern_analysis": {
+          "breakout_patterns": [
+            "double_bottom"
+          ]
+        },
+        "risk_assessment": {
+          "risk_level": "medium"
+        },
+        "recommendations": [
+          "关注突破有效性",
+          "设置合理止损"
+        ]
+      }
+    ],
+    "evaluation_result": {
+      "evaluation_id": "eval_20250912_164835",
+      "evaluation_date": "2025-09-12T16:48:35.837950",
+      "performance_metrics": {
+        "total_trades": 3,
+        "winning_trades": 3,
+        "losing_trades": 0,
+        "win_rate": 1.0,
+        "average_win": 0.06579760490035598,
+        "average_loss": 0.0,
+        "profit_factor": Infinity,
+        "total_return": 0.19739281470106795,
+        "annualized_return": 9199523.06465043,
+        "max_drawdown": 0.0,
+        "sharpe_ratio": 58.48457271288316,
+        "sortino_ratio": 58.48457271288316,
+        "calmar_ratio": 0.0,
+        "volatility": 0.2829976465100139
+      },
+      "risk_metrics": {
+        "var_95": 0.04821480019414664,
+        "cvar_95": 0.04537456976449605,
+        "maximum_drawdown": 0.0,
+        "drawdown_duration": 0,
+        "downside_deviation": 0.0,
+        "beta": 1.0,
+        "tracking_error": 0.05,
+        "information_ratio": 0.2
+      },
+      "detailed_analysis": {
+        "trade_distribution": {
+          "return_distribution": {
+            "mean": 0.06579760490035598,
+            "std": 0.01782717605433483,
+            "skewness": -1.6106459617804294,
+            "kurtosis": NaN
+          },
+          "percentiles": {
+            "5%": 0.04821480019414664,
+            "25%": 0.05957572191274899,
+            "50%": 0.07377687406100193,
+            "75%": 0.07600912246828595,
+            "95%": 0.07779492119411317
+          }
+        },
+        "time_analysis": {
+          "monthly_patterns": {
+            "9": 0.06579760490035598
+          },
+          "weekly_patterns": {
+            "2": 0.07824137087556998,
+            "3": 0.04537456976449605,
+            "4": 0.07377687406100193
+          },
+          "total_period_days": 2
+        },
+        "performance_consistency": {
+          "consistency_score": 0.5,
+          "message": "数据不足"
+        },
+        "risk_analysis": {
+          "consecutive_losses": {
+            "max_consecutive": 0,
+            "current_consecutive": 0,
+            "average_consecutive": 0
+          },
+          "tail_risk": 0.3333333333333333,
+          "negative_return_frequency": 0.0
+        }
+      },
+      "recommendations": [
+        "胜率较高，策略表现良好",
+        "夏普比率优秀，风险调整后收益良好",
+        "回撤控制良好，风险管理有效",
+        "盈亏比优秀，策略具有良好的风险收益特征"
+      ],
+      "overall_rating": "A+",
+      "confidence_level": 0.9
+    },
+    "performance_metrics": {
+      "backtest_metrics": {
+        "total_buypoints": 3,
+        "success_rate": 1.0,
+        "average_score": 80.0,
+        "execution_time": 0.025480031967163086
+      },
+      "detection_metrics": {
+        "total_signals": 2,
+        "high_quality_signals": 2,
+        "average_confidence": 0.8499999999999999
+      },
+      "evaluation_metrics": {
+        "overall_rating": "A+",
+        "confidence_level": 0.9,
+        "win_rate": 1.0,
+        "sharpe_ratio": 58.48457271288316
+      }
+    },
+    "recommendations": [
+      "历史回测表现优秀，策略具有较强的稳定性",
+      "检测到 2 个高质量买点信号，建议重点关注",
+      "策略评级优秀，建议增加投资比重",
+      "建议设置合理的止损位，控制单笔损失",
+      "建议分散投资，避免集中持仓风险"
+    ],
+    "execution_time": 0.16777706146240234
+  },
+  "config": {
+    "backtest_config": {
+      "periods": [
+        "日线",
+        "30分钟",
+        "60分钟"
+      ],
+      "indicators": [
+        "MACD",
+        "KDJ",
+        "RSI",
+        "MA",
+        "VOL"
+      ],
+      "lookback_days": 250,
+      "min_data_points": 50,
+      "parallel_workers": 4,
+      "cache_enabled": true
+    },
+    "detection_config": {
+      "min_confidence": 0.6,
+      "min_score": 60.0,
+      "lookback_periods": 20,
+      "volume_threshold": 1.5,
+      "price_change_threshold": 0.02,
+      "enable_ml_detection": false,
+      "detection_types": [
+        "BuyPointType.VOLUME_BREAKOUT",
+        "BuyPointType.PULLBACK_SUPPORT",
+        "BuyPointType.TREND_REVERSAL",
+        "BuyPointType.PATTERN_BREAKOUT",
+        "BuyPointType.MOMENTUM_ACCELERATION",
+        "BuyPointType.OVERSOLD_REBOUND",
+        "BuyPointType.MULTI_TIMEFRAME_CONFLUENCE"
+      ]
+    },
+    "enable_realtime_detection": true,
+    "enable_performance_evaluation": true,
+    "output_directory": "reports/integration_test",
+    "max_concurrent_analyses": 10
+  },
+  "generated_at": "2025-09-12T16:48:35.838256"
+}

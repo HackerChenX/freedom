@@ -1,0 +1,108 @@
+{
+  "test_summary": {
+    "total_tests": 13,
+    "passed_tests": 13,
+    "failed_tests": 0,
+    "success_rate": 1.0,
+    "execution_time": 0.007740020751953125
+  },
+  "test_details": [
+    {
+      "test_name": "公式解析功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功解析 2 个条件",
+      "timestamp": "2025-09-12T15:48:10.721337"
+    },
+    {
+      "test_name": "策略配置创建",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功创建策略: strategy_20250912_154810",
+      "timestamp": "2025-09-12T15:48:10.721495"
+    },
+    {
+      "test_name": "策略配置验证",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "验证通过，得分: 100.0",
+      "timestamp": "2025-09-12T15:48:10.721585"
+    },
+    {
+      "test_name": "配置导出导入",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "导出导入功能正常",
+      "timestamp": "2025-09-12T15:48:10.721844"
+    },
+    {
+      "test_name": "选股执行功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功执行选股，分析 3 只股票",
+      "timestamp": "2025-09-12T15:48:10.722483"
+    },
+    {
+      "test_name": "性能统计功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "性能统计功能正常",
+      "timestamp": "2025-09-12T15:48:10.722517"
+    },
+    {
+      "test_name": "策略评估功能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "评估完成，得分: 92.25, 评级: A+",
+      "timestamp": "2025-09-12T15:48:10.724634"
+    },
+    {
+      "test_name": "评估报告导出",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "报告导出功能正常",
+      "timestamp": "2025-09-12T15:48:10.724844"
+    },
+    {
+      "test_name": "公式创建策略",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功创建策略: strategy_20250912_154810",
+      "timestamp": "2025-09-12T15:48:10.725263"
+    },
+    {
+      "test_name": "完整分析流程",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "完整分析流程正常",
+      "timestamp": "2025-09-12T15:48:10.726709"
+    },
+    {
+      "test_name": "系统状态获取",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "系统状态正常",
+      "timestamp": "2025-09-12T15:48:10.726755"
+    },
+    {
+      "test_name": "多策略并行处理",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "成功率: 100.0%",
+      "timestamp": "2025-09-12T15:48:10.727842"
+    },
+    {
+      "test_name": "大股票池性能",
+      "status": "✅ PASSED",
+      "passed": true,
+      "details": "执行时间: 0.00秒",
+      "timestamp": "2025-09-12T15:48:10.728717"
+    }
+  ],
+  "test_metadata": {
+    "start_time": "2025-09-12T15:48:10.721024",
+    "end_time": "2025-09-12T15:48:10.728766",
+    "test_environment": "development",
+    "test_version": "1.0.0"
+  }
+}
