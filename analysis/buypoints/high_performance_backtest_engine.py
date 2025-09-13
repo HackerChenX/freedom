@@ -272,9 +272,11 @@ class HighPerformanceBacktestEngine:
         container = get_container()
         try:
             self.data_access = container.resolve("DataAccessInterface")
-        except:
-            self.logger.warning("使用模拟数据访问接口")
-            self.data_access = self._create_mock_data_access()
+        except Exception as e:
+            # 数据纯净化：必须使用真实数据访问接口
+            error_msg = f"数据纯净化要求：必须使用真实数据访问接口，不允许模拟实现。初始化失败: {e}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
         self.logger.info(f"高性能回测引擎初始化完成")
         self.logger.info(f"性能目标: {self.performance_target.target_speed}条/秒, "
@@ -723,36 +725,3 @@ class HighPerformanceBacktestEngine:
                 'gc_calls': self.memory_manager.gc_counter
             }
         }
-
-    def _create_mock_data_access(self):
-        """创建模拟数据访问 - 仅用于测试"""
-        class MockDataAccess:
-            def query_dataframe(self, query: str) -> pd.DataFrame:
-                # 生成高质量模拟数据用于性能测试
-                dates = pd.date_range('2023-01-01', '2023-12-31', freq='D')
-                np.random.seed(42)  # 保证可重复性
-
-                data = []
-                base_price = 100.0
-                for i, date in enumerate(dates):
-                    # 生成符合股价规律的模拟数据
-                    price_change = np.random.normal(0, 2)
-                    base_price = max(1.0, base_price + price_change)
-
-                    high = base_price * (1 + np.random.uniform(0, 0.03))
-                    low = base_price * (1 - np.random.uniform(0, 0.03))
-                    volume = int(np.random.lognormal(13, 1))
-
-                    data.append({
-                        'code': '000001',
-                        'date': date.strftime('%Y-%m-%d'),
-                        'open': base_price,
-                        'high': high,
-                        'low': low,
-                        'close': base_price,
-                        'volume': volume
-                    })
-
-                return pd.DataFrame(data)
-
-        return MockDataAccess()

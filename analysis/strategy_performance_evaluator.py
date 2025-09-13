@@ -517,9 +517,10 @@ class StrategyPerformanceEvaluator:
         """
         try:
             if self.data_access is None:
-                # 生成模拟基准数据
-                self.logger.warning("无法获取真实基准数据，使用模拟数据")
-                return self._generate_mock_benchmark_data(start_date, end_date)
+                # 数据纯净化：必须使用真实基准数据
+                error_msg = "数据纯净化要求：无法获取真实基准数据，不允许使用模拟数据"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
             # 从ClickHouse获取基准数据
             query = f"""
@@ -535,8 +536,9 @@ class StrategyPerformanceEvaluator:
             benchmark_data = self.data_access.query_dataframe(query)
 
             if benchmark_data.empty:
-                self.logger.warning("未获取到基准数据，使用模拟数据")
-                return self._generate_mock_benchmark_data(start_date, end_date)
+                error_msg = f"数据纯净化要求：未获取到基准代码 {self.config.benchmark_code} 的真实数据，不允许使用模拟数据"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
 
             # 处理基准数据
             benchmark_data['date'] = pd.to_datetime(benchmark_data['date'])
@@ -549,24 +551,10 @@ class StrategyPerformanceEvaluator:
 
         except Exception as e:
             self.logger.error(f"获取基准数据失败: {e}")
-            return self._generate_mock_benchmark_data(start_date, end_date)
-
-    def _generate_mock_benchmark_data(self, start_date: pd.Timestamp, end_date: pd.Timestamp) -> pd.DataFrame:
-        """生成模拟基准数据"""
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-
-        # 生成符合股市特征的随机收益率
-        np.random.seed(42)  # 确保可重复性
-        returns = np.random.normal(0.0005, 0.02, len(dates))  # 年化收益约12.5%，年化波动约32%
-
-        benchmark_data = pd.DataFrame({
-            'returns': returns,
-            'cumulative_returns': (1 + returns).cumprod()
-        }, index=dates)
-
-        benchmark_data['close'] = 100 * benchmark_data['cumulative_returns']
-
-        return benchmark_data
+            # 数据纯净化：不允许生成模拟基准数据，必须使用真实数据
+            error_msg = f"数据纯净化要求：获取基准数据失败，不允许使用模拟数据。原因: {e}"
+            self.logger.error(error_msg)
+            raise ValueError(error_msg)
 
     def _calculate_performance_metrics(self,
                                      strategy_data: pd.DataFrame,

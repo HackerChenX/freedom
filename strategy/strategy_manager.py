@@ -53,13 +53,9 @@ class StrategyManager:
             # 使用正确的SQL管理器
             self.sql_manager = get_sql_manager()
         except Exception as e:
-            logger.warning(f"SQL管理器初始化失败: {e}")
-            # 如果没有SQL管理器，创建一个模拟实现
-            self.sql_manager = type('MockSQLManager', (), {
-                'get_query': lambda self, query_type: f"SELECT * FROM strategies WHERE type = '{query_type}'",
-                'validate_params': lambda self, query_type, params: True,
-                'build_dynamic_query': lambda self, **kwargs: "SELECT * FROM strategies"
-            })()
+            logger.error(f"SQL管理器初始化失败: {e}")
+            # 数据纯净化：必须使用真实SQL管理器，不允许模拟实现
+            raise ValueError("数据纯净化要求：必须使用真实SQL管理器，不允许创建模拟实现")
         
         self.strategy_dir = get_strategy_dir()
         

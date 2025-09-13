@@ -24,66 +24,158 @@ logger = get_logger(__name__)
 class DataAccessManager(DataAccessInterface):
     """
     数据访问管理器
-    
+
     实现统一的数据访问接口，集成缓存和连接管理
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  connection_manager=None,
                  cache_service=None):
         """
         初始化数据访问管理器
-        
+
         Args:
             connection_manager: 连接管理器
             cache_service: 缓存服务
         """
         self.connection_manager = connection_manager
         self.cache_service = cache_service
-        
+
         logger.info("数据访问管理器初始化完成")
+
+    def _validate_real_data(self, data_source: str = None, data_type: str = None) -> bool:
+        """
+        验证数据源是真实数据 - 数据纯净化要求
+
+        Args:
+            data_source: 数据源标识
+            data_type: 数据类型
+
+        Returns:
+            bool: 验证通过返回True
+
+        Raises:
+            ValueError: 检测到模拟数据时抛出异常
+        """
+        forbidden_sources = ['mock', 'simulate', 'fake', 'dummy', 'test', 'random']
+
+        if data_source:
+            data_source_lower = data_source.lower()
+            for forbidden in forbidden_sources:
+                if forbidden in data_source_lower:
+                    error_msg = f"数据纯净化违规：禁止使用模拟数据源 '{data_source}'"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+
+        if data_type:
+            data_type_lower = data_type.lower()
+            for forbidden in forbidden_sources:
+                if forbidden in data_type_lower:
+                    error_msg = f"数据纯净化违规：禁止使用模拟数据类型 '{data_type}'"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
+
+        logger.debug("真实数据验证通过")
+        return True
+
+    def _validate_data_integrity(self, data: pd.DataFrame, data_name: str = "数据") -> bool:
+        """
+        验证数据完整性和真实性
+
+        Args:
+            data: 待验证的数据
+            data_name: 数据名称（用于日志）
+
+        Returns:
+            bool: 验证通过返回True
+
+        Raises:
+            ValueError: 数据不完整或可疑时抛出异常
+        """
+        if data.empty:
+            error_msg = f"{data_name}为空，违反数据纯净化要求"
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        # 检查是否包含明显的模拟数据特征
+        if hasattr(data, 'columns'):
+            suspicious_columns = [col for col in data.columns
+                                if any(word in col.lower() for word in ['mock', 'fake', 'simulate', 'test'])]
+            if suspicious_columns:
+                error_msg = f"{data_name}包含可疑的模拟数据列: {suspicious_columns}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+        # 检查数据源标记
+        if hasattr(data, 'attrs') and 'source' in data.attrs:
+            self._validate_real_data(data.attrs['source'])
+
+        logger.debug(f"{data_name}完整性验证通过，记录数: {len(data)}")
+        return True
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_stock_data_data_access_manager(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_data_access_manager(self, code: str, start_date: str, end_date: str,
                       columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
-        
+
         Args:
             code: 股票代码
             start_date: 开始日期
             end_date: 结束日期
             columns: 需要的列名列表，None表示所有列
-            
+
         Returns:
             股票数据DataFrame
         """
         try:
+            # 数据纯净化：验证输入参数
+            self._validate_real_data(data_type=f"stock_data_for_{code}")
+
             from db.unified_data_manager import get_unified_data_manager
             data_manager = get_unified_data_manager()
-            return data_manager.get_stock_daily_data(code, start_date, end_date)
+
+            # 获取真实股票数据
+            data = data_manager.get_stock_daily_data(code, start_date, end_date)
+
+            # 数据纯净化：验证返回数据的完整性和真实性
+            if not data.empty:
+                self._validate_data_integrity(data, f"股票{code}的数据")
+
+            logger.info(f"成功获取股票{code}的真实数据，记录数: {len(data)}")
+            return data
+
         except Exception as e:
             logger.error(f"获取股票数据失败: {e}")
             return pd.DataFrame()
     
     # 添加标准接口方法 - 这是其他模块期望的方法名
     @exception_handler(reraise=False, default_return=pd.DataFrame())
-    def get_stock_data(self, code: str = None, stock_code: str = None, 
-                      start_date: str = None, end_date: str = None, 
+    def get_stock_data(self, code: str = None, stock_code: str = None,
+                      start_date: str = None, end_date: str = None,
                       columns: Optional[List[str]] = None, **kwargs) -> pd.DataFrame:
         """
         获取股票数据 - 标准接口方法
-        
+
         Args:
             code: 股票代码
+            stock_code: 备用的股票代码参数
             start_date: 开始日期
             end_date: 结束日期
             columns: 需要的列名列表，None表示所有列
-            
+
         Returns:
             股票数据DataFrame
         """
-        return self.get_stock_data_data_access_manager(code, start_date, end_date, columns)
+        # 数据纯净化：确保使用真实股票代码
+        actual_code = code or stock_code
+        if not actual_code:
+            logger.error("数据纯净化要求：必须提供真实的股票代码")
+            raise ValueError("数据纯净化违规：股票代码不能为空")
+
+        self._validate_real_data(data_type=f"stock_query_for_{actual_code}")
+
+        return self.get_stock_data_data_access_manager(actual_code, start_date, end_date, columns)
     
     @exception_handler(reraise=False, default_return=pd.DataFrame())
     def get_stocks_data_batch_data_access_manager(self, codes: List[str], start_date: str, end_date: str,

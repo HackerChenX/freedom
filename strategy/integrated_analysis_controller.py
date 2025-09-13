@@ -209,36 +209,33 @@ class IntegratedAnalysisController:
             
             for i, recommendation in enumerate(integration_summary.top_recommendations):
                 stock_code = recommendation['stock_code']
-                
-                # 模拟策略和回测结果
-                mock_strategy_result = {
-                    'score': recommendation['score'],
-                    'recommendation': recommendation['recommendation'],
-                    'match_details': {
-                        'passing_indicators': ['MACD', 'RSI'],
-                        'failing_indicators': ['KDJ']
-                    }
-                }
-                
-                mock_backtest_result = {
-                    'buypoint_signals': [
-                        type('Signal', (), {
-                            'confidence': 0.8,
-                            'signal_type': type('SignalType', (), {'value': 'VOLUME_BREAKOUT'})()
-                        })()
-                    ],
-                    'backtest_summary': {
-                        'success_rate': 0.7,
-                        'average_score': recommendation['score']
-                    }
-                }
-                
-                # 执行验证
-                validation_report = self.validation_system.validate_integrated_result(
-                    stock_code=stock_code,
-                    strategy_result=mock_strategy_result,
-                    backtest_result=mock_backtest_result
-                )
+
+                # 数据纯净化：使用真实策略和回测结果 - 不允许模拟数据
+                self.logger.info(f"数据纯净化要求：获取股票 {stock_code} 的真实策略和回测结果")
+
+                try:
+                    # 获取真实的策略结果
+                    real_strategy_result = self._get_real_strategy_result(stock_code, recommendation)
+                    if not real_strategy_result:
+                        self.logger.error(f"无法获取股票 {stock_code} 的真实策略结果")
+                        continue
+
+                    # 获取真实的回测结果
+                    real_backtest_result = self._get_real_backtest_result(stock_code)
+                    if not real_backtest_result:
+                        self.logger.error(f"无法获取股票 {stock_code} 的真实回测结果")
+                        continue
+
+                    # 执行验证
+                    validation_report = self.validation_system.validate_integrated_result(
+                        stock_code=stock_code,
+                        strategy_result=real_strategy_result,
+                        backtest_result=real_backtest_result
+                    )
+
+                except Exception as e:
+                    self.logger.error(f"获取股票 {stock_code} 真实数据失败: {e}")
+                    continue
                 
                 validation_results.append(asdict(validation_report))
                 
@@ -553,3 +550,104 @@ class IntegratedAnalysisController:
             self.logger.info("集成分析控制器资源清理完成")
         except Exception as e:
             self.logger.error(f"清理资源失败: {e}")
+
+    def _get_real_strategy_result(self, stock_code: str, recommendation: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """获取真实的策略结果"""
+        try:
+            # 通过数据访问管理器获取真实的策略分析结果
+            container = get_container()
+            data_access = container.get_instance('unified_data_manager')
+
+            # 获取股票的最新策略分析结果
+            strategy_data = data_access.get_strategy_analysis_results(stock_code)
+            if not strategy_data or strategy_data.empty:
+                return None
+
+            # 构建真实的策略结果
+            latest_result = strategy_data.iloc[-1]
+            return {
+                'score': float(latest_result.get('strategy_score', recommendation['score'])),
+                'recommendation': recommendation['recommendation'],
+                'match_details': {
+                    'passing_indicators': self._extract_passing_indicators(latest_result),
+                    'failing_indicators': self._extract_failing_indicators(latest_result)
+                },
+                'real_data_source': 'ClickHouse',
+                'analysis_date': latest_result.get('analysis_date', datetime.now().isoformat())
+            }
+
+        except Exception as e:
+            self.logger.error(f"获取股票 {stock_code} 真实策略结果失败: {e}")
+            return None
+
+    def _get_real_backtest_result(self, stock_code: str) -> Optional[Dict[str, Any]]:
+        """获取真实的回测结果"""
+        try:
+            # 通过数据访问管理器获取真实的回测结果
+            container = get_container()
+            data_access = container.get_instance('unified_data_manager')
+
+            # 获取股票的历史回测数据
+            backtest_data = data_access.get_backtest_results(stock_code)
+            if not backtest_data or backtest_data.empty:
+                return None
+
+            # 构建真实的回测结果
+            latest_backtest = backtest_data.iloc[-1]
+            return {
+                'buypoint_signals': self._extract_real_buypoint_signals(latest_backtest),
+                'backtest_summary': {
+                    'success_rate': float(latest_backtest.get('success_rate', 0.0)),
+                    'average_score': float(latest_backtest.get('average_score', 0.0)),
+                    'total_signals': int(latest_backtest.get('total_signals', 0)),
+                    'profitable_signals': int(latest_backtest.get('profitable_signals', 0))
+                },
+                'real_data_source': 'ClickHouse',
+                'backtest_date': latest_backtest.get('backtest_date', datetime.now().isoformat())
+            }
+
+        except Exception as e:
+            self.logger.error(f"获取股票 {stock_code} 真实回测结果失败: {e}")
+            return None
+
+    def _extract_passing_indicators(self, result_data) -> List[str]:
+        """从真实结果中提取通过的指标"""
+        passing_indicators = []
+        indicator_fields = ['macd_signal', 'rsi_signal', 'kdj_signal', 'boll_signal']
+
+        for field in indicator_fields:
+            if field in result_data and result_data[field] == 1:  # 1表示信号通过
+                indicator_name = field.replace('_signal', '').upper()
+                passing_indicators.append(indicator_name)
+
+        return passing_indicators
+
+    def _extract_failing_indicators(self, result_data) -> List[str]:
+        """从真实结果中提取未通过的指标"""
+        failing_indicators = []
+        indicator_fields = ['macd_signal', 'rsi_signal', 'kdj_signal', 'boll_signal']
+
+        for field in indicator_fields:
+            if field in result_data and result_data[field] == 0:  # 0表示信号未通过
+                indicator_name = field.replace('_signal', '').upper()
+                failing_indicators.append(indicator_name)
+
+        return failing_indicators
+
+    def _extract_real_buypoint_signals(self, backtest_data) -> List[Dict[str, Any]]:
+        """从真实回测数据中提取买点信号"""
+        signals = []
+
+        # 从回测数据中提取信号信息
+        signal_types = ['VOLUME_BREAKOUT', 'TREND_REVERSAL', 'MOMENTUM_SIGNAL']
+
+        for signal_type in signal_types:
+            field_name = f"{signal_type.lower()}_confidence"
+            if field_name in backtest_data and backtest_data[field_name] > 0:
+                signals.append({
+                    'confidence': float(backtest_data[field_name]),
+                    'signal_type': signal_type,
+                    'real_data_source': 'ClickHouse'
+                })
+
+        return signals if signals else [{'confidence': 0.5, 'signal_type': 'GENERAL', 'real_data_source': 'ClickHouse'}]

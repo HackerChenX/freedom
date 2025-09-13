@@ -260,46 +260,13 @@ class PatternRecognizer:
                     end_date=end_date
                 )
             else:
-                # 返回模拟数据用于测试
-                return self._generate_mock_stock_data(buypoint.stock_code, start_date, end_date)
+                # 必须使用真实数据 - 不允许模拟数据
+                self.logger.error(f"无法获取股票 {buypoint.stock_code} 的真实数据，拒绝使用模拟数据")
+                raise ValueError(f"数据纯净化要求：必须使用真实数据，拒绝为 {buypoint.stock_code} 生成模拟数据")
 
         except Exception as e:
             self.logger.warning(f"获取股票 {buypoint.stock_code} 数据失败: {e}")
             return pd.DataFrame()
-
-    def _generate_mock_stock_data(self, stock_code: str, start_date: str, end_date: str) -> pd.DataFrame:
-        """生成模拟股票数据用于测试"""
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        np.random.seed(hash(stock_code) % 2**32)  # 确保每个股票的数据一致
-
-        n_days = len(dates)
-        base_price = 10.0
-
-        # 生成价格序列
-        returns = np.random.normal(0.001, 0.02, n_days)  # 日收益率
-        prices = [base_price]
-
-        for ret in returns[1:]:
-            prices.append(prices[-1] * (1 + ret))
-
-        # 生成OHLC数据
-        data = []
-        for i, (date, close) in enumerate(zip(dates, prices)):
-            high = close * (1 + abs(np.random.normal(0, 0.01)))
-            low = close * (1 - abs(np.random.normal(0, 0.01)))
-            open_price = prices[i-1] if i > 0 else close
-            volume = int(np.random.normal(1000000, 300000))
-
-            data.append({
-                'date': date.strftime('%Y-%m-%d'),
-                'open': max(open_price, 0.1),
-                'high': max(high, close, open_price),
-                'low': min(low, close, open_price),
-                'close': max(close, 0.1),
-                'volume': max(volume, 1000)
-            })
-
-        return pd.DataFrame(data)
 
     def _calculate_all_indicators(self, stock_data: pd.DataFrame) -> Dict[str, pd.Series]:
         """
