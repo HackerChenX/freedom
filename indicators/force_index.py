@@ -58,14 +58,27 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """设置参数"""
         self.period = kwargs.get('period', self.period)
     
+    def _validate_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据的有效性"""
+        if data is None or len(data) == 0:
+            return False
+
+        # 检查必需列
+        for col in self.REQUIRED_COLUMNS:
+            if col not in data.columns:
+                logger.error(f"数据缺少必需列: {col}")
+                return False
+
+        return True
+
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算力量指数
-        
+
         Args:
             data: 包含close和volume列的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             pd.DataFrame: 包含力量指数的DataFrame
         """
@@ -73,7 +86,7 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证数据
             if not self._validate_data(data):
                 return pd.DataFrame()
-            
+
             df = data.copy()
             
             # 计算价格变化

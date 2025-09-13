@@ -72,14 +72,27 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.period2 = kwargs.get('period2', self.period2)
         self.period3 = kwargs.get('period3', self.period3)
     
+    def _validate_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据的有效性"""
+        if data is None or len(data) == 0:
+            return False
+
+        # 检查必需列
+        for col in self.REQUIRED_COLUMNS:
+            if col not in data.columns:
+                logger.error(f"数据缺少必需列: {col}")
+                return False
+
+        return True
+
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算终极振荡器
-        
+
         Args:
             data: 包含high、low、close列的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             pd.DataFrame: 包含终极振荡器的DataFrame
         """
@@ -87,7 +100,7 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证数据
             if not self._validate_data(data):
                 return pd.DataFrame()
-            
+
             df = data.copy()
             
             # 计算前一日收盘价

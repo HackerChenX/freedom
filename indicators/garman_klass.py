@@ -63,14 +63,27 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.period = kwargs.get('period', self.period)
         self.annualize = kwargs.get('annualize', self.annualize)
     
+    def _validate_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据的有效性"""
+        if data is None or len(data) == 0:
+            return False
+
+        # 检查必需列
+        for col in self.REQUIRED_COLUMNS:
+            if col not in data.columns:
+                logger.error(f"数据缺少必需列: {col}")
+                return False
+
+        return True
+
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算Garman-Klass波动率
-        
+
         Args:
             data: 包含OHLC列的DataFrame
             **kwargs: 其他参数
-            
+
         Returns:
             pd.DataFrame: 包含Garman-Klass波动率的DataFrame
         """
@@ -78,7 +91,7 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证数据
             if not self._validate_data(data):
                 return pd.DataFrame()
-            
+
             df = data.copy()
             
             # 避免除零和对数计算错误
