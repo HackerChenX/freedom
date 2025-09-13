@@ -1,0 +1,382 @@
+# API Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-service
+  namespace: freedom-stock
+  labels:
+    app: api-service
+    component: api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: api-service
+  template:
+    metadata:
+      labels:
+        app: api-service
+        component: api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: api-service
+        image: freedom-stock-analysis:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "clickhouse-primary-service"
+        - name: CLICKHOUSE_PORT
+          value: "8123"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_USER
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: REDIS_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: freedom-config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: app-logs
+          mountPath: /app/logs
+        - name: app-data
+          mountPath: /app/data
+        - name: app-results
+          mountPath: /app/results
+      volumes:
+      - name: app-logs
+        emptyDir: {}
+      - name: app-data
+        emptyDir: {}
+      - name: app-results
+        emptyDir: {}
+---
+# API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+  namespace: freedom-stock
+  labels:
+    app: api-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000
+    protocol: TCP
+    name: http
+  selector:
+    app: api-service
+---
+# HorizontalPodAutoscaler for API Service
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-service-hpa
+  namespace: freedom-stock
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-service
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+---
+# Data Processor Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-processor
+  namespace: freedom-stock
+  labels:
+    app: data-processor
+    component: processor
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: data-processor
+  template:
+    metadata:
+      labels:
+        app: data-processor
+        component: processor
+    spec:
+      containers:
+      - name: data-processor
+        image: freedom-data-processor:latest
+        imagePullPolicy: Always
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "clickhouse-primary-service"
+        - name: CLICKHOUSE_PORT
+          value: "8123"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_USER
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: REDIS_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: freedom-config
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "6Gi"
+            cpu: "4000m"
+        volumeMounts:
+        - name: processor-logs
+          mountPath: /app/logs
+        - name: processor-data
+          mountPath: /app/data
+        - name: processor-results
+          mountPath: /app/results
+      volumes:
+      - name: processor-logs
+        emptyDir: {}
+      - name: processor-data
+        emptyDir: {}
+      - name: processor-results
+        emptyDir: {}
+---
+# Strategy Analyzer Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strategy-analyzer
+  namespace: freedom-stock
+  labels:
+    app: strategy-analyzer
+    component: analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: strategy-analyzer
+  template:
+    metadata:
+      labels:
+        app: strategy-analyzer
+        component: analyzer
+    spec:
+      containers:
+      - name: strategy-analyzer
+        image: freedom-stock-analysis:latest
+        imagePullPolicy: Always
+        command: ["python", "strategy/intelligent_strategy_generator.py"]
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "clickhouse-primary-service"
+        - name: CLICKHOUSE_PORT
+          value: "8123"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_USER
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: REDIS_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: freedom-config
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+        volumeMounts:
+        - name: analyzer-logs
+          mountPath: /app/logs
+        - name: analyzer-data
+          mountPath: /app/data
+        - name: analyzer-results
+          mountPath: /app/results
+        - name: analyzer-config
+          mountPath: /app/config
+      volumes:
+      - name: analyzer-logs
+        emptyDir: {}
+      - name: analyzer-data
+        emptyDir: {}
+      - name: analyzer-results
+        emptyDir: {}
+      - name: analyzer-config
+        emptyDir: {}
+---
+# Monitor Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitor-service
+  namespace: freedom-stock
+  labels:
+    app: monitor-service
+    component: monitor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitor-service
+  template:
+    metadata:
+      labels:
+        app: monitor-service
+        component: monitor
+    spec:
+      containers:
+      - name: monitor-service
+        image: freedom-stock-analysis:latest
+        imagePullPolicy: Always
+        command: ["python", "monitoring/market_monitor.py"]
+        env:
+        - name: CLICKHOUSE_HOST
+          value: "clickhouse-primary-service"
+        - name: CLICKHOUSE_PORT
+          value: "8123"
+        - name: REDIS_HOST
+          value: "redis-service"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_USER
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_PASSWORD
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: REDIS_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: freedom-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: monitor-logs
+          mountPath: /app/logs
+        - name: monitor-config
+          mountPath: /app/config
+      volumes:
+      - name: monitor-logs
+        emptyDir: {}
+      - name: monitor-config
+        emptyDir: {}

@@ -16,11 +16,11 @@ from enum import Enum
 import datetime
 
 from utils.cache import LRUCache
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 from enums.period import Period
 from utils.dependency_injection import get_service
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PeriodManager:
@@ -49,7 +49,7 @@ class PeriodManager:
                 import importlib
                 db_manager_module = importlib.import_module('db.db_manager')
                 DBManager = db_manager_module.DBManager
-                self.db_manager = DBManager.get_instance()
+                self.db_manager = DBManager()
                 self.data_access = self.db_manager
             except ImportError:
                 logger.warning("无法导入DBManager，数据访问功能将不可用")
@@ -446,7 +446,7 @@ def get_instance_period_manager() -> PeriodManager:
 
 
 # 为PeriodManager类添加静态方法（向后兼容）
-PeriodManager.get_instance = staticmethod(get_instance)
+PeriodManager.get_instance = staticmethod(get_instance_period_manager)
 
 # 注意：PeriodManager现在通过依赖注入容器管理
 # 可以在应用启动时预注册：

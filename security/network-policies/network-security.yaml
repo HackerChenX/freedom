@@ -1,0 +1,206 @@
+# Pod Security Standards
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: freedom-stock
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+# Network Policy for API Service
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-service-netpol
+  namespace: freedom-stock
+spec:
+  podSelector:
+    matchLabels:
+      app: api-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow traffic from load balancer
+  - from:
+    - podSelector:
+        matchLabels:
+          app: nginx-lb
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Allow traffic from monitoring
+  - from:
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8000
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow connection to ClickHouse
+  - to:
+    - podSelector:
+        matchLabels:
+          app: clickhouse-primary
+    ports:
+    - protocol: TCP
+      port: 8123
+    - protocol: TCP
+      port: 9000
+  # Allow connection to Redis
+  - to:
+    - podSelector:
+        matchLabels:
+          app: redis
+    ports:
+    - protocol: TCP
+      port: 6379
+---
+# Network Policy for Database
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-netpol
+  namespace: freedom-stock
+spec:
+  podSelector:
+    matchLabels:
+      app: clickhouse-primary
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow connections from API services
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-service
+    - podSelector:
+        matchLabels:
+          app: data-processor
+    - podSelector:
+        matchLabels:
+          app: strategy-analyzer
+    - podSelector:
+        matchLabels:
+          app: monitor-service
+    ports:
+    - protocol: TCP
+      port: 8123
+    - protocol: TCP
+      port: 9000
+  # Allow monitoring
+  - from:
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 8123
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow NTP
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 123
+---
+# Network Policy for Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-netpol
+  namespace: freedom-stock
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow connections from application services
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-service
+    - podSelector:
+        matchLabels:
+          app: data-processor
+    - podSelector:
+        matchLabels:
+          app: strategy-analyzer
+    - podSelector:
+        matchLabels:
+          app: monitor-service
+    ports:
+    - protocol: TCP
+      port: 6379
+  # Allow monitoring
+  - from:
+    - podSelector:
+        matchLabels:
+          app: prometheus
+    ports:
+    - protocol: TCP
+      port: 6379
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+---
+# Network Policy for Load Balancer
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nginx-lb-netpol
+  namespace: freedom-stock
+spec:
+  podSelector:
+    matchLabels:
+      app: nginx-lb
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow all ingress traffic (public-facing)
+  - {}
+  egress:
+  # Allow DNS resolution
+  - to: []
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow connection to API services
+  - to:
+    - podSelector:
+        matchLabels:
+          app: api-service
+    ports:
+    - protocol: TCP
+      port: 8000
+---
+# Default Deny All Network Policy
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: freedom-stock
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

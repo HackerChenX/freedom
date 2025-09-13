@@ -1,0 +1,182 @@
+# ClickHouse Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse-primary
+  namespace: freedom-stock
+  labels:
+    app: clickhouse-primary
+    component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clickhouse-primary
+  template:
+    metadata:
+      labels:
+        app: clickhouse-primary
+        component: database
+    spec:
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:23.8
+        ports:
+        - containerPort: 8123
+          name: http
+        - containerPort: 9000
+          name: tcp
+        - containerPort: 9004
+          name: mysql
+        env:
+        - name: CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT
+          value: "1"
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_PASSWORD
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: CLICKHOUSE_USER
+        volumeMounts:
+        - name: clickhouse-data
+          mountPath: /var/lib/clickhouse
+        - name: clickhouse-config
+          mountPath: /etc/clickhouse-server/config.d/
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+        livenessProbe:
+          httpGet:
+            path: /?query=SELECT%201
+            port: 8123
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /?query=SELECT%201
+            port: 8123
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: clickhouse-data
+        persistentVolumeClaim:
+          claimName: clickhouse-pvc
+      - name: clickhouse-config
+        configMap:
+          name: clickhouse-config
+---
+# ClickHouse Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: clickhouse-primary-service
+  namespace: freedom-stock
+  labels:
+    app: clickhouse-primary
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8123
+    targetPort: 8123
+    protocol: TCP
+    name: http
+  - port: 9000
+    targetPort: 9000
+    protocol: TCP
+    name: tcp
+  - port: 9004
+    targetPort: 9004
+    protocol: TCP
+    name: mysql
+  selector:
+    app: clickhouse-primary
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: freedom-stock
+  labels:
+    app: redis
+    component: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        component: cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        ports:
+        - containerPort: 6379
+        args:
+        - redis-server
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        - --maxmemory
+        - 2gb
+        - --maxmemory-policy
+        - allkeys-lru
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: freedom-secrets
+              key: REDIS_PASSWORD
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: freedom-stock
+  labels:
+    app: redis
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+  selector:
+    app: redis

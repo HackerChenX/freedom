@@ -1,0 +1,71 @@
+metadata:
+  total_templates: 3
+  updated_at: '2025-09-13T14:47:12.333086'
+  version: '1.0'
+templates:
+  macd_template:
+    conditions:
+      death_cross_threshold:
+        default: -0.01
+        max: -0.001
+        min: -0.1
+        type: float
+      golden_cross_threshold:
+        default: 0.01
+        max: 0.1
+        min: 0.001
+        type: float
+    description: MACD指标预警模板
+    indicators:
+    - MACD
+    name: MACD模板
+    priority:
+      default: 4
+      max: 5
+      min: 1
+      type: int
+    signal_type: BUY
+  rsi_template:
+    conditions:
+      rsi_overbought:
+        default: 70
+        max: 90
+        min: 60
+        type: float
+      rsi_oversold:
+        default: 30
+        max: 40
+        min: 10
+        type: float
+    description: RSI指标预警模板
+    indicators:
+    - RSI
+    name: RSI模板
+    priority:
+      default: 3
+      max: 5
+      min: 1
+      type: int
+    signal_type: RISK_WARNING
+  volume_template:
+    conditions:
+      volume_shrink_ratio:
+        default: 0.3
+        max: 0.8
+        min: 0.1
+        type: float
+      volume_surge_ratio:
+        default: 3.0
+        max: 10.0
+        min: 1.5
+        type: float
+    description: 成交量异常预警模板
+    indicators:
+    - VOL
+    name: 成交量模板
+    priority:
+      default: 3
+      max: 5
+      min: 1
+      type: int
+    signal_type: RISK_WARNING

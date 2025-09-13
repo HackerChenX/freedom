@@ -8,7 +8,7 @@ from db.sql_manager import QueryType
 """
 
 from utils.dependency_injection import get_container
-from utils.logger import getLogger
+from utils.dependency_injection import get_logger
 import pandas as pd
 
 class DBManager:
@@ -16,7 +16,7 @@ class DBManager:
     
     def __init__(self):
         """初始化数据库管理器"""
-        self.logger = getLogger(__name__)
+        self.logger = get_logger(__name__)
         
         try:
             # 使用依赖注入容器获取数据访问接口
@@ -190,7 +190,7 @@ def get_db_manager() -> DBManager:
         container = get_container()
         return container.resolve(DBManager)
     except Exception as e:
-        logger = getLogger(__name__)
+        logger = get_logger(__name__)
         logger.warning(f"从依赖注入容器获取DBManager失败，创建新实例: {e}")
         return DBManager()
 
@@ -200,8 +200,8 @@ try:
     container = get_container()
     if not container.is_registered(DBManager):
         container.register_singleton(DBManager, DBManager)
-        logger = getLogger(__name__)
+        logger = get_logger(__name__)
         logger.info("DBManager已注册到依赖注入容器")
 except Exception as e:
-    logger = getLogger(__name__)
+    logger = get_logger(__name__)
     logger.warning(f"注册DBManager到依赖注入容器失败: {e}")

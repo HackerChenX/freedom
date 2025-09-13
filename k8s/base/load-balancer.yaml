@@ -1,0 +1,257 @@
+# Nginx ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: freedom-stock
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 4096;
+        use epoll;
+        multi_accept on;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+
+        # Logging format
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                       '$status $body_bytes_sent "$http_referer" '
+                       '"$http_user_agent" "$http_x_forwarded_for" '
+                       'rt=$request_time uct="$upstream_connect_time" '
+                       'uht="$upstream_header_time" urt="$upstream_response_time"';
+
+        access_log /var/log/nginx/access.log main;
+
+        # Performance settings
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        client_max_body_size 100M;
+
+        # Compression
+        gzip on;
+        gzip_vary on;
+        gzip_proxied any;
+        gzip_comp_level 6;
+        gzip_types
+            text/plain
+            text/css
+            text/xml
+            text/javascript
+            application/javascript
+            application/xml+rss
+            application/json;
+
+        # Rate limiting
+        limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
+        limit_conn_zone $binary_remote_addr zone=conn_limit:10m;
+
+        # Upstream for API services
+        upstream api_backend {
+            least_conn;
+            server api-service:8000 max_fails=3 fail_timeout=30s;
+            keepalive 32;
+        }
+
+        # Health check endpoint
+        server {
+            listen 80;
+            server_name localhost;
+
+            location /health {
+                access_log off;
+                return 200 "healthy\n";
+                add_header Content-Type text/plain;
+            }
+        }
+
+        # Main server block
+        server {
+            listen 80 default_server;
+            server_name _;
+
+            # Rate limiting
+            limit_req zone=api_limit burst=200 nodelay;
+            limit_conn conn_limit 50;
+
+            # Security headers
+            add_header X-Frame-Options DENY always;
+            add_header X-Content-Type-Options nosniff always;
+            add_header X-XSS-Protection "1; mode=block" always;
+            add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+            # API endpoints
+            location /api/ {
+                proxy_pass http://api_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+                proxy_cache_bypass $http_upgrade;
+
+                # Timeout settings
+                proxy_connect_timeout 30s;
+                proxy_send_timeout 300s;
+                proxy_read_timeout 300s;
+            }
+
+            # Health check
+            location /health {
+                proxy_pass http://api_backend/health;
+                proxy_http_version 1.1;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                access_log off;
+            }
+
+            # Documentation
+            location /docs {
+                proxy_pass http://api_backend/docs;
+                proxy_http_version 1.1;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            # WebSocket endpoint
+            location /ws {
+                proxy_pass http://api_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection "upgrade";
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+
+            # Static files and default
+            location / {
+                proxy_pass http://api_backend;
+                proxy_http_version 1.1;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+    }
+---
+# Nginx Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-lb
+  namespace: freedom-stock
+  labels:
+    app: nginx-lb
+    component: loadbalancer
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+        component: loadbalancer
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.24-alpine
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
+---
+# Nginx Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb-service
+  namespace: freedom-stock
+  labels:
+    app: nginx-lb
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: nginx-lb
+---
+# Ingress for external access
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: freedom-stock-ingress
+  namespace: freedom-stock
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+  - host: freedom-stock-api.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nginx-lb-service
+            port:
+              number: 80

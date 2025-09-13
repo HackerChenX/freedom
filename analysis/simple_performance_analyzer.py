@@ -26,10 +26,10 @@ sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
-from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class SimplePerformanceAnalyzer:
@@ -207,7 +207,7 @@ class SimplePerformanceAnalyzer:
         logger.info(f"开始分析数据加载性能，股票数量: {len(stock_codes)}")
         
         # 创建数据处理器
-        data_processor = Period_data_processor()
+        data_processor = PeriodDataProcessor()
         
         loading_times = []
         cache_hits = 0

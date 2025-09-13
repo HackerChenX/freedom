@@ -20,10 +20,10 @@ sys.path.insert(0, root_dir)
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_logger
-from utils.period_manager import Period_manager
+from utils.period_manager import PeriodManager
 from enums.kline_period import Kline_period
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class PeriodDataProcessor:
     """多周期数据处理器"""
@@ -31,7 +31,7 @@ class PeriodDataProcessor:
     def __init__(self):
         """初始化数据处理器"""
         self.db = get_service(DataAccessInterface)
-        self.period_manager = Period_manager()
+        self.period_manager = PeriodManager()
         self.data_cache = {}
     
     def get_multi_period_data(self, 

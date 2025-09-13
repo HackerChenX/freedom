@@ -1,0 +1,78 @@
+{
+  "evaluation_summary": {
+    "total_strategies": 5,
+    "successful_evaluations": 5,
+    "evaluation_date": "2025-09-13T19:51:29.440710",
+    "total_execution_time": 0.4926168918609619,
+    "parallel_efficiency": 3.9105707994553858
+  },
+  "individual_results": {
+    "低风险策略": {
+      "strategy_name": "低风险策略",
+      "evaluation_date": "2025-09-13T19:51:28.773826",
+      "evaluation_period": {
+        "start_date": "2025-01-04",
+        "end_date": "2025-09-13",
+        "total_days": 253,
+        "trading_days": 253
+      },
+      "performance_metrics": {
+        "total_return": 0.01977053634874193,
+        "annualized_return": 0.01969162755195808,
+        "excess_return": -0.07987710710316298,
+        "alpha": -0.010052761628880226,
+        "beta": -0.0036742197544465177,
+        "volatility": 0.038648530410863476,
+        "max_drawdown": 0.046539594083562154,
+        "downside_deviation": 0.03886776172614185,
+        "var_95": -0.004031812901091542,
+        "cvar_95": -0.004927950103611836,
+        "sharpe_ratio": -0.26672094225720944,
+        "sortino_ratio": -0.265216518529511,
+        "calmar_ratio": 0.4231155844763414,
+        "information_ratio": -0.4717737081831918,
+        "treynor_ratio": 2.8055949662691764,
+        "win_rate": 0.5198412698412699,
+        "profit_loss_ratio": 1.0006633909083744,
+        "total_trades": 252,
+        "profitable_trades": 131,
+        "losing_trades": 121,
+        "avg_profit": 0.002016348796805022,
+        "avg_loss": 0.0020150120561267227,
+        "evaluation_period_days": 253,
+        "active_trading_days": 253,
+        "avg_holding_period": 0.0,
+        "benchmark_total_return": 0.09998297501711462,
+        "benchmark_volatility": 0.19303634606062448,
+        "tracking_error": 0.19756154719946512,
+        "correlation_with_benchmark": -0.018351485774029837
+      },
+      "risk_metrics": {
+        "daily_volatility": 0.002434628571553851,
+        "weekly_volatility": 0.005443994985957622,
+        "monthly_volatility": 0.011156869718247732,
+        "annual_volatility": 0.038648530410863476,
+        "var_1d_95": -0.0040318129010915435,
+        "var_1d_99": -0.005477751376899196,
+        "var_1w_95": -0.009015407719401328,
+        "var_1w_99": -0.012248624442589675,
+        "cvar_1d_95": -0.004927950103611836,
+        "cvar_1d_99": -0.006010644813789364,
+        "max_drawdown": 0.046539594083562154,
+        "max_drawdown_duration": 212,
+        "current_drawdown": 0.013164885004705312,
+        "drawdown_frequency": 0.019762845849802372,
+        "avg_drawdown": 0.021393738916584863,
+        "stress_test_results": {
+          "market_decline_5pct": -0.034999999999999996,
+          "market_decline_10pct": -0.06999999999999999,
+          "market_decline_20pct": -0.13999999999999999,
+          "vol_shock_1.5x": -0.00850902685758071,
+          "vol_shock_2.0x": -0.011345369143440946,
+          "vol_shock_3.0x": -0.01701805371516142,
+          "liquidity_shock": -0.0012173142857769255
+        }
+      },
+      "time_series_analysis": {
+        "rolling_returns": {
+          

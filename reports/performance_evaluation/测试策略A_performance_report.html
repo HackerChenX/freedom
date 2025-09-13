@@ -1,0 +1,461 @@
+
+        <!DOCTYPE html>
+        <html lang="zh-CN">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>策略性能评估报告 - 测试策略A</title>
+            
+        <style>
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 0;
+                background-color: #f5f5f5;
+                color: #333;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+                background-color: white;
+                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                min-height: 100vh;
+            }
+            header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem;
+                text-align: center;
+            }
+            header h1 {
+                margin: 0;
+                font-size: 2.5em;
+                margin-bottom: 1rem;
+            }
+            .report-info {
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                margin-top: 1rem;
+            }
+            .report-info p {
+                margin: 0;
+                font-size: 1.1em;
+            }
+            .section {
+                padding: 2rem;
+                margin-bottom: 2rem;
+                border-bottom: 1px solid #eee;
+            }
+            .section h2 {
+                color: #667eea;
+                border-bottom: 2px solid #667eea;
+                padding-bottom: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+            .metrics-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
+            .metric-card {
+                background: #f8f9fa;
+                padding: 1.5rem;
+                border-radius: 8px;
+                border-left: 4px solid #667eea;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .metric-card h3 {
+                margin: 0 0 0.5rem 0;
+                color: #495057;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .metric-value {
+                font-size: 1.8em;
+                font-weight: bold;
+                color: #667eea;
+                margin: 0;
+            }
+            .metric-unit {
+                font-size: 0.8em;
+                color: #666;
+                margin-left: 0.2em;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin: 1rem 0;
+                background: white;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            table th, table td {
+                padding: 0.75rem;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+            table th {
+                background-color: #667eea;
+                color: white;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.85em;
+                letter-spacing: 0.5px;
+            }
+            table tr:hover {
+                background-color: #f8f9fa;
+            }
+            .positive {
+                color: #28a745;
+                font-weight: bold;
+            }
+            .negative {
+                color: #dc3545;
+                font-weight: bold;
+            }
+            .neutral {
+                color: #6c757d;
+            }
+            .chart-placeholder {
+                background: #f8f9fa;
+                border: 2px dashed #dee2e6;
+                padding: 3rem;
+                text-align: center;
+                color: #6c757d;
+                margin: 1rem 0;
+                border-radius: 8px;
+            }
+            footer {
+                background: #343a40;
+                color: white;
+                text-align: center;
+                padding: 1.5rem;
+                margin-top: 2rem;
+            }
+            footer p {
+                margin: 0.5rem 0;
+            }
+            .alert {
+                padding: 1rem;
+                margin: 1rem 0;
+                border-radius: 4px;
+                border-left: 4px solid;
+            }
+            .alert-info {
+                background-color: #d1ecf1;
+                border-color: #17a2b8;
+                color: #0c5460;
+            }
+            .alert-warning {
+                background-color: #fff3cd;
+                border-color: #ffc107;
+                color: #856404;
+            }
+            .alert-danger {
+                background-color: #f8d7da;
+                border-color: #dc3545;
+                color: #721c24;
+            }
+        </style>
+        
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <h1>策略性能评估报告</h1>
+                    <div class="report-info">
+                        <p><strong>策略名称:</strong> 测试策略A</p>
+                        <p><strong>评估日期:</strong> 2025-09-13</p>
+                    </div>
+                </header>
+
+                
+        <div class="section">
+            <h2>📊 执行摘要</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h3>总收益率</h3>
+                    <p class="metric-value positive">
+                        14.39<span class="metric-unit">%</span>
+                    </p>
+                </div>
+                <div class="metric-card">
+                    <h3>年化收益率</h3>
+                    <p class="metric-value positive">
+                        11.91<span class="metric-unit">%</span>
+                    </p>
+                </div>
+                <div class="metric-card">
+                    <h3>夏普比率</h3>
+                    <p class="metric-value neutral">
+                        0.718
+                    </p>
+                </div>
+                <div class="metric-card">
+                    <h3>最大回撤</h3>
+                    <p class="metric-value negative">
+                        -11.32<span class="metric-unit">%</span>
+                    </p>
+                </div>
+                <div class="metric-card">
+                    <h3>年化波动率</h3>
+                    <p class="metric-value neutral">
+                        12.41<span class="metric-unit">%</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>策略评估概览:</strong>
+                策略表现良好，获得了稳定的正收益；风险调整后收益一般；回撤控制一般。
+            </div>
+        </div>
+        
+                
+        <div class="section">
+            <h2>📈 详细性能指标</h2>
+
+            <h3>收益指标</h3>
+            <table>
+                <tr>
+                    <th>指标名称</th>
+                    <th>数值</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>总收益率</td>
+                    <td class="positive">
+                        14.39%
+                    </td>
+                    <td>整个评估期间的累计收益率</td>
+                </tr>
+                <tr>
+                    <td>年化收益率</td>
+                    <td class="positive">
+                        11.91%
+                    </td>
+                    <td>按年化计算的收益率</td>
+                </tr>
+                <tr>
+                    <td>超额收益率</td>
+                    <td class="positive">
+                        10.29%
+                    </td>
+                    <td>相对于基准的超额收益</td>
+                </tr>
+            </table>
+
+            <h3>风险调整收益指标</h3>
+            <table>
+                <tr>
+                    <th>指标名称</th>
+                    <th>数值</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>夏普比率</td>
+                    <td class="neutral">
+                        0.718
+                    </td>
+                    <td>每单位风险的超额收益</td>
+                </tr>
+                <tr>
+                    <td>索提诺比率</td>
+                    <td class="neutral">
+                        0.740
+                    </td>
+                    <td>每单位下行风险的超额收益</td>
+                </tr>
+                <tr>
+                    <td>卡玛比率</td>
+                    <td class="positive">
+                        1.052
+                    </td>
+                    <td>年化收益率与最大回撤的比值</td>
+                </tr>
+                <tr>
+                    <td>信息比率</td>
+                    <td class="neutral">
+                        0.380
+                    </td>
+                    <td>每单位跟踪误差的超额收益</td>
+                </tr>
+            </table>
+
+            <h3>交易统计</h3>
+            <table>
+                <tr>
+                    <th>指标名称</th>
+                    <th>数值</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>胜率</td>
+                    <td class="positive">
+                        54.0%
+                    </td>
+                    <td>盈利交易占总交易的比例</td>
+                </tr>
+                <tr>
+                    <td>盈亏比</td>
+                    <td class="neutral">
+                        1.00
+                    </td>
+                    <td>平均盈利与平均亏损的比值</td>
+                </tr>
+                <tr>
+                    <td>总交易次数</td>
+                    <td class="neutral">
+                        300
+                    </td>
+                    <td>评估期间的总交易次数</td>
+                </tr>
+            </table>
+        </div>
+        
+                
+        <div class="section">
+            <h2>⚠️ 风险分析</h2>
+
+            <h3>波动率分析</h3>
+            <table>
+                <tr>
+                    <th>时间周期</th>
+                    <th>波动率</th>
+                    <th>风险等级</th>
+                </tr>
+                <tr>
+                    <td>日波动率</td>
+                    <td>0.78%</td>
+                    <td><span class="positive">低风险</span></td>
+                </tr>
+                <tr>
+                    <td>年化波动率</td>
+                    <td>12.41%</td>
+                    <td><span class="positive">低风险</span></td>
+                </tr>
+            </table>
+
+            <h3>风险价值分析 (VaR)</h3>
+            <table>
+                <tr>
+                    <th>置信度</th>
+                    <th>1日VaR</th>
+                    <th>1周VaR</th>
+                    <th>描述</th>
+                </tr>
+                <tr>
+                    <td>95%</td>
+                    <td class="negative">-1.10%</td>
+                    <td class="negative">-2.47%</td>
+                    <td>95%的情况下，损失不会超过此值</td>
+                </tr>
+                <tr>
+                    <td>99%</td>
+                    <td class="negative">-1.75%</td>
+                    <td class="negative">-3.91%</td>
+                    <td>99%的情况下，损失不会超过此值</td>
+                </tr>
+            </table>
+
+            <h3>回撤分析</h3>
+            <table>
+                <tr>
+                    <th>回撤指标</th>
+                    <th>数值</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>最大回撤</td>
+                    <td class="negative">-11.32%</td>
+                    <td>历史上资产价值的最大跌幅</td>
+                </tr>
+                <tr>
+                    <td>最大回撤持续期</td>
+                    <td class="neutral">117 天</td>
+                    <td>最大回撤的持续时间</td>
+                </tr>
+                <tr>
+                    <td>当前回撤</td>
+                    <td class="neutral">
+                        -0.00%
+                    </td>
+                    <td>当前相对于历史高点的回撤</td>
+                </tr>
+                <tr>
+                    <td>平均回撤</td>
+                    <td class="neutral">-5.15%</td>
+                    <td>所有回撤期间的平均回撤幅度</td>
+                </tr>
+            </table>
+
+            <h3>压力测试结果</h3>
+            <h4>历史模拟法</h4>
+            <table>
+                <tr>
+                    <th>场景</th>
+                    <th>预期损失</th>
+                    <th>概率分位数</th>
+                </tr>
+                <tr>
+                    <td>最差1日</td>
+                    <td class="negative">-2.34%</td>
+                    <td>0.3%</td>
+                </tr>
+                <tr>
+                    <td>最差1周</td>
+                    <td class="negative">-4.99%</td>
+                    <td>0.3%</td>
+                </tr>
+                <tr>
+                    <td>最差1月</td>
+                    <td class="negative">-9.18%</td>
+                    <td>-</td>
+                </tr>
+            </table>
+            
+            <h4>场景分析</h4>
+            <table>
+                <tr>
+                    <th>市场场景</th>
+                    <th>预期收益率</th>
+                    <th>描述</th>
+                </tr>
+                <tr>
+                    <td>牛市</td>
+                    <td class="positive">0.44%</td>
+                    <td>市场上涨环境下的表现</td>
+                </tr>
+                <tr>
+                    <td>熊市</td>
+                    <td class="negative">-1.13%</td>
+                    <td>市场下跌环境下的表现</td>
+                </tr>
+                <tr>
+                    <td>高波动市场</td>
+                    <td class="neutral">0.05%</td>
+                    <td>高波动率环境下的表现</td>
+                </tr>
+                <tr>
+                    <td>市场崩盘</td>
+                    <td class="negative">-20.00%</td>
+                    <td>极端下跌情况下的表现</td>
+                </tr>
+            </table>
+            
+        </div>
+        
+                <div class="chart-placeholder">基准比较图表区域 - 待实现</div>
+                <div class="chart-placeholder">时间序列分析图表区域 - 待实现</div>
+
+                <footer>
+                    <p>报告生成时间: 2025-09-13 19:51:28</p>
+                    <p>生成工具: 策略性能评估框架 v1.0</p>
+                </footer>
+            </div>
+        </body>
+        </html>
+        

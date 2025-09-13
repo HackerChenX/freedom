@@ -1,0 +1,829 @@
+{
+  "test_summary": {
+    "total_tests": 17,
+    "passed_tests": 11,
+    "failed_tests": 6,
+    "error_tests": 0,
+    "success_rate": 64.71,
+    "test_time": 2.28
+  },
+  "test_results": [
+    {
+      "category": "系统端点",
+      "tests": [
+        {
+          "name": "健康检查",
+          "status": "PASS",
+          "status_code": 200,
+          "response_time": "0:00:01.896532",
+          "details": {
+            "status": "healthy",
+            "timestamp": "2025-09-13T15:35:23.717462",
+            "version": "1.0.0",
+            "components": {
+              "indicators": {
+                "status": "healthy",
+                "count": 128
+              },
+              "database": {
+                "status": "connected"
+              },
+              "api": {
+                "status": "healthy"
+              }
+            }
+          }
+        },
+        {
+          "name": "系统信息",
+          "status": "PASS",
+          "status_code": 200,
+          "response_time": "0:00:00.002558",
+          "details": {
+            "system": "股票分析系统",
+            "version": "1.0.0",
+            "api_version": "v1",
+            "description": "提供完整的股票数据分析、技术指标计算、策略分析和风险监控功能",
+            "features": [
+              "股票数据查询",
+              "技术指标计算",
+              "策略分析",
+              "风险监控",
+              "实时监控",
+              "预警系统"
+            ],
+            "indicators": {
+              "total_count": 128,
+              "categories": [
+                "趋势指标",
+                "振荡器指标",
+                "成交量指标",
+                "波动性指标",
+                "形态识别指标",
+                "ZXM体系指标"
+              ]
+            },
+            "endpoints": {
+              "stock_data": "/api/v1/stocks",
+              "indicators": "/api/v1/indicators",
+              "strategies": "/api/v1/strategies",
+              "risk": "/api/v1/risk",
+              "monitoring": "/api/v1/monitoring"
+            },
+            "documentation": {
+              "swagger_ui": "/docs",
+              "redoc": "/redoc",
+              "openapi_spec": "/openapi.json"
+            },
+            "timestamp": "2025-09-13T15:35:23.721187"
+          }
+        }
+      ]
+    },
+    {
+      "category": "股票数据",
+      "tests": [
+        {
+          "name": "股票列表",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"获取股票列表失败: 查询执行失败: 'NoneType' object has no attribute 'get_connection'\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.728666\"}"
+        },
+        {
+          "name": "股票数据查询",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"获取股票数据失败: 查询执行失败: 'NoneType' object has no attribute 'get_connection'\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.734758\"}"
+        },
+        {
+          "name": "最新股票数据",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"获取最新股票数据失败: 查询执行失败: 'NoneType' object has no attribute 'get_connection'\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.741654\"}"
+        }
+      ]
+    },
+    {
+      "category": "技术指标",
+      "tests": [
+        {
+          "name": "指标列表",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"获取指标列表失败: 'str' object has no attribute '__name__'\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.749425\"}"
+        },
+        {
+          "name": "指标计算",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"计算技术指标失败: 'str' object is not callable\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.774201\"}"
+        },
+        {
+          "name": "指标信息",
+          "status": "FAIL",
+          "status_code": 500,
+          "details": "{\"error\":\"请求错误\",\"message\":\"获取指标信息失败: 'str' object has no attribute '__name__'\",\"status_code\":500,\"timestamp\":\"2025-09-13T15:35:23.778576\"}"
+        }
+      ]
+    },
+    {
+      "category": "策略分析",
+      "tests": [
+        {
+          "name": "策略列表",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "strategies": [
+              {
+                "name": "趋势跟踪策略",
+                "description": "基于移动平均线和趋势指标的趋势跟踪策略",
+                "category": "趋势策略",
+                "parameters": {
+                  "ma_period": 20,
+                  "trend_threshold": 0.02
+                },
+                "risk_level": "中等"
+              },
+              {
+                "name": "均值回归策略",
+                "description": "基于RSI和布林带的均值回归策略",
+                "category": "均值回归",
+                "parameters": {
+                  "rsi_period": 14,
+                  "rsi_oversold": 30,
+                  "rsi_overbought": 70
+                },
+                "risk_level": "低"
+              },
+              {
+                "name": "突破策略",
+                "description": "基于价格突破和成交量确认的突破策略",
+                "category": "突破策略",
+                "parameters": {
+                  "breakout_period": 20,
+                  "volume_threshold": 1.5
+                },
+                "risk_level": "高"
+              },
+              {
+                "name": "ZXM买点策略",
+                "description": "基于ZXM体系的买点识别策略",
+                "category": "ZXM策略",
+                "parameters": {
+                  "absorption_threshold": 0.8,
+                  "volume_contraction": 0.5
+                },
+                "risk_level": "中等"
+              },
+              {
+                "name": "多因子策略",
+                "description": "综合多个技术指标的多因子选股策略",
+                "category": "多因子",
+                "parameters": {
+                  "factor_weights": {
+                    "momentum": 0.3,
+                    "value": 0.3,
+                    "quality": 0.4
+                  }
+                },
+                "risk_level": "中等"
+              }
+            ],
+            "total_count": 5,
+            "categories": [
+              "ZXM策略",
+              "均值回归",
+              "多因子",
+              "突破策略",
+              "趋势策略"
+            ],
+            "timestamp": "2025-09-13T15:35:23.781469"
+          }
+        },
+        {
+          "name": "策略分析",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "strategy_name": "趋势跟踪策略",
+            "analysis_results": [
+              {
+                "stock_code": "000001",
+                "success": true,
+                "signals": [
+                  {
+                    "date": "2024-12-25",
+                    "type": "买入信号",
+                    "price": 42.41,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-26",
+                    "type": "买入信号",
+                    "price": 43.49,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-27",
+                    "type": "买入信号",
+                    "price": 42.76,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-30",
+                    "type": "买入信号",
+                    "price": 43.54,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-31",
+                    "type": "买入信号",
+                    "price": 43.5,
+                    "reason": "价格突破20日均线"
+                  }
+                ],
+                "score": 64.12,
+                "analysis_date": "2025-09-13",
+                "data_points": 262
+              },
+              {
+                "stock_code": "000002",
+                "success": true,
+                "signals": [
+                  {
+                    "date": "2024-12-17",
+                    "type": "买入信号",
+                    "price": 25.57,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-18",
+                    "type": "买入信号",
+                    "price": 25.26,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-19",
+                    "type": "买入信号",
+                    "price": 25.24,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-20",
+                    "type": "买入信号",
+                    "price": 24.94,
+                    "reason": "价格突破20日均线"
+                  },
+                  {
+                    "date": "2024-12-23",
+                    "type": "买入信号",
+                    "price": 24.66,
+                    "reason": "价格突破20日均线"
+                  }
+                ],
+                "score": 47.33,
+                "analysis_date": "2025-09-13",
+                "data_points": 262
+              }
+            ],
+            "summary": {
+              "total_stocks": 2,
+              "successful_analysis": 2,
+              "average_score": 55.73,
+              "top_stocks": [
+                {
+                  "stock_code": "000001",
+                  "score": 64.12
+                },
+                {
+                  "stock_code": "000002",
+                  "score": 47.33
+                }
+              ],
+              "signal_count": 10,
+              "max_score": 64.12,
+              "min_score": 47.33
+            },
+            "performance_metrics": {
+              "success_rate": 100.0,
+              "average_signals_per_stock": 5.0,
+              "data_quality": "良好",
+              "analysis_coverage": "2/2"
+            },
+            "analysis_time": 0.031,
+            "timestamp": "2025-09-13T15:35:23.820860"
+          }
+        },
+        {
+          "name": "策略回测",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "strategy_name": "趋势跟踪策略",
+            "backtest_results": {
+              "initial_capital": 100000.0,
+              "final_capital": 99063.4,
+              "total_return": -0.94,
+              "total_trades": 2,
+              "winning_trades": 1,
+              "strategy_name": "趋势跟踪策略"
+            },
+            "performance_summary": {
+              "return_rate": "-0.94%",
+              "max_drawdown": "5.2%",
+              "sharpe_ratio": 1.25,
+              "win_rate": "65%",
+              "avg_holding_period": "30天"
+            },
+            "trades": [
+              {
+                "stock_code": "000001",
+                "action": "买入",
+                "date": "2024-01-01",
+                "price": 11.22,
+                "quantity": 891,
+                "amount": 9999.9
+              },
+              {
+                "stock_code": "000001",
+                "action": "卖出",
+                "date": "2024-12-31",
+                "price": 10.17,
+                "quantity": 891,
+                "amount": 9063.3
+              }
+            ],
+            "backtest_time": 0.0,
+            "timestamp": "2025-09-13T15:35:23.826675"
+          }
+        }
+      ]
+    },
+    {
+      "category": "风险监控",
+      "tests": [
+        {
+          "name": "风险评估",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "assessment_type": "comprehensive",
+            "market_risk": {
+              "market_index": "000001",
+              "risk_level": "极高风险",
+              "risk_score": 88.97,
+              "var_1d": 0.03288810562242739,
+              "var_5d": 0.07354003982294068,
+              "volatility": 0.3142805978463404,
+              "max_drawdown": 0.2923705144428236,
+              "data_points": 252,
+              "assessment_time": "2025-09-13T15:35:23.850579",
+              "details": {
+                "recent_volatility": 0.20783527436740484,
+                "trend_direction": "down",
+                "volatility_trend": "decreasing"
+              }
+            },
+            "stock_risks": [
+              {
+                "stock_code": "000001",
+                "stock_name": "000001",
+                "risk_type": "波动性风险",
+                "risk_level": "极高风险",
+                "risk_score": 80.39,
+                "var_1d": 0.04452830695466903,
+                "var_5d": 0.0995683212736166,
+                "volatility": 0.414862589418602,
+                "beta": -0.036163302163861134,
+                "max_drawdown": 0.4667043809203985,
+                "sharpe_ratio": 0.2209933222429843,
+                "timestamp": "2025-09-13T15:35:23.865616",
+                "details": {
+                  "recent_volatility": 0.40107724435460695,
+                  "price_trend": "up",
+                  "volatility_rank": "极高波动",
+                  "liquidity_score": 87.0756312789372,
+                  "data_quality": "good"
+                }
+              },
+              {
+                "stock_code": "000002",
+                "stock_name": "000002",
+                "risk_type": "市场风险",
+                "risk_level": "高风险",
+                "risk_score": 69.11,
+                "var_1d": 0.0343580626365706,
+                "var_5d": 0.07682696363056751,
+                "volatility": 0.33264368048813425,
+                "beta": -0.04771826826176569,
+                "max_drawdown": 0.41595558532173854,
+                "sharpe_ratio": -0.6511945570272382,
+                "timestamp": "2025-09-13T15:35:23.879810",
+                "details": {
+                  "recent_volatility": 0.3980935663334321,
+                  "price_trend": "up",
+                  "volatility_rank": "高波动",
+                  "liquidity_score": 87.1101762959372,
+                  "data_quality": "good"
+                }
+              }
+            ],
+            "risk_summary": {
+              "overall_risk_level": "极高风险",
+              "key_risks": [
+                "市场系统性风险较高 (评分: 88.97)",
+                "1 只股票波动率过高"
+              ],
+              "recommendations": [
+                "市场风险极高，建议减少仓位，增加现金比例",
+                "部分股票波动率过高，建议降低仓位或设置止损"
+              ]
+            },
+            "recommendations": [
+              "市场风险极高，建议减少仓位，增加现金比例",
+              "部分股票波动率过高，建议降低仓位或设置止损"
+            ],
+            "assessment_time": 0.05,
+            "timestamp": "2025-09-13T15:35:23.880728"
+          }
+        },
+        {
+          "name": "市场风险",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "market_risk": {
+              "market_index": "000001",
+              "risk_level": "极高风险",
+              "risk_score": 88.97,
+              "var_1d": 0.03288810562242739,
+              "var_5d": 0.07354003982294068,
+              "volatility": 0.3142805978463404,
+              "max_drawdown": 0.2923705144428236,
+              "data_points": 252,
+              "assessment_time": "2025-09-13T15:35:23.897505",
+              "details": {
+                "recent_volatility": 0.20783527436740484,
+                "trend_direction": "down",
+                "volatility_trend": "decreasing"
+              }
+            },
+            "timestamp": "2025-09-13T15:35:23.898239"
+          }
+        },
+        {
+          "name": "个股风险",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "stock_risk": {
+              "stock_code": "000001",
+              "stock_name": "000001",
+              "risk_type": "波动性风险",
+              "risk_level": "极高风险",
+              "risk_score": 80.39,
+              "var_1d": 0.04452830695466903,
+              "var_5d": 0.0995683212736166,
+              "volatility": 0.414862589418602,
+              "beta": -0.036163302163861134,
+              "max_drawdown": 0.4667043809203985,
+              "sharpe_ratio": 0.2209933222429843,
+              "timestamp": "2025-09-13T15:35:23.915966",
+              "details": {
+                "recent_volatility": 0.40107724435460695,
+                "price_trend": "up",
+                "volatility_rank": "极高波动",
+                "liquidity_score": 87.0756312789372,
+                "data_quality": "good"
+              }
+            },
+            "timestamp": "2025-09-13T15:35:23.916583"
+          }
+        }
+      ]
+    },
+    {
+      "category": "实时监控",
+      "tests": [
+        {
+          "name": "监控状态",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "monitoring_active": true,
+            "monitored_stocks": [
+              "000001",
+              "000002"
+            ],
+            "monitoring_interval": 300,
+            "last_update": "2025-09-13T15:35:23.919995",
+            "alerts_count": 0,
+            "timestamp": "2025-09-13T15:35:23.920005"
+          }
+        },
+        {
+          "name": "监控预警",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "alerts": [
+              {
+                "id": "monitor_alert_001",
+                "type": "技术指标信号",
+                "severity": "高",
+                "stock_code": "664987",
+                "stock_name": "股票247781",
+                "message": "技术指标信号预警: 高级别",
+                "trigger_value": 89.45,
+                "threshold": 5.73,
+                "created_time": "2025-09-13T15:35:23.923275",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_002",
+                "type": "成交量异常",
+                "severity": "低",
+                "stock_code": "171753",
+                "stock_name": "股票260663",
+                "message": "成交量异常预警: 低级别",
+                "trigger_value": 37.7,
+                "threshold": 65.68,
+                "created_time": "2025-09-13T15:35:23.923290",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_003",
+                "type": "技术指标信号",
+                "severity": "高",
+                "stock_code": "053114",
+                "stock_name": "股票472135",
+                "message": "技术指标信号预警: 高级别",
+                "trigger_value": 91.21,
+                "threshold": 68.43,
+                "created_time": "2025-09-13T15:35:23.923300",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_004",
+                "type": "技术指标信号",
+                "severity": "低",
+                "stock_code": "561228",
+                "stock_name": "股票586586",
+                "message": "技术指标信号预警: 低级别",
+                "trigger_value": 96.66,
+                "threshold": 44.66,
+                "created_time": "2025-09-13T15:35:23.923309",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_005",
+                "type": "成交量异常",
+                "severity": "中",
+                "stock_code": "530635",
+                "stock_name": "股票651856",
+                "message": "成交量异常预警: 中级别",
+                "trigger_value": 39.41,
+                "threshold": 6.2,
+                "created_time": "2025-09-13T15:35:23.923317",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_006",
+                "type": "价格突破",
+                "severity": "极高",
+                "stock_code": "356247",
+                "stock_name": "股票323482",
+                "message": "价格突破预警: 极高级别",
+                "trigger_value": 45.06,
+                "threshold": 64.93,
+                "created_time": "2025-09-13T15:35:23.923326",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_007",
+                "type": "成交量异常",
+                "severity": "高",
+                "stock_code": "693487",
+                "stock_name": "股票277566",
+                "message": "成交量异常预警: 高级别",
+                "trigger_value": 75.48,
+                "threshold": 26.89,
+                "created_time": "2025-09-13T15:35:23.923335",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_008",
+                "type": "成交量异常",
+                "severity": "中",
+                "stock_code": "703121",
+                "stock_name": "股票707087",
+                "message": "成交量异常预警: 中级别",
+                "trigger_value": 21.83,
+                "threshold": 65.82,
+                "created_time": "2025-09-13T15:35:23.923343",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_009",
+                "type": "风险预警",
+                "severity": "中",
+                "stock_code": "686763",
+                "stock_name": "股票395631",
+                "message": "风险预警预警: 中级别",
+                "trigger_value": 17.73,
+                "threshold": 26.37,
+                "created_time": "2025-09-13T15:35:23.923352",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_010",
+                "type": "风险预警",
+                "severity": "中",
+                "stock_code": "582262",
+                "stock_name": "股票609450",
+                "message": "风险预警预警: 中级别",
+                "trigger_value": 16.83,
+                "threshold": 68.74,
+                "created_time": "2025-09-13T15:35:23.923361",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_011",
+                "type": "成交量异常",
+                "severity": "低",
+                "stock_code": "922664",
+                "stock_name": "股票308618",
+                "message": "成交量异常预警: 低级别",
+                "trigger_value": 35.3,
+                "threshold": 84.92,
+                "created_time": "2025-09-13T15:35:23.923370",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_012",
+                "type": "技术指标信号",
+                "severity": "低",
+                "stock_code": "118689",
+                "stock_name": "股票879859",
+                "message": "技术指标信号预警: 低级别",
+                "trigger_value": 82.93,
+                "threshold": 23.64,
+                "created_time": "2025-09-13T15:35:23.923378",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_013",
+                "type": "价格突破",
+                "severity": "极高",
+                "stock_code": "498322",
+                "stock_name": "股票166020",
+                "message": "价格突破预警: 极高级别",
+                "trigger_value": 71.7,
+                "threshold": 23.78,
+                "created_time": "2025-09-13T15:35:23.923387",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_014",
+                "type": "成交量异常",
+                "severity": "中",
+                "stock_code": "990890",
+                "stock_name": "股票095423",
+                "message": "成交量异常预警: 中级别",
+                "trigger_value": 54.65,
+                "threshold": 41.96,
+                "created_time": "2025-09-13T15:35:23.923395",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_015",
+                "type": "价格突破",
+                "severity": "中",
+                "stock_code": "431713",
+                "stock_name": "股票092124",
+                "message": "价格突破预警: 中级别",
+                "trigger_value": 76.58,
+                "threshold": 94.33,
+                "created_time": "2025-09-13T15:35:23.923403",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_016",
+                "type": "技术指标信号",
+                "severity": "中",
+                "stock_code": "339226",
+                "stock_name": "股票043043",
+                "message": "技术指标信号预警: 中级别",
+                "trigger_value": 75.7,
+                "threshold": 71.78,
+                "created_time": "2025-09-13T15:35:23.923412",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_017",
+                "type": "价格突破",
+                "severity": "极高",
+                "stock_code": "251821",
+                "stock_name": "股票918994",
+                "message": "价格突破预警: 极高级别",
+                "trigger_value": 37.49,
+                "threshold": 79.93,
+                "created_time": "2025-09-13T15:35:23.923420",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_018",
+                "type": "成交量异常",
+                "severity": "极高",
+                "stock_code": "179515",
+                "stock_name": "股票255331",
+                "message": "成交量异常预警: 极高级别",
+                "trigger_value": 30.21,
+                "threshold": 90.06,
+                "created_time": "2025-09-13T15:35:23.923428",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_019",
+                "type": "价格突破",
+                "severity": "高",
+                "stock_code": "425243",
+                "stock_name": "股票600349",
+                "message": "价格突破预警: 高级别",
+                "trigger_value": 71.82,
+                "threshold": 37.49,
+                "created_time": "2025-09-13T15:35:23.923437",
+                "status": "active"
+              },
+              {
+                "id": "monitor_alert_020",
+                "type": "风险预警",
+                "severity": "高",
+                "stock_code": "885329",
+                "stock_name": "股票325600",
+                "message": "风险预警预警: 高级别",
+                "trigger_value": 63.75,
+                "threshold": 79.37,
+                "created_time": "2025-09-13T15:35:23.923445",
+                "status": "active"
+              }
+            ],
+            "total_count": 20,
+            "active_alerts": 20,
+            "alert_summary": {
+              "high_severity": 9,
+              "medium_severity": 7,
+              "low_severity": 4
+            },
+            "timestamp": "2025-09-13T15:35:23.923457"
+          }
+        },
+        {
+          "name": "预警规则",
+          "status": "PASS",
+          "status_code": 200,
+          "details": {
+            "success": true,
+            "rules": [
+              {
+                "rule_id": "rule_001",
+                "name": "RSI超买超卖",
+                "description": "RSI指标超买超卖预警",
+                "rule_type": "rsi_overbought_oversold",
+                "enabled": true,
+                "signal_type": "RISK_WARNING",
+                "priority": 3,
+                "created_time": "2025-09-13T15:35:23.990229",
+                "updated_time": "2025-09-13T15:35:23.990238"
+              },
+              {
+                "rule_id": "rule_002",
+                "name": "MACD金叉死叉",
+                "description": "MACD金叉死叉信号预警",
+                "rule_type": "macd_golden_death_cross",
+                "enabled": true,
+                "signal_type": "BUY",
+                "priority": 4,
+                "created_time": "2025-09-13T15:35:23.990243",
+                "updated_time": "2025-09-13T15:35:23.990247"
+              }
+            ],
+            "total_count": 2,
+            "enabled_count": 2,
+            "timestamp": "2025-09-13T15:35:23.990254"
+          }
+        }
+      ]
+    }
+  ],
+  "timestamp": "2025-09-13T15:35:23.992756"
+}

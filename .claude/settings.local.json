@@ -10,7 +10,10 @@
       "Bash(diff:*)",
       "Bash(sed:*)",
       "Bash(timeout:*)",
-      "Bash(find /Users/hacker/PycharmProjects/freedom -name \"*.py\" -exec grep -l \"global\\|_global\" {})"
+      "Bash(find /Users/hacker/PycharmProjects/freedom -name \"*.py\" -exec grep -l \"global\\|_global\" {})",
+      "Bash(awk:*)",
+      "Bash(chmod:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

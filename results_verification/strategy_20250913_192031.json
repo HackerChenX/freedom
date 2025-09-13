@@ -1,0 +1,34 @@
+{
+  "strategy_name": "历史买点策略_20250913_1920",
+  "description": "基于历史买点分析生成的选股策略，主要技术条件包括：\n1. max_drawdown BETWEEN -9.9513 AND -7.1887 (置信度: 0.74)\n2. price BETWEEN 8.0000 AND 11.3400 (置信度: 0.66)\n3. buypoint_price BETWEEN 8.0000 AND 11.3400 (置信度: 0.66)\n4. return_5d BETWEEN -3.5452 AND -2.3802 (置信度: 0.68)\n\n该策略基于 3 个历史买点的共性特征生成。",
+  "patterns": [
+    {
+      "indicator": "max_drawdown",
+      "condition": "max_drawdown BETWEEN -9.9513 AND -7.1887",
+      "confidence": 0.7370178303706416,
+      "frequency": 3
+    },
+    {
+      "indicator": "price",
+      "condition": "price BETWEEN 8.0000 AND 11.3400",
+      "confidence": 0.6557459893578088,
+      "frequency": 3
+    },
+    {
+      "indicator": "buypoint_price",
+      "condition": "buypoint_price BETWEEN 8.0000 AND 11.3400",
+      "confidence": 0.6557459893578088,
+      "frequency": 3
+    },
+    {
+      "indicator": "return_5d",
+      "condition": "return_5d BETWEEN -3.5452 AND -2.3802",
+      "confidence": 0.6808294058730419,
+      "frequency": 3
+    }
+  ],
+  "expected_success_rate": 0.6129339214959301,
+  "expected_return": -2.2703587506130645,
+  "risk_level": "MEDIUM",
+  "generation_time": "2025-09-13T19:20:31.875154"
+}

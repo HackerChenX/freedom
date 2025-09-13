@@ -74,7 +74,7 @@ class Stock_info:
             
             # 将DataFrame转换为Stock_info对象列表
             for _, row in data.iterrows():
-                stock_info = Stock_info(row.to_dict_Info())
+                stock_info = Stock_info(row.to_dict())
                 self._collection.append(stock_info)
         else:
             raise TypeError(f"不支持的数据类型: {type(data)}")
@@ -97,7 +97,7 @@ class Stock_info:
             'low': ['low', 'low_price'],
             'close': ['close', 'close_price'],
             'volume': ['volume', 'vol'],
-            'turnover': ['turnover', 'turnover'],
+            'turnover_rate': ['turnover_rate', 'turnover'],
             'price_change': ['price_change', 'change', 'pct_chg'],
             'price_range': ['price_range', 'range'],
             'industry': ['industry', 'sector'],
@@ -132,7 +132,7 @@ class Stock_info:
                                 pass
                     
                     # 数值类型转换
-                    if attr in ['open', 'high', 'low', 'close', 'volume', 'turnover', 'price_change', 'price_range']:
+                    if attr in ['open', 'high', 'low', 'close', 'volume', 'turnover_rate', 'price_change', 'price_range']:
                         try:
                             value = float(value) if value is not None else 0.0
                         except (ValueError, TypeError):
@@ -153,7 +153,7 @@ class Stock_info:
         """获取所有字段（仅返回数据库中实际存在的字段）"""
         return [
             "date", "code", "name", "open", "high", "low", "close",
-            "volume", "turnover", "level"
+            "volume", "turnover_rate", "level"
         ]
 
     @property
@@ -382,7 +382,7 @@ class Stock_info:
             'low': self._low,
             'close': self._close,
             'volume': self._volume,
-            'turnover': self._turnover,
+            'turnover_rate': self._turnover_rate,
             'price_change': self._price_change,
             'price_range': self._price_range,
             'industry': self._industry,
@@ -413,7 +413,7 @@ class Stock_info:
             pd.DataFrame: 包含所有数据的Data_frame
         """
         if not self._is_collection:
-            return pd.DataFrame([self.to_dict_Info()])
+            return pd.DataFrame([self.to_dict()])
         
         if self._data_frame is not None:
             return self._data_frame

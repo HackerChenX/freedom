@@ -1,0 +1,73 @@
+{
+  "test_results": {
+    "单策略评估": {
+      "execution_time": 0.15412616729736328,
+      "execution_time_acceptable": true,
+      "has_performance_metrics": true,
+      "has_risk_metrics": true,
+      "has_report_files": true,
+      "total_return": 0.1438846318579159,
+      "annualized_return": 0.11912382644419939,
+      "sharpe_ratio": 0.718025141961542,
+      "max_drawdown": 0.11319165521647104,
+      "volatility": 0.12412354559162907,
+      "data_quality_score": 100.0,
+      "metrics_reasonable": true
+    },
+    "批量策略评估": {
+      "execution_time": 1.087738037109375,
+      "execution_time_acceptable": true,
+      "total_strategies": 5,
+      "successful_evaluations": 5,
+      "success_rate": 0,
+      "has_individual_results": true,
+      "has_strategy_rankings": true,
+      "has_batch_reports": true,
+      "parallel_efficiency": 3.9105707994553858,
+      "avg_time_per_strategy": 0.217547607421875,
+      "batch_evaluation_quality": false
+    },
+    "性能指标准确性": {
+      "calculated_total_return": 36.40934092365077,
+      "expected_total_return": 36.409340923650774,
+      "total_return_error": 1.951539681122176e-16,
+      "calculated_annualized_return": 11.189970915175351,
+      "expected_annualized_return": 11.274002099240244,
+      "annualized_return_error": 0.007453536315250065,
+      "calculated_volatility": 0.008309097176613774,
+      "expected_volatility": 0.0,
+      "max_drawdown": 0.0,
+      "total_return_accurate": "True",
+      "annualized_return_accurate": "True",
+      "volatility_accurate": "True",
+      "max_drawdown_accurate": "True",
+      "overall_accuracy": true
+    },
+    "缓存机制": {
+      "first_execution_time": 0.06591272354125977,
+      "second_execution_time": 0.06718301773071289,
+      "speedup_ratio": 0.9810920343807003,
+      "cache_effective": false,
+      "results_identical": "True"
+    },
+    "内存使用": {
+      "initial_memory_mb": 139.6171875,
+      "memory_after_data_mb": 139.765625,
+      "memory_after_evaluation_mb": 166.8046875,
+      "memory_after_cleanup_mb": 165.8203125,
+      "peak_memory_usage_mb": 166.8046875,
+      "memory_increase_mb": 27.1875,
+      "memory_per_strategy_mb": 0.54375,
+      "memory_usage_acceptable": true,
+      "memory_cleanup_effective": true
+    }
+  },
+  "summary": {
+    "total_tests": 5,
+    "passed_tests": 5,
+    "failed_tests": 0,
+    "success_rate": 1.0,
+    "total_execution_time": 13.867139101028442,
+    "framework_ready": true
+  }
+}

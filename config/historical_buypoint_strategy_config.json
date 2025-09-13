@@ -1,0 +1,131 @@
+{
+  "system_config": {
+    "name": "历史买点自动策略生成系统",
+    "version": "1.0.0",
+    "description": "基于历史买点数据自动生成量化交易策略的系统"
+  },
+
+  "generation": {
+    "pattern_method": "hybrid",
+    "generation_mode": "balanced",
+    "min_pattern_frequency": 3,
+    "min_success_rate": 0.6,
+    "min_buypoints_required": 10,
+    "feature_extraction": {
+      "enable_technical_indicators": true,
+      "enable_pattern_recognition": true,
+      "enable_market_context": true,
+      "lookback_days": 60,
+      "forward_validation_days": 30
+    }
+  },
+
+  "pattern_recognition": {
+    "statistical_analysis": {
+      "enabled": true,
+      "confidence_level": 0.95,
+      "quantile_thresholds": [0.25, 0.75]
+    },
+    "frequent_patterns": {
+      "enabled": true,
+      "min_support": 0.3,
+      "max_itemset_size": 3
+    },
+    "clustering": {
+      "enabled": false,
+      "algorithm": "kmeans",
+      "n_clusters": 5
+    }
+  },
+
+  "validation": {
+    "pool_size": 1000,
+    "validation_period_days": 30,
+    "validation_date": null,
+    "thresholds": {
+      "min_buypoint_quality": 60.0,
+      "min_confidence_level": 0.5,
+      "min_success_rate": 0.4,
+      "max_risk_score": 0.7,
+      "min_selected_stocks": 5,
+      "max_selected_stocks": 100
+    }
+  },
+
+  "optimization": {
+    "max_iterations": 3,
+    "target_performance": 75.0,
+    "enable_iterative_optimization": true,
+    "optimization_strategies": [
+      {
+        "iteration": 0,
+        "generation_mode": "conservative",
+        "min_pattern_frequency": 5
+      },
+      {
+        "iteration": 1,
+        "generation_mode": "balanced",
+        "min_pattern_frequency": 3
+      },
+      {
+        "iteration": 2,
+        "generation_mode": "aggressive",
+        "min_pattern_frequency": 2
+      }
+    ]
+  },
+
+  "performance": {
+    "enable_caching": true,
+    "enable_parallel_processing": true,
+    "max_workers": 4,
+    "cache_size": 1000,
+    "performance_monitoring": {
+      "enable_timing": true,
+      "enable_memory_monitoring": true,
+      "log_slow_operations": true,
+      "slow_operation_threshold": 10.0
+    }
+  },
+
+  "risk_management": {
+    "max_position_size": 0.05,
+    "stop_loss_pct": 0.08,
+    "max_drawdown": 0.15,
+    "risk_assessment": {
+      "volatility_window": 20,
+      "var_confidence": 0.95,
+      "max_correlation": 0.8
+    }
+  },
+
+  "output": {
+    "save_strategy": true,
+    "save_validation_report": true,
+    "save_summary_report": true,
+    "save_strategy_info": true,
+    "output_format": {
+      "strategy": "pickle",
+      "reports": "json",
+      "summary": "text"
+    }
+  },
+
+  "logging": {
+    "level": "INFO",
+    "enable_file_logging": true,
+    "log_file": "strategy_generation.log",
+    "enable_performance_logging": true,
+    "log_format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  },
+
+  "data_sources": {
+    "primary_database": "clickhouse",
+    "backup_sources": [],
+    "data_validation": {
+      "check_data_quality": true,
+      "min_data_points": 100,
+      "max_missing_ratio": 0.1
+    }
+  }
+}

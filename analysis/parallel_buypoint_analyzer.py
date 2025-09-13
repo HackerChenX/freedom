@@ -24,10 +24,10 @@ sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
-from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 def analyze_single_buypoint_worker(args):

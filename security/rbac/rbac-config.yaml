@@ -1,0 +1,223 @@
+# RBAC Configuration for Freedom Stock System
+
+# Service Account for API Services
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: freedom-api-sa
+  namespace: freedom-stock
+  labels:
+    app: freedom-stock
+    component: api
+automountServiceAccountToken: false
+---
+# Service Account for Data Processor
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: freedom-processor-sa
+  namespace: freedom-stock
+  labels:
+    app: freedom-stock
+    component: processor
+automountServiceAccountToken: false
+---
+# Service Account for Monitoring
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: freedom-monitor-sa
+  namespace: freedom-stock
+  labels:
+    app: freedom-stock
+    component: monitor
+automountServiceAccountToken: true
+---
+# Role for API Services (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: freedom-stock
+  name: api-service-role
+rules:
+# Allow reading ConfigMaps for configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+# Allow reading Secrets for database credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+# Allow health check access to own pod
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get"]
+  resourceNames: [] # Will be restricted to own pod
+---
+# Role for Data Processor (minimal permissions)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: freedom-stock
+  name: data-processor-role
+rules:
+# Allow reading ConfigMaps for configuration
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+# Allow reading Secrets for database credentials
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+---
+# Role for Monitoring Services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: freedom-stock
+  name: monitor-role
+rules:
+# Allow monitoring to read pods and services
+- apiGroups: [""]
+  resources: ["pods", "services", "endpoints"]
+  verbs: ["get", "list", "watch"]
+# Allow reading ConfigMaps and Secrets
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+# Allow reading deployments for monitoring
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "watch"]
+---
+# ClusterRole for Prometheus (monitoring across namespaces)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-cluster-role
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - nodes/metrics
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+# RoleBinding for API Services
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: api-service-rolebinding
+  namespace: freedom-stock
+subjects:
+- kind: ServiceAccount
+  name: freedom-api-sa
+  namespace: freedom-stock
+roleRef:
+  kind: Role
+  name: api-service-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding for Data Processor
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: data-processor-rolebinding
+  namespace: freedom-stock
+subjects:
+- kind: ServiceAccount
+  name: freedom-processor-sa
+  namespace: freedom-stock
+roleRef:
+  kind: Role
+  name: data-processor-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding for Monitoring
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: monitor-rolebinding
+  namespace: freedom-stock
+subjects:
+- kind: ServiceAccount
+  name: freedom-monitor-sa
+  namespace: freedom-stock
+roleRef:
+  kind: Role
+  name: monitor-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ClusterRoleBinding for Prometheus
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-cluster-rolebinding
+subjects:
+- kind: ServiceAccount
+  name: prometheus-sa
+  namespace: freedom-stock
+roleRef:
+  kind: ClusterRole
+  name: prometheus-cluster-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# Security Context Constraints (OpenShift)
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: freedom-stock-scc
+  annotations:
+    kubernetes.io/description: "SCC for Freedom Stock Analysis System"
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegedContainer: false
+allowedCapabilities: []
+defaultAddCapabilities: []
+fsGroup:
+  type: MustRunAs
+  ranges:
+  - min: 1000
+    max: 2000
+readOnlyRootFilesystem: true
+requiredDropCapabilities:
+- ALL
+runAsUser:
+  type: MustRunAsNonRoot
+seLinuxContext:
+  type: MustRunAs
+supplementalGroups:
+  type: MustRunAs
+  ranges:
+  - min: 1000
+    max: 2000
+volumes:
+- configMap
+- downwardAPI
+- emptyDir
+- persistentVolumeClaim
+- projected
+- secret
+users:
+- system:serviceaccount:freedom-stock:freedom-api-sa
+- system:serviceaccount:freedom-stock:freedom-processor-sa
+- system:serviceaccount:freedom-stock:freedom-monitor-sa

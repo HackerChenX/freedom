@@ -7,12 +7,12 @@
 from enum import Enum, auto
 
 
-class Patternpolarity_polarity(Enum):
+class PatternPolarity(Enum):
     """模式极性枚举"""
     
-    positive = auto()    # 正面极性（看涨/适合买点）
-    negative = auto()    # 负面极性（看跌/不适合买点）
-    neutral = auto()     # 中性极性（信息性质）
+    POSITIVE = auto()    # 正面极性（看涨/适合买点）
+    NEGATIVE = auto()    # 负面极性（看跌/不适合买点）
+    NEUTRAL = auto()     # 中性极性（信息性质）
     
     def __str___Pattern_Polarity(self):
         return self.name.lower()

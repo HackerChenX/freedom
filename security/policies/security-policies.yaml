@@ -1,0 +1,246 @@
+# Security Policies for Freedom Stock Analysis System
+
+# Pod Security Policy
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: freedom-stock-psp
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  # Privilege and access controls
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  allowedCapabilities: []
+
+  # Host controls
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  hostPorts: []
+
+  # Volume controls
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  allowedHostPaths: []
+
+  # User controls
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  runAsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 2000
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 2000
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1000
+        max: 2000
+
+  # Security contexts
+  readOnlyRootFilesystem: true
+  seLinux:
+    rule: 'RunAsAny'
+---
+# OPA Gatekeeper Constraints
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: freedomstockresourcelimits
+spec:
+  crd:
+    spec:
+      names:
+        kind: FreedomStockResourceLimits
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            maxCPU:
+              type: string
+            maxMemory:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package freedomstockresourcelimits
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.cpu
+          msg := "Container missing CPU limits"
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits.memory
+          msg := "Container missing memory limits"
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          cpu_limit := container.resources.limits.cpu
+          max_cpu := input.parameters.maxCPU
+          to_number(cpu_limit) > to_number(max_cpu)
+          msg := sprintf("Container CPU limit %s exceeds maximum %s", [cpu_limit, max_cpu])
+        }
+---
+# Resource Limits Constraint
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: FreedomStockResourceLimits
+metadata:
+  name: must-have-resource-limits
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces: ["freedom-stock"]
+  parameters:
+    maxCPU: "8"
+    maxMemory: "16Gi"
+---
+# Network Security Policy Template
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: requirenetworkpolicy
+spec:
+  crd:
+    spec:
+      names:
+        kind: RequireNetworkPolicy
+      validation:
+        openAPIV3Schema:
+          type: object
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package requirenetworkpolicy
+
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          input.review.operation == "CREATE"
+          namespace := input.review.object.metadata.namespace
+          not has_network_policy(namespace)
+          msg := sprintf("Namespace %s must have a NetworkPolicy", [namespace])
+        }
+
+        has_network_policy(namespace) {
+          # This would need to be implemented with external data
+          # or additional logic to check for existing NetworkPolicies
+          true
+        }
+---
+# Require Network Policy Constraint
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: RequireNetworkPolicy
+metadata:
+  name: must-have-network-policy
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["freedom-stock"]
+---
+# Admission Controller Configuration
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionWebhook
+metadata:
+  name: freedom-stock-validator
+webhooks:
+- name: security-validator.freedom-stock.local
+  clientConfig:
+    service:
+      name: security-validator
+      namespace: freedom-stock
+      path: "/validate"
+  rules:
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+  - operations: [ "CREATE", "UPDATE" ]
+    apiGroups: ["apps"]
+    apiVersions: ["v1"]
+    resources: ["deployments"]
+  admissionReviewVersions: ["v1", "v1beta1"]
+  sideEffects: None
+  failurePolicy: Fail
+---
+# Security Scanner Job
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: security-scanner
+  namespace: freedom-stock
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: security-scanner-sa
+          containers:
+          - name: security-scanner
+            image: aquasec/trivy:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Scan all images in the namespace
+              kubectl get pods -n freedom-stock -o jsonpath='{.items[*].spec.containers[*].image}' | tr ' ' '\n' | sort -u | while read image; do
+                echo "Scanning image: $image"
+                trivy image --exit-code 1 --severity HIGH,CRITICAL $image
+              done
+          restartPolicy: OnFailure
+---
+# Security Scanner Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-scanner-sa
+  namespace: freedom-stock
+---
+# Security Scanner Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: freedom-stock
+  name: security-scanner-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+# Security Scanner RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: security-scanner-rolebinding
+  namespace: freedom-stock
+subjects:
+- kind: ServiceAccount
+  name: security-scanner-sa
+  namespace: freedom-stock
+roleRef:
+  kind: Role
+  name: security-scanner-role
+  apiGroup: rbac.authorization.k8s.io

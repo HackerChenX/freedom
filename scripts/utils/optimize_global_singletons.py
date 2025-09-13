@@ -225,7 +225,7 @@ from strategy.strategy_format_converter import Strategy_format_converter
 from db.db_manager import DBManager
 from db.interfaces.data_access_interface import Data_access_interface
 from indicators.pattern_registry import Pattern_registry
-from utils.period_manager import Period_manager
+from utils.period_manager import PeriodManager
 from utils.cache import Cache_manager
 from analysis.integration.unified_data_adapter import Unified_data_adapter
 from analysis.integration.unified_analysis_engine import Unified_analysis_engine

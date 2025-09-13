@@ -1,0 +1,293 @@
+# GitLab CI/CD Pipeline Configuration
+# Alternative CI/CD pipeline for GitLab environments
+
+stages:
+  - validate
+  - test
+  - build
+  - security
+  - deploy-dev
+  - deploy-staging
+  - deploy-prod
+  - monitor
+
+variables:
+  DOCKER_REGISTRY: registry.gitlab.com
+  IMAGE_NAME: freedom-stock-analysis
+  PROCESSOR_IMAGE_NAME: freedom-data-processor
+  DOCKER_DRIVER: overlay2
+  KUBERNETES_NAMESPACE_DEV: freedom-stock-dev
+  KUBERNETES_NAMESPACE_STAGING: freedom-stock-staging
+  KUBERNETES_NAMESPACE_PROD: freedom-stock-prod
+
+# ============================================================================
+# Validation Stage
+# ============================================================================
+validate:lint:
+  stage: validate
+  image: python:3.10-slim
+  before_script:
+    - pip install black flake8 isort bandit safety
+  script:
+    - black --check --line-length 120 analysis/ indicators/ utils/ db/ api/ strategy/ monitoring/
+    - isort --check-only --profile black analysis/ indicators/ utils/ db/ api/ strategy/ monitoring/
+    - flake8 analysis/ indicators/ utils/ db/ api/ strategy/ monitoring/ --max-line-length=120
+    - bandit -r analysis/ indicators/ utils/ db/ api/ strategy/ monitoring/ -f json -o bandit-report.json
+    - safety check --json --output safety-report.json
+  artifacts:
+    reports:
+      codequality: bandit-report.json
+    paths:
+      - bandit-report.json
+      - safety-report.json
+    when: always
+    expire_in: 1 week
+
+validate:dockerfile:
+  stage: validate
+  image: hadolint/hadolint:latest-debian
+  script:
+    - hadolint Dockerfile
+    - hadolint Dockerfile.processor
+
+# ============================================================================
+# Test Stage
+# ============================================================================
+test:unit:
+  stage: test
+  image: python:3.10-slim
+  services:
+    - name: clickhouse/clickhouse-server:23.8
+      alias: clickhouse
+      command: ["/entrypoint.sh"]
+    - name: redis:7.2-alpine
+      alias: redis
+  variables:
+    CLICKHOUSE_HOST: clickhouse
+    CLICKHOUSE_PORT: "8123"
+    CLICKHOUSE_PASSWORD: test_password
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+    PYTHONPATH: $CI_PROJECT_DIR
+  before_script:
+    - apt-get update && apt-get install -y wget curl
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov
+    # Wait for services to be ready
+    - timeout 60 bash -c 'until wget --spider http://clickhouse:8123/; do sleep 1; done'
+    - timeout 60 bash -c 'until redis-cli -h redis ping; do sleep 1; done'
+  script:
+    - python -m pytest tests/ -v --cov=analysis --cov=indicators --cov=utils --cov=db --cov=api --cov=strategy --cov=monitoring --cov-report=xml --cov-report=html --cov-report=term-missing
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - coverage.xml
+      - htmlcov/
+    when: always
+    expire_in: 1 week
+
+test:integration:
+  stage: test
+  image: python:3.10-slim
+  services:
+    - name: clickhouse/clickhouse-server:23.8
+      alias: clickhouse
+    - name: redis:7.2-alpine
+      alias: redis
+  variables:
+    CLICKHOUSE_HOST: clickhouse
+    CLICKHOUSE_PORT: "8123"
+    CLICKHOUSE_PASSWORD: test_password
+    REDIS_HOST: redis
+    REDIS_PORT: "6379"
+  before_script:
+    - apt-get update && apt-get install -y wget curl
+    - pip install -r requirements.txt
+    - timeout 60 bash -c 'until wget --spider http://clickhouse:8123/; do sleep 1; done'
+    - timeout 60 bash -c 'until redis-cli -h redis ping; do sleep 1; done'
+  script:
+    - python -m pytest tests/integration/ -v
+  artifacts:
+    reports:
+      junit: integration-test-results.xml
+    when: always
+    expire_in: 1 week
+
+# ============================================================================
+# Build Stage
+# ============================================================================
+build:main-image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker build -t $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest .
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest
+  only:
+    - master
+    - develop
+    - /^feat\/.*$/
+
+build:processor-image:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+  script:
+    - docker build -f Dockerfile.processor -t $CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker build -f Dockerfile.processor -t $CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:latest .
+    - docker push $CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:latest
+  only:
+    - master
+    - develop
+    - /^feat\/.*$/
+
+# ============================================================================
+# Security Stage
+# ============================================================================
+security:container-scan:
+  stage: security
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA
+  script:
+    - |
+      docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+        -v $(pwd):/tmp/.cache/ aquasec/trivy:latest image \
+        --format template --template "@contrib/gitlab.tpl" \
+        --output /tmp/.cache/gl-container-scanning-report.json \
+        $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA
+  artifacts:
+    reports:
+      container_scanning: gl-container-scanning-report.json
+    when: always
+    expire_in: 1 week
+
+security:sast:
+  stage: security
+  image: python:3.10-slim
+  script:
+    - pip install bandit
+    - bandit -r . -f gitlab -o gl-sast-report.json
+  artifacts:
+    reports:
+      sast: gl-sast-report.json
+    when: always
+    expire_in: 1 week
+
+# ============================================================================
+# Development Deployment
+# ============================================================================
+deploy:dev:
+  stage: deploy-dev
+  image: bitnami/kubectl:latest
+  environment:
+    name: development
+    url: https://dev.freedom-stock-api.local
+  before_script:
+    - echo $KUBE_CONFIG_DEV | base64 -d > /tmp/kube-config
+    - export KUBECONFIG=/tmp/kube-config
+  script:
+    - kubectl apply -k k8s/overlays/dev/
+    - kubectl set image deployment/api-service api-service=$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_DEV
+    - kubectl set image deployment/data-processor data-processor=$CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_DEV
+    - kubectl rollout status deployment/api-service -n $KUBERNETES_NAMESPACE_DEV --timeout=300s
+    - kubectl rollout status deployment/data-processor -n $KUBERNETES_NAMESPACE_DEV --timeout=300s
+  only:
+    - develop
+    - /^feat\/.*$/
+
+# ============================================================================
+# Staging Deployment
+# ============================================================================
+deploy:staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:latest
+  environment:
+    name: staging
+    url: https://staging.freedom-stock-api.local
+  before_script:
+    - echo $KUBE_CONFIG_STAGING | base64 -d > /tmp/kube-config
+    - export KUBECONFIG=/tmp/kube-config
+  script:
+    - kubectl apply -k k8s/overlays/staging/
+    - kubectl set image deployment/api-service api-service=$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_STAGING
+    - kubectl set image deployment/data-processor data-processor=$CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_STAGING
+    - kubectl rollout status deployment/api-service -n $KUBERNETES_NAMESPACE_STAGING --timeout=600s
+    - kubectl rollout status deployment/data-processor -n $KUBERNETES_NAMESPACE_STAGING --timeout=600s
+    # Run smoke tests
+    - kubectl wait --for=condition=Ready pod -l app=api-service -n $KUBERNETES_NAMESPACE_STAGING --timeout=300s
+    - STAGING_URL=$(kubectl get svc nginx-lb-service -n $KUBERNETES_NAMESPACE_STAGING -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    - curl -f http://$STAGING_URL/health
+  only:
+    - master
+
+# ============================================================================
+# Production Deployment
+# ============================================================================
+deploy:prod:
+  stage: deploy-prod
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+    url: https://freedom-stock-api.com
+  when: manual
+  before_script:
+    - echo $KUBE_CONFIG_PROD | base64 -d > /tmp/kube-config
+    - export KUBECONFIG=/tmp/kube-config
+  script:
+    - kubectl apply -k k8s/overlays/prod/
+    - kubectl set image deployment/api-service api-service=$CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_PROD
+    - kubectl set image deployment/data-processor data-processor=$CI_REGISTRY_IMAGE/$PROCESSOR_IMAGE_NAME:$CI_COMMIT_SHA -n $KUBERNETES_NAMESPACE_PROD
+    - kubectl rollout status deployment/api-service -n $KUBERNETES_NAMESPACE_PROD --timeout=900s
+    - kubectl rollout status deployment/data-processor -n $KUBERNETES_NAMESPACE_PROD --timeout=900s
+    # Post-deployment verification
+    - kubectl wait --for=condition=Ready pod -l app=api-service -n $KUBERNETES_NAMESPACE_PROD --timeout=600s
+    - PROD_URL=$(kubectl get svc nginx-lb-service -n $KUBERNETES_NAMESPACE_PROD -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+    - curl -f http://$PROD_URL/health
+    - curl -f http://$PROD_URL/info
+  only:
+    - master
+    - tags
+
+# ============================================================================
+# Monitoring
+# ============================================================================
+monitor:performance:
+  stage: monitor
+  image: python:3.10-slim
+  dependencies: []
+  script:
+    - pip install locust requests
+    - python tests/performance/load_test.py --environment=production
+  artifacts:
+    paths:
+      - performance-results.json
+    when: always
+    expire_in: 1 week
+  only:
+    - schedules
+
+monitor:health-check:
+  stage: monitor
+  image: curlimages/curl:latest
+  script:
+    - curl -f https://freedom-stock-api.com/health
+    - curl -f https://freedom-stock-api.com/info
+  only:
+    - schedules

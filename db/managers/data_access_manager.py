@@ -448,11 +448,24 @@ class DataAccessManager(DataAccessInterface):
     def query_dataframe_Manager_Data_Access_Manager(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
         """
         执行SQL查询并返回Data_frame（query方法的别名）
-        
+
         Args:
             sql: SQL查询语句
             params: 查询参数
-            
+
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        return self.query_Manager_Data_Access_Manager(sql, params)
+
+    def query_dataframe(self, sql: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行SQL查询并返回DataFrame（标准接口方法）
+
+        Args:
+            sql: SQL查询语句
+            params: 查询参数
+
         Returns:
             pd.DataFrame: 查询结果
         """
@@ -664,7 +677,7 @@ class DataAccessManager(DataAccessInterface):
                 industry,
                 COUNT(*) as stock_count,
                 AVG(price_change) as avg_change,
-                AVG(turnover) as avg_turnover
+                AVG(turnover_rate) as avg_turnover
             FROM stock_info WHERE 1=1
             WHERE date = %(date)s AND level = '日线' 
             AND industry != '' AND industry IS NOT NULL
@@ -727,7 +740,7 @@ class DataAccessManager(DataAccessInterface):
         # 基础查询
         query = """
         SELECT code, name, date, level, open, high, low, close, volume, 
-               turnover, price_change, price_range, industry
+               turnover_rate, price_change, price_range, industry
         FROM stock_info
         WHERE 1=1
         """

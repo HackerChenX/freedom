@@ -82,7 +82,7 @@ class OptimizedQueryManager:
             # 构建批量查询SQL
             placeholders = "', '".join(stock_codes)
             query = f"""
-            SELECT code, name, date, open, high, low, close, volume, turnover
+            SELECT code, name, date, open, high, low, close, volume, turnover_rate
             FROM stock_info 
             WHERE code IN ('{placeholders}')
             AND level = '{level}'
@@ -207,7 +207,7 @@ class OptimizedQueryManager:
                 'low': 'min',
                 'close': 'last',
                 'volume': 'sum',
-                'turnover': 'sum'
+                'turnover_rate': 'sum'
             }).reset_index(drop=True)
             
             # 确保数据完整性
@@ -246,11 +246,11 @@ class OptimizedQueryManager:
             
             if result:
                 # 获取列名（假设查询的是stock_info表的标准字段）
-                columns = ['code', 'name', 'date', 'open', 'high', 'low', 'close', 'volume', 'turnover']
+                columns = ['code', 'name', 'date', 'open', 'high', 'low', 'close', 'volume', 'turnover_rate']
                 df = pd.DataFrame(result, columns=columns)
                 
                 # 数据类型转换
-                numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'turnover']
+                numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'turnover_rate']
                 for col in numeric_columns:
                     if col in df.columns:
                         df[col] = pd.to_numeric(df[col], errors='coerce')

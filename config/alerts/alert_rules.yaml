@@ -1,0 +1,49 @@
+metadata:
+  total_rules: 3
+  updated_at: '2025-09-13T14:47:12.328015'
+  version: '1.0'
+rules:
+  kdj_overbought_oversold:
+    conditions:
+      d_overbought: 80
+      d_oversold: 20
+      k_overbought: 80
+      k_oversold: 20
+    created_at: '2025-09-13T14:47:12.328005'
+    description: KDJ指标超买(>80)或超卖(<20)预警
+    enabled: true
+    id: kdj_overbought_oversold
+    indicators:
+    - KDJ
+    name: KDJ超买超卖
+    priority: 3
+    signal_type: OPPORTUNITY
+    updated_at: '2025-09-13T14:47:12.328008'
+  macd_golden_death_cross:
+    conditions:
+      death_cross_threshold: -0.01
+      golden_cross_threshold: 0.01
+    created_at: '2025-09-13T14:47:12.327998'
+    description: MACD指标金叉买入、死叉卖出信号
+    enabled: true
+    id: macd_golden_death_cross
+    indicators:
+    - MACD
+    name: MACD金叉死叉
+    priority: 4
+    signal_type: BUY
+    updated_at: '2025-09-13T14:47:12.328000'
+  rsi_overbought_oversold:
+    conditions:
+      rsi_overbought: 70
+      rsi_oversold: 30
+    created_at: '2025-09-13T14:47:12.327983'
+    description: RSI指标超买(>70)或超卖(<30)预警
+    enabled: true
+    id: rsi_overbought_oversold
+    indicators:
+    - RSI
+    name: RSI超买超卖
+    priority: 3
+    signal_type: RISK_WARNING
+    updated_at: '2025-09-13T14:47:12.327992'

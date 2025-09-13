@@ -388,10 +388,15 @@ class CompleteIndicatorRegistry:
         from indicators.real_technical_indicators import real_indicator_factory
         return real_indicator_factory.create_indicator(name, **kwargs)
     
+    @property
+    def indicators(self) -> Dict[str, Any]:
+        """获取所有指标（属性访问）"""
+        return self._indicators.copy()
+
     def get_all_indicators(self) -> Dict[str, Any]:
         """获取所有指标"""
         return self._indicators.copy()
-    
+
     def get_indicator_count(self) -> int:
         """获取已注册指标数量"""
         return len(self._indicators)

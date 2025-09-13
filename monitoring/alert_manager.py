@@ -18,10 +18,12 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from utils.logger import getLogger
-from utils.decorators import exception_handler
+from utils.logger import get_logger
+from utils.exception_handler import exception_handler
+from utils.performance_monitor import performance_monitor
+from monitoring.intelligent_alert_system import get_intelligent_alert_system
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class NotificationChannel(Enum):
@@ -94,7 +96,10 @@ class AlertManager:
         # 通知处理线程
         self.notification_thread = None
         self.notification_running = False
-        
+
+        # 智能预警系统集成
+        self.intelligent_alert_system = get_intelligent_alert_system()
+
         logger.info("告警管理器初始化完成")
     
     def _load_notification_configs(self) -> Dict[str, NotificationConfig]:
@@ -532,6 +537,117 @@ class AlertManager:
         self.alert_stats.clear()
         logger.info("告警历史已清空")
 
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=5.0)
+    def setup_alerts(self, alert_configs: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """
+        设置预警规则（兼容接口）
+
+        Args:
+            alert_configs: 预警配置列表
+
+        Returns:
+            Dict[str, Any]: 设置结果
+        """
+        try:
+            # 处理传统告警配置
+            configured_count = 0
+            for config in alert_configs:
+                # 这里可以添加传统告警规则的处理逻辑
+                configured_count += 1
+
+            # 获取智能预警系统的统计信息
+            intelligent_stats = self.intelligent_alert_system.get_system_statistics()
+
+            return {
+                "status": "configured",
+                "traditional_alerts": configured_count,
+                "intelligent_rules": intelligent_stats.get("total_rules", 0),
+                "enabled_rules": intelligent_stats.get("enabled_rules", 0),
+                "timestamp": datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"设置预警规则失败: {e}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+
+    @exception_handler(reraise=True)
+    @performance_monitor(threshold_seconds=10.0)
+    def analyze_stock_alerts(self, stock_code: str, stock_name: str = "") -> Dict[str, Any]:
+        """
+        分析股票预警信号
+
+        Args:
+            stock_code: 股票代码
+            stock_name: 股票名称
+
+        Returns:
+            Dict[str, Any]: 分析结果
+        """
+        try:
+            # 使用智能预警系统分析信号
+            signals = self.intelligent_alert_system.analyze_stock_signals(
+                stock_code=stock_code,
+                stock_name=stock_name
+            )
+
+            # 处理识别的信号
+            for signal in signals:
+                # 添加到智能预警系统的历史记录
+                self.intelligent_alert_system.signals_history.append(signal)
+
+                # 发送通知
+                self._send_signal_notification(signal)
+
+            return {
+                "status": "success",
+                "stock_code": stock_code,
+                "stock_name": stock_name,
+                "signals_count": len(signals),
+                "signals": [
+                    {
+                        "id": signal.id,
+                        "signal_type": signal.signal_type.value,
+                        "signal_strength": signal.signal_strength.value,
+                        "confidence": signal.confidence,
+                        "message": signal.message,
+                        "timestamp": signal.timestamp.isoformat()
+                    }
+                    for signal in signals
+                ],
+                "timestamp": datetime.now().isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"分析股票 {stock_code} 预警信号失败: {e}")
+            return {
+                "status": "error",
+                "stock_code": stock_code,
+                "message": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+
+    def _send_signal_notification(self, signal):
+        """发送信号通知"""
+        try:
+            # 构建通知消息
+            notification_message = f"[{signal.signal_type.value}] {signal.message}"
+
+            # 发送到日志
+            if signal.signal_type.value in ["买入信号", "卖出信号"]:
+                logger.warning(notification_message)
+            else:
+                logger.info(notification_message)
+
+            # 这里可以添加其他通知渠道的处理
+
+        except Exception as e:
+            logger.error(f"发送信号通知失败: {e}")
+
 
 # 全局告警管理器实例
 _global_alert_manager = None
@@ -541,4 +657,4 @@ def get_alert_manager() -> AlertManager:
     global _global_alert_manager
     if _global_alert_manager is None:
         _global_alert_manager = AlertManager()
-    return _global_alert_manager 
+    return _global_alert_manager

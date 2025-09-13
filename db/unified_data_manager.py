@@ -745,7 +745,7 @@ class UnifiedDataManager:
             }
 
             # 添加其他字段的聚合规则
-            for col in ['amount', 'turnover', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
+            for col in ['amount', 'turnover_rate', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
                 if col in df_base.columns:
                     if col in ['amount', 'volume']:
                         agg_dict[col] = 'sum'
@@ -778,8 +778,8 @@ class UnifiedDataManager:
                 df_target['industry'] = first_row.get('industry', '')
 
             # 重新排列列顺序
-            expected_columns = ['code', 'name', 'date', 'level', 'open', 'high', 'low', 'close', 
-                               'volume', 'turnover', 'price_change', 'price_range', 
+            expected_columns = ['code', 'name', 'date', 'level', 'open', 'high', 'low', 'close',
+                               'volume', 'turnover_rate', 'price_change', 'price_range',
                                'industry', 'datetime', 'time']
             
             # 只保留存在的列
@@ -1457,7 +1457,7 @@ class UnifiedDataManager:
                         df['date'] = pd.to_datetime(df['date'])
                     
                     # 检查数据完整性
-                    for col in ['amount', 'turnover', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
+                    for col in ['amount', 'turnover_rate', 'pe_ratio', 'pb_ratio', 'price_change', 'price_range']:
                         if col not in df.columns:
                             df[col] = 0.0
 
@@ -1484,12 +1484,13 @@ class UnifiedDataManager:
             pd.DataFrame: 股票日线数据
         """
         try:
-            return self.get_stock_info(
+            stock_info = self.get_stock_info(
                 stock_code=stock_code,
                 level="日线",
                 start_date=start_date,
                 end_date=end_date
             )
+            return stock_info.to_dataframe()
         except Exception as e:
             logger.error(f"获取股票{stock_code}日线数据失败: {e}")
             return pd.DataFrame()

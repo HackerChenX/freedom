@@ -28,11 +28,11 @@ sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
-from analysis.buypoints.period_data_processor import Period_data_processor
+from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 from indicators.complete_indicator_registry import complete_registry
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class OptimizedIndicatorCalculator:
@@ -146,7 +146,7 @@ class ParallelDataProcessor:
             Dict[str, pd.DataFrame]: 股票数据
         """
         try:
-            data_processor = Period_data_processor()
+            data_processor = PeriodDataProcessor()
             return data_processor.get_multi_period_data(
                 stock_code=stock_code,
                 end_date=buypoint_date

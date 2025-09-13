@@ -1,0 +1,478 @@
+# Production Docker Compose Configuration
+version: '3.8'
+
+networks:
+  freedom-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  clickhouse_data:
+    driver: local
+  clickhouse_logs:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+services:
+  # ============================================================================
+  # Database Layer
+  # ============================================================================
+
+  # Primary ClickHouse Instance
+  clickhouse-primary:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: clickhouse-primary
+    hostname: clickhouse-primary
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-secure_password_123}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+    ports:
+      - "8123:8123"  # HTTP interface
+      - "9000:9000"  # TCP interface
+      - "9004:9004"  # MySQL interface
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./config/clickhouse/config.xml:/etc/clickhouse-server/config.xml
+      - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./config/clickhouse/macros.xml:/etc/clickhouse-server/config.d/macros.xml
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.10
+    ulimits:
+      nofile: 262144
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/?query=SELECT%201"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # ClickHouse Replica (for high availability)
+  clickhouse-replica:
+    image: clickhouse/clickhouse-server:23.8
+    container_name: clickhouse-replica
+    hostname: clickhouse-replica
+    environment:
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-secure_password_123}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+    ports:
+      - "8124:8123"  # HTTP interface
+      - "9001:9000"  # TCP interface
+      - "9005:9004"  # MySQL interface
+    volumes:
+      - ./data/clickhouse-replica:/var/lib/clickhouse
+      - ./logs/clickhouse-replica:/var/log/clickhouse-server
+      - ./config/clickhouse/config-replica.xml:/etc/clickhouse-server/config.xml
+      - ./config/clickhouse/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./config/clickhouse/macros-replica.xml:/etc/clickhouse-server/config.d/macros.xml
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.11
+    depends_on:
+      - zookeeper
+    ulimits:
+      nofile: 262144
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/?query=SELECT%201"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          cpus: '4.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # ZooKeeper for ClickHouse coordination
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    hostname: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_SYNC_LIMIT: 5
+    volumes:
+      - ./data/zookeeper:/var/lib/zookeeper/data
+      - ./logs/zookeeper:/var/lib/zookeeper/log
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.12
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo 'ruok' | nc localhost 2181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    hostname: redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis_secure_123} --maxmemory 2gb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.13
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+
+  # ============================================================================
+  # Application Layer
+  # ============================================================================
+
+  # Main API Service
+  api-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    image: freedom-stock-analysis:latest
+    container_name: api-service
+    hostname: api-service
+    environment:
+      - NODE_ENV=production
+      - CLICKHOUSE_HOST=clickhouse-primary
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-secure_password_123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_123}
+      - API_PORT=8000
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./cache:/app/cache
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.20
+    depends_on:
+      clickhouse-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Stock Data Processor
+  data-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile.processor
+    image: freedom-data-processor:latest
+    container_name: data-processor
+    hostname: data-processor
+    environment:
+      - CLICKHOUSE_HOST=clickhouse-primary
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-secure_password_123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_123}
+      - PROCESSOR_WORKERS=8
+      - BATCH_SIZE=1000
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./results:/app/results
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.21
+    depends_on:
+      clickhouse-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["python", "bin/buypoint_batch_analyzer.py"]
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+          cpus: '4.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+
+  # Strategy Analyzer
+  strategy-analyzer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: freedom-stock-analysis:latest
+    container_name: strategy-analyzer
+    hostname: strategy-analyzer
+    environment:
+      - CLICKHOUSE_HOST=clickhouse-primary
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-secure_password_123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_123}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+      - ./results:/app/results
+      - ./config:/app/config
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.22
+    depends_on:
+      clickhouse-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["python", "strategy/intelligent_strategy_generator.py"]
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Real-time Monitor
+  monitor-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: freedom-stock-analysis:latest
+    container_name: monitor-service
+    hostname: monitor-service
+    environment:
+      - CLICKHOUSE_HOST=clickhouse-primary
+      - CLICKHOUSE_PORT=8123
+      - CLICKHOUSE_USER=${CLICKHOUSE_USER:-default}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-secure_password_123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secure_123}
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./config:/app/config
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.23
+    depends_on:
+      clickhouse-primary:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    command: ["python", "monitoring/market_monitor.py"]
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # ============================================================================
+  # Load Balancer
+  # ============================================================================
+
+  # Nginx Load Balancer
+  nginx:
+    image: nginx:1.24-alpine
+    container_name: nginx-lb
+    hostname: nginx-lb
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.30
+    depends_on:
+      - api-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  # ============================================================================
+  # Monitoring Stack
+  # ============================================================================
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    hostname: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./config/prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.40
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: grafana
+    hostname: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin_secure_123}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.41
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  # Node Exporter
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    hostname: node-exporter
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.42
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+  # cAdvisor for container monitoring
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: cadvisor
+    hostname: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+    networks:
+      freedom-network:
+        ipv4_address: 172.20.0.43
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'

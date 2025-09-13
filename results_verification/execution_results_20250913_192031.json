@@ -1,0 +1,60 @@
+{
+  "start_time": "2025-09-13T19:20:31.650796",
+  "buypoints_file": "./test_buypoints_2025.csv",
+  "output_dir": "./results_verification",
+  "steps": {
+    "data_loading": {
+      "status": "success",
+      "buypoints_count": 3,
+      "message": "成功加载 3 个历史买点"
+    },
+    "strategy_generation": {
+      "status": "success",
+      "strategy_name": "历史买点策略_20250913_1920",
+      "patterns_count": 4,
+      "expected_success_rate": 0.6129339214959301,
+      "expected_return": -2.2703587506130645,
+      "risk_level": "MEDIUM"
+    },
+    "stock_selection": {
+      "status": "success",
+      "selected_stocks": [
+        {
+          "stock_code": "000001",
+          "score": 0.85,
+          "match_patterns": 3
+        },
+        {
+          "stock_code": "000002",
+          "score": 0.78,
+          "match_patterns": 2
+        }
+      ],
+      "stocks_count": 2,
+      "message": "选出 2 只股票"
+    },
+    "validation": {
+      "status": "warning",
+      "message": "简化验证未通过",
+      "validation_passed": false,
+      "forward_validation": {
+        "accuracy": 0.8,
+        "matched_buypoints": 4,
+        "total_patterns": 4,
+        "signal_consistency": 0.8
+      },
+      "backward_validation": {
+        "strategy_coverage": 0.1,
+        "analyzed_stocks": 2,
+        "statistical_significance": 0.1
+      },
+      "overall_score": 0.52,
+      "risk_assessment": "MEDIUM",
+      "execution_time": 1.0,
+      "recommendations": [
+        "使用了简化验证流程",
+        "建议安装完整的验证系统以获得更准确的结果"
+      ]
+    }
+  }
+}

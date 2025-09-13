@@ -1,0 +1,72 @@
+{
+  "cache_timestamp": "2025-09-13T19:51:35.115490",
+  "cache_key": "c20a1dc5b9beabcb097bb3530fabdb5d",
+  "result": {
+    "strategy_name": "策略37",
+    "evaluation_date": "2025-09-13T19:51:35.001393",
+    "evaluation_period": {
+      "start_date": "2025-01-04",
+      "end_date": "2025-09-13",
+      "total_days": 253,
+      "trading_days": 253
+    },
+    "performance_metrics": {
+      "total_return": 0.03906006303433829,
+      "annualized_return": 0.03890271066311013,
+      "excess_return": -0.06066602399201093,
+      "alpha": 0.011529603328819145,
+      "beta": -0.037759672915305,
+      "volatility": 0.11336527540092488,
+      "max_drawdown": 0.1416802449945364,
+      "downside_deviation": 0.11996715769466217,
+      "var_95": -0.012718615941920535,
+      "cvar_95": -0.016379341563455076,
+      "sharpe_ratio": 0.07853119600887504,
+      "sortino_ratio": 0.07420956563603114,
+      "calmar_ratio": 0.2745810516110438,
+      "information_ratio": -0.29935869124712206,
+      "treynor_ratio": -0.23577298148421263,
+      "win_rate": 0.5277777777777778,
+      "profit_loss_ratio": 0.9540329438811551,
+      "total_trades": 252,
+      "profitable_trades": 133,
+      "losing_trades": 119,
+      "avg_profit": 0.005414098918254369,
+      "avg_loss": 0.005674960128975178,
+      "evaluation_period_days": 253,
+      "active_trading_days": 253,
+      "avg_holding_period": 0.0,
+      "benchmark_total_return": 0.09998297501711462,
+      "benchmark_volatility": 0.19303634606062448,
+      "tracking_error": 0.2300625921014356,
+      "correlation_with_benchmark": -0.06429648992812607
+    },
+    "risk_metrics": {
+      "daily_volatility": 0.007141341095742747,
+      "weekly_volatility": 0.015968524140593618,
+      "monthly_volatility": 0.032725736134740016,
+      "annual_volatility": 0.11336527540092488,
+      "var_1d_95": -0.012718615941920548,
+      "var_1d_99": -0.018432317274254963,
+      "var_1w_95": -0.028439689825846864,
+      "var_1w_99": -0.04121591440807773,
+      "cvar_1d_95": -0.016379341563455076,
+      "cvar_1d_99": -0.020797891697770566,
+      "max_drawdown": 0.1416802449945364,
+      "max_drawdown_duration": 73,
+      "current_drawdown": 0.12508164744492856,
+      "drawdown_frequency": 0.05138339920948617,
+      "avg_drawdown": 0.042288645866433716,
+      "stress_test_results": {
+        "market_decline_5pct": -0.034999999999999996,
+        "market_decline_10pct": -0.06999999999999999,
+        "market_decline_20pct": -0.13999999999999999,
+        "vol_shock_1.5x": -0.024958987129620903,
+        "vol_shock_2.0x": -0.033278649506161204,
+        "vol_shock_3.0x": -0.049917974259241805,
+        "liquidity_shock": -0.0035706705478713734
+      }
+    },
+    "time_series_analysis": {
+      "rolling_returns": {
+        

@@ -21,7 +21,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
-from utils.period_manager import Period_manager
+from utils.period_manager import PeriodManager
 from db.db_manager import DBManager
 from enums.period import Period
 
@@ -50,7 +50,7 @@ class BacktestDataManager:
             raise Exception("回测系统必须使用 ClickHouse 数据库，请检查数据库配置和连接状态")
         
         # 初始化周期管理器
-        self.period_manager = Period_manager()
+        self.period_manager = PeriodManager()
         
         # 缓存
         self.data_cache = {}

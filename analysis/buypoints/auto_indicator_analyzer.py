@@ -33,7 +33,7 @@ except ImportError as e:
     PATTERN_ANALYZER_AVAILABLE = False
     print(f"警告: 形态识别分析器不可用，跳过K线形态分析: {e}")
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
 
 class AutoIndicatorAnalyzer:
     """自动指标分析器"""
@@ -487,6 +487,9 @@ class AutoIndicatorAnalyzer:
                             "score": pattern_score,  # 使用评分框架计算的评分
                             "strength_score": pattern_score  # 使用评分框架计算的评分
                         })
+                except Exception as e:
+                    logger.error(f"处理指标 {indicator_name} 的DataFrame形态时出错: {e}")
+                    # 继续处理其他可能的格式
 
             # 如果返回的是列表（已弃用的旧格式）
             elif isinstance(patterns_result, list) and patterns_result:

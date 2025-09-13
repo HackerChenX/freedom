@@ -1,0 +1,66 @@
+# Kubernetes Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: freedom-stock
+  labels:
+    name: freedom-stock
+    environment: production
+---
+# ConfigMap for application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: freedom-config
+  namespace: freedom-stock
+data:
+  PYTHONPATH: "/app"
+  LOG_LEVEL: "INFO"
+  NODE_ENV: "production"
+  API_PORT: "8000"
+  PROCESSOR_WORKERS: "8"
+  BATCH_SIZE: "1000"
+---
+# Secret for sensitive configuration
+apiVersion: v1
+kind: Secret
+metadata:
+  name: freedom-secrets
+  namespace: freedom-stock
+type: Opaque
+stringData:
+  CLICKHOUSE_PASSWORD: "secure_password_123"
+  CLICKHOUSE_USER: "default"
+  REDIS_PASSWORD: "redis_secure_123"
+  GRAFANA_PASSWORD: "admin_secure_123"
+---
+# Persistent Volume for ClickHouse data
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: clickhouse-pv
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: "/data/clickhouse"
+---
+# Persistent Volume Claim for ClickHouse
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clickhouse-pvc
+  namespace: freedom-stock
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
