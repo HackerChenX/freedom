@@ -1,0 +1,83 @@
+1. 110日振幅>8.1至少两次
+
+a1:=100*(H-L)/L>8.1;
+COUNT(a1,110)>1
+
+2. 近60日至少一次涨幅大于7%
+
+a1:=C/REF(C,1)>1.07;
+COUNT(a1,60)>0
+
+3. 日线买入
+
+V9:=TROUGHBARS(3,15,1)<10; 
+V11:=IF(V9=1,50,0);
+底部:= IF(V11=50,50,0);
+XG:COUNT(底部>REF(底部,1),10);
+
+4. 回踩 10/20/30 均线（日线）
+
+A10:=ABS((C/MA(C,10)-1)*100)<= 5;
+A20:=ABS((C/MA(C,20)-1)*100)<= 5;
+A30:=ABS((C/MA(C,30)-1)*100)<= 5;
+XG: A10 OR A20 OR A30 ;
+
+5. KDJ_DEA任一上移（日线）
+
+RSV:=(CLOSE-LLV(LOW,9))/(HHV(HIGH,9)-LLV(LOW,9))*100;
+K:=SMA(RSV,3,1);
+D:=SMA(K,3,1);
+J:=3*K-2*D;
+DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);
+DEA:=EMA(DIFF,9);
+XG: J>=REF(J,1) OR K>=REF(K,1) OR D>=REF(D,1)  OR DEA>=REF(DEA,1);
+
+6. KDJ任一上移（日线）
+
+RSV:=(CLOSE-LLV(LOW,9))/(HHV(HIGH,9)-LLV(LOW,9))*100;
+K:=SMA(RSV,3,1);
+D:=SMA(K,3,1);
+J:=3*K-2*D;
+XG:J>=REF(J,1) OR K>=REF(K,1) OR D>=REF(D,1);
+
+7. 日均线上移
+
+MA5 := MA(CLOSE, 5);
+MA10 := MA(CLOSE, 10);
+MA20 := MA(CLOSE, 20);
+MA30 := MA(CLOSE, 30);
+MA60 := MA(CLOSE, 60);
+
+MA5RISING := REF(MA5, 1) < MA5;
+MA10RISING := REF(MA10, 1) < MA10;
+MA20RISING := REF(MA20, 1) < MA20;
+MA30RISING := REF(MA30, 1) < MA30;
+
+COUNTRISING1 := 0;
+COUNTRISING2 := COUNTRISING1 + IF(MA10RISING, 1, 0);
+COUNTRISING3 := COUNTRISING2 + IF(MA20RISING, 1, 0);
+COUNTRISING4 := COUNTRISING3 + IF(MA30RISING, 1, 0);
+COUNTRISING5 := COUNTRISING4 + IF(MA5RISING, 1, 0);
+XG: COUNTRISING5>= 3;
+
+8. 无放量大跌(日线)
+
+// 定义放量下跌条件
+放量下跌 := 
+    CLOSE < REF(CLOSE, 1)    // 今日收盘价低于昨日收盘价（收跌）
+    AND VOL > REF(VOL, 1);    // 今日成交量大于昨日成交量
+
+// 排除过去5日内出现过放量下跌的股票
+选股条件 := NOT(EXIST(放量下跌, 1));
+
+9. 无放量大阴线（日线）
+
+// 定义放量大阴线标准：
+放量大阴线 := 
+    (CLOSE < OPEN * 0.96)         // 阴线实体跌幅>4%（可调整）
+    AND VOL > MA(VOL, 5) * 1.8;   // 成交量超过5日均量1.8倍（可调整）
+
+// 排除5日内存在放量大阴线的股票：
+NOT(EXIST(放量大阴线, N));
+
+

@@ -156,24 +156,26 @@ class KDJUpwardStrategyExecutor:
     def get_stock_data(self, stock_code: str) -> Optional[pd.DataFrame]:
         """获取股票数据"""
         try:
-            from db.clickhouse_db import get_clickhouse_db
-            
+            from db.connection_pool_adapter import get_connection_pool_adapter
+
             # 计算查询日期范围
             target_date = datetime.strptime(self.target_date, '%Y-%m-%d')
             start_date = (target_date - timedelta(days=80)).strftime('%Y-%m-%d')
             end_date = self.target_date
-            
-            db = get_clickhouse_db()
+
+            adapter = get_connection_pool_adapter()
             query = f"""
             SELECT code, name, date, open, close, high, low, volume, turnover_rate
-            FROM stock.stock_info 
-            WHERE code = '{stock_code}' 
-            AND date >= '{start_date}' 
+            FROM stock_info
+            WHERE code = '{stock_code}'
+            AND level = '日线'
+            AND date >= '{start_date}'
             AND date <= '{end_date}'
             ORDER BY date ASC
             """
-            
-            result = db.query(query)
+
+            with adapter.get_connection() as conn:
+                result = conn.query_dataframe(query)
             
             if result is not None and not result.empty:
                 # 确保数据类型正确
@@ -247,12 +249,12 @@ class KDJUpwardStrategyExecutor:
         
         # 获取股票池
         try:
-            from db.clickhouse_db import get_clickhouse_db
+            from db.connection_pool_adapter import get_connection_pool_adapter
 
-            db = get_clickhouse_db()
+            adapter = get_connection_pool_adapter()
             query = """
             SELECT DISTINCT code
-            FROM stock.stock_info
+            FROM stock_info
             WHERE code IS NOT NULL
             AND name IS NOT NULL
             AND code != ''
@@ -260,7 +262,8 @@ class KDJUpwardStrategyExecutor:
             LIMIT 4000
             """
 
-            result = db.query(query)
+            with adapter.get_connection() as conn:
+                result = conn.query_dataframe(query)
 
             if result is not None and not result.empty:
                 stock_codes = result['code'].tolist()

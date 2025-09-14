@@ -46,7 +46,25 @@ class DataAccessInterface(ABC):
             股票数据DataFrame
         """
         pass
-    
+
+    @abstractmethod
+    def get_stock_info(self, code: str, level: Optional[str] = None,
+                      start_date: Optional[str] = None,
+                      end_date: Optional[str] = None) -> Optional[List]:
+        """
+        获取股票信息（兼容买点分析器接口）
+
+        Args:
+            code: 股票代码
+            level: 数据级别（忽略，保持兼容性）
+            start_date: 开始日期 (YYYYMMDD格式)
+            end_date: 结束日期 (YYYYMMDD格式)
+
+        Returns:
+            Optional[List]: 股票数据列表
+        """
+        pass
+
     @abstractmethod
     def get_indicator_data_data_access_interface(self, code: str, indicator: str, start_date: str, end_date: str,
                           params: Optional[Dict] = None) -> pd.DataFrame:

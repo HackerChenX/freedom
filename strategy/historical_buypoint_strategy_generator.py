@@ -27,6 +27,7 @@ from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from utils.financial_statistical_validator import get_statistical_validator, FinancialStatisticalValidator
 
 logger = get_logger(__name__)
 
@@ -104,6 +105,9 @@ class GeneratedStrategy:
 
     # 验证结果
     validation_results: Optional[Dict[str, Any]] = None
+
+    # 金融统计显著性验证结果
+    statistical_validation: Optional[Dict[str, Any]] = None
 
 
 class TechnicalFeatureExtractor:
@@ -641,6 +645,7 @@ class HistoricalBuyPointStrategyGenerator:
         # 初始化组件
         self.feature_extractor = TechnicalFeatureExtractor()
         self.pattern_engine = PatternRecognitionEngine(pattern_method)
+        self.statistical_validator = get_statistical_validator()  # 金融统计验证器
 
         # 配置参数
         self._configure_parameters()
@@ -732,7 +737,11 @@ class HistoricalBuyPointStrategyGenerator:
             logger.warning(f"有效模式数量不足: {len(selected_patterns)}/{self.min_patterns}")
             return None
 
-        # 第四步：生成策略
+        # 第四步：金融统计显著性验证（新增）
+        logger.info("执行金融统计显著性验证...")
+        statistical_validation = self._perform_statistical_validation(all_features, selected_patterns)
+
+        # 第五步：生成策略
         strategy = self._create_strategy(
             selected_patterns,
             all_features,
@@ -740,7 +749,12 @@ class HistoricalBuyPointStrategyGenerator:
             len(buypoint_inputs)
         )
 
+        # 将统计验证结果添加到策略中
+        strategy.statistical_validation = statistical_validation
+
         logger.info(f"成功生成策略: {strategy.strategy_name}")
+        logger.info(f"统计验证状态: {statistical_validation.get('overall_assessment', {}).get('overall_recommendation', 'UNKNOWN')}")
+
         return strategy
 
     def _adaptive_parameter_adjustment(self, all_features: List[Dict[str, Any]]):
@@ -840,6 +854,292 @@ class HistoricalBuyPointStrategyGenerator:
         except Exception as e:
             logger.error(f"计算模式得分失败: {e}")
             return 0.0
+
+    def _perform_statistical_validation(self,
+                                       all_features: List[Dict[str, Any]],
+                                       patterns: List[TechnicalPattern]) -> Dict[str, Any]:
+        """
+        执行金融统计显著性验证
+
+        Args:
+            all_features: 所有买点特征数据
+            patterns: 识别出的技术模式
+
+        Returns:
+            Dict: 统计验证结果
+        """
+        validation_results = {
+            'validation_timestamp': datetime.now().isoformat(),
+            'sample_statistics': {},
+            'pattern_significance': {},
+            'return_distribution_analysis': {},
+            'overall_assessment': {}
+        }
+
+        try:
+            # 1. 提取收益数据进行统计检验
+            returns_data = []
+            success_outcomes = []
+
+            for features in all_features:
+                # 提取收益数据（优先使用20日收益）
+                return_value = None
+                for return_key in ['return_20d', 'return_10d', 'return_5d']:
+                    if return_key in features and features[return_key] is not None:
+                        return_value = features[return_key]
+                        break
+
+                if return_value is not None:
+                    returns_data.append(return_value)
+                    success_outcomes.append(return_value > 0)  # 正收益定义为成功
+
+            # 2. 样本统计描述
+            if returns_data:
+                validation_results['sample_statistics'] = {
+                    'sample_size': len(returns_data),
+                    'mean_return': float(np.mean(returns_data)),
+                    'std_return': float(np.std(returns_data)),
+                    'min_return': float(np.min(returns_data)),
+                    'max_return': float(np.max(returns_data)),
+                    'success_rate': float(np.mean(success_outcomes)),
+                    'median_return': float(np.median(returns_data)),
+                    'skewness': float(stats.skew(returns_data)),
+                    'kurtosis': float(stats.kurtosis(returns_data))
+                }
+
+                # 3. 执行核心统计显著性验证
+                strategy_validation = self.statistical_validator.validate_strategy_statistical_significance(
+                    returns_data=returns_data,
+                    benchmark_returns=None,  # 可以后续添加基准比较
+                    control_group_returns=None
+                )
+                validation_results.update(strategy_validation)
+
+                # 4. 模式稳健性验证
+                if len(all_features) >= 5:  # 最小样本量要求
+                    pattern_robustness = self.statistical_validator.validate_pattern_statistical_robustness(
+                        pattern_features=all_features,
+                        success_outcomes=success_outcomes
+                    )
+                    validation_results['pattern_robustness'] = pattern_robustness
+
+                # 5. 特定金融风险指标计算
+                if len(returns_data) > 5:
+                    validation_results['financial_risk_metrics'] = self._calculate_financial_risk_metrics(returns_data)
+
+                # 6. 策略可靠性评分
+                validation_results['reliability_score'] = self._calculate_strategy_reliability_score(validation_results)
+
+            else:
+                validation_results['error'] = "无法提取有效的收益数据进行统计验证"
+                logger.warning("统计验证失败：缺乏收益数据")
+
+        except Exception as e:
+            logger.error(f"统计显著性验证失败: {e}")
+            validation_results['error'] = str(e)
+
+        return validation_results
+
+    def _calculate_financial_risk_metrics(self, returns_data: List[float]) -> Dict[str, float]:
+        """
+        计算金融风险指标
+
+        Args:
+            returns_data: 收益数据
+
+        Returns:
+            Dict: 风险指标字典
+        """
+        risk_metrics = {}
+
+        try:
+            returns_array = np.array(returns_data)
+
+            # 1. 夏普比率（Sharpe Ratio）
+            mean_return = np.mean(returns_array)
+            std_return = np.std(returns_array, ddof=1)
+            if std_return > 0:
+                risk_metrics['sharpe_ratio'] = mean_return / std_return
+            else:
+                risk_metrics['sharpe_ratio'] = 0.0
+
+            # 2. 最大回撤（Maximum Drawdown）
+            cumulative_returns = np.cumsum(returns_array)
+            running_max = np.maximum.accumulate(cumulative_returns)
+            drawdowns = cumulative_returns - running_max
+            risk_metrics['max_drawdown'] = float(np.min(drawdowns))
+
+            # 3. VaR（Value at Risk）at 5% level
+            risk_metrics['var_5pct'] = float(np.percentile(returns_array, 5))
+
+            # 4. CVaR（Conditional VaR）at 5% level
+            var_5pct = risk_metrics['var_5pct']
+            extreme_losses = returns_array[returns_array <= var_5pct]
+            if len(extreme_losses) > 0:
+                risk_metrics['cvar_5pct'] = float(np.mean(extreme_losses))
+            else:
+                risk_metrics['cvar_5pct'] = var_5pct
+
+            # 5. 下行标准差（Downside Deviation）
+            negative_returns = returns_array[returns_array < 0]
+            if len(negative_returns) > 0:
+                risk_metrics['downside_deviation'] = float(np.std(negative_returns, ddof=1))
+            else:
+                risk_metrics['downside_deviation'] = 0.0
+
+            # 6. 索提诺比率（Sortino Ratio）
+            if risk_metrics['downside_deviation'] > 0:
+                risk_metrics['sortino_ratio'] = mean_return / risk_metrics['downside_deviation']
+            else:
+                risk_metrics['sortino_ratio'] = float('inf') if mean_return > 0 else 0.0
+
+            # 7. 卡尔马比率（Calmar Ratio）
+            if abs(risk_metrics['max_drawdown']) > 1e-6:
+                risk_metrics['calmar_ratio'] = mean_return / abs(risk_metrics['max_drawdown'])
+            else:
+                risk_metrics['calmar_ratio'] = float('inf') if mean_return > 0 else 0.0
+
+            # 8. 胜率（Win Rate）
+            win_count = np.sum(returns_array > 0)
+            risk_metrics['win_rate'] = float(win_count / len(returns_array))
+
+            # 9. 盈亏比（Profit/Loss Ratio）
+            positive_returns = returns_array[returns_array > 0]
+            negative_returns = returns_array[returns_array < 0]
+
+            if len(positive_returns) > 0 and len(negative_returns) > 0:
+                avg_profit = np.mean(positive_returns)
+                avg_loss = abs(np.mean(negative_returns))
+                risk_metrics['profit_loss_ratio'] = avg_profit / avg_loss
+            else:
+                risk_metrics['profit_loss_ratio'] = 0.0
+
+        except Exception as e:
+            logger.error(f"计算金融风险指标失败: {e}")
+
+        return risk_metrics
+
+    def _calculate_strategy_reliability_score(self, validation_results: Dict[str, Any]) -> float:
+        """
+        计算策略可靠性评分（0-1）
+
+        Args:
+            validation_results: 验证结果
+
+        Returns:
+            float: 可靠性评分
+        """
+        try:
+            score_components = []
+
+            # 1. 样本充足性评分 (25%)
+            if 'sample_size_analysis' in validation_results:
+                sample_analysis = validation_results['sample_size_analysis']
+                if hasattr(sample_analysis, 'adequacy_status'):
+                    if sample_analysis.adequacy_status == 'ADEQUATE':
+                        score_components.append(1.0)
+                    elif sample_analysis.adequacy_status == 'MARGINAL':
+                        score_components.append(0.7)
+                    else:
+                        score_components.append(0.3)
+                else:
+                    score_components.append(0.5)
+            else:
+                score_components.append(0.5)
+
+            # 2. 统计显著性评分 (30%)
+            if 'overall_assessment' in validation_results:
+                assessment = validation_results['overall_assessment']
+                if 'statistical_significance_level' in assessment:
+                    sig_level = assessment['statistical_significance_level']
+                    if sig_level == 'HIGH':
+                        score_components.append(1.0)
+                    elif sig_level == 'MODERATE':
+                        score_components.append(0.7)
+                    elif sig_level == 'LOW':
+                        score_components.append(0.3)
+                    else:
+                        score_components.append(0.5)
+                else:
+                    score_components.append(0.5)
+            else:
+                score_components.append(0.5)
+
+            # 3. 效应量评分 (20%)
+            if 'effect_size_analysis' in validation_results:
+                effect_sizes = validation_results['effect_size_analysis']
+                if effect_sizes:
+                    max_effect_size = max([abs(es) for es in effect_sizes.values()
+                                          if isinstance(es, (int, float))], default=0)
+                    if max_effect_size >= 0.8:
+                        score_components.append(1.0)
+                    elif max_effect_size >= 0.5:
+                        score_components.append(0.8)
+                    elif max_effect_size >= 0.2:
+                        score_components.append(0.6)
+                    else:
+                        score_components.append(0.3)
+                else:
+                    score_components.append(0.5)
+            else:
+                score_components.append(0.5)
+
+            # 4. 金融风险指标评分 (25%)
+            risk_score = 0.5
+            if 'financial_risk_metrics' in validation_results:
+                risk_metrics = validation_results['financial_risk_metrics']
+
+                # 综合风险指标评估
+                risk_factors = []
+
+                # 夏普比率评分
+                if 'sharpe_ratio' in risk_metrics:
+                    sharpe = risk_metrics['sharpe_ratio']
+                    if sharpe >= 1.0:
+                        risk_factors.append(1.0)
+                    elif sharpe >= 0.5:
+                        risk_factors.append(0.8)
+                    elif sharpe >= 0.2:
+                        risk_factors.append(0.6)
+                    else:
+                        risk_factors.append(0.3)
+
+                # 胜率评分
+                if 'win_rate' in risk_metrics:
+                    win_rate = risk_metrics['win_rate']
+                    if win_rate >= 0.6:
+                        risk_factors.append(1.0)
+                    elif win_rate >= 0.5:
+                        risk_factors.append(0.7)
+                    else:
+                        risk_factors.append(0.4)
+
+                # 最大回撤评分
+                if 'max_drawdown' in risk_metrics:
+                    max_dd = abs(risk_metrics['max_drawdown'])
+                    if max_dd <= 5:
+                        risk_factors.append(1.0)
+                    elif max_dd <= 10:
+                        risk_factors.append(0.8)
+                    elif max_dd <= 20:
+                        risk_factors.append(0.6)
+                    else:
+                        risk_factors.append(0.3)
+
+                if risk_factors:
+                    risk_score = np.mean(risk_factors)
+
+            score_components.append(risk_score)
+
+            # 计算加权平均分
+            weights = [0.25, 0.30, 0.20, 0.25]
+            reliability_score = np.average(score_components, weights=weights)
+
+            return float(np.clip(reliability_score, 0.0, 1.0))
+
+        except Exception as e:
+            logger.error(f"计算策略可靠性评分失败: {e}")
+            return 0.5
 
     def _create_strategy(self,
                         patterns: List[TechnicalPattern],

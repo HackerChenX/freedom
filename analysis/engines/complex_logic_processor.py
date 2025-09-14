@@ -21,7 +21,7 @@ import numpy as np
 
 from utils.logger import getLogger
 from utils.cache import get_memory_cache
-from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
+from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
 
 logger = getLogger(__name__)
 
@@ -45,7 +45,7 @@ class TokenType(Enum):
 @dataclass
 class Token:
     """逻辑表达式标记"""
-    type: Token_type
+    type: TokenType
     value: str
     position: int
 
@@ -142,7 +142,7 @@ class LogicExpressionLexer:
             # 数字
             if self.current_char.isdigit():
                 value = self.read_number()
-                tokens.append(Token(Token_type.NUMBER, value, pos))
+                tokens.append(Token(TokenType.NUMBER, value, pos))
                 
             # 标识符或关键字
             elif self.current_char.isalpha() or self.current_char == '_':
@@ -150,23 +150,23 @@ class LogicExpressionLexer:
                 
                 # 检查是否为逻辑运算符
                 if value.upper() == 'AND':
-                    tokens.append(Token(Token_type.AND, value, pos))
+                    tokens.append(Token(TokenType.AND, value, pos))
                 elif value.upper() == 'OR':
-                    tokens.append(Token(Token_type.OR, value, pos))
+                    tokens.append(Token(TokenType.OR, value, pos))
                 elif value.upper() == 'NOT':
-                    tokens.append(Token(Token_type.NOT, value, pos))
+                    tokens.append(Token(TokenType.NOT, value, pos))
                 else:
                     # 检查是否为函数（下一个字符是左括号）
                     self.skip_whitespace()
                     if self.current_char == '(':
-                        tokens.append(Token(Token_type.FUNCTION, value, pos))
+                        tokens.append(Token(TokenType.FUNCTION, value, pos))
                     else:
-                        tokens.append(Token(Token_type.IDENTIFIER, value, pos))
+                        tokens.append(Token(TokenType.IDENTIFIER, value, pos))
                         
             # 字符串
             elif self.current_char in ['"', "'"]:
                 value = self.read_string()
-                tokens.append(Token(Token_type.STRING, value, pos))
+                tokens.append(Token(TokenType.STRING, value, pos))
                 
             # 左括号
             elif self.current_char == '(':
@@ -186,7 +186,7 @@ class LogicExpressionLexer:
             # 运算符
             elif self.current_char in '>=<!+-*/':
                 value = self.read_operator()
-                tokens.append(Token(Token_type.OPERATOR, value, pos))
+                tokens.append(Token(TokenType.OPERATOR, value, pos))
                 
             else:
                 logger.warning(f"未知字符: {self.current_char} at position {self.position}")
@@ -202,7 +202,7 @@ class LogicExpressionParser:
     def parse(self) -> Dict[str, Any]:
         """解析表达式，返回抽象语法树"""
         result = self.parse_or_expression()
-        if self.current_token and self.current_token.type != Token_type.EOF:
+        if self.current_token and self.current_token.type != TokenType.EOF:
             raise ValueError(f"解析错误：意外的标记 {self.current_token.value}")
         return result
     
@@ -210,7 +210,7 @@ class LogicExpressionParser:
         """解析OR表达式"""
         left = self.parse_and_expression()
         
-        while self.current_token and self.current_token.type == Token_type.OR:
+        while self.current_token and self.current_token.type == TokenType.OR:
             operator_token = self.current_token
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             right = self.parse_and_expression()
@@ -227,7 +227,7 @@ class LogicExpressionParser:
         """解析AND表达式"""
         left = self.parse_not_expression()
         
-        while self.current_token and self.current_token.type == Token_type.AND:
+        while self.current_token and self.current_token.type == TokenType.AND:
             operator_token = self.current_token
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             right = self.parse_not_expression()
@@ -242,7 +242,7 @@ class LogicExpressionParser:
     
     def parse_not_expression(self) -> Dict[str, Any]:
         """解析NOT表达式"""
-        if self.current_token and self.current_token.type == Token_type.NOT:
+        if self.current_token and self.current_token.type == TokenType.NOT:
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             operand = self.parse_not_expression()
             return {
@@ -258,7 +258,7 @@ class LogicExpressionParser:
         left = self.parse_arithmetic_expression()
         
         if (self.current_token and 
-            self.current_token.type == Token_type.OPERATOR and
+            self.current_token.type == TokenType.OPERATOR and
             self.current_token.value in ['>', '<', '>=', '<=', '==', '=', '!=', '<>']):
             operator_token = self.current_token
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
@@ -278,7 +278,7 @@ class LogicExpressionParser:
         left = self.parse_term_expression()
         
         while (self.current_token and 
-               self.current_token.type == Token_type.OPERATOR and
+               self.current_token.type == TokenType.OPERATOR and
                self.current_token.value in ['+', '-']):
             operator_token = self.current_token
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
@@ -297,7 +297,7 @@ class LogicExpressionParser:
         left = self.parse_primary_expression()
         
         while (self.current_token and 
-               self.current_token.type == Token_type.OPERATOR and
+               self.current_token.type == TokenType.OPERATOR and
                self.current_token.value in ['*', '/']):
             operator_token = self.current_token
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
@@ -317,7 +317,7 @@ class LogicExpressionParser:
             raise ValueError("意外的表达式结束")
         
         # 一元运算符（负号）
-        if (self.current_token.type == Token_type.OPERATOR and 
+        if (self.current_token.type == TokenType.OPERATOR and
             self.current_token.value == '-'):
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             operand = self.parse_primary_expression()
@@ -328,20 +328,20 @@ class LogicExpressionParser:
             }
         
         # 括号表达式
-        elif self.current_token.type == Token_type.LEFT_PAREN:
+        elif self.current_token.type == TokenType.LEFT_PAREN:
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             result = self.parse_or_expression()
-            if not self.current_token or self.current_token.type != Token_type.RIGHT_PAREN:
+            if not self.current_token or self.current_token.type != TokenType.RIGHT_PAREN:
                 raise ValueError("缺少右括号")
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             return result
         
         # 函数调用
-        elif self.current_token.type == Token_type.FUNCTION:
+        elif self.current_token.type == TokenType.FUNCTION:
             return self.parse_function_call()
         
         # 标识符
-        elif self.current_token.type == Token_type.IDENTIFIER:
+        elif self.current_token.type == TokenType.IDENTIFIER:
             value = self.current_token.value
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             return {
@@ -350,7 +350,7 @@ class LogicExpressionParser:
             }
         
         # 数字
-        elif self.current_token.type == Token_type.NUMBER:
+        elif self.current_token.type == TokenType.NUMBER:
             value = float(self.current_token.value)
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             return {
@@ -359,7 +359,7 @@ class LogicExpressionParser:
             }
         
         # 字符串
-        elif self.current_token.type == Token_type.STRING:
+        elif self.current_token.type == TokenType.STRING:
             value = self.current_token.value
             self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
             return {
@@ -375,21 +375,21 @@ class LogicExpressionParser:
         function_name = self.current_token.value
         self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
         
-        if not self.current_token or self.current_token.type != Token_type.LEFT_PAREN:
+        if not self.current_token or self.current_token.type != TokenType.LEFT_PAREN:
             raise ValueError(f"函数 {function_name} 缺少左括号")
         self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
         
         args = []
         
         # 解析参数
-        if self.current_token and self.current_token.type != Token_type.RIGHT_PAREN:
+        if self.current_token and self.current_token.type != TokenType.RIGHT_PAREN:
             args.append(self.parse_or_expression())
             
-            while self.current_token and self.current_token.type == Token_type.COMMA:
+            while self.current_token and self.current_token.type == TokenType.COMMA:
                 self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
                 args.append(self.parse_or_expression())
         
-        if not self.current_token or self.current_token.type != Token_type.RIGHT_PAREN:
+        if not self.current_token or self.current_token.type != TokenType.RIGHT_PAREN:
             raise ValueError(f"函数 {function_name} 缺少右括号")
         self.advance_Processor_Complex_Logic_Processor_Complex_Logic_Processor_1_complexlogicprocessor()
         
@@ -403,7 +403,7 @@ class LogicExpressionParser:
 class ComplexLogicProcessor:
     """
     复杂逻辑处理器
-    
+
     支持复杂逻辑表达式的解析和评估，包括：
     1. 逻辑表达式解析器
     2. 条件优先级和括号运算
@@ -412,8 +412,32 @@ class ComplexLogicProcessor:
     5. 自定义函数和变量
     6. 条件结果缓存
     """
-    
-    def evaluate_expression(self, 
+
+    def __init__(self, condition_evaluator: Optional[SharedConditionEvaluator] = None):
+        """
+        初始化复杂逻辑处理器
+
+        Args:
+            condition_evaluator: 条件评估器实例
+        """
+        self.condition_evaluator = condition_evaluator or SharedConditionEvaluator()
+        self.cache = get_memory_cache()
+        self.variables = {}
+        self.custom_functions = {}
+
+        # 统计信息
+        self.stats = {
+            'expressions_parsed': 0,
+            'expressions_evaluated': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'total_parse_time': 0.0,
+            'total_eval_time': 0.0,
+        }
+
+        logger.info("复杂逻辑处理器初始化完成")
+
+    def evaluate_expression(self,
                           expression: str,
                           data: Dict[str, Any],
                           date_idx: Optional[int] = None,

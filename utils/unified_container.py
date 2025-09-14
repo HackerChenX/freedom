@@ -329,11 +329,15 @@ def is_service_registered(service_type: Type[T]) -> bool:
     return container.is_registered(service_type)
 
 
+# 全局容器实例别名
+container = get_container()
+
 # 导出主要类和函数
 __all__ = [
     'IServiceContainer',
-    'UnifiedServiceContainer', 
+    'UnifiedServiceContainer',
     'ServiceLifecycle',
+    'container',
     'get_container',
     'reset_container',
     'register_service',

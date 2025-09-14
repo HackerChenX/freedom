@@ -13,6 +13,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
 from indicators.zxm.elasticity_indicators import AmplitudeElasticity, ZxmriseElasticity
 from indicators.zxm.buy_point_indicators import ZXMDailyMACD, ZXMTurnover, ZXMMACallback
 from utils.dependency_injection import get_logger
@@ -20,7 +21,7 @@ from utils.dependency_injection import get_logger
 logger = get_logger(__name__)
 
 
-class ZxmelasticityScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class ZxmelasticityScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM弹性评分指标
     

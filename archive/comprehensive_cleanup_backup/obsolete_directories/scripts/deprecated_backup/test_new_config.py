@@ -68,9 +68,9 @@ def test_environment_variables_Config():
     print("=" * 50)
     
     # 设置测试环境变量
-    os.environ['CLICKHOUSE_HOST'] = 'test-host'
+    os.environ['CLICKHOUSE_HOST'] = 'localhost'
     os.environ['CLICKHOUSE_PORT'] = '9001'
-    os.environ['CLICKHOUSE_PASSWORD'] = 'test-password'
+    os.environ['CLICKHOUSE_PASSWORD'] = '123456'
     
     try:
         from config.database_config_manager import Database_config_manager

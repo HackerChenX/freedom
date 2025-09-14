@@ -60,13 +60,14 @@ def linregress(x, y):
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
 from utils.dependency_injection import get_logger
 from indicators.score_manager import IndicatorScoreManager
 
 logger = get_logger(__name__)
 
 
-class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM趋势-日线上移指标
     
@@ -1037,7 +1038,7 @@ class ZxmweeklyKdjdtrendUp(BaseIndicator, PatternSignalMixin):
     判断周线KDJ指标的D值是否向上移动
     """
     
-class ZxmmonthlyMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class ZxmmonthlyMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM趋势-月MACD指标
 

@@ -556,11 +556,11 @@ class SystemStabilityEnhancer:
 
     def _register_default_recovery_strategies(self):
         """注册默认恢复策略"""
-        # 数据库连接恢复策略
+        # 数据库连接恢复策略（任务5整合：使用增强连接池）
         def database_recovery_strategy(error: Exception) -> bool:
             try:
-                from db.optimized_connection_pool import initialize_optimized_pool
-                initialize_optimized_pool()
+                from db.enhanced_connection_pool import initialize_connection_pool
+                initialize_connection_pool()
                 logger.info("数据库连接池已重新初始化")
                 return True
             except Exception as e:

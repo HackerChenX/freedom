@@ -1,0 +1,7 @@
+{
+  "stock_code": "300005",
+  "analysis_date": "2025-05-09",
+  "status": "ERROR",
+  "error": "查询执行失败: 'NoneType' object has no attribute 'get_connection'",
+  "analysis_time": "2025-09-14 21:06:59"
+}

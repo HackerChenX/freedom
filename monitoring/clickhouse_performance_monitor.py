@@ -139,33 +139,31 @@ class ClickHouseConnection:
         self._initialize_connection()
 
     def _initialize_connection(self):
-        """初始化连接"""
+        """初始化连接 - 任务5简化版本"""
         try:
-            # 尝试导入clickhouse_driver
-            from clickhouse_driver import Client
+            # 直接使用增强连接池
+            from db.enhanced_connection_pool import get_connection_pool
 
-            self.client = Client(
-                host=self.host,
-                port=self.port,
-                database=self.database,
-                user=self.username,
-                password=self.password,
-                settings={'use_numpy': True}
-            )
+            self.connection_pool = get_connection_pool()
 
             # 测试连接
-            result = self.client.execute('SELECT 1')
-            if result:
-                logger.info(f"ClickHouse连接成功: {self.host}:{self.port}")
-            else:
-                logger.warning("ClickHouse连接测试失败")
+            with self.connection_pool.get_connection() as conn:
+                result = conn.execute('SELECT 1')
+                if result:
+                    logger.info(f"ClickHouse连接成功: {self.host}:{self.port}")
+                else:
+                    logger.warning("ClickHouse连接测试失败")
+
+            self.client = True  # 标记连接可用
 
         except ImportError:
-            logger.warning("clickhouse_driver包未安装，使用模拟模式")
+            logger.warning("增强连接池未安装，使用模拟模式")
             self.client = None
+            self.connection_pool = None
         except Exception as e:
             logger.error(f"ClickHouse连接失败: {e}")
             self.client = None
+            self.connection_pool = None
 
     @exception_handler(reraise=True)
     def execute_query(self, query: str, parameters: Optional[Dict[str, Any]] = None) -> List[Tuple]:

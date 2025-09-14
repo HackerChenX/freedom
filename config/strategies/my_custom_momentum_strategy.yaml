@@ -1,0 +1,72 @@
+filters:
+  financial_filters:
+    market_cap:
+      max: 1000
+      min: 10
+    price_range:
+      max: 100.0
+      min: 3.0
+  market_filters:
+    exclude_st: true
+    markets:
+    - 主板
+    - 创业板
+    - 科创板
+selection_parameters:
+  max_selections: 25
+  min_score: 0.65
+  ranking_method: composite_score
+strategy:
+  author: 用户自定义
+  category: momentum
+  description: 结合KDJ、RSI、MACD的自定义动量策略
+  id: my_custom_momentum_strategy
+  name: 我的自定义动量策略
+  version: '1.0'
+technical_indicators:
+  combination_logic: AND
+  primary_indicators:
+  - conditions:
+    - field: k_value
+      id: kdj_golden_cross
+      operator: '>'
+      value: d_value
+      weight: 0.4
+    - field: k_value
+      id: kdj_oversold_exit
+      operator: '>'
+      value: 20
+      weight: 0.3
+    indicator_id: KDJ
+    parameters:
+      d_period: 3
+      j_multiplier: 3
+      k_period: 9
+    weight: 0.4
+  - conditions:
+    - field: rsi_value
+      id: rsi_oversold
+      operator: <
+      value: 35
+      weight: 0.6
+    - field: rsi_slope
+      id: rsi_turning_up
+      operator: '>'
+      value: 0
+      weight: 0.4
+    indicator_id: RSI
+    parameters:
+      period: 14
+    weight: 0.35
+  - conditions:
+    - field: macd_histogram
+      id: macd_positive
+      operator: '>'
+      value: 0
+      weight: 1.0
+    indicator_id: MACD
+    parameters:
+      fast_period: 12
+      signal_period: 9
+      slow_period: 26
+    weight: 0.25

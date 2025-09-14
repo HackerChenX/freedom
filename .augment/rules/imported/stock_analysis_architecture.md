@@ -1,5 +1,6 @@
 ---
 type: "always_apply"
+description: "Example description"
 ---
 
 # 股票分析系统架构规则（强制执行）

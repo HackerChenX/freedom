@@ -12,6 +12,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.dependency_injection import get_logger
+from utils.numerical_stability_manager import get_stability_manager
 
 logger = get_logger(__name__)
 
@@ -26,19 +27,22 @@ class ZXMRiskControl(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def __init__(self, **kwargs):
         """
         初始化ZXM风险控制指标
-        
+
         Args:
             **kwargs: 指标参数
         """
         # 移除super().__init__调用，直接设置属性
         self.name = "ZXMRiskControl"
         self.description = "ZXM风险控制指标，分析股票的风险水平"
-        
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_zxmriskcontrol()
-        
+
         # 应用用户参数
         self.set_parameters_Risk_Control(**kwargs)
+
+        # 初始化数值稳定性管理器
+        self.stability_mgr = get_stability_manager()
     
     def _get_default_parameters_zxmriskcontrol(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -104,100 +108,106 @@ class ZXMRiskControl(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_volatility_risk(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算波动率风险"""
         result = data.copy()
-        
+
         close = result['close']
-        
+
         # 计算日收益率
         returns = close.pct_change()
-        
+
         # 计算历史波动率
         volatility = returns.rolling(window=self.volatility_period).std() * np.sqrt(252)
-        
+
         # 计算波动率风险评分（0-100）
         # 波动率越高，风险评分越高
         volatility_percentile = volatility.rolling(window=self.drawdown_period).rank(pct=True)
         volatility_risk = volatility_percentile * 100
-        
-        result['Returns'] = returns
-        result['Volatility'] = volatility
-        result['VolatilityRisk'] = volatility_risk.fillna(50)
-        
+
+        # 应用数值稳定性管理器确保精度控制
+        volatility_risk = self.stability_mgr.ensure_series_precision(volatility_risk)
+
+        result['Returns'] = self.stability_mgr.ensure_series_precision(returns)
+        result['Volatility'] = self.stability_mgr.ensure_series_precision(volatility)
+        result['VolatilityRisk'] = self.stability_mgr.ensure_series_precision(volatility_risk.fillna(50.0))
+
         return result
 
     def _calculate_drawdown_risk(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算回撤风险"""
         result = data.copy()
-        
+
         close = result['close']
-        
+
         # 计算累计最高价
         cumulative_max = close.expanding().max()
-        
+
         # 计算回撤
         drawdown = (close - cumulative_max) / cumulative_max
-        
+
         # 计算最大回撤
         max_drawdown = drawdown.rolling(window=self.drawdown_period).min()
-        
+
         # 计算回撤风险评分（0-100）
         # 回撤越大，风险评分越高
         drawdown_risk = (-max_drawdown * 100).clip(0, 100)
-        
-        result['CumulativeMax'] = cumulative_max
-        result['Drawdown'] = drawdown
-        result['MaxDrawdown'] = max_drawdown
-        result['DrawdownRisk'] = drawdown_risk.fillna(0)
-        
+
+        # 应用精度控制
+        drawdown_risk = self.stability_mgr.ensure_series_precision(drawdown_risk)
+
+        result['CumulativeMax'] = self.stability_mgr.ensure_series_precision(cumulative_max)
+        result['Drawdown'] = self.stability_mgr.ensure_series_precision(drawdown)
+        result['MaxDrawdown'] = self.stability_mgr.ensure_series_precision(max_drawdown)
+        result['DrawdownRisk'] = self.stability_mgr.ensure_series_precision(drawdown_risk.fillna(0.0))
+
         return result
 
     def _calculate_var_risk(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算VaR风险"""
         result = data.copy()
-        
+
         returns = result['Returns']
-        
-        # 计算VaR（Value at Risk）
-        var_values = []
-        for i in range(len(returns)):
-            if i < self.volatility_period:
-                var_values.append(np.nan)
-            else:
-                window_returns = returns.iloc[i-self.volatility_period+1:i+1]
-                var_value = np.percentile(window_returns.dropna(), (1 - self.var_confidence) * 100)
-                var_values.append(var_value)
-        
-        var_series = pd.Series(var_values, index=returns.index)
-        
+
+        # 最高性能的向量化VaR计算
+        # 使用pandas的rolling.quantile替代循环，大幅提升性能
+        quantile_level = (1 - self.var_confidence)
+        var_series = returns.rolling(window=self.volatility_period).quantile(quantile_level)
+
         # 计算VaR风险评分（0-100）
         # VaR损失越大，风险评分越高
         var_risk = (-var_series * 100).clip(0, 100)
-        
+
+        # 应用精度控制
+        var_series = self.stability_mgr.ensure_series_precision(var_series)
+        var_risk = self.stability_mgr.ensure_series_precision(var_risk)
+
         result['VaR'] = var_series
-        result['VaRRisk'] = var_risk.fillna(50)
-        
+        result['VaRRisk'] = self.stability_mgr.ensure_series_precision(var_risk.fillna(50.0))
+
         return result
 
     def _calculate_composite_risk_score(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算综合风险评分"""
         result = data.copy()
-        
+
         # 综合各项风险指标
         volatility_risk = result['VolatilityRisk']
         drawdown_risk = result['DrawdownRisk']
         var_risk = result['VaRRisk']
-        
+
         # 加权计算综合风险评分
         composite_risk = (
             volatility_risk * 0.4 +
             drawdown_risk * 0.35 +
             var_risk * 0.25
         )
-        
+
         # 确保在0-100范围内
         composite_risk = np.clip(composite_risk, 0, 100)
-        
+
+        # 应用精度控制
+        composite_risk = self.stability_mgr.ensure_series_precision(composite_risk)
+
         result['CompositeRiskScore'] = composite_risk
-        
+
         return result
 
     def _generate_risk_control_signals(self, data: pd.DataFrame) -> pd.DataFrame:

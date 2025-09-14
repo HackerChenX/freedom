@@ -953,3 +953,8 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         period = self._parameters.get('period', 20)
         atr_period = self._parameters.get('atr_period', 10)
         return max(period, atr_period) + 10
+
+
+# 添加类别名供注册系统使用
+KC = KeltnerChannel
+KeltnerChannels = KeltnerChannel

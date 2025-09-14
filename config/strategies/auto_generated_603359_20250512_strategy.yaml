@@ -1,0 +1,110 @@
+metadata:
+  source_analysis:
+    buypoint_score: 0.8999999999999999
+    total_indicators: 1
+    total_patterns: 11
+selection_parameters:
+  max_selections: 50
+  min_score: 0.3
+  ranking_method: composite_score
+strategy:
+  category: auto_generated
+  description: 基于603359在20250512的买点分析自动生成
+  generation_timestamp: '2025-09-14T15:06:19.023708'
+  id: auto_generated_603359_20250512_strategy
+  name: 自动生成-603359策略
+  target_date: '20250512'
+  target_stock: '603359'
+  version: '1.0'
+technical_indicators:
+  combination_logic: OR
+  primary_indicators:
+  - conditions:
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: MA_TREND
+      value: 0.3
+      weight: 0.4
+    indicator_id: MA
+    metadata:
+      avg_match_strength: 0.39999999999999997
+      pattern_count: 9
+      source_patterns:
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+      - MA_TREND
+    parameters:
+      periods:
+      - 5
+      - 10
+      - 20
+      - 60
+    weight: 0.39999999999999997
+  - conditions:
+    - field: signal_strength
+      operator: '>'
+      source_pattern: BOLL_ANALYSIS
+      value: 0.3
+      weight: 0.4
+    - field: signal_strength
+      operator: '>'
+      source_pattern: BOLL_ANALYSIS
+      value: 0.3
+      weight: 0.4
+    indicator_id: BOLL
+    metadata:
+      avg_match_strength: 0.4
+      pattern_count: 2
+      source_patterns:
+      - BOLL_ANALYSIS
+      - BOLL_ANALYSIS
+    parameters:
+      period: 20
+      std_dev: 2
+    weight: 0.4

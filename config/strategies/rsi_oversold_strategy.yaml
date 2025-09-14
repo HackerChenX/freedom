@@ -1,0 +1,92 @@
+strategy:
+  id: "rsi_oversold_strategy"
+  name: "RSI超卖反弹策略"
+  description: "基于RSI指标超卖区域的反弹策略，适合捕捉短期反弹机会"
+  version: "1.1"
+  author: "系统自动生成"
+  category: "reversal"
+  risk_level: "medium"
+  created_date: "2025-01-01"
+  updated_date: "2025-09-14"
+
+technical_indicators:
+  primary_indicators:
+    - indicator_id: "RSI"
+      parameters:
+        period: 14
+      conditions:
+        - id: "rsi_oversold"
+          field: "rsi_value"
+          operator: "<"
+          value: 30
+          lookback_days: 1
+          weight: 0.5
+        - id: "rsi_turning_up"
+          field: "rsi_value"
+          operator: ">"
+          value: "rsi_yesterday"
+          lookback_days: 1
+          weight: 0.5
+      weight: 0.8
+    
+    - indicator_id: "MA"
+      parameters:
+        period: 20
+      conditions:
+        - id: "price_near_ma"
+          field: "close_price"
+          operator: "between"
+          value: [0.95, 1.05]  # 相对于MA20的比例
+          weight: 1.0
+      weight: 0.2
+
+  combination_logic: "AND"
+
+time_criteria:
+  time_frames:
+    - level: "daily"
+      priority: 1
+      required: true
+    - level: "30min"
+      priority: 2
+      required: false
+  
+  market_timing:
+    trading_session: "full_day"
+    exclude_holidays: true
+
+filters:
+  market_filters:
+    markets: ["主板", "创业板", "科创板"]
+    exclude_st: true
+  
+  financial_filters:
+    market_cap:
+      min: 5
+      max: 3000
+    price_range:
+      min: 1.5
+      max: 200.0
+    volume_filter:
+      min_avg_volume: 500000
+      min_turnover: 0.005
+
+selection_parameters:
+  max_selections: 25
+  min_score: 0.6
+  ranking_method: "score"
+  diversification:
+    max_per_industry: 4
+    max_concentration: 0.2
+
+validation:
+  enable_closed_loop: true
+  validation_method: "pattern_recognition"
+  validation_threshold: 0.7
+  sample_size: 8
+
+performance_config:
+  enable_cache: true
+  parallel_processing: true
+  max_workers: 3
+  timeout_seconds: 150

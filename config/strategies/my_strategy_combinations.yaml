@@ -1,0 +1,49 @@
+my_aggressive_growth:
+  combination_method: union
+  description: 追求高收益的激进策略组合
+  name: 我的激进成长策略
+  selection_parameters:
+    max_selections: 40
+    min_score: 0.6
+  strategies:
+  - priority: 1
+    required: true
+    strategy_id: my_custom_momentum_strategy
+    weight: 0.6
+  - priority: 2
+    required: false
+    strategy_id: ZXM_60MIN_ABSORB_20250512
+    weight: 0.4
+my_balanced_portfolio:
+  category: balanced
+  combination_method: weighted_average
+  description: 平衡风险和收益的投资组合策略
+  name: 我的平衡投资组合策略
+  risk_control:
+    enable_stop_loss: true
+    max_drawdown: 0.15
+    position_sizing: equal_weight
+    stop_loss_threshold: 0.08
+  selection_parameters:
+    diversification:
+      max_concentration: 0.1
+      max_per_industry: 2
+    max_selections: 20
+    min_score: 0.7
+  strategies:
+  - description: 动量策略部分
+    priority: 1
+    required: true
+    strategy_id: my_custom_momentum_strategy
+    weight: 0.4
+  - description: 超卖反弹部分
+    priority: 2
+    required: false
+    strategy_id: rsi_oversold_strategy
+    weight: 0.3
+  - description: 趋势跟踪部分
+    priority: 3
+    required: false
+    strategy_id: KDJ_ALL_LINES_UPWARD_strategy
+    weight: 0.3
+  version: '1.0'

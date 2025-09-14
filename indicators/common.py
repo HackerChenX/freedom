@@ -121,15 +121,43 @@ def highest(series: Numeric_array, periods: int) -> np.ndarray:
 def lowest(series: Numeric_array, periods: int) -> np.ndarray:
     """
     计算周期内最低值
-    
+
     Args:
         series: 输入序列
         periods: 周期
-        
+
     Returns:
         np.ndarray: 周期内最低值
     """
     return pd.Series(series).rolling(periods).min().values
+
+
+def llv(series: Numeric_array, periods: int) -> np.ndarray:
+    """
+    计算周期内最低值（LLV函数别名）
+
+    Args:
+        series: 输入序列
+        periods: 周期
+
+    Returns:
+        np.ndarray: 周期内最低值
+    """
+    return lowest(series, periods)
+
+
+def hhv(series: Numeric_array, periods: int) -> np.ndarray:
+    """
+    计算周期内最高值（HHV函数别名）
+
+    Args:
+        series: 输入序列
+        periods: 周期
+
+    Returns:
+        np.ndarray: 周期内最高值
+    """
+    return highest(series, periods)
 
 
 def ref(series: Numeric_array, periods: int = 1) -> np.ndarray:

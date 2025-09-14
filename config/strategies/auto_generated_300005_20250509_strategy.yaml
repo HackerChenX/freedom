@@ -1,0 +1,21 @@
+metadata:
+  source_analysis:
+    buypoint_score: 0.0
+    total_indicators: 1
+    total_patterns: 0
+selection_parameters:
+  max_selections: 50
+  min_score: 0.3
+  ranking_method: composite_score
+strategy:
+  category: auto_generated
+  description: 基于300005在20250509的买点分析自动生成
+  generation_timestamp: '2025-09-14T14:41:35.676787'
+  id: auto_generated_300005_20250509_strategy
+  name: 自动生成-300005策略
+  target_date: '20250509'
+  target_stock: '300005'
+  version: '1.0'
+technical_indicators:
+  combination_logic: OR
+  primary_indicators: []

@@ -1,0 +1,262 @@
+{
+  "scan_timestamp": "2025-09-14T16:28:42.521494",
+  "total_scanned": 29,
+  "filtered_count": 28,
+  "successfully_deprecated": 28,
+  "failed_deprecations": 0,
+  "deprecation_results": [
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/strategy/selector.py",
+      "relative_path": "strategy/selector.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/strategy/selector.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.460274"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/convert_backtest_to_strategy.py",
+      "relative_path": "bin/convert_backtest_to_strategy.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/convert_backtest_to_strategy.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.462719"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/buypoints/buypoint_batch_analyzer.py",
+      "relative_path": "analysis/buypoints/buypoint_batch_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/buypoints/buypoint_batch_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.464918"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/buypoints/auto_indicator_analyzer.py",
+      "relative_path": "analysis/buypoints/auto_indicator_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/buypoints/auto_indicator_analyzer.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.466895"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/freedom_select.py",
+      "relative_path": "bin/freedom_select.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/freedom_select.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.468225"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/formula_to_strategy.py",
+      "relative_path": "bin/formula_to_strategy.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/formula_to_strategy.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.470656"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/parallel_buypoint_analyzer.py",
+      "relative_path": "analysis/parallel_buypoint_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/parallel_buypoint_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.473966"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/stock_analysis.py",
+      "relative_path": "bin/stock_analysis.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/stock_analysis.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.476179"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/simple_strategy_test.py",
+      "relative_path": "bin/simple_strategy_test.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/simple_strategy_test.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.478076"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/strategy_generator.py",
+      "relative_path": "bin/strategy_generator.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/strategy_generator.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.479950"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/production_stock_selector.py",
+      "relative_path": "bin/production_stock_selector.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/production_stock_selector.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.481573"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/strategy/strategy_selection_analysis_controller.py",
+      "relative_path": "strategy/strategy_selection_analysis_controller.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/strategy/strategy_selection_analysis_controller.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.483544"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/zxm_analysis.py",
+      "relative_path": "bin/zxm_analysis.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/zxm_analysis.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.485508"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/backtest_strategy_integrate.py",
+      "relative_path": "bin/backtest_strategy_integrate.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/backtest_strategy_integrate.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.487571"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/buypoint_batch_analyzer.py",
+      "relative_path": "bin/buypoint_batch_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/buypoint_batch_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.492072"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/final_strategy_test.py",
+      "relative_path": "bin/final_strategy_test.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/final_strategy_test.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.495086"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/high_performance_stock_select.py",
+      "relative_path": "bin/high_performance_stock_select.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/high_performance_stock_select.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.497380"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/multi_dimension_analyze.py",
+      "relative_path": "bin/multi_dimension_analyze.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/multi_dimension_analyze.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.499050"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/buypoints/enhanced_buypoint_detector.py",
+      "relative_path": "analysis/buypoints/enhanced_buypoint_detector.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/buypoints/enhanced_buypoint_detector.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.501745"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/universal_buypoint_analyzer.py",
+      "relative_path": "analysis/universal_buypoint_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/universal_buypoint_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.504084"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/strategy/enhanced_stock_selection_engine.py",
+      "relative_path": "strategy/enhanced_stock_selection_engine.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/strategy/enhanced_stock_selection_engine.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.509744"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/buypoints/analyze_buypoints.py",
+      "relative_path": "analysis/buypoints/analyze_buypoints.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/buypoints/analyze_buypoints.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.512118"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/test_strategy_generation.py",
+      "relative_path": "bin/test_strategy_generation.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/test_strategy_generation.py.backup_20250914_162842",
+      "file_type": "strategy_execution",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.513700"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/run_pattern_analysis_and_backtest.py",
+      "relative_path": "bin/run_pattern_analysis_and_backtest.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/run_pattern_analysis_and_backtest.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.514654"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/buypoints/buypoint_dimension_analyzer.py",
+      "relative_path": "analysis/buypoints/buypoint_dimension_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/buypoints/buypoint_dimension_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.516711"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/analysis/optimized_buypoint_analyzer.py",
+      "relative_path": "analysis/optimized_buypoint_analyzer.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/analysis/optimized_buypoint_analyzer.py.backup_20250914_162842",
+      "file_type": "buypoint_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.518612"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/run_pattern_analysis.py",
+      "relative_path": "bin/run_pattern_analysis.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/run_pattern_analysis.py.backup_20250914_162842",
+      "file_type": "general_analysis",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.519843"
+    },
+    {
+      "file": "/Users/hacker/PycharmProjects/freedom/bin/stock_select.py",
+      "relative_path": "bin/stock_select.py",
+      "success": true,
+      "backup_file": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries/bin/stock_select.py.backup_20250914_162842",
+      "file_type": "stock_selection",
+      "action": "deprecated_and_redirected",
+      "timestamp": "2025-09-14T16:28:42.521477"
+    }
+  ],
+  "backup_directory": "/Users/hacker/PycharmProjects/freedom/backups/deprecated_entries"
+}

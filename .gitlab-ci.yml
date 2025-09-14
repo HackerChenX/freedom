@@ -65,7 +65,7 @@ test:unit:
   variables:
     CLICKHOUSE_HOST: clickhouse
     CLICKHOUSE_PORT: "8123"
-    CLICKHOUSE_PASSWORD: test_password
+    CLICKHOUSE_PASSWORD: 123456
     REDIS_HOST: redis
     REDIS_PORT: "6379"
     PYTHONPATH: $CI_PROJECT_DIR
@@ -101,7 +101,7 @@ test:integration:
   variables:
     CLICKHOUSE_HOST: clickhouse
     CLICKHOUSE_PORT: "8123"
-    CLICKHOUSE_PASSWORD: test_password
+    CLICKHOUSE_PASSWORD: 123456
     REDIS_HOST: redis
     REDIS_PORT: "6379"
   before_script:

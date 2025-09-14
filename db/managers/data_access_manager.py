@@ -561,7 +561,18 @@ class DataAccessManager(DataAccessInterface):
         Returns:
             pd.DataFrame: 查询结果
         """
-        return self.query_Manager_Data_Access_Manager(sql, params)
+        try:
+            # 如果connection_manager为None，直接使用连接池
+            if self.connection_manager is None:
+                from db.enhanced_connection_pool import get_connection_pool
+                connection_pool = get_connection_pool()
+                with connection_pool.get_connection() as conn:
+                    return conn.query_dataframe(sql, params or {})
+            else:
+                return self.query_Manager_Data_Access_Manager(sql, params)
+        except Exception as e:
+            logger.error(f"查询执行失败: {sql}, 错误: {e}")
+            raise DataAccessError(f"查询执行失败: {e}")
     
     def execute(self, sql: str, params: Optional[Dict[str, Any]] = None) -> None:
         """
@@ -1577,20 +1588,23 @@ class DataAccessManager(DataAccessInterface):
                 conditions.append(f"date <= '{formatted_end}'")
 
             query = f"""
-            SELECT code, name, date, open, close, high, low, volume,
+            SELECT code, name, date, level, open, close, high, low, volume,
                    turnover_rate, price_change, price_range, industry
-            FROM stock.stock_info
-            WHERE {' AND '.join(conditions)}
+            FROM stock_info
+            WHERE {' AND '.join(conditions)} AND level = '日线'
             ORDER BY date
             """
 
-            from db.clickhouse_db import get_clickhouse_db
-            db = get_clickhouse_db()
-            result = db.query(query)
+            # 使用增强连接池
+            from db.enhanced_connection_pool import get_connection_pool
+            connection_pool = get_connection_pool()
+            with connection_pool.get_connection() as conn:
+                result = conn.query_dataframe(query)
 
             if result is not None and not result.empty:
                 logger.info(f"成功获取 {code} 的 {len(result)} 条数据")
-                return result
+                # 转换为列表格式，兼容买点分析器
+                return result.values.tolist()
             else:
                 logger.warning(f"未找到 {code} 的数据")
                 return None

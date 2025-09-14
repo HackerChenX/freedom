@@ -24,7 +24,7 @@ L1: 基础设施层 (utils/, config/, enums/)
 - **各类指标实现**: MA, MACD, RSI, BOLL, KDJ等
 
 #### 2. 数据层 (`db/`)
-- **optimized_connection_pool.py**: 优化连接池
+- **enhanced_connection_pool.py**: 增强连接池（任务5优化版本）
 - **query_optimizer.py**: 查询优化器
 - **unified_data_quality_manager.py**: 数据质量管理
 - **data_quality_monitor.py**: 质量监控

@@ -1,0 +1,415 @@
+# 配置验证Schema定义文件
+# 版本: v2.0
+# 创建时间: 2025-09-14
+# 用途: 定义所有配置文件的验证Schema
+
+# 策略配置Schema
+strategy_config_schema:
+  type: object
+  properties:
+    strategy:
+      type: object
+      properties:
+        id:
+          type: string
+          pattern: "^[A-Z0-9_]+$"
+          description: "策略唯一标识符"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: "策略名称"
+        description:
+          type: string
+          maxLength: 500
+          description: "策略描述"
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+\\.\\d+$"
+          description: "版本号"
+        author:
+          type: string
+          description: "作者"
+        create_time:
+          type: string
+          format: date-time
+          description: "创建时间"
+        update_time:
+          type: string
+          format: date-time
+          description: "更新时间"
+        type:
+          type: string
+          enum: ["technical_analysis", "fundamental_analysis", "quantitative"]
+          description: "策略类型"
+        conditions:
+          type: array
+          minItems: 1
+          items:
+            oneOf:
+              - type: object
+                properties:
+                  type:
+                    type: string
+                    enum: ["indicator", "price", "volume", "fundamental"]
+                  indicator_id:
+                    type: string
+                  period:
+                    type: string
+                    enum: ["1MIN", "5MIN", "15MIN", "30MIN", "60MIN", "DAILY", "WEEKLY"]
+                  signal_type:
+                    type: string
+                    enum: ["BUY", "SELL", "HOLD"]
+                  parameter:
+                    type: string
+                  operator:
+                    type: string
+                    enum: ["=", "!=", ">", "<", ">=", "<=", "in", "not_in"]
+                  value:
+                    oneOf:
+                      - type: number
+                      - type: string
+                      - type: array
+                  description:
+                    type: string
+                required: ["type", "operator", "value"]
+              - type: object
+                properties:
+                  logic:
+                    type: string
+                    enum: ["AND", "OR", "NOT"]
+                required: ["logic"]
+        filters:
+          type: object
+          properties:
+            market:
+              type: array
+              items:
+                type: string
+            industry:
+              type: array
+              items:
+                type: string
+            market_cap:
+              type: object
+              properties:
+                min:
+                  type: number
+                  minimum: 0
+                max:
+                  type: number
+                  minimum: 0
+            price:
+              type: object
+              properties:
+                min:
+                  type: number
+                  minimum: 0
+                max:
+                  type: number
+                  minimum: 0
+            volume:
+              type: object
+              properties:
+                min_avg_volume:
+                  type: number
+                  minimum: 0
+                min_turnover_rate:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+        sort:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              direction:
+                type: string
+                enum: ["ASC", "DESC"]
+            required: ["field", "direction"]
+        parameters:
+          type: object
+          description: "策略参数"
+      required: ["id", "name", "conditions"]
+  required: ["strategy"]
+
+# 买点分析配置Schema
+buypoints_config_schema:
+  type: object
+  properties:
+    analysis:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        version:
+          type: string
+          pattern: "^\\d+\\.\\d+\\.\\d+$"
+        author:
+          type: string
+        create_time:
+          type: string
+          format: date-time
+        update_time:
+          type: string
+          format: date-time
+        indicators:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              weight:
+                type: number
+                minimum: 0
+                maximum: 1
+              parameters:
+                type: object
+              signals:
+                type: object
+                properties:
+                  buy:
+                    type: string
+                  sell:
+                    type: string
+            required: ["id", "name", "weight"]
+        weights:
+          type: object
+          patternProperties:
+            "^[a-z_]+_score$":
+              type: number
+              minimum: 0
+              maximum: 1
+        thresholds:
+          type: object
+          properties:
+            buy_threshold:
+              type: number
+              minimum: 0
+              maximum: 100
+            sell_threshold:
+              type: number
+              minimum: 0
+              maximum: 100
+            strong_buy_threshold:
+              type: number
+              minimum: 0
+              maximum: 100
+            strong_sell_threshold:
+              type: number
+              minimum: 0
+              maximum: 100
+        parameters:
+          type: object
+          properties:
+            analysis_period:
+              type: string
+              enum: ["1MIN", "5MIN", "15MIN", "30MIN", "60MIN", "DAILY", "WEEKLY"]
+            lookback_days:
+              type: integer
+              minimum: 1
+              maximum: 365
+            min_data_points:
+              type: integer
+              minimum: 1
+            confidence_level:
+              type: number
+              minimum: 0
+              maximum: 1
+      required: ["indicators", "weights", "thresholds"]
+  required: ["analysis"]
+
+# 系统配置Schema
+system_config_schema:
+  type: object
+  properties:
+    version:
+      type: string
+      pattern: "^\\d+\\.\\d+\\.\\d+$"
+    name:
+      type: string
+      minLength: 1
+    description:
+      type: string
+    database:
+      type: object
+      properties:
+        host:
+          type: string
+          minLength: 1
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+        user:
+          type: string
+        password:
+          type: string
+        name:
+          type: string
+          minLength: 1
+        timeout:
+          type: integer
+          minimum: 1
+        compression:
+          type: boolean
+      required: ["host", "port", "user", "name"]
+    cache:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        max_size:
+          type: integer
+          minimum: 1
+        ttl:
+          type: integer
+          minimum: 1
+        size:
+          type: integer
+          minimum: 1
+    performance:
+      type: object
+      properties:
+        timeout:
+          type: integer
+          minimum: 1
+        max_connections:
+          type: integer
+          minimum: 1
+        pool_size:
+          type: integer
+          minimum: 1
+        batch_size:
+          type: integer
+          minimum: 1
+    logging:
+      type: object
+      properties:
+        level:
+          type: string
+          enum: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+        format:
+          type: string
+        file:
+          type: string
+    paths:
+      type: object
+      properties:
+        logs:
+          type: string
+        data:
+          type: string
+        output:
+          type: string
+        temp:
+          type: string
+  required: ["version", "name"]
+
+# 指标参数Schema
+indicator_parameter_schema:
+  type: object
+  patternProperties:
+    "^[A-Z_]+$":
+      type: object
+      properties:
+        description:
+          type: string
+        parameters:
+          type: object
+          patternProperties:
+            "^[a-z_]+$":
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: ["integer", "number", "string", "boolean"]
+                default:
+                  oneOf:
+                    - type: integer
+                    - type: number
+                    - type: string
+                    - type: boolean
+                minimum:
+                  type: number
+                maximum:
+                  type: number
+                enum:
+                  type: array
+              required: ["type", "default"]
+        patterns:
+          type: object
+          patternProperties:
+            "^[A-Z_]+$":
+              type: object
+              properties:
+                description:
+                  type: string
+                type:
+                  type: string
+                  enum: ["boolean", "number", "string"]
+              required: ["description", "type"]
+        signals:
+          type: object
+          patternProperties:
+            "^[A-Z_]+$":
+              type: object
+              properties:
+                description:
+                  type: string
+                type:
+                  type: string
+                  enum: ["boolean", "number", "string"]
+              required: ["description", "type"]
+        validation:
+          type: object
+          properties:
+            min_data_points:
+              type: integer
+              minimum: 1
+            required_columns:
+              type: array
+              items:
+                type: string
+      required: ["description", "parameters", "validation"]
+
+# 通用验证规则
+common_validation_rules:
+  # 日期格式验证
+  date_formats:
+    - "YYYY-MM-DD"
+    - "YYYY-MM-DD HH:MM:SS"
+    - "YYYY-MM-DDTHH:MM:SS"
+  
+  # 数值范围验证
+  numeric_ranges:
+    percentage: [0, 1]
+    price: [0, 10000]
+    volume: [0, null]
+    market_cap: [0, null]
+  
+  # 字符串长度限制
+  string_limits:
+    short_text: 100
+    medium_text: 500
+    long_text: 2000
+  
+  # 枚举值定义
+  enums:
+    time_periods: ["1MIN", "5MIN", "15MIN", "30MIN", "60MIN", "DAILY", "WEEKLY", "MONTHLY"]
+    signal_types: ["BUY", "SELL", "HOLD"]
+    operators: ["=", "!=", ">", "<", ">=", "<=", "in", "not_in"]
+    logic_operators: ["AND", "OR", "NOT"]
+    sort_directions: ["ASC", "DESC"]
+    log_levels: ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]

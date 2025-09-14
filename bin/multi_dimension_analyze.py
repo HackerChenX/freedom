@@ -1,163 +1,112 @@
-#!/usr/bin/python
-# -*- coding: UTF-8 -*-
+#!/usr/bin/env python3
+"""
+⚠️ 此文件已废弃 ⚠️
 
-import os
+原文件: bin/multi_dimension_analyze.py
+文件类型: general_analysis
+废弃日期: 2025-09-14 16:28:42
+
+此入口已被废弃，请使用新的统一入口：
+
+from bin.unified_analysis_controller import unified_controller
+
+# 买点分析
+result = unified_controller.analyze_buypoint(stock_code, buypoint_date)
+
+# 策略选股  
+result = unified_controller.execute_stock_selection(strategy_config)
+
+# 技术指标
+result = unified_controller.get_technical_indicators(stock_code, date, indicators)
+
+详细文档: docs/optimization/basic_usability_architecture_plan.md
+"""
+
+import warnings
 import sys
-import json
-import argparse
-from datetime import datetime, timedelta
+import os
+from typing import Dict, Any, List, Optional
 
-# 添加项目根目录到Python路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
+# 添加项目根目录到路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from analysis.multi_dimension_analyzer import Multi_dimension_analyzer
-from utils.logger import get_logger
-from utils.path_utils import get_result_dir
+def deprecated_entry_warning():
+    """废弃入口警告"""
+    warnings.warn(
+        f"此入口文件已废弃: /Users/hacker/PycharmProjects/freedom/bin/entry_deprecation_manager.py\n"
+        f"请使用统一入口: bin.unified_analysis_controller\n"
+        f"详情请查看文档: docs/optimization/basic_usability_architecture_plan.md",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
-# 获取日志记录器
-logger = get_logger(__name__)
-
-def main_10():
-    """命令行入口函数"""
-    # 解析命令行参数
-    parser = argparse.ArgumentParser(description="多维度分析工具")
+def redirect_to_unified_controller(*args, **kwargs):
+    """重定向到统一控制器"""
+    deprecated_entry_warning()
     
-    # 添加子命令
-    subparsers = parser.add_subparsers(dest='command', help='子命令')
+    try:
+        from bin.unified_analysis_controller import unified_controller
+    except ImportError as e:
+        print(f"❌ 无法导入统一控制器: {e}")
+        print("请确保 bin/unified_analysis_controller.py 文件存在")
+        return {'success': False, 'error': '统一控制器不可用'}
     
-    # 单股分析子命令
-    single_parser = subparsers.add_parser('single_stock', help='单个股票分析')
-    single_parser.add_argument('-s', '--stock', required=True, help='股票代码')
-    single_parser.add_argument('-d', '--date', help='分析日期，格式YYYYMMDD，默认为当天')
-    single_parser.add_argument('-p', '--periods', default='DAILY,WEEKLY', 
-                            help='分析周期，用逗号分隔，如DAILY,WEEKLY')
-    single_parser.add_argument('-o', '--output', help='输出文件路径')
-    single_parser.add_argument('-f', '--format', choices=['json', 'markdown', 'excel'], 
-                             default='json', help='输出格式')
+    # 根据文件类型判断重定向目标
+    file_type = "general_analysis"
     
-    # 股票组分析子命令
-    group_parser = subparsers.add_parser('stock_group', help='股票组分析')
-    group_parser.add_argument('-f', '--file', required=True, help='股票代码文件路径，每行一个股票代码')
-    group_parser.add_argument('-d', '--date', help='分析日期，格式YYYYMMDD，默认为当天')
-    group_parser.add_argument('-p', '--periods', default='DAILY', 
-                           help='分析周期，用逗号分隔，如DAILY,WEEKLY')
-    group_parser.add_argument('-o', '--output', help='输出文件路径')
-    group_parser.add_argument('--format', choices=['json', 'markdown', 'excel'], 
-                            default='json', help='输出格式')
+    if file_type == "buypoint_analysis":
+        if len(args) >= 2:
+            return unified_controller.analyze_buypoint(args[0], args[1], kwargs.get('analysis_config'))
+        else:
+            print("❌ 买点分析需要 stock_code 和 buypoint_date 参数")
+            print("使用方法: python {__file__} <stock_code> <buypoint_date>")
+            return {'success': False, 'error': '参数不足'}
     
-    # 市场相关性分析子命令
-    correlation_parser = subparsers.add_parser('correlation', help='市场相关性分析')
-    correlation_parser.add_argument('-f', '--file', required=True, help='股票代码文件路径，每行一个股票代码')
-    correlation_parser.add_argument('-d', '--date', help='分析结束日期，格式YYYYMMDD，默认为当天')
-    correlation_parser.add_argument('--days', type=int, default=30, help='分析的天数')
-    correlation_parser.add_argument('-o', '--output', help='输出文件路径')
-    correlation_parser.add_argument('--format', choices=['json', 'markdown', 'excel'], 
-                                  default='json', help='输出格式')
+    elif file_type == "stock_selection":
+        if len(args) >= 1 and isinstance(args[0], dict):
+            return unified_controller.execute_stock_selection(args[0], kwargs.get('selection_params'))
+        else:
+            print("❌ 策略选股需要 strategy_config 参数")
+            print("使用方法: 请参考统一入口文档")
+            return {'success': False, 'error': '参数不足'}
     
-    args = parser.parse_args()
-    
-    # 创建多维度分析器
-    analyzer = Multi_dimension_analyzer()
-    
-    # 处理日期参数，默认为当天
-    if not hasattr(args, 'date') or not args.date:
-        args.date = datetime.now().strftime("%Y%m%d")
-    
-    # 处理输出文件参数，默认为结果目录下的文件
-    if not hasattr(args, 'output') or not args.output:
-        result_dir = get_result_dir()
-        os.makedirs(result_dir, exist_ok=True)
-        args.output = os.path.join(result_dir, f"multi_dimension_{args.command}_{args.date}.{args.format}")
-    
-    if args.command == 'single_stock':
-        # 解析周期参数
-        periods = [p.strip() for p in args.periods.split(',') if p.strip()]
-        
-        # 执行单股分析
-        result = analyzer.analyze_single_stock(args.stock, args.date, periods)
-        
-        # 输出结果
-        if args.format == 'json' or args.format == 'markdown':
-            analyzer.save_results(args.output, args.format)
-        elif args.format == 'excel':
-            analyzer.export_to_excel(args.output)
-        
-        # 打印关键信息
-        assessment = result.get("assessment", {})
-        if assessment:
-            print(f"分析结果摘要: {assessment.get('summary', '')}")
-            print(f"推荐: {assessment.get('recommendation', '')}")
-            print(f"综合评分: {assessment.get('overall_score', 0)}")
-        
-        print(f"详细结果已保存到: {args.output}")
-        
-    elif args.command == 'stock_group':
-        # 读取股票代码文件
-        try:
-            with open(args.file, 'r', encoding='utf-8') as f:
-                stock_codes = [line.strip() for line in f if line.strip()]
-        except Exception as e:
-            logger.error(f"读取股票代码文件时出错: {e}")
-            return
-        
-        if not stock_codes:
-            logger.error("股票代码列表为空")
-            return
-        
-        # 解析周期参数
-        periods = [p.strip() for p in args.periods.split(',') if p.strip()]
-        
-        # 执行股票组分析
-        result = analyzer.analyze_stock_group(stock_codes, args.date, periods)
-        
-        # 输出结果
-        if args.format == 'json' or args.format == 'markdown':
-            analyzer.save_results(args.output, args.format)
-        elif args.format == 'excel':
-            analyzer.export_to_excel(args.output)
-        
-        # 打印关键信息
-        assessment = result.get("assessment", {})
-        if assessment:
-            print(f"分析结果摘要: {assessment.get('summary', '')}")
-            print(f"推荐: {assessment.get('recommendation', '')}")
-        
-        print(f"详细结果已保存到: {args.output}")
-        
-    elif args.command == 'correlation':
-        # 读取股票代码文件
-        try:
-            with open(args.file, 'r', encoding='utf-8') as f:
-                stock_codes = [line.strip() for line in f if line.strip()]
-        except Exception as e:
-            logger.error(f"读取股票代码文件时出错: {e}")
-            return
-        
-        if not stock_codes:
-            logger.error("股票代码列表为空")
-            return
-        
-        # 执行市场相关性分析
-        result = analyzer.analyze_market_correlation(stock_codes, args.date, args.days)
-        
-        # 输出结果
-        if args.format == 'json' or args.format == 'markdown':
-            analyzer.save_results(args.output, args.format)
-        elif args.format == 'excel':
-            analyzer.export_to_excel(args.output)
-        
-        # 打印关键信息
-        avg_correlations = result.get("avg_correlations", {})
-        if avg_correlations:
-            print("平均相关系数:")
-            for index_code, corr in sorted(avg_correlations.items(), key=lambda x: abs(x[1]), reverse=True):
-                print(f"  {index_code}: {corr:.4f}")
-        
-        print(f"详细结果已保存到: {args.output}")
+    elif file_type == "strategy_execution":
+        # 策略执行重定向到选股
+        strategy_config = {'name': kwargs.get('strategy_name', 'unknown')}
+        return unified_controller.execute_stock_selection(strategy_config, kwargs)
     
     else:
-        parser.print_help()
+        print("❌ 无法确定重定向目标，请直接使用统一入口")
+        print("统一入口: bin/unified_analysis_controller.py")
+        return {'success': False, 'error': '无法确定重定向目标'}
+
+# 为向后兼容提供的函数别名
+main = redirect_to_unified_controller
+analyze = redirect_to_unified_controller
+execute = redirect_to_unified_controller
+run = redirect_to_unified_controller
+select = redirect_to_unified_controller
+detect = redirect_to_unified_controller
 
 if __name__ == "__main__":
-    main_10() 
+    deprecated_entry_warning()
+    
+    print(f"⚠️  此文件已废弃: entry_deprecation_manager.py")
+    print(f"📁 原文件类型: general_analysis")
+    print(f"🔄 请使用统一入口: bin/unified_analysis_controller.py")
+    print()
+    print("📖 使用示例:")
+    print("   python bin/unified_analysis_controller.py buypoint --stock 000001 --date 2024-01-15")
+    print("   python bin/unified_analysis_controller.py selection --strategy momentum")
+    print("   python bin/unified_analysis_controller.py indicators --stock 000001 --date 2024-01-15 --indicators RSI,MACD")
+    print()
+    print("📚 详细文档: docs/optimization/basic_usability_architecture_plan.md")
+    
+    # 尝试自动重定向
+    if len(sys.argv) > 1:
+        print("🔄 尝试自动重定向...")
+        result = redirect_to_unified_controller(*sys.argv[1:])
+        if result.get('success'):
+            print("✅ 重定向成功")
+        else:
+            print(f"❌ 重定向失败: {result.get('error')}")

@@ -1,0 +1,663 @@
+{
+  "stock_code": "300005",
+  "stock_name": "探路者",
+  "analysis_date": "2025-05-09",
+  "analysis_type": "comprehensive",
+  "status": "SUCCESS",
+  "indicators": {
+    "MA": {
+      "signal": "SELL",
+      "value": -1.0,
+      "pattern": "MA_Ma_信号",
+      "strength": 0.7
+    },
+    "EMA": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "EMA_信号",
+      "strength": 0.5
+    },
+    "MACD": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "RSI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "BOLL": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "BOLL_信号",
+      "strength": 0.5
+    },
+    "PSY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "PSY_未实现信号方法",
+      "strength": 0.5
+    },
+    "DMA": {
+      "signal": "BUY",
+      "value": 1.0,
+      "pattern": "DMA_信号",
+      "strength": 0.7
+    },
+    "DMI": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "DMI_信号",
+      "strength": 0.5
+    },
+    "ADX": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "ADX_信号",
+      "strength": 0.5
+    },
+    "AROON": {
+      "signal": "HOLD",
+      "value": false,
+      "pattern": "AROON_信号",
+      "strength": 0.5
+    },
+    "SAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "PSAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "TRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "TRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "CCI": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "CCI_信号",
+      "strength": 0.5
+    },
+    "ENHANCED_CCI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ENHANCED_TRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EnhancedTRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "WMA": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WMA_信号",
+      "strength": 0.5
+    },
+    "SUPERTREND": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "KDJ": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "KDJ_信号",
+      "strength": 0.5
+    },
+    "WR": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WR_信号",
+      "strength": 0.5
+    },
+    "WILLIAMS_R": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WR_信号",
+      "strength": 0.5
+    },
+    "CMO": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CMO_未实现信号方法",
+      "strength": 0.5
+    },
+    "STOCHRSI": {
+      "signal": "HOLD",
+      "value": 0.0,
+      "pattern": "STOCHRSI_信号",
+      "strength": 0.5
+    },
+    "STOCH": {
+      "signal": "HOLD",
+      "value": 0.0,
+      "pattern": "STOCHRSI_信号",
+      "strength": 0.5
+    },
+    "ENHANCED_RSI": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_RSI_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_KDJ": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ENHANCED_KDJ 未找到"
+    },
+    "ENHANCED_WR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_WR_未实现信号方法",
+      "strength": 0.5
+    },
+    "MOMENTUM": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ROC": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ROC_OSCILLATOR": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ULTIMATE": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "OBV": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 OBV 未找到"
+    },
+    "AD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "AD_未实现信号方法",
+      "strength": 0.5
+    },
+    "EMV": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EMV_Emv_未实现信号方法",
+      "strength": 0.5
+    },
+    "VOL": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "VOL_信号",
+      "strength": 0.5
+    },
+    "VR": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 VR 未找到"
+    },
+    "VOSC": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "MFI": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 MFI 未找到"
+    },
+    "PVT": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "CHAIKIN": {
+      "signal": "HOLD",
+      "value": false,
+      "pattern": "CHAIKIN_信号",
+      "strength": 0.5
+    },
+    "FORCE_INDEX": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "ATR": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "KC": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 KC 未找到"
+    },
+    "VIX": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 VIX 未找到"
+    },
+    "STDDEV": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "VOLATILITY": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "CHAIKIN_VOLATILITY": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "GARMAN_KLASS": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "ZXM_DAILY_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMDailyMACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_TURNOVER": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMTurnover_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_VOLUME_SHRINK": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMVolumeShrink_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_MA_CALLBACK": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMMACallback_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_BS_ABSORB": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMBSAbsorb_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_DAILY_TREND_UP": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_DAILY_TREND_UP 未找到"
+    },
+    "ZXM_WEEKLY_TREND_UP": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_WEEKLY_TREND_UP 未找到"
+    },
+    "ZXM_MONTHLY_KDJ_TREND_UP": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_MONTHLY_KDJ_TREND_UP 未找到"
+    },
+    "ZXM_WEEKLY_MACD": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_WEEKLY_MACD 未找到"
+    },
+    "ZXM_MONTHLY_MACD": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_MONTHLY_MACD 未找到"
+    },
+    "ZXM_AMPLITUDE_ELASTICITY": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_AMPLITUDE_ELASTICITY 未找到"
+    },
+    "ZXM_RISE_ELASTICITY": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_RISE_ELASTICITY 未找到"
+    },
+    "ZXM_ELASTICITY": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_ELASTICITY 未找到"
+    },
+    "ZXM_BOUNCE_DETECTOR": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_BOUNCE_DETECTOR 未找到"
+    },
+    "ZXM_BUYPOINT_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_BUYPOINT_SCORE 未找到"
+    },
+    "ZXM_TREND_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_TREND_SCORE 未找到"
+    },
+    "ZXM_ELASTIC_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_ELASTIC_SCORE 未找到"
+    },
+    "ZXM_VOLUME_ENERGY": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_VOLUME_ENERGY 未找到"
+    },
+    "ZXM_PRICE_POSITION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_PRICE_POSITION 未找到"
+    },
+    "ZXM_TECHNICAL_FORM": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_TECHNICAL_FORM 未找到"
+    },
+    "ZXM_MARKET_SENTIMENT": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_MARKET_SENTIMENT 未找到"
+    },
+    "ZXM_CHIP_DISTRIBUTION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CHIP_DISTRIBUTION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_FUND_FLOW": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMFundFlow_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_INSTITUTION_BEHAVIOR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "INSTITUTIONAL_BEHAVIOR_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_HOT_SPOT": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_HOT_SPOT 未找到"
+    },
+    "ZXM_INDUSTRY_ROTATION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_INDUSTRY_ROTATION 未找到"
+    },
+    "ZXM_CYCLE_POSITION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_CYCLE_POSITION 未找到"
+    },
+    "ZXM_RISK_CONTROL": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_RISK_CONTROL 未找到"
+    },
+    "ZXM_TIMING_SIGNAL": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_TIMING_SIGNAL 未找到"
+    },
+    "ZXM_POSITION_MANAGEMENT": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_POSITION_MANAGEMENT 未找到"
+    },
+    "ZXM_PORTFOLIO_OPTIMIZATION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_PORTFOLIO_OPTIMIZATION 未找到"
+    },
+    "ZXM_STRATEGY_COMBINATION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_STRATEGY_COMBINATION 未找到"
+    },
+    "ZXM_PERFORMANCE_ATTRIBUTION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_PERFORMANCE_ATTRIBUTION 未找到"
+    },
+    "ZXM_ALPHA_GENERATION": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_ALPHA_GENERATION 未找到"
+    },
+    "ZXM_BETA_HEDGING": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ZXM_BETA_HEDGING 未找到"
+    },
+    "ZXM_LIQUIDITY_ANALYSIS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_LIQUIDITY_ANALYSIS_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_VOLATILITY_FORECAST": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_VOLATILITY_FORECAST_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_CORRELATION_MATRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_CORRELATION_MATRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "CANDLESTICK_PATTERNS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CandlestickPatterns_未实现信号方法",
+      "strength": 0.5
+    },
+    "DOJI": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 DOJI 未找到"
+    },
+    "HAMMER": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 HAMMER 未找到"
+    },
+    "SHOOTING_STAR": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 SHOOTING_STAR 未找到"
+    },
+    "ENGULFING": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ENGULFING 未找到"
+    },
+    "HARAMI": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 HARAMI 未找到"
+    },
+    "PIERCING_LINE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 PIERCING_LINE 未找到"
+    },
+    "DARK_CLOUD_COVER": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 DARK_CLOUD_COVER 未找到"
+    },
+    "MORNING_STAR": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 MORNING_STAR 未找到"
+    },
+    "EVENING_STAR": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 EVENING_STAR 未找到"
+    },
+    "THREE_BLACK_CROWS": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 THREE_BLACK_CROWS 未找到"
+    },
+    "THREE_WHITE_SOLDIERS": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 THREE_WHITE_SOLDIERS 未找到"
+    },
+    "ISLAND_REVERSAL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ISLAND_REVERSAL_未实现信号方法",
+      "strength": 0.5
+    },
+    "V_SHAPED_REVERSAL": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 V_SHAPED_REVERSAL 未找到"
+    },
+    "HEAD_SHOULDERS": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 HEAD_SHOULDERS 未找到"
+    },
+    "DOUBLE_TOP": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 DOUBLE_TOP 未找到"
+    },
+    "DOUBLE_BOTTOM": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 DOUBLE_BOTTOM 未找到"
+    },
+    "TRIANGLE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 TRIANGLE 未找到"
+    },
+    "WEDGE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 WEDGE 未找到"
+    },
+    "FLAG": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 FLAG 未找到"
+    },
+    "PENNANT": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 PENNANT 未找到"
+    },
+    "RECTANGLE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 RECTANGLE 未找到"
+    },
+    "CUP_AND_HANDLE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 CUP_AND_HANDLE 未找到"
+    },
+    "ENHANCED_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_MACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_BOLL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EnhancedBoll_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_STOCHRSI": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 ENHANCED_STOCHRSI 未找到"
+    },
+    "FIBONACCI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ELLIOTT_WAVE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ELLIOTT_WAVE_未实现信号方法",
+      "strength": 0.5
+    },
+    "GANN": {
+      "signal": "ERROR",
+      "error": "'GannTools' object has no attribute 'calculate'"
+    },
+    "ICHIMOKU": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ICHIMOKU_未实现信号方法",
+      "strength": 0.5
+    },
+    "VORTEX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "VORTEX_未实现信号方法",
+      "strength": 0.5
+    },
+    "BIAS": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "BIAS_信号",
+      "strength": 0.5
+    },
+    "MTM": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 MTM 未找到"
+    },
+    "RSIMA": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "RSIMA_未实现信号方法",
+      "strength": 0.5
+    },
+    "COMPOSITE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 COMPOSITE 未找到"
+    },
+    "SYNERGY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SYNERGY_未实现信号方法",
+      "strength": 0.5
+    },
+    "UNIFIED_MA": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "UNIFIED_MA_未实现信号方法",
+      "strength": 0.5
+    },
+    "MACD_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 MACD_SCORE 未找到"
+    },
+    "RSI_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 RSI_SCORE 未找到"
+    },
+    "BOLL_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 BOLL_SCORE 未找到"
+    },
+    "KDJ_SCORE": {
+      "signal": "NOT_AVAILABLE",
+      "error": "指标 KDJ_SCORE 未找到"
+    },
+    "VOLUME_SCORE": {
+      "signal": "ERROR",
+      "error": "'VolumeScore' object has no attribute 'calculate'"
+    }
+  },
+  "buy_signal": {
+    "signal": "HOLD",
+    "strength": 0.0078125,
+    "buy_signals_count": 1,
+    "total_signals_count": 128,
+    "signal_details": [
+      "DMA: BUY"
+    ],
+    "confidence": 0.78125
+  },
+  "analysis_time": "2025-09-14 23:18:35",
+  "data_points": 200
+}

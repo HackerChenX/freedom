@@ -10,10 +10,10 @@ sys.path.insert(0, root_dir)
 
 import pandas as pd
 import numpy as np
-from utils.dependency_injection import get_service
+from utils.dependency_injection import get_service, get_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
-from analysis.market.a_stock_market_analysis import Market_analyzer, print_market_indicators
+from analysis.market.a_stock_market_analysis import AstockMarketAnalyzer
 from datetime import datetime
 import argparse
 from typing import Optional
@@ -25,7 +25,7 @@ logger = get_logger(__name__)
 
 @exception_handler(reraise=False, default_return=None)
 @performance_monitor(threshold=5.0)
-def get_latest_data(analyzer: Market_analyzer) -> Optional[Market_analyzer]:
+def get_latest_data(analyzer: AstockMarketAnalyzer) -> Optional[AstockMarketAnalyzer]:
     """
     获取最新数据
     
@@ -33,7 +33,7 @@ def get_latest_data(analyzer: Market_analyzer) -> Optional[Market_analyzer]:
         analyzer: 市场分析器实例
         
     Returns:
-        Optional[Market_analyzer]: 更新后的分析器，失败时返回None
+        Optional[AstockMarketAnalyzer]: 更新后的分析器，失败时返回None
     """
     try:
         # 使用analyzer获取最新数据
@@ -59,7 +59,7 @@ def main_34():
     try:
         # 初始化依赖注入容器
         container = get_container()
-        data_access = get_service(Data_access_interface)
+        data_access = get_service(DataAccessInterface)
         logger.info("成功初始化数据访问服务")
         
         # 解析命令行参数
@@ -73,7 +73,7 @@ def main_34():
         args = parser.parse_args()
         
         # 初始化市场分析器，传入数据访问接口
-        analyzer = Market_analyzer(
+        analyzer = AstockMarketAnalyzer(
             date=args.date, 
             data_source=args.data_source,
             data_access=data_access
@@ -90,7 +90,7 @@ def main_34():
             return
         
         # 打印市场指标
-        print_market_indicators(analyzer)
+        # print_market_indicators(analyzer)  # TODO: 实现市场指标打印功能
         
         # 获取操作建议
         advice = analyzer.get_operation_advice()
@@ -110,7 +110,7 @@ def main_34():
             
         logger.info("市场分析完成")
         
-    except Keyboard_interrupt:
+    except KeyboardInterrupt:
         logger.info("用户中断程序执行")
         print("\n程序被用户中断")
     except Exception as e:

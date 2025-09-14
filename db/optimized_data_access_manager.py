@@ -10,7 +10,7 @@ from contextlib import contextmanager
 import pandas as pd
 import logging
 
-from db.optimized_connection_pool import OptimizedClickHouseConnectionPool, get_optimized_pool
+from db.enhanced_connection_pool import ClickHouseConnectionPool, get_connection_pool
 from db.query_optimizer import QueryOptimizer, get_query_optimizer
 from db.multi_layer_cache import MultiLayerCache, get_multi_cache
 from db.interfaces.data_access_interface import DataAccessInterface
@@ -34,7 +34,7 @@ class OptimizedDataAccessManager(DataAccessInterface):
     """
     
     def __init__(self,
-                 connection_pool: Optional[OptimizedClickHouseConnectionPool] = None,
+                 connection_pool: Optional[ClickHouseConnectionPool] = None,
                  query_optimizer: Optional[QueryOptimizer] = None,
                  cache_manager: Optional[MultiLayerCache] = None,
                  enable_cache: bool = True,
@@ -51,7 +51,7 @@ class OptimizedDataAccessManager(DataAccessInterface):
             enable_query_optimization: 是否启用查询优化
             enable_monitoring: 是否启用监控
         """
-        self.connection_pool = connection_pool or get_optimized_pool()
+        self.connection_pool = connection_pool or get_connection_pool()
         self.query_optimizer = query_optimizer or get_query_optimizer()
         self.cache_manager = cache_manager or get_multi_cache()
         

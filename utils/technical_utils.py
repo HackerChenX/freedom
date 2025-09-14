@@ -630,7 +630,12 @@ def calculate_ma_Utils(data: pd.Series, period: int) -> pd.Series:
 
 def calculate_ema_Utils(data: pd.Series, period: int, method: str = 'standard') -> pd.Series:
     """
-    计算指数移动平均线(EMA) - 专业修复版本
+    计算指数移动平均线(EMA) - 金融级高精度版本
+
+    专业金融量化交易系统要求：
+    - 计算精度：6位小数
+    - 数值稳定性：处理极值和边界情况
+    - 金融标准：符合行业计算标准
 
     Args:
         data: 价格数据序列
@@ -638,51 +643,109 @@ def calculate_ema_Utils(data: pd.Series, period: int, method: str = 'standard') 
         method: 计算方法 ('standard', 'sma_init', 'pandas')
 
     Returns:
-        pd.Series: 指数移动平均线序列
+        pd.Series: 指数移动平均线序列（6位小数精度）
     """
+    import numpy as np
+    from decimal import Decimal, getcontext
+
+    # 设置高精度计算上下文（8位小数内部计算，输出6位）
+    getcontext().prec = 28
+
+    # 边界情况处理
+    if data is None or len(data) == 0:
+        return pd.Series(index=pd.Index([]), dtype='float64')
+
+    if period <= 0:
+        raise ValueError(f"EMA周期必须大于0，当前值: {period}")
+
     if method == 'pandas':
         # 原始pandas方法（保持向后兼容）
-        return data.ewm(span=period, adjust=False).mean()
+        result = data.ewm(span=period, adjust=False).mean()
+        # 保持6位小数精度
+        return result.round(6)
 
     elif method == 'sma_init':
-        # SMA初始化方法（金融行业标准）
+        # SMA初始化方法（金融行业标准 - 高精度版本）
         if len(data) < period:
-            return pd.Series(index=data.index, dtype=float)
+            return pd.Series(index=data.index, dtype='float64').fillna(np.nan)
 
-        result = pd.Series(index=data.index, dtype=float)
-        multiplier = 2.0 / (period + 1)
+        result = pd.Series(index=data.index, dtype='float64')
 
-        # 使用SMA作为初始值
-        sma_init = data.iloc[:period].mean()
-        result.iloc[period-1] = sma_init
+        # 高精度乘数计算
+        multiplier = Decimal(2) / Decimal(period + 1)
+        multiplier_float = float(multiplier)
+        complement = 1.0 - multiplier_float
 
-        # 从第period个值开始计算EMA
+        # 使用SMA作为初始值（高精度计算）
+        valid_data = data.iloc[:period].dropna()
+        if len(valid_data) < period:
+            # 如果数据不足，使用可用数据的平均值
+            sma_init = valid_data.mean()
+        else:
+            sma_init = valid_data.mean()
+
+        result.iloc[period-1] = round(float(sma_init), 6)
+
+        # 从第period个值开始计算EMA（高精度迭代）
         for i in range(period, len(data)):
-            result.iloc[i] = (data.iloc[i] * multiplier) + (result.iloc[i-1] * (1 - multiplier))
+            if pd.isna(data.iloc[i]) or pd.isna(result.iloc[i-1]):
+                result.iloc[i] = np.nan
+            else:
+                # 高精度EMA计算
+                current_value = Decimal(str(data.iloc[i]))
+                previous_ema = Decimal(str(result.iloc[i-1]))
+
+                new_ema = (current_value * multiplier) + (previous_ema * Decimal(str(complement)))
+                result.iloc[i] = round(float(new_ema), 6)
 
         return result
 
-    else:  # 'standard'
-        # 标准EMA方法（专业修复版本）
+    else:  # 'standard' - 金融级高精度标准方法
         if len(data) == 0:
-            return pd.Series(index=data.index, dtype=float)
+            return pd.Series(index=data.index, dtype='float64')
 
-        result = pd.Series(index=data.index, dtype=float)
-        multiplier = 2.0 / (period + 1)
+        result = pd.Series(index=data.index, dtype='float64')
 
-        # 第一个值作为初始值
-        result.iloc[0] = data.iloc[0]
+        # 高精度乘数计算
+        multiplier = Decimal(2) / Decimal(period + 1)
+        multiplier_float = float(multiplier)
+        complement = 1.0 - multiplier_float
 
-        # 计算后续EMA值
-        for i in range(1, len(data)):
-            result.iloc[i] = (data.iloc[i] * multiplier) + (result.iloc[i-1] * (1 - multiplier))
+        # 第一个非NaN值作为初始值
+        first_valid_idx = data.first_valid_index()
+        if first_valid_idx is None:
+            return result.fillna(np.nan)
+
+        first_valid_pos = data.index.get_loc(first_valid_idx)
+        result.iloc[first_valid_pos] = round(float(data.iloc[first_valid_pos]), 6)
+
+        # 计算后续EMA值（高精度迭代）
+        for i in range(first_valid_pos + 1, len(data)):
+            if pd.isna(data.iloc[i]):
+                # 处理缺失数据：保持前一个EMA值
+                result.iloc[i] = result.iloc[i-1]
+            elif pd.isna(result.iloc[i-1]):
+                # 如果前一个EMA值缺失，使用当前值
+                result.iloc[i] = round(float(data.iloc[i]), 6)
+            else:
+                # 高精度EMA计算
+                current_value = Decimal(str(data.iloc[i]))
+                previous_ema = Decimal(str(result.iloc[i-1]))
+
+                new_ema = (current_value * multiplier) + (previous_ema * Decimal(str(complement)))
+                result.iloc[i] = round(float(new_ema), 6)
 
         return result
 
 def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: int = 26,
                   signal_period: int = 9, method: str = 'standard') -> Tuple[pd.Series, pd.Series, pd.Series]:
     """
-    计算MACD指标 - 专业修复版本
+    计算MACD指标 - 金融级高精度版本
+
+    专业量化交易系统要求：
+    - 计算精度：6位小数
+    - 数值稳定性：处理数值溢出和边界情况
+    - 金融标准：符合专业交易平台标准
 
     Args:
         data: 价格数据序列
@@ -692,17 +755,41 @@ def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: in
         method: EMA计算方法 ('standard', 'sma_init', 'pandas')
 
     Returns:
-        Tuple[pd.Series, pd.Series, pd.Series]: (DIF, DEA, MACD)
+        Tuple[pd.Series, pd.Series, pd.Series]: (DIF, DEA, MACD) - 所有精度6位小数
     """
-    # 使用专业修复的EMA计算方法
+    import numpy as np
+    from decimal import Decimal, getcontext
+
+    # 设置高精度计算上下文
+    getcontext().prec = 28
+
+    # 边界情况处理
+    if data is None or len(data) == 0:
+        empty_series = pd.Series(index=pd.Index([]), dtype='float64')
+        return empty_series, empty_series, empty_series
+
+    if fast_period <= 0 or slow_period <= 0 or signal_period <= 0:
+        raise ValueError(f"MACD周期必须大于0: fast={fast_period}, slow={slow_period}, signal={signal_period}")
+
+    if fast_period >= slow_period:
+        raise ValueError(f"快线周期必须小于慢线周期: fast={fast_period}, slow={slow_period}")
+
+    # 使用金融级高精度EMA计算方法
     ema_fast = calculate_ema_Utils(data, fast_period, method)
     ema_slow = calculate_ema_Utils(data, slow_period, method)
 
-    # 计算DIF（MACD线）
-    dif = ema_fast - ema_slow
+    # 计算DIF（MACD线）- 高精度减法运算
+    dif = pd.Series(index=data.index, dtype='float64')
+    for i in range(len(data)):
+        if pd.isna(ema_fast.iloc[i]) or pd.isna(ema_slow.iloc[i]):
+            dif.iloc[i] = np.nan
+        else:
+            # 高精度减法计算
+            fast_val = Decimal(str(ema_fast.iloc[i]))
+            slow_val = Decimal(str(ema_slow.iloc[i]))
+            dif.iloc[i] = round(float(fast_val - slow_val), 6)
 
     # 计算DEA（信号线）- 对DIF进行EMA平滑
-    # 注意：只对有效的DIF值计算信号线
     if method == 'sma_init':
         # 对于SMA初始化方法，从慢线有效开始计算信号线
         valid_start = slow_period - 1
@@ -710,18 +797,40 @@ def calculate_macd_Utils(data: pd.Series, fast_period: int = 12, slow_period: in
             valid_dif = dif.iloc[valid_start:].dropna()
             if len(valid_dif) > 0:
                 dea_partial = calculate_ema_Utils(valid_dif, signal_period, method)
-                dea = pd.Series(index=dif.index, dtype=float)
-                dea.iloc[valid_start:] = dea_partial
+                dea = pd.Series(index=dif.index, dtype='float64')
+                dea.iloc[valid_start:valid_start+len(dea_partial)] = dea_partial.values
             else:
-                dea = pd.Series(index=dif.index, dtype=float)
+                dea = pd.Series(index=dif.index, dtype='float64').fillna(np.nan)
         else:
-            dea = pd.Series(index=dif.index, dtype=float)
+            dea = pd.Series(index=dif.index, dtype='float64').fillna(np.nan)
     else:
         # 标准方法直接计算
         dea = calculate_ema_Utils(dif, signal_period, method)
 
-    # 计算MACD柱状图
-    macd = (dif - dea) * 2
+    # 计算MACD柱状图 - 高精度乘法运算（金融标准：MACD = (DIF - DEA) * 2）
+    macd = pd.Series(index=data.index, dtype='float64')
+    for i in range(len(data)):
+        if pd.isna(dif.iloc[i]) or pd.isna(dea.iloc[i]):
+            macd.iloc[i] = np.nan
+        else:
+            # 高精度减法和乘法计算
+            dif_val = Decimal(str(dif.iloc[i]))
+            dea_val = Decimal(str(dea.iloc[i]))
+            macd_val = (dif_val - dea_val) * Decimal('2')
+            macd.iloc[i] = round(float(macd_val), 6)
+
+    # 数值稳定性检查和修正（使用专业稳定性管理器）
+    from utils.numerical_stability_manager import get_stability_manager
+    stability_manager = get_stability_manager()
+
+    dif = stability_manager.check_and_fix_extreme_values(dif, "MACD DIF")
+    dea = stability_manager.check_and_fix_extreme_values(dea, "MACD DEA")
+    macd = stability_manager.check_and_fix_extreme_values(macd, "MACD Histogram")
+
+    # 确保最终精度
+    dif = stability_manager.ensure_series_precision(dif)
+    dea = stability_manager.ensure_series_precision(dea)
+    macd = stability_manager.ensure_series_precision(macd)
 
     return dif, dea, macd
 
@@ -769,53 +878,115 @@ def calculate_kdj_Utils(high: pd.Series, low: pd.Series, close: pd.Series,
 
 def calculate_rsi_Utils(data: pd.Series, period: int = 14) -> pd.Series:
     """
-    计算RSI指标（使用标准Wilder平滑方法）
+    计算RSI指标 - 金融级高精度版本（标准Wilder平滑方法）
+
+    专业量化交易系统要求：
+    - 计算精度：6位小数
+    - Wilder平滑算法：金融行业标准
+    - 数值稳定性：处理边界情况和极值
 
     Args:
         data: 价格数据序列
         period: 周期
 
     Returns:
-        pd.Series: RSI序列
+        pd.Series: RSI序列（6位小数精度）
     """
+    import numpy as np
+    from decimal import Decimal, getcontext
+    from utils.dependency_injection import get_logger
+
+    logger = get_logger(__name__)
+
+    # 设置高精度计算上下文
+    getcontext().prec = 28
+
+    # 边界情况处理
+    if data is None or len(data) == 0:
+        return pd.Series(index=pd.Index([]), dtype='float64')
+
+    if period <= 0:
+        raise ValueError(f"RSI周期必须大于0，当前值: {period}")
+
+    if len(data) <= period:
+        logger.warning(f"RSI数据长度不足: 需要至少{period+1}个数据点，实际{len(data)}个")
+        return pd.Series(index=data.index, dtype='float64').fillna(np.nan)
+
     # 计算价格变化
     delta = data.diff()
 
-    # 分离上涨和下跌
+    # 分离上涨和下跌（高精度处理）
     gains = delta.where(delta > 0, 0)
     losses = -delta.where(delta < 0, 0)
 
-    # 使用标准Wilder平滑方法
-    rsi_values = pd.Series(index=data.index, dtype=float)
+    # 使用标准Wilder平滑方法进行高精度计算
+    rsi_values = pd.Series(index=data.index, dtype='float64')
 
     if len(gains) >= period:
-        # 计算初始平均值（前period个值的简单平均）
-        initial_avg_gain = gains.iloc[1:period+1].mean()  # 跳过第一个NaN值
-        initial_avg_loss = losses.iloc[1:period+1].mean()
+        # 计算初始平均值（前period个值的简单平均，跳过第一个NaN值）
+        initial_gains = gains.iloc[1:period+1].dropna()
+        initial_losses = losses.iloc[1:period+1].dropna()
+
+        if len(initial_gains) < period - 1 or len(initial_losses) < period - 1:
+            logger.warning(f"RSI初始计算数据不足，使用可用数据")
+
+        # 高精度初始平均值计算
+        initial_avg_gain = Decimal(str(initial_gains.mean())) if len(initial_gains) > 0 else Decimal('0')
+        initial_avg_loss = Decimal(str(initial_losses.mean())) if len(initial_losses) > 0 else Decimal('0')
 
         # 设置初始RSI值
         if initial_avg_loss == 0:
-            rsi_values.iloc[period] = 100.0
+            if initial_avg_gain == 0:
+                rsi_values.iloc[period] = 50.0  # 中性值
+            else:
+                rsi_values.iloc[period] = 100.0  # 全部上涨
         else:
+            # 高精度RS计算
             rs = initial_avg_gain / initial_avg_loss
-            rsi_values.iloc[period] = 100 - (100 / (1 + rs))
+            rsi_val = 100 - (100 / (1 + rs))
+            rsi_values.iloc[period] = round(float(rsi_val), 6)
 
-        # 使用Wilder平滑方法计算后续值
+        # 使用Wilder平滑方法计算后续值（高精度迭代）
         avg_gain = initial_avg_gain
         avg_loss = initial_avg_loss
+        period_decimal = Decimal(str(period))
 
         for i in range(period + 1, len(gains)):
-            # Wilder平滑公式
-            avg_gain = (avg_gain * (period - 1) + gains.iloc[i]) / period
-            avg_loss = (avg_loss * (period - 1) + losses.iloc[i]) / period
+            if pd.isna(gains.iloc[i]) or pd.isna(losses.iloc[i]):
+                # 处理缺失数据
+                rsi_values.iloc[i] = rsi_values.iloc[i-1] if pd.notna(rsi_values.iloc[i-1]) else np.nan
+                continue
 
+            # 高精度Wilder平滑公式
+            current_gain = Decimal(str(gains.iloc[i]))
+            current_loss = Decimal(str(losses.iloc[i]))
+
+            avg_gain = (avg_gain * (period_decimal - 1) + current_gain) / period_decimal
+            avg_loss = (avg_loss * (period_decimal - 1) + current_loss) / period_decimal
+
+            # 计算RSI值
             if avg_loss == 0:
-                rsi_values.iloc[i] = 100.0
+                if avg_gain == 0:
+                    rsi_values.iloc[i] = 50.0  # 中性值
+                else:
+                    rsi_values.iloc[i] = 100.0  # 全部上涨
             else:
+                # 高精度RS和RSI计算
                 rs = avg_gain / avg_loss
-                rsi_values.iloc[i] = 100 - (100 / (1 + rs))
+                rsi_val = 100 - (100 / (1 + rs))
+                rsi_values.iloc[i] = round(float(rsi_val), 6)
 
-    return rsi_values
+    # 数值稳定性检查和修正（使用专业稳定性管理器）
+    from utils.numerical_stability_manager import get_stability_manager
+    stability_manager = get_stability_manager()
+
+    rsi_values = stability_manager.validate_rsi_range(rsi_values)
+    rsi_values = stability_manager.check_and_fix_extreme_values(rsi_values, "RSI")
+
+    # 检测计算异常
+    anomalies = stability_manager.detect_calculation_anomalies(rsi_values, "RSI")
+
+    return stability_manager.ensure_series_precision(rsi_values)
 
 def calculate_bollinger_bands_Utils(data: pd.Series, period: int = 20, 
                             num_std: float = 2.0) -> Tuple[pd.Series, pd.Series, pd.Series]:

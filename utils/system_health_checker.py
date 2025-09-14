@@ -264,9 +264,9 @@ class SystemHealthChecker:
     def _check_database_connection(self) -> HealthCheckResult:
         """检查数据库连接"""
         try:
-            from db.enhanced_connection_pool import ClickHouseConnectionPool
-            
-            pool = ClickHouseConnectionPool()
+            from db.enhanced_connection_pool import get_connection_pool
+
+            pool = get_connection_pool()
             with pool.get_connection() as conn:
                 # 执行简单查询测试连接
                 result = conn.execute("SELECT 1")

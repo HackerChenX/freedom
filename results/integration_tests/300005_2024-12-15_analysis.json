@@ -1,0 +1,789 @@
+{
+  "stock_code": "300005",
+  "stock_name": "探路者",
+  "analysis_date": "2024-12-15",
+  "analysis_type": "comprehensive",
+  "status": "SUCCESS",
+  "indicators": {
+    "MA": {
+      "signal": "HOLD",
+      "value": 0.0,
+      "pattern": "MA_Ma_信号",
+      "strength": 0.5
+    },
+    "EMA": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "EMA_信号",
+      "strength": 0.5
+    },
+    "MACD": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "RSI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "BOLL": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "BOLL_信号",
+      "strength": 0.5
+    },
+    "PSY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "PSY_未实现信号方法",
+      "strength": 0.5
+    },
+    "DMA": {
+      "signal": "BUY",
+      "value": 1.0,
+      "pattern": "DMA_信号",
+      "strength": 0.7
+    },
+    "DMI": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "DMI_信号",
+      "strength": 0.5
+    },
+    "ADX": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "ADX_信号",
+      "strength": 0.5
+    },
+    "AROON": {
+      "signal": "HOLD",
+      "value": false,
+      "pattern": "AROON_信号",
+      "strength": 0.5
+    },
+    "SAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "PSAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "TRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "TRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "CCI": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "CCI_信号",
+      "strength": 0.5
+    },
+    "ENHANCED_CCI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ENHANCED_TRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EnhancedTRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "WMA": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WMA_信号",
+      "strength": 0.5
+    },
+    "SUPERTREND": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "KDJ": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "KDJ_信号",
+      "strength": 0.5
+    },
+    "WR": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WR_信号",
+      "strength": 0.5
+    },
+    "WILLIAMS_R": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "WR_信号",
+      "strength": 0.5
+    },
+    "CMO": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CMO_未实现信号方法",
+      "strength": 0.5
+    },
+    "STOCHRSI": {
+      "signal": "SELL",
+      "value": -1.0,
+      "pattern": "STOCHRSI_信号",
+      "strength": 0.7
+    },
+    "STOCH": {
+      "signal": "SELL",
+      "value": -1.0,
+      "pattern": "STOCHRSI_信号",
+      "strength": 0.7
+    },
+    "ENHANCED_RSI": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_RSI_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_KDJ": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EnhancedKDJ_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_WR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_WR_未实现信号方法",
+      "strength": 0.5
+    },
+    "MOMENTUM": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ROC": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ROC_OSCILLATOR": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ULTIMATE": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "OBV": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "AD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "AD_未实现信号方法",
+      "strength": 0.5
+    },
+    "EMV": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EMV_Emv_未实现信号方法",
+      "strength": 0.5
+    },
+    "VOL": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "VOL_信号",
+      "strength": 0.5
+    },
+    "VR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "VR_未实现信号方法",
+      "strength": 0.5
+    },
+    "VOSC": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "MFI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "PVT": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "CHAIKIN": {
+      "signal": "HOLD",
+      "value": false,
+      "pattern": "CHAIKIN_信号",
+      "strength": 0.5
+    },
+    "FORCE_INDEX": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "ATR": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "KC": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "KC_未实现信号方法",
+      "strength": 0.5
+    },
+    "VIX": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "STDDEV": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "VOLATILITY": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "CHAIKIN_VOLATILITY": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "GARMAN_KLASS": {
+      "signal": 0,
+      "value": null,
+      "pattern": "",
+      "strength": 0
+    },
+    "ZXM_DAILY_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMDailyMACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_TURNOVER": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMTurnover_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_VOLUME_SHRINK": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMVolumeShrink_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_MA_CALLBACK": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMMACallback_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_BS_ABSORB": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMBSAbsorb_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_DAILY_TREND_UP": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_DAILY_TREND_UP_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_WEEKLY_TREND_UP": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_WEEKLY_TREND_UP_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_MONTHLY_KDJ_TREND_UP": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_MONTHLY_KDJ_TREND_UP_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_WEEKLY_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_WEEKLY_MACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_MONTHLY_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_MONTHLY_MACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_AMPLITUDE_ELASTICITY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_AMPLITUDE_ELASTICITY_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_RISE_ELASTICITY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_RISE_ELASTICITY_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_ELASTICITY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_ELASTICITY_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_BOUNCE_DETECTOR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_BOUNCE_DETECTOR_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_BUYPOINT_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_BUYPOINT_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_TREND_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_TREND_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_ELASTIC_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_ELASTIC_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_VOLUME_ENERGY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_VOLUME_ENERGY_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_PRICE_POSITION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_PRICE_POSITION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_TECHNICAL_FORM": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_TECHNICAL_FORM_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_MARKET_SENTIMENT": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_MARKET_SENTIMENT_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_CHIP_DISTRIBUTION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CHIP_DISTRIBUTION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_FUND_FLOW": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXMFundFlow_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_INSTITUTION_BEHAVIOR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "INSTITUTIONAL_BEHAVIOR_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_HOT_SPOT": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_HOT_SPOT_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_INDUSTRY_ROTATION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_INDUSTRY_ROTATION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_CYCLE_POSITION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_CYCLE_POSITION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_RISK_CONTROL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_RISK_CONTROL_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_TIMING_SIGNAL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_TIMING_SIGNAL_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_POSITION_MANAGEMENT": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_POSITION_MANAGEMENT_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_PORTFOLIO_OPTIMIZATION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_PORTFOLIO_OPTIMIZATION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_STRATEGY_COMBINATION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_STRATEGY_COMBINATION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_PERFORMANCE_ATTRIBUTION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_PERFORMANCE_ATTRIBUTION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_ALPHA_GENERATION": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_ALPHA_GENERATION_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_BETA_HEDGING": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_BETA_HEDGING_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_LIQUIDITY_ANALYSIS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_LIQUIDITY_ANALYSIS_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_VOLATILITY_FORECAST": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_VOLATILITY_FORECAST_未实现信号方法",
+      "strength": 0.5
+    },
+    "ZXM_CORRELATION_MATRIX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ZXM_CORRELATION_MATRIX_未实现信号方法",
+      "strength": 0.5
+    },
+    "CANDLESTICK_PATTERNS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CandlestickPatterns_未实现信号方法",
+      "strength": 0.5
+    },
+    "DOJI": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "DOJI_未实现信号方法",
+      "strength": 0.5
+    },
+    "HAMMER": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "HAMMER_未实现信号方法",
+      "strength": 0.5
+    },
+    "SHOOTING_STAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SHOOTING_STAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENGULFING": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENGULFING_未实现信号方法",
+      "strength": 0.5
+    },
+    "HARAMI": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "HARAMI_未实现信号方法",
+      "strength": 0.5
+    },
+    "PIERCING_LINE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "PIERCING_LINE_未实现信号方法",
+      "strength": 0.5
+    },
+    "DARK_CLOUD_COVER": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "DARK_CLOUD_COVER_未实现信号方法",
+      "strength": 0.5
+    },
+    "MORNING_STAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "MORNING_STAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "EVENING_STAR": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EVENING_STAR_未实现信号方法",
+      "strength": 0.5
+    },
+    "THREE_BLACK_CROWS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "THREE_BLACK_CROWS_未实现信号方法",
+      "strength": 0.5
+    },
+    "THREE_WHITE_SOLDIERS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "THREE_WHITE_SOLDIERS_未实现信号方法",
+      "strength": 0.5
+    },
+    "ISLAND_REVERSAL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ISLAND_REVERSAL_未实现信号方法",
+      "strength": 0.5
+    },
+    "V_SHAPED_REVERSAL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "V_SHAPED_REVERSAL_未实现信号方法",
+      "strength": 0.5
+    },
+    "HEAD_SHOULDERS": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "HEAD_SHOULDERS_未实现信号方法",
+      "strength": 0.5
+    },
+    "DOUBLE_TOP": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "DOUBLE_TOP_未实现信号方法",
+      "strength": 0.5
+    },
+    "DOUBLE_BOTTOM": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "DOUBLE_BOTTOM_未实现信号方法",
+      "strength": 0.5
+    },
+    "TRIANGLE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "TRIANGLE_未实现信号方法",
+      "strength": 0.5
+    },
+    "WEDGE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "WEDGE_未实现信号方法",
+      "strength": 0.5
+    },
+    "FLAG": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "FLAG_未实现信号方法",
+      "strength": 0.5
+    },
+    "PENNANT": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "PENNANT_未实现信号方法",
+      "strength": 0.5
+    },
+    "RECTANGLE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "RECTANGLE_未实现信号方法",
+      "strength": 0.5
+    },
+    "CUP_AND_HANDLE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "CUP_AND_HANDLE_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_MACD": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_MACD_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_BOLL": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "EnhancedBoll_未实现信号方法",
+      "strength": 0.5
+    },
+    "ENHANCED_STOCHRSI": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ENHANCED_STOCHRSI_未实现信号方法",
+      "strength": 0.5
+    },
+    "FIBONACCI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "ELLIOTT_WAVE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ELLIOTT_WAVE_未实现信号方法",
+      "strength": 0.5
+    },
+    "GANN": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "GANN_TOOLS_未实现信号方法",
+      "strength": 0.5
+    },
+    "ICHIMOKU": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "ICHIMOKU_未实现信号方法",
+      "strength": 0.5
+    },
+    "VORTEX": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "VORTEX_未实现信号方法",
+      "strength": 0.5
+    },
+    "BIAS": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "BIAS_信号",
+      "strength": 0.5
+    },
+    "MTM": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "MTM_未实现信号方法",
+      "strength": 0.5
+    },
+    "RSIMA": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "RSIMA_未实现信号方法",
+      "strength": 0.5
+    },
+    "COMPOSITE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "COMPOSITE_未实现信号方法",
+      "strength": 0.5
+    },
+    "SYNERGY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "SYNERGY_未实现信号方法",
+      "strength": 0.5
+    },
+    "UNIFIED_MA": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "UNIFIED_MA_未实现信号方法",
+      "strength": 0.5
+    },
+    "MACD_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "MACD_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "RSI_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "RSI_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "BOLL_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "BOLL_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "KDJ_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "KDJ_SCORE_未实现信号方法",
+      "strength": 0.5
+    },
+    "VOLUME_SCORE": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "VOLUME_SCORE_未实现信号方法",
+      "strength": 0.5
+    }
+  },
+  "buy_signal": {
+    "signal": "HOLD",
+    "strength": 0.0078125,
+    "buy_signals_count": 1,
+    "total_signals_count": 128,
+    "signal_details": [
+      "DMA: BUY"
+    ],
+    "confidence": 0.78125
+  },
+  "analysis_time": "2025-09-15 00:33:27",
+  "data_points": 200
+}

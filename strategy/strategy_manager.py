@@ -193,7 +193,66 @@ class StrategyManager:
             strategy_dict[strategy['id']] = strategy
         
         return list(strategy_dict.values())
-    
+
+    @exception_handler(reraise=False, default_return={})
+    @performance_monitor(threshold=1.0)
+    def get_available_strategies(self) -> Dict[str, Any]:
+        """
+        获取可用策略列表
+
+        Returns:
+            Dict[str, Any]: 可用策略字典，键为策略ID，值为策略信息
+        """
+        try:
+            # 获取所有策略
+            strategies = self.list_strategies()
+
+            # 转换为字典格式
+            available_strategies = {}
+            for strategy in strategies:
+                strategy_id = strategy.get('id', strategy.get('strategy', {}).get('id'))
+                if strategy_id:
+                    available_strategies[strategy_id] = {
+                        'name': strategy.get('name', strategy.get('strategy', {}).get('name', strategy_id)),
+                        'description': strategy.get('description', strategy.get('strategy', {}).get('description', '')),
+                        'type': strategy.get('type', strategy.get('strategy', {}).get('type', 'unknown')),
+                        'is_active': strategy.get('is_active', strategy.get('strategy', {}).get('is_active', True))
+                    }
+
+            # 添加内置策略
+            builtin_strategies = self._get_builtin_strategies()
+            available_strategies.update(builtin_strategies)
+
+            logger.info(f"获取到 {len(available_strategies)} 个可用策略")
+            return available_strategies
+
+        except Exception as e:
+            logger.error(f"获取可用策略失败: {e}")
+            return {}
+
+    def _get_builtin_strategies(self) -> Dict[str, Any]:
+        """获取内置策略"""
+        return {
+            'KDJ_UPWARD': {
+                'name': 'KDJ上升策略',
+                'description': 'KDJ指标K、D、J三线均上升的选股策略',
+                'type': 'technical_indicator',
+                'is_active': True
+            },
+            'MACD_GOLDEN_CROSS': {
+                'name': 'MACD金叉策略',
+                'description': 'MACD指标金叉信号选股策略',
+                'type': 'technical_indicator',
+                'is_active': True
+            },
+            'BREAKOUT': {
+                'name': '突破策略',
+                'description': '价格突破关键阻力位的选股策略',
+                'type': 'price_action',
+                'is_active': True
+            }
+        }
+
     @exception_handler(reraise=False, default_return=False)
     @performance_monitor(threshold=1.0)
     def delete_strategy(self, strategy_id: str) -> bool:

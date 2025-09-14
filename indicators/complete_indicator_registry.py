@@ -112,7 +112,7 @@ class CompleteIndicatorRegistry:
             'STOCHRSI': 'indicators.stochrsi.STOCHRSI',
             'STOCH': 'indicators.stochrsi.STOCHRSI',  # 别名
             'ENHANCED_RSI': 'indicators.enhanced_rsi.EnhancedRSI',
-            'ENHANCED_KDJ': 'indicators.oscillator.enhanced_kdj.EnhancedKDJ',
+            'ENHANCED_KDJ': 'indicators.oscillator.enhanced_kdj.EnhancedKdj',
             'ENHANCED_WR': 'indicators.enhanced_wr.EnhancedWR',
             'MOMENTUM': 'indicators.momentum.MOMENTUM',
             'ROC': 'indicators.roc.RateOfChange',
@@ -343,12 +343,28 @@ class CompleteIndicatorRegistry:
                 module_path, class_name = indicator_path.rsplit('.', 1)
                 module = importlib.import_module(module_path)
                 indicator_class = getattr(module, class_name)
-                return indicator_class()
+
+                # 尝试不同的实例化方式
+                try:
+                    # 首先尝试无参数实例化
+                    return indicator_class()
+                except Exception as e1:
+                    try:
+                        # 尝试使用默认参数实例化
+                        return indicator_class(period=20)
+                    except Exception as e2:
+                        try:
+                            # 尝试使用更多默认参数
+                            return indicator_class(n=9, m1=3, m2=3)
+                        except Exception as e3:
+                            # 如果都失败，尝试创建真实指标
+                            return self._create_real_indicator(name)
 
             return indicator_path
         except Exception as e:
             logger.warning(f"创建指标 {name} 实例失败: {e}")
-            return None
+            # 尝试创建真实指标作为后备
+            return self._create_real_indicator(name)
     
     def create_indicator(self, name: str, **kwargs):
         """
@@ -385,8 +401,15 @@ class CompleteIndicatorRegistry:
     
     def _create_real_indicator(self, name: str, **kwargs):
         """创建真实指标实现"""
-        from indicators.real_technical_indicators import real_indicator_factory
-        return real_indicator_factory.create_indicator(name, **kwargs)
+        try:
+            from indicators.real_technical_indicators import real_indicator_factory
+            return real_indicator_factory.create_indicator(name, **kwargs)
+        except ImportError as e:
+            logger.warning(f"无法导入真实指标工厂: {e}")
+            return None
+        except Exception as e:
+            logger.warning(f"创建真实指标 {name} 失败: {e}")
+            return None
     
     @property
     def indicators(self) -> Dict[str, Any]:

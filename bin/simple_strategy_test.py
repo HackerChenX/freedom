@@ -1,235 +1,112 @@
 #!/usr/bin/env python3
 """
-简化的策略测试脚本
+⚠️ 此文件已废弃 ⚠️
 
-测试通用时间周期转换和ZXM策略选股
+原文件: bin/simple_strategy_test.py
+文件类型: strategy_execution
+废弃日期: 2025-09-14 16:28:42
+
+此入口已被废弃，请使用新的统一入口：
+
+from bin.unified_analysis_controller import unified_controller
+
+# 买点分析
+result = unified_controller.analyze_buypoint(stock_code, buypoint_date)
+
+# 策略选股  
+result = unified_controller.execute_stock_selection(strategy_config)
+
+# 技术指标
+result = unified_controller.get_technical_indicators(stock_code, date, indicators)
+
+详细文档: docs/optimization/basic_usability_architecture_plan.md
 """
 
+import warnings
 import sys
 import os
-import pandas as pd
-from datetime import datetime
+from typing import Dict, Any, List, Optional
 
 # 添加项目根目录到路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, root_dir)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-def test_database_connection():
-    """测试数据库连接"""
-    try:
-        from clickhouse_driver import Client
-        client = Client(host='localhost', port=9000, database='stock', user='default', password='123456')
-        result = client.execute('SELECT count(*) as total_records, count(DISTINCT code) as total_stocks FROM stock_info')
-        print(f"✅ 数据库连接正常: 总记录数: {result[0][0]:,}, 总股票数: {result[0][1]:,}")
-        return client
-    except Exception as e:
-        print(f"❌ 数据库连接失败: {e}")
-        return None
+def deprecated_entry_warning():
+    """废弃入口警告"""
+    warnings.warn(
+        f"此入口文件已废弃: /Users/hacker/PycharmProjects/freedom/bin/entry_deprecation_manager.py\n"
+        f"请使用统一入口: bin.unified_analysis_controller\n"
+        f"详情请查看文档: docs/optimization/basic_usability_architecture_plan.md",
+        DeprecationWarning,
+        stacklevel=2
+    )
 
-def test_time_period_conversion(client):
-    """测试时间周期转换逻辑"""
-    print("\n🔄 测试时间周期转换逻辑...")
+def redirect_to_unified_controller(*args, **kwargs):
+    """重定向到统一控制器"""
+    deprecated_entry_warning()
     
     try:
-        # 测试15分钟数据查询
-        query_15min = """
-        SELECT code, date, open, high, low, close, volume 
-        FROM stock_info 
-        WHERE code = '000001' 
-        AND level = '15分钟' 
-        AND date >= '2025-05-20' AND date <= '2025-05-23'
-        ORDER BY date ASC
-        LIMIT 20
-        """
-        
-        result = client.execute(query_15min, with_column_types=True)
-        if result and result[0]:
-            data, columns = result
-            column_names = [col[0] for col in columns]
-            df_15min = pd.DataFrame(data, columns=column_names)
-            print(f"  📊 15分钟数据查询结果: {len(df_15min)} 条记录")
-            
-            if len(df_15min) >= 4:
-                # 模拟60分钟转换逻辑（每4个15分钟合并为1个60分钟）
-                print("  🔧 执行15分钟→60分钟转换...")
-                df_60min = convert_15min_to_60min(df_15min)
-                print(f"  ✅ 转换完成: {len(df_60min)} 个60分钟K线")
-                return True
-            else:
-                print("  ⚠️  15分钟数据不足，无法进行转换测试")
+        from bin.unified_analysis_controller import unified_controller
+    except ImportError as e:
+        print(f"❌ 无法导入统一控制器: {e}")
+        print("请确保 bin/unified_analysis_controller.py 文件存在")
+        return {'success': False, 'error': '统一控制器不可用'}
+    
+    # 根据文件类型判断重定向目标
+    file_type = "strategy_execution"
+    
+    if file_type == "buypoint_analysis":
+        if len(args) >= 2:
+            return unified_controller.analyze_buypoint(args[0], args[1], kwargs.get('analysis_config'))
         else:
-            print("  ❌ 没有找到15分钟数据")
-            
-    except Exception as e:
-        print(f"  ❌ 时间周期转换测试失败: {e}")
+            print("❌ 买点分析需要 stock_code 和 buypoint_date 参数")
+            print("使用方法: python {__file__} <stock_code> <buypoint_date>")
+            return {'success': False, 'error': '参数不足'}
     
-    return False
-
-def convert_15min_to_60min(df_15min):
-    """将15分钟数据转换为60分钟数据"""
-    if df_15min.empty:
-        return pd.DataFrame()
+    elif file_type == "stock_selection":
+        if len(args) >= 1 and isinstance(args[0], dict):
+            return unified_controller.execute_stock_selection(args[0], kwargs.get('selection_params'))
+        else:
+            print("❌ 策略选股需要 strategy_config 参数")
+            print("使用方法: 请参考统一入口文档")
+            return {'success': False, 'error': '参数不足'}
     
-    # 确保date列是datetime类型
-    df_15min['date'] = pd.to_datetime(df_15min['date'])
+    elif file_type == "strategy_execution":
+        # 策略执行重定向到选股
+        strategy_config = {'name': kwargs.get('strategy_name', 'unknown')}
+        return unified_controller.execute_stock_selection(strategy_config, kwargs)
     
-    # 按小时分组
-    df_15min['hour'] = df_15min['date'].dt.floor('H')
-    
-    # 按小时聚合
-    df_60min = df_15min.groupby(['code', 'hour']).agg({
-        'open': 'first',   # 开盘价取第一个
-        'high': 'max',     # 最高价取最大
-        'low': 'min',      # 最低价取最小  
-        'close': 'last',   # 收盘价取最后一个
-        'volume': 'sum'    # 成交量求和
-    }).reset_index()
-    
-    # 重命名列
-    df_60min = df_60min.rename(columns={'hour': 'date'})
-    
-    return df_60min
-
-def test_zxm_strategy_config():
-    """测试ZXM策略配置"""
-    print("\n📋 测试ZXM策略配置...")
-    
-    strategy_file = "config/strategies/zxm_60min_absorb_20250512.yaml"
-    
-    if os.path.exists(strategy_file):
-        try:
-            import yaml
-            with open(strategy_file, 'r', encoding='utf-8') as f:
-                strategy_config = yaml.safe_load(f)
-            
-            print(f"  ✅ 策略配置文件加载成功:")
-            print(f"    - 策略ID: {strategy_config['strategy']['id']}")
-            print(f"    - 策略名称: {strategy_config['strategy']['name']}")
-            print(f"    - 条件数量: {len(strategy_config['strategy']['conditions'])}")
-            
-            # 验证条件配置
-            condition = strategy_config['strategy']['conditions'][0]
-            print(f"    - 指标ID: {condition['indicator_id']}")
-            print(f"    - 时间周期: {condition['period']}")
-            print(f"    - 信号类型: {condition['signal_type']}")
-            
-            return True
-            
-        except Exception as e:
-            print(f"  ❌ 策略配置解析失败: {e}")
     else:
-        print(f"  ❌ 策略配置文件不存在: {strategy_file}")
-    
-    return False
+        print("❌ 无法确定重定向目标，请直接使用统一入口")
+        print("统一入口: bin/unified_analysis_controller.py")
+        return {'success': False, 'error': '无法确定重定向目标'}
 
-def simulate_zxm_stock_selection(client):
-    """模拟ZXM策略选股"""
-    print("\n🎯 模拟ZXM策略选股...")
-    
-    try:
-        # 获取少量股票进行测试
-        query_stocks = """
-        SELECT DISTINCT code, name 
-        FROM stock_info 
-        WHERE level = '日线' 
-        AND date >= '2025-05-01'
-        LIMIT 10
-        """
-        
-        result = client.execute(query_stocks, with_column_types=True)
-        if result and result[0]:
-            data, columns = result
-            column_names = [col[0] for col in columns]
-            df_stocks = pd.DataFrame(data, columns=column_names)
-            
-            print(f"  📊 测试股票池: {len(df_stocks)} 只股票")
-            
-            selected_stocks = []
-            for _, stock in df_stocks.iterrows():
-                # 模拟ZXM吸筹信号检测
-                if simulate_zxm_signal(client, stock['code']):
-                    selected_stocks.append({
-                        'code': stock['code'],
-                        'name': stock['name'],
-                        'signal': 'ZXM_60min_absorb',
-                        'date': '2025-05-12'
-                    })
-            
-            print(f"  ✅ 选股完成: 发现 {len(selected_stocks)} 只符合条件的股票")
-            
-            if selected_stocks:
-                print("  📈 选中股票:")
-                for stock in selected_stocks:
-                    print(f"    - {stock['code']} {stock['name']}")
-            
-            return len(selected_stocks) > 0
-            
-    except Exception as e:
-        print(f"  ❌ 模拟选股失败: {e}")
-    
-    return False
-
-def simulate_zxm_signal(client, code):
-    """模拟ZXM信号检测"""
-    try:
-        # 查询该股票的基本数据
-        query = f"""
-        SELECT date, close, volume 
-        FROM stock_info 
-        WHERE code = '{code}' 
-        AND level = '日线' 
-        AND date >= '2025-05-01' AND date <= '2025-05-15'
-        ORDER BY date ASC
-        LIMIT 10
-        """
-        
-        result = client.execute(query)
-        if result and len(result) >= 5:
-            # 简单模拟：如果成交量在增加且价格相对稳定，认为是吸筹信号
-            volumes = [row[2] for row in result[-5:]]  # 最后5天的成交量
-            if len(volumes) >= 2 and volumes[-1] > volumes[0] * 1.2:  # 成交量增加20%以上
-                return True
-                
-    except Exception as e:
-        print(f"    ⚠️  {code} 信号检测失败: {e}")
-    
-    return False
-
-def main():
-    """主函数"""
-    print("🚀 简化策略测试系统启动")
-    print("=" * 50)
-    
-    # 1. 测试数据库连接
-    client = test_database_connection()
-    if not client:
-        print("❌ 无法继续测试，请检查数据库连接")
-        return
-    
-    # 2. 测试时间周期转换
-    time_conversion_ok = test_time_period_conversion(client)
-    
-    # 3. 测试策略配置
-    config_ok = test_zxm_strategy_config()
-    
-    # 4. 模拟策略选股
-    selection_ok = simulate_zxm_stock_selection(client)
-    
-    # 总结
-    print("\n" + "=" * 50)
-    print("📊 测试总结:")
-    print(f"  数据库连接: {'✅' if client else '❌'}")
-    print(f"  时间转换: {'✅' if time_conversion_ok else '❌'}")
-    print(f"  策略配置: {'✅' if config_ok else '❌'}")
-    print(f"  模拟选股: {'✅' if selection_ok else '❌'}")
-    
-    if client and time_conversion_ok and config_ok:
-        print("\n🎉 核心架构实现验证成功!")
-        print("✅ 时间周期转换逻辑已下沉到数据查询层")
-        print("✅ ZXM策略配置文件已创建")
-        print("✅ 通用策略选股架构已实现")
-    else:
-        print("\n⚠️  部分功能需要进一步完善")
+# 为向后兼容提供的函数别名
+main = redirect_to_unified_controller
+analyze = redirect_to_unified_controller
+execute = redirect_to_unified_controller
+run = redirect_to_unified_controller
+select = redirect_to_unified_controller
+detect = redirect_to_unified_controller
 
 if __name__ == "__main__":
-    main() 
+    deprecated_entry_warning()
+    
+    print(f"⚠️  此文件已废弃: entry_deprecation_manager.py")
+    print(f"📁 原文件类型: strategy_execution")
+    print(f"🔄 请使用统一入口: bin/unified_analysis_controller.py")
+    print()
+    print("📖 使用示例:")
+    print("   python bin/unified_analysis_controller.py buypoint --stock 000001 --date 2024-01-15")
+    print("   python bin/unified_analysis_controller.py selection --strategy momentum")
+    print("   python bin/unified_analysis_controller.py indicators --stock 000001 --date 2024-01-15 --indicators RSI,MACD")
+    print()
+    print("📚 详细文档: docs/optimization/basic_usability_architecture_plan.md")
+    
+    # 尝试自动重定向
+    if len(sys.argv) > 1:
+        print("🔄 尝试自动重定向...")
+        result = redirect_to_unified_controller(*sys.argv[1:])
+        if result.get('success'):
+            print("✅ 重定向成功")
+        else:
+            print(f"❌ 重定向失败: {result.get('error')}")

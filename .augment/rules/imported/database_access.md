@@ -1,5 +1,6 @@
 ---
-type: "always_apply"
+type: "agent_requested"
+description: "Example description"
 ---
 
 # 数据库访问规范（ClickHouse专用）

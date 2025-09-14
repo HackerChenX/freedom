@@ -1,0 +1,64 @@
+{
+  "stock_code": "300005",
+  "stock_name": "探路者",
+  "analysis_date": "2025-05-09",
+  "analysis_type": "comprehensive",
+  "status": "SUCCESS",
+  "indicators": {
+    "MA": {
+      "signal": "SELL",
+      "value": -1.0,
+      "pattern": "MA_Ma_信号",
+      "strength": 0.7
+    },
+    "EMA": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "EMA_信号",
+      "strength": 0.5
+    },
+    "MACD": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "RSI": {
+      "signal": "ERROR",
+      "value": null,
+      "pattern": "",
+      "strength": 0.0
+    },
+    "BOLL": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "BOLL_信号",
+      "strength": 0.5
+    },
+    "PSY": {
+      "signal": "NOT_IMPLEMENTED",
+      "value": null,
+      "pattern": "PSY_未实现信号方法",
+      "strength": 0.5
+    },
+    "DMA": {
+      "signal": "BUY",
+      "value": 1.0,
+      "pattern": "DMA_信号",
+      "strength": 0.7
+    },
+    "DMI": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "DMI_信号",
+      "strength": 0.5
+    },
+    "ADX": {
+      "signal": "HOLD",
+      "value": "300005",
+      "pattern": "ADX_信号",
+      "strength": 0.5
+    },
+    "AROON": {
+      "signal": "HOLD",
+      "value": 

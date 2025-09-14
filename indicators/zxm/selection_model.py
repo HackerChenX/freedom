@@ -13,6 +13,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
 from utils.dependency_injection import get_logger
 from utils.decorators import log_calls, error_handling
 
@@ -25,7 +26,7 @@ from indicators.zxm.score_indicators import StockScoreCalculator
 logger = get_logger(__name__)
 
 
-class SelectionModel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class SelectionModel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM选股模型
     

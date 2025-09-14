@@ -21,7 +21,7 @@ from utils.logger import get_logger
 from utils.exception_handler import exception_handler
 from utils.performance_monitor import performance_monitor
 from utils.unified_container import get_container
-from db.enhanced_connection_pool import ClickHouseConnectionPool
+from db.enhanced_connection_pool import get_connection_pool
 from indicators.complete_indicator_registry import get_indicator_registry
 
 logger = get_logger(__name__)

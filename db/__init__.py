@@ -31,10 +31,14 @@ def register_data_services(container):
         container: 依赖注入容器
     """
     try:
-        # 注册数据访问接口
+        # 首先注册连接管理器
+        from db.enhanced_connection_pool import get_connection_pool
+        connection_pool = get_connection_pool()
+
+        # 注册数据访问接口，传入连接管理器
         container.register_singleton(
             DataAccessInterface,
-            factory=lambda: DataAccessManager()
+            factory=lambda: DataAccessManager(connection_manager=connection_pool)
         )
 
         logger.info("数据服务层服务注册完成")

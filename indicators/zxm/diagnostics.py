@@ -8,11 +8,12 @@ from typing import Dict, List, Tuple, Union, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class ZXMDiagnostics(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class ZXMDiagnostics(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM智能诊断器
     

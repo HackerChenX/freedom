@@ -708,3 +708,4 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 # 类别名，供指标注册系统使用
 OnBalanceVolumeOBV = OnBalanceVolume
 Obv = OnBalanceVolume
+OBV = OnBalanceVolume  # 添加OBV别名

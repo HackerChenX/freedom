@@ -1,0 +1,96 @@
+strategy:
+  id: "macd_golden_cross_strategy"
+  name: "MACD金叉策略"
+  description: "基于MACD指标金叉信号的选股策略，适合捕捉中短期上涨趋势"
+  version: "1.2"
+  author: "系统自动生成"
+  category: "momentum"
+  risk_level: "medium"
+  created_date: "2025-01-01"
+  updated_date: "2025-09-14"
+
+technical_indicators:
+  primary_indicators:
+    - indicator_id: "MACD"
+      parameters:
+        fast_period: 12
+        slow_period: 26
+        signal_period: 9
+      conditions:
+        - id: "macd_golden_cross"
+          field: "macd_line"
+          operator: "cross_up"
+          value: "signal_line"
+          lookback_days: 3
+          weight: 0.6
+        - id: "macd_positive"
+          field: "macd_histogram"
+          operator: ">"
+          value: 0
+          weight: 0.4
+      weight: 0.7
+    
+    - indicator_id: "VOL"
+      parameters:
+        period: 20
+      conditions:
+        - id: "volume_increase"
+          field: "volume_ratio"
+          operator: ">"
+          value: 1.2
+          weight: 1.0
+      weight: 0.3
+
+  combination_logic: "AND"
+
+time_criteria:
+  time_frames:
+    - level: "daily"
+      priority: 1
+      required: true
+    - level: "60min"
+      priority: 2
+      required: false
+  
+  date_range:
+    target_date: "2025-05-12"
+  
+  market_timing:
+    trading_session: "full_day"
+    exclude_holidays: true
+
+filters:
+  market_filters:
+    markets: ["主板", "创业板", "科创板"]
+    exclude_st: true
+  
+  financial_filters:
+    market_cap:
+      min: 10
+      max: 5000
+    price_range:
+      min: 2.0
+      max: 300.0
+    volume_filter:
+      min_avg_volume: 1000000
+      min_turnover: 0.01
+
+selection_parameters:
+  max_selections: 30
+  min_score: 0.65
+  ranking_method: "score"
+  diversification:
+    max_per_industry: 3
+    max_concentration: 0.15
+
+validation:
+  enable_closed_loop: true
+  validation_method: "indicator_consistency"
+  validation_threshold: 0.75
+  sample_size: 10
+
+performance_config:
+  enable_cache: true
+  parallel_processing: true
+  max_workers: 4
+  timeout_seconds: 180

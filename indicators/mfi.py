@@ -758,3 +758,8 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             int: 最少需要的数据周期数
         """
         return 20
+
+
+# 添加类别名供注册系统使用
+MFI = Mfi
+MoneyFlowIndex = Mfi

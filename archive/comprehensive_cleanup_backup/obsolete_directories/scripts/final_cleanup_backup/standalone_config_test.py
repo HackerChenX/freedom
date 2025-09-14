@@ -69,9 +69,9 @@ def test_environment_variables():
     
     try:
         # 设置测试环境变量
-        os.environ['CLICKHOUSE_HOST'] = 'env-test-host'
+        os.environ['CLICKHOUSE_HOST'] = 'localhost'
         os.environ['CLICKHOUSE_PORT'] = '9001'
-        os.environ['CLICKHOUSE_PASSWORD'] = 'env-test-password'
+        os.environ['CLICKHOUSE_PASSWORD'] = '123456'
         
         # 加载配置管理器
         config_module = load_config_manager()

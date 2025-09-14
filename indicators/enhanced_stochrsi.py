@@ -647,3 +647,4 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
 
 # 为了向后兼容，创建别名
 enhanced_stochastic_rsi = EnhancedStochasticRSI
+ENHANCED_STOCHRSI = EnhancedStochasticRSI

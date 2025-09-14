@@ -17,6 +17,27 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     自动生成的标准化实现
     """
     
+    
+    def calculate_volume_score(self, data: pd.DataFrame) -> float:
+        """计算成交量评分"""
+        try:
+            if 'volume' not in data.columns:
+                return 0.0
+            
+            volume = data['volume'].fillna(0)
+            if len(volume) < 2:
+                return 0.0
+            
+            # 计算成交量变化率
+            volume_change = volume.pct_change().fillna(0)
+            
+            # 计算评分
+            score = volume_change.mean() * 100
+            return max(0, min(100, score))
+            
+        except Exception as e:
+            return 0.0
+
     def __init__(self, **kwargs):
         """
         初始化VOLUME_SCORE指标
@@ -184,3 +205,55 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def minimum_periods(self) -> int:
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
         return getattr(self, '_minimum_periods', 14)
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算成交量评分
+        
+        Args:
+            data: 股票数据
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        try:
+            result_df = pd.DataFrame(index=data.index)
+            
+            # 计算成交量评分
+            volume_score = self.calculate_volume_score(data)
+            result_df['volume_score'] = volume_score
+            
+            # 计算成交量强度
+            volume_strength = self.calculate_volume_strength(data)
+            result_df['volume_strength'] = volume_strength
+            
+            return result_df
+            
+        except Exception as e:
+            logger.error(f"成交量评分计算失败: {e}")
+            return pd.DataFrame(index=data.index)
+
+    def calculate_volume_strength(self, data: pd.DataFrame) -> float:
+        """计算成交量强度"""
+        try:
+            if 'volume' not in data.columns:
+                return 0.0
+            
+            volume = data['volume'].fillna(0)
+            if len(volume) < 2:
+                return 0.0
+            
+            # 计算成交量强度
+            volume_ma = volume.rolling(window=min(20, len(volume))).mean()
+            current_volume = volume.iloc[-1] if len(volume) > 0 else 0
+            avg_volume = volume_ma.iloc[-1] if len(volume_ma) > 0 else 0
+            
+            if avg_volume > 0:
+                strength = (current_volume / avg_volume) * 100
+                return max(0, min(200, strength))  # 限制在0-200范围内
+            
+            return 0.0
+            
+        except Exception as e:
+            return 0.0
+

@@ -454,6 +454,19 @@ class GannTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return pd.DataFrame({'patterns': [patterns]}, index=[data.index[-1]] if len(data) > 0 else [])
 
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        标准计算方法，调用GANN工具计算
+
+        Args:
+            data: 股票数据
+            **kwargs: 其他参数
+
+        Returns:
+            pd.DataFrame: 计算结果
+        """
+        return self.calculate_Tools_Gann_Tools(data, **kwargs)
+
 
 # 为了向后兼容，创建别名
 gann_tools = GannTools

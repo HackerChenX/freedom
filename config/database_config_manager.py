@@ -32,11 +32,11 @@ class DatabaseConfigManager:
     
     # 默认配置
     DEFAULT_CONFIG = {
-        'host': get_config('database.host'),
-        'port': get_config('database.port'),
-        'database': get_config('database.name'),
-        'user': get_config('database.user'),
-        'password': get_config('database.password'),
+        'host': get_config('db.host', 'localhost'),
+        'port': get_config('db.port', 9000),
+        'database': get_config('db.database', 'stock'),
+        'user': get_config('db.user', 'default'),
+        'password': get_config('db.password', '123456'),
         'timeout': 30,
         'compression': True,
         'pool': {

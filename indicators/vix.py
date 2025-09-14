@@ -882,3 +882,8 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         period = getattr(self, 'period', 10)
         smooth_period = getattr(self, 'smooth_period', 5)
         return max(period, smooth_period) + 10
+
+
+# 添加类别名供注册系统使用
+VIX = Vix
+VolatilityIndex = Vix

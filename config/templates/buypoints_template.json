@@ -1,0 +1,187 @@
+{
+  "analysis": {
+    "name": "买点分析配置模板",
+    "description": "标准化的买点分析配置模板，包含所有必要的配置项",
+    "version": "2.0.0",
+    "author": "system",
+    "create_time": "2025-09-14T18:30:00",
+    "update_time": "2025-09-14T18:30:00",
+    
+    "indicators": [
+      {
+        "id": "RSI",
+        "name": "相对强弱指标",
+        "weight": 0.2,
+        "parameters": {
+          "period": 14,
+          "overbought": 70,
+          "oversold": 30
+        },
+        "signals": {
+          "buy": "rsi < 30",
+          "sell": "rsi > 70"
+        }
+      },
+      {
+        "id": "MACD",
+        "name": "指数平滑移动平均线",
+        "weight": 0.25,
+        "parameters": {
+          "fast_period": 12,
+          "slow_period": 26,
+          "signal_period": 9
+        },
+        "signals": {
+          "buy": "macd_line > signal_line and macd_histogram > 0",
+          "sell": "macd_line < signal_line and macd_histogram < 0"
+        }
+      },
+      {
+        "id": "KDJ",
+        "name": "随机指标",
+        "weight": 0.2,
+        "parameters": {
+          "n": 9,
+          "m1": 3,
+          "m2": 3
+        },
+        "signals": {
+          "buy": "k < 20 and d < 20 and k > d",
+          "sell": "k > 80 and d > 80 and k < d"
+        }
+      },
+      {
+        "id": "BOLL",
+        "name": "布林带",
+        "weight": 0.15,
+        "parameters": {
+          "period": 20,
+          "std_dev": 2.0
+        },
+        "signals": {
+          "buy": "close < lower_band",
+          "sell": "close > upper_band"
+        }
+      },
+      {
+        "id": "MA",
+        "name": "移动平均线",
+        "weight": 0.2,
+        "parameters": {
+          "short_period": 5,
+          "long_period": 20
+        },
+        "signals": {
+          "buy": "ma_short > ma_long and close > ma_short",
+          "sell": "ma_short < ma_long and close < ma_short"
+        }
+      }
+    ],
+    
+    "weights": {
+      "technical_score": 0.4,
+      "volume_score": 0.2,
+      "momentum_score": 0.2,
+      "trend_score": 0.2
+    },
+    
+    "thresholds": {
+      "buy_threshold": 70,
+      "sell_threshold": 30,
+      "strong_buy_threshold": 85,
+      "strong_sell_threshold": 15
+    },
+    
+    "parameters": {
+      "analysis_period": "DAILY",
+      "lookback_days": 30,
+      "min_data_points": 20,
+      "confidence_level": 0.8,
+      
+      "filters": {
+        "min_price": 3.0,
+        "max_price": 200.0,
+        "min_market_cap": 10,
+        "max_market_cap": 5000,
+        "min_volume": 1000000
+      },
+      
+      "scoring": {
+        "method": "weighted_average",
+        "normalization": "min_max",
+        "outlier_handling": "clip"
+      },
+      
+      "output": {
+        "max_results": 100,
+        "sort_by": "total_score",
+        "sort_order": "desc",
+        "include_details": true
+      }
+    }
+  },
+  
+  "timeframes": {
+    "primary": "DAILY",
+    "secondary": ["30MIN", "60MIN"],
+    "analysis_window": {
+      "short_term": 5,
+      "medium_term": 20,
+      "long_term": 60
+    }
+  },
+  
+  "risk_management": {
+    "max_risk_per_trade": 0.02,
+    "max_portfolio_risk": 0.1,
+    "stop_loss_percentage": 0.05,
+    "take_profit_percentage": 0.15,
+    "position_sizing": "fixed_percentage"
+  },
+  
+  "market_conditions": {
+    "bull_market_adjustments": {
+      "buy_threshold_adjustment": -5,
+      "weight_adjustments": {
+        "momentum_score": 0.1
+      }
+    },
+    "bear_market_adjustments": {
+      "buy_threshold_adjustment": 10,
+      "weight_adjustments": {
+        "technical_score": 0.1
+      }
+    },
+    "sideways_market_adjustments": {
+      "buy_threshold_adjustment": 0,
+      "weight_adjustments": {}
+    }
+  },
+  
+  "validation": {
+    "schema_version": "2.0",
+    "required_fields": [
+      "analysis.indicators",
+      "analysis.weights",
+      "analysis.thresholds"
+    ],
+    "data_quality_checks": {
+      "min_indicators": 3,
+      "weight_sum_tolerance": 0.01,
+      "threshold_range_check": true
+    }
+  },
+  
+  "performance_monitoring": {
+    "enabled": true,
+    "metrics": [
+      "accuracy",
+      "precision",
+      "recall",
+      "f1_score",
+      "sharpe_ratio"
+    ],
+    "benchmark": "market_index",
+    "reporting_frequency": "weekly"
+  }
+}

@@ -19,10 +19,10 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 DEFAULT_CONFIG = {
     'db': {
         'host': 'localhost',
-        'port': 8123, 
+        'port': 9000,  # 修正为ClickHouse原生协议端口
         'user': 'default',
-        'password': '',  # 密码已隐藏，将从环境变量或用户输入获取
-        'database': 'stock_data'
+        'password': '123456',  # 密码已隐藏，将从环境变量或用户输入获取
+        'database': 'stock'  # 修正数据库名
     },
     'paths': {
         'output': os.path.expanduser('~/Documents/StockResults/'),

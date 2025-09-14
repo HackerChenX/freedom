@@ -32,10 +32,18 @@ class MemoryCache:
     重构为普通类，支持依赖注入
     """
     
-    def __init__(self):
-        """初始化缓存"""
+    def __init__(self, max_size: int = 1000, default_ttl: Optional[float] = None):
+        """
+        初始化缓存
+
+        Args:
+            max_size: 最大缓存条目数
+            default_ttl: 默认TTL（秒）
+        """
         self._cache: Dict[str, Tuple[Any, float, Optional[float]]] = {}  # (value, timestamp, ttl)
         self._lock = threading.Lock()
+        self.max_size = max_size
+        self.default_ttl = default_ttl
     
     def get(self, key: str, default: Any = None) -> Any:
         """
@@ -61,13 +69,23 @@ class MemoryCache:
     def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
         """
         设置缓存值
-        
+
         Args:
             key: 缓存键
             value: 缓存值
             ttl: 过期时间（秒），None表示永不过期
         """
         with self._lock:
+            # 使用默认TTL如果未指定
+            if ttl is None:
+                ttl = self.default_ttl
+
+            # 检查缓存大小限制
+            if len(self._cache) >= self.max_size and key not in self._cache:
+                # 删除最旧的条目
+                oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k][1])
+                del self._cache[oldest_key]
+
             self._cache[key] = (value, time.time(), ttl)
     
     def delete(self, key: str) -> bool:

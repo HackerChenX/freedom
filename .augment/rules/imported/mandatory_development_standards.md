@@ -1,5 +1,6 @@
 ---
 type: "always_apply"
+description: "Example description"
 ---
 
 # 强制开发标准（基于88指标系统集成项目）

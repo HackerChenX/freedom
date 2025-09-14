@@ -14,7 +14,7 @@ from datetime import datetime
 
 from utils.logger import getLogger
 from utils.cache import get_memory_cache
-from analysis.engines.unified_indicator_engine import Unified_indicator_engine
+from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
 
 logger = getLogger(__name__)
 
@@ -31,14 +31,14 @@ class SharedConditionEvaluator:
     5. 复合逻辑表达式
     """
     
-    def __init___116(self, indicator_engine: Optional[Unified_indicator_engine] = None):
+    def __init___116(self, indicator_engine: Optional[UnifiedIndicatorEngine] = None):
         """
         初始化共享条件评估器
-        
+
         Args:
             indicator_engine: 统一指标计算引擎实例
         """
-        self.indicator_engine = indicator_engine or Unified_indicator_engine()
+        self.indicator_engine = indicator_engine or UnifiedIndicatorEngine()
         self.cache = get_memory_cache()
         
         # 性能统计

@@ -1,0 +1,48 @@
+selection_parameters:
+  max_selections: 50
+  min_score: 0.3
+  ranking_method: composite_score
+strategy:
+  category: auto_generated
+  description: 基于300005买点分析自动生成的策略
+  id: auto_generated_300005_strategy
+  name: 自动生成-300005策略
+  target_date: '20250509'
+  target_stock: '300005'
+  version: '1.0'
+technical_indicators:
+  combination_logic: OR
+  primary_indicators:
+  - conditions:
+    - field: k_value
+      operator: '>'
+      value: d_value
+      weight: 0.6
+    - field: k_value
+      operator: '>'
+      value: 15
+      weight: 0.4
+    indicator_id: KDJ
+    parameters:
+      d_period: 3
+      j_multiplier: 3
+      k_period: 9
+    weight: 0.3
+  - conditions:
+    - field: rsi_value
+      operator: <
+      value: 70
+      weight: 1.0
+    indicator_id: RSI
+    parameters:
+      period: 14
+    weight: 0.25
+  - conditions:
+    - field: trend_strength
+      operator: '>'
+      value: 0.6
+      weight: 1.0
+    indicator_id: TREND
+    parameters:
+      trend_type: multi_ma
+    weight: 0.25

@@ -112,7 +112,7 @@ class DateManager:
         """
         return datetime.datetime.now()
     
-    def get_current_date(self, format_type: date_format = Date_format.YYYY_MM_DD) -> str:
+    def get_current_date(self, format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
         """
         获取当前日期字符串
         
@@ -123,12 +123,12 @@ class DateManager:
             str: 当前日期字符串
         """
         now = self.get_current_datetime()
-        if format_type == Date_format.TIMESTAMP:
+        if format_type == DateFormat.TIMESTAMP:
             return str(int(now.timestamp()))
         return now.strftime(format_type.value)
     
     def parse_date(self, date_input: Union[str, datetime.datetime, pd.Timestamp, int, float], 
-                   input_format: Optional[Date_format] = None) -> datetime.datetime:
+                   input_format: Optional[DateFormat] = None) -> datetime.datetime:
         """
         解析日期输入为datetime对象
         
@@ -174,7 +174,7 @@ class DateManager:
         elif isinstance(date_input, str):
             # 字符串日期解析
             if input_format:
-                if input_format == Date_format.TIMESTAMP:
+                if input_format == DateFormat.TIMESTAMP:
                     result = datetime.datetime.fromtimestamp(float(date_input))
                 else:
                     result = datetime.datetime.strptime(date_input, input_format.value)
@@ -226,8 +226,8 @@ class DateManager:
         raise ValueError(f"无法解析日期字符串: {date_str}")
     
     def format_date(self, date_input: Union[str, datetime.datetime, pd.Timestamp], 
-                   output_format: date_format = Date_format.YYYY_MM_DD,
-                   input_format: Optional[Date_format] = None) -> str:
+                   output_format: DateFormat = DateFormat.YYYY_MM_DD,
+                   input_format: Optional[DateFormat] = None) -> str:
         """
         格式化日期
         
@@ -241,12 +241,12 @@ class DateManager:
         """
         dt = self.parse_date(date_input, input_format)
         
-        if output_format == Date_format.TIMESTAMP:
+        if output_format == DateFormat.TIMESTAMP:
             return str(int(dt.timestamp()))
         
         return dt.strftime(output_format.value)
     
-    def get_latest_trading_date(self, format_type: date_format = Date_format.YYYY_MM_DD) -> str:
+    def get_latest_trading_date(self, format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
         """
         获取最近的交易日期
         
@@ -346,7 +346,7 @@ class DateManager:
     
     def get_previous_trading_dates(self, base_date: Union[str, datetime.datetime], 
                                  count: int = 1,
-                                 format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
+                                 format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
         """
         获取指定日期之前的N个交易日
         
@@ -374,7 +374,7 @@ class DateManager:
     
     def get_next_trading_dates(self, base_date: Union[str, datetime.datetime], 
                               count: int = 1,
-                              format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
+                              format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
         """
         获取指定日期之后的N个交易日
         
@@ -403,7 +403,7 @@ class DateManager:
     def get_date_range(self, start_date: Union[str, datetime.datetime], 
                       end_date: Union[str, datetime.datetime],
                       trading_days_only: bool = True,
-                      format_type: date_format = Date_format.YYYY_MM_DD) -> List[str]:
+                      format_type: DateFormat = DateFormat.YYYY_MM_DD) -> List[str]:
         """
         生成日期范围列表
         
@@ -435,10 +435,10 @@ class DateManager:
         
         return date_list
     
-    def get_predefined_date_range(self, range_type: Date_range, 
+    def get_predefined_date_range(self, range_type: DateRange,
                                  base_date: Optional[Union[str, datetime.datetime]] = None,
                                  trading_days_only: bool = True,
-                                 format_type: date_format = Date_format.YYYY_MM_DD) -> Tuple[str, List[str]]:
+                                 format_type: DateFormat = DateFormat.YYYY_MM_DD) -> Tuple[str, List[str]]:
         """
         获取预定义的日期范围
         
@@ -499,7 +499,7 @@ class DateManager:
     
     def add_trading_days(self, base_date: Union[str, datetime.datetime], 
                         days: int,
-                        format_type: date_format = Date_format.YYYY_MM_DD) -> str:
+                        format_type: DateFormat = DateFormat.YYYY_MM_DD) -> str:
         """
         在基准日期上增加指定的交易日数
         
@@ -560,7 +560,7 @@ class DateManager:
     def get_time_series_dates(self, start_date: Union[str, datetime.datetime], 
                              end_date: Union[str, datetime.datetime],
                              frequency: str = 'D',
-                             trading_days_only: bool = True) -> pd.Datetime_index:
+                             trading_days_only: bool = True) -> pd.DatetimeIndex:
         """
         生成时间序列日期索引
         
@@ -571,7 +571,7 @@ class DateManager:
             trading_days_only: 是否只包含交易日
             
         Returns:
-            pd.Datetime_index: 时间序列日期索引
+            pd.DatetimeIndex: 时间序列日期索引
         """
         start_dt = self.parse_date(start_date)
         end_dt = self.parse_date(end_date)

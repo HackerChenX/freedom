@@ -1,0 +1,184 @@
+# 策略配置模板 - 标准化版本
+# 版本: v2.0
+# 创建时间: 2025-09-14
+# 用途: 提供标准化的策略配置模板
+
+strategy:
+  # 基础信息 (必填)
+  id: "TEMPLATE_STRATEGY_ID"
+  name: "策略模板"
+  description: "这是一个标准化的策略配置模板，包含所有必要的配置项"
+  version: "1.0.0"
+  author: "system"
+  create_time: "2025-09-14 18:30:00"
+  update_time: "2025-09-14 18:30:00"
+  
+  # 策略类型
+  type: "technical_analysis"  # technical_analysis, fundamental_analysis, quantitative
+  
+  # 策略条件 (必填)
+  conditions:
+    # 示例条件1: 技术指标条件
+    - type: indicator
+      indicator_id: "RSI"
+      period: "DAILY"
+      signal_type: "BUY"
+      parameter: "rsi_value"
+      operator: "<"
+      value: 30
+      description: "RSI超卖信号"
+    
+    # 逻辑连接符
+    - logic: "AND"
+    
+    # 示例条件2: 价格条件
+    - type: price
+      field: "close"
+      operator: ">"
+      value: 10.0
+      description: "收盘价大于10元"
+  
+  # 过滤条件
+  filters:
+    # 市场范围
+    market: ["主板", "创业板", "科创板"]
+    
+    # 行业过滤 (空表示不限制)
+    industry: []
+    
+    # 市值范围 (亿元)
+    market_cap:
+      min: 10
+      max: 5000
+    
+    # 价格范围 (元)
+    price:
+      min: 3.0
+      max: 200.0
+    
+    # 成交量过滤
+    volume:
+      min_avg_volume: 1000000  # 最小日均成交量
+      min_turnover_rate: 0.01  # 最小换手率
+    
+    # 财务指标过滤
+    financial:
+      min_roe: 0.05  # 最小ROE
+      max_debt_ratio: 0.7  # 最大负债率
+  
+  # 排序规则
+  sort:
+    - field: "technical_score"
+      direction: "DESC"
+    - field: "market_cap"
+      direction: "ASC"
+  
+  # 策略参数
+  parameters:
+    # 技术指标参数
+    indicators:
+      rsi:
+        period: 14
+        overbought: 70
+        oversold: 30
+      
+      macd:
+        fast_period: 12
+        slow_period: 26
+        signal_period: 9
+    
+    # 时间参数
+    time:
+      target_date: "2025-09-14"
+      lookback_days: 30
+      min_trading_days: 20
+    
+    # 风险控制参数
+    risk:
+      max_position_size: 0.1  # 最大仓位比例
+      stop_loss: 0.05  # 止损比例
+      take_profit: 0.15  # 止盈比例
+    
+    # 结果限制
+    output:
+      max_results: 100
+      min_score: 60
+      export_format: "json"
+
+# 策略元数据
+metadata:
+  # 标签
+  tags: ["技术分析", "超卖", "模板"]
+  
+  # 适用市场
+  markets: ["A股", "港股"]
+  
+  # 风险等级
+  risk_level: "medium"  # low, medium, high
+  
+  # 预期收益
+  expected_return: 0.15
+  
+  # 最大回撤
+  max_drawdown: 0.1
+  
+  # 策略频率
+  frequency: "daily"  # intraday, daily, weekly, monthly
+  
+  # 持仓周期
+  holding_period: "1-3 months"
+
+# 回测配置
+backtest:
+  # 回测时间范围
+  start_date: "2024-01-01"
+  end_date: "2024-12-31"
+  
+  # 初始资金
+  initial_capital: 1000000
+  
+  # 交易费用
+  commission: 0.0003
+  
+  # 滑点
+  slippage: 0.001
+  
+  # 基准指数
+  benchmark: "000300.SH"  # 沪深300
+
+# 监控配置
+monitoring:
+  # 是否启用监控
+  enabled: true
+  
+  # 监控频率
+  frequency: "daily"
+  
+  # 告警条件
+  alerts:
+    - condition: "performance < -0.05"
+      message: "策略表现低于预期"
+    - condition: "drawdown > 0.1"
+      message: "回撤超过阈值"
+
+# 配置验证
+validation:
+  # Schema版本
+  schema_version: "2.0"
+  
+  # 必填字段检查
+  required_fields:
+    - "strategy.id"
+    - "strategy.name"
+    - "strategy.conditions"
+  
+  # 数据类型检查
+  type_checks:
+    enabled: true
+    strict_mode: false
+  
+  # 业务逻辑检查
+  business_rules:
+    - "market_cap.min < market_cap.max"
+    - "price.min < price.max"
+    - "len(conditions) > 0"

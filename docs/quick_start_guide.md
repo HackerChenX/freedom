@@ -209,8 +209,8 @@ def health_check():
     
     # 2. 数据库连接检查
     try:
-        from db.optimized_connection_pool import ClickHouseConnectionPool
-        pool = ClickHouseConnectionPool()
+        from db.enhanced_connection_pool import get_connection_pool
+        pool = get_connection_pool()
         print("✅ 数据库连接正常")
     except Exception as e:
         print(f"❌ 数据库连接异常: {e}")

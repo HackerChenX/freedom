@@ -9,11 +9,12 @@ import logging
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
 from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
-class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAbstractMethodsMixin):
     """
     ZXM市场宽度指标
     

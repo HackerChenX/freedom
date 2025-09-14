@@ -631,12 +631,12 @@ class PerformanceStabilityOptimizer:
         start_time = time.time()
 
         try:
-            # 获取连接池
-            from db.optimized_connection_pool import get_optimized_pool
-            pool = get_optimized_pool()
+            # 获取连接池（任务5整合：使用增强连接池）
+            from db.enhanced_connection_pool import get_connection_pool
+            pool = get_connection_pool()
 
             before_metrics = {
-                "active_connections": len(pool.connection_metrics),
+                "active_connections": pool.stats.get('current_active', 0),
                 "available_connections": pool.available_connections.qsize()
             }
 
@@ -644,11 +644,12 @@ class PerformanceStabilityOptimizer:
             pool.health_check_interval = min(pool.health_check_interval, 30)
             pool.max_idle_time = min(pool.max_idle_time, 300)
 
-            # 清理空闲连接
-            pool._cleanup_idle_connections()
+            # 清理空闲连接（如果方法存在）
+            if hasattr(pool, '_cleanup_idle_connections'):
+                pool._cleanup_idle_connections()
 
             after_metrics = {
-                "active_connections": len(pool.connection_metrics),
+                "active_connections": pool.stats.get('current_active', 0),
                 "available_connections": pool.available_connections.qsize()
             }
 
@@ -781,26 +782,23 @@ class PerformanceStabilityOptimizer:
             )
 
     def _warmup_connection_pools(self):
-        """预热连接池"""
+        """预热连接池（任务5整合：使用增强连接池）"""
         try:
-            from db.optimized_connection_pool import get_optimized_pool
-            pool = get_optimized_pool()
+            from db.enhanced_connection_pool import get_connection_pool
+            pool = get_connection_pool()
 
             # 预创建一些连接
             connections = []
             for _ in range(min(3, pool.min_connections)):
                 try:
-                    conn = pool.get_connection()
-                    connections.append(conn)
+                    with pool.get_connection() as conn:
+                        # 测试连接
+                        conn.execute("SELECT 1")
+                        logger.debug("连接预热成功")
                 except Exception:
                     break
 
-            # 归还连接
-            for conn in connections:
-                try:
-                    pool.return_connection(conn)
-                except Exception:
-                    pass
+            logger.info(f"连接池预热完成，预热连接数: {min(3, pool.min_connections)}")
 
         except Exception as e:
             logger.warning(f"连接池预热失败: {e}")

@@ -1,0 +1,24 @@
+selection_parameters:
+  max_selections: 50
+  min_score: 0.3
+  ranking_method: composite_score
+strategy:
+  category: auto_generated
+  description: 基于603359买点分析自动生成的策略
+  id: auto_generated_603359_strategy
+  name: 自动生成-603359策略
+  target_date: '20250512'
+  target_stock: '603359'
+  version: '1.0'
+technical_indicators:
+  combination_logic: OR
+  primary_indicators:
+  - conditions:
+    - field: rsi_value
+      operator: <
+      value: 70
+      weight: 1.0
+    indicator_id: RSI
+    parameters:
+      period: 14
+    weight: 0.25

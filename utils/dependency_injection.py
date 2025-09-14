@@ -85,6 +85,15 @@ def get_service(service_type: type) -> Any:
     service_name = service_type.__name__
 
     if service_name not in _services:
+        # 特殊处理DataAccessInterface
+        if service_name == 'DataAccessInterface':
+            try:
+                from db.managers.data_access_manager import DataAccessManager
+                _services[service_name] = DataAccessManager()
+                return _services[service_name]
+            except Exception as e:
+                print(f"创建DataAccessManager失败: {e}")
+
         # 尝试创建服务实例
         try:
             if hasattr(service_type, '__module__'):

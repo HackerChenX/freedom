@@ -1,6 +1,10 @@
 """
-统一配置管理系统
+统一配置管理系统 - 标准化增强版
 提供分层配置、环境变量支持、配置验证和热重载功能
+支持JSON/YAML格式标准化、Schema验证、性能优化和缓存机制
+
+版本: v2.0 (任务4标准化增强)
+更新时间: 2025-09-14
 """
 
 import os
@@ -12,8 +16,87 @@ from dataclasses import dataclass, field
 from datetime import datetime
 import threading
 import logging
+from functools import lru_cache
+import time
 
-logger = logging.getLogger(__name__)
+# 可选依赖处理
+try:
+    from cachetools import TTLCache
+    CACHETOOLS_AVAILABLE = True
+except ImportError:
+    CACHETOOLS_AVAILABLE = False
+    # 简单的TTL缓存实现
+    class TTLCache:
+        def __init__(self, maxsize=100, ttl=300):
+            self.maxsize = maxsize
+            self.ttl = ttl
+            self.data = {}
+            self.timestamps = {}
+
+        def __contains__(self, key):
+            if key in self.data:
+                if time.time() - self.timestamps[key] < self.ttl:
+                    return True
+                else:
+                    del self.data[key]
+                    del self.timestamps[key]
+            return False
+
+        def __getitem__(self, key):
+            if key in self:
+                return self.data[key]
+            raise KeyError(key)
+
+        def __setitem__(self, key, value):
+            self.data[key] = value
+            self.timestamps[key] = time.time()
+            if len(self.data) > self.maxsize:
+                oldest_key = min(self.timestamps.keys(), key=lambda k: self.timestamps[k])
+                del self.data[oldest_key]
+                del self.timestamps[oldest_key]
+
+        def __len__(self):
+            return len(self.data)
+
+        def clear(self):
+            self.data.clear()
+            self.timestamps.clear()
+
+try:
+    import jsonschema
+    from jsonschema import validate, ValidationError
+    JSONSCHEMA_AVAILABLE = True
+except ImportError:
+    JSONSCHEMA_AVAILABLE = False
+    # 简单的验证实现
+    class ValidationError(Exception):
+        def __init__(self, message):
+            self.message = message
+            super().__init__(message)
+
+    def validate(instance, schema):
+        # 简单的类型检查
+        if 'type' in schema:
+            expected_type = schema['type']
+            if expected_type == 'object' and not isinstance(instance, dict):
+                raise ValidationError(f"Expected object, got {type(instance).__name__}")
+            elif expected_type == 'array' and not isinstance(instance, list):
+                raise ValidationError(f"Expected array, got {type(instance).__name__}")
+            elif expected_type == 'string' and not isinstance(instance, str):
+                raise ValidationError(f"Expected string, got {type(instance).__name__}")
+            elif expected_type == 'number' and not isinstance(instance, (int, float)):
+                raise ValidationError(f"Expected number, got {type(instance).__name__}")
+        return True
+
+# 导入项目模块
+try:
+    from utils.logger import get_logger
+    from utils.performance_monitor import performance_monitor
+    from utils.exception_handler import exception_handler
+    logger = get_logger(__name__)
+except ImportError:
+    # 兼容性处理
+    logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -81,13 +164,27 @@ class UnifiedConfigManager:
     支持多配置源、分层配置、环境变量覆盖和配置验证
     """
     
-    def __init__(self, config_dir: str = "config"):
+    def __init__(self, config_dir: str = "config", cache_ttl: int = 300):
         self.config_dir = Path(config_dir)
         self.sources: List[ConfigSource] = []
         self.merged_config: Dict[str, Any] = {}
         self.validator = ConfigValidator()
         self._lock = threading.RLock()
         self._watchers = []
+
+        # 标准化增强功能
+        self.cache = TTLCache(maxsize=100, ttl=cache_ttl)
+        self.schema_cache = TTLCache(maxsize=50, ttl=600)
+        self.supported_formats = {'.json', '.yaml', '.yml'}
+        self.standardization_enabled = True
+
+        # 性能监控
+        self.load_stats = {
+            'total_loads': 0,
+            'cache_hits': 0,
+            'validation_errors': 0,
+            'last_load_time': None
+        }
         
         # 默认配置
         self.default_config = {
@@ -463,6 +560,134 @@ def reload_config() -> bool:
     return manager.reload_config()
 
 
+# 标准化增强功能
+@performance_monitor(threshold_seconds=2.0) if 'performance_monitor' in globals() else lambda f: f
+@exception_handler(reraise=True) if 'exception_handler' in globals() else lambda f: f
+def load_standardized_config(config_path: str, schema_type: Optional[str] = None,
+                           validate_config: bool = True) -> Dict[str, Any]:
+    """
+    标准化配置加载函数
+
+    Args:
+        config_path: 配置文件路径
+        schema_type: Schema类型
+        validate_config: 是否验证配置
+
+    Returns:
+        Dict[str, Any]: 配置数据
+    """
+    manager = get_config_manager()
+
+    # 检查缓存
+    cache_key = f"std_{config_path}_{schema_type}_{validate_config}"
+    if hasattr(manager, 'cache') and cache_key in manager.cache:
+        manager.load_stats['cache_hits'] += 1
+        logger.debug(f"从缓存加载标准化配置: {config_path}")
+        return manager.cache[cache_key]
+
+    # 加载配置文件
+    full_path = manager.config_dir / config_path
+    if not full_path.exists():
+        raise FileNotFoundError(f"配置文件不存在: {full_path}")
+
+    # 根据文件扩展名加载
+    suffix = full_path.suffix.lower()
+    if suffix == '.json':
+        with open(full_path, 'r', encoding='utf-8') as f:
+            config_data = json.load(f)
+    elif suffix in {'.yaml', '.yml'}:
+        with open(full_path, 'r', encoding='utf-8') as f:
+            config_data = yaml.safe_load(f)
+    else:
+        raise ValueError(f"不支持的配置文件格式: {suffix}")
+
+    # Schema验证
+    if validate_config and schema_type:
+        _validate_standardized_config(config_data, schema_type)
+
+    # 缓存配置
+    if hasattr(manager, 'cache'):
+        manager.cache[cache_key] = config_data
+
+    # 更新统计
+    manager.load_stats['total_loads'] += 1
+    manager.load_stats['last_load_time'] = time.time()
+
+    logger.info(f"标准化配置加载成功: {config_path}")
+    return config_data
+
+
+def _validate_standardized_config(config_data: Dict[str, Any], schema_type: str):
+    """验证标准化配置"""
+    # 基础Schema定义
+    schemas = {
+        'strategy': {
+            "type": "object",
+            "properties": {
+                "strategy": {
+                    "type": "object",
+                    "properties": {
+                        "id": {"type": "string"},
+                        "name": {"type": "string"},
+                        "description": {"type": "string"},
+                        "version": {"type": "string"},
+                        "conditions": {"type": "array"},
+                        "filters": {"type": "object"},
+                        "parameters": {"type": "object"}
+                    },
+                    "required": ["id", "name", "conditions"]
+                }
+            },
+            "required": ["strategy"]
+        },
+        'buypoints': {
+            "type": "object",
+            "properties": {
+                "analysis": {
+                    "type": "object",
+                    "properties": {
+                        "indicators": {"type": "array"},
+                        "weights": {"type": "object"},
+                        "thresholds": {"type": "object"}
+                    },
+                    "required": ["indicators"]
+                }
+            },
+            "required": ["analysis"]
+        }
+    }
+
+    if schema_type in schemas:
+        try:
+            validate(instance=config_data, schema=schemas[schema_type])
+            logger.debug(f"标准化配置验证通过: {schema_type}")
+        except ValidationError as e:
+            manager = get_config_manager()
+            manager.load_stats['validation_errors'] += 1
+            logger.error(f"标准化配置验证失败: {e.message}")
+            raise
+
+
+def get_standardization_stats() -> Dict[str, Any]:
+    """获取标准化统计信息"""
+    manager = get_config_manager()
+    stats = {
+        "load_stats": getattr(manager, 'load_stats', {}),
+        "cache_stats": {},
+        "supported_formats": getattr(manager, 'supported_formats', set()),
+        "standardization_enabled": getattr(manager, 'standardization_enabled', False)
+    }
+
+    if hasattr(manager, 'cache'):
+        stats["cache_stats"] = {
+            "size": len(manager.cache),
+            "maxsize": manager.cache.maxsize,
+            "ttl": getattr(manager.cache, 'ttl', 0)
+        }
+
+    return stats
+
+
 # 导出主要类和函数
 __all__ = [
     'ConfigSource',
@@ -471,5 +696,7 @@ __all__ = [
     'get_config_manager',
     'get_config',
     'set_config',
-    'reload_config'
+    'reload_config',
+    'load_standardized_config',
+    'get_standardization_stats'
 ]

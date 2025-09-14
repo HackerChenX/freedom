@@ -1,200 +1,112 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
+#!/usr/bin/env python3
 """
-运行形态识别分析
+⚠️ 此文件已废弃 ⚠️
 
-对指定股票进行多指标形态识别分析，生成分析报告
+原文件: bin/run_pattern_analysis.py
+文件类型: general_analysis
+废弃日期: 2025-09-14 16:28:42
+
+此入口已被废弃，请使用新的统一入口：
+
+from bin.unified_analysis_controller import unified_controller
+
+# 买点分析
+result = unified_controller.analyze_buypoint(stock_code, buypoint_date)
+
+# 策略选股  
+result = unified_controller.execute_stock_selection(strategy_config)
+
+# 技术指标
+result = unified_controller.get_technical_indicators(stock_code, date, indicators)
+
+详细文档: docs/optimization/basic_usability_architecture_plan.md
 """
 
-import os
+import warnings
 import sys
-import json
-import pandas as pd
-import argparse
-from datetime import datetime, timedelta
+import os
+from typing import Dict, Any, List, Optional
 
 # 添加项目根目录到路径
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(root_dir)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from analysis.pattern_recognition_analyzer import PatternRecognitionAnalyzer
-from indicators.complete_indicator_registry import complete_registry
-from utils.dependency_injection import get_service
-from db.interfaces.data_access_interface import IDataAccess
-from utils.logger import get_logger
-from utils.path_utils import get_result_path, ensure_dir
-from enums.kline_period import KlinePeriod
-
-logger = get_logger(__name__)
-
-
-def parse_args_Analysis():
-    """解析命令行参数"""
-    parser = argparse.ArgumentParser(description="形态识别分析工具")
-    
-    parser.add_argument("--stock", "-s", required=True, help="股票代码，例如：000001.SZ")
-    parser.add_argument("--start", default=None, help="开始日期，格式：YYYY-MM-DD")
-    parser.add_argument("--end", default=None, help="结束日期，格式：YYYY-MM-DD")
-    parser.add_argument("--periods", default="DAILY,WEEKLY", help="周期列表，多个周期用逗号分隔")
-    parser.add_argument("--indicators", default="MACD,KDJ,RSI", help="指标列表，多个指标用逗号分隔")
-    parser.add_argument("--days", type=int, default=120, help="获取最近多少天的数据")
-    parser.add_argument("--output", "-o", default=None, help="输出文件路径")
-    parser.add_argument("--detail", action="store_true", help="是否输出详细信息")
-    
-    return parser.parse_args_Analysis()
-
-
-def get_stock_data_Analysis(stock_code, periods, start_date=None, end_date=None, days=120):
-    """获取股票数据"""
-    # 使用依赖注入架构
-    container = get_container()
-    data_access = get_service(DataAccessInterface)
-    
-    # 如果没有指定开始日期，则使用当前日期减去指定天数
-    if not start_date:
-        start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
-    
-    # 如果没有指定结束日期，则使用当前日期
-    if not end_date:
-        end_date = datetime.now().strftime("%Y-%m-%d")
-    
-    # 获取股票名称
-    stock_name = data_access.get_stock_name(stock_code)
-    
-    # 按周期获取数据
-    data = {}
-    
-    for period in periods:
-        try:
-            period_data = data_access.get_kline_data(
-                stock_code=stock_code,
-                start_date=start_date,
-                end_date=end_date,
-                period=period
-            )
-            
-            if period_data is not None and not period_data.empty:
-                # 确保数据按日期排序
-                period_data = period_data.sort_index()
-                data[period] = period_data
-                logger.info(f"获取到 {stock_code} {period} 周期的数据 {len(period_data)} 条")
-            else:
-                logger.warning(f"未获取到 {stock_code} {period} 周期的数据")
-        except Exception as e:
-            logger.error(f"获取 {stock_code} {period} 周期的数据时出错: {e}")
-    
-    return data, stock_name
-
-
-def main_24():
-    """主函数"""
-    args = parse_args_Analysis()
-    
-    # 解析参数
-    stock_code = args.stock
-    start_date = args.start
-    end_date = args.end
-    days = args.days
-    
-    # 解析周期列表
-    periods = [p.strip() for p in args.periods.split(",")]
-    
-    # 解析指标列表
-    indicators = [i.strip() for i in args.indicators.split(",")]
-    
-    logger.info(f"开始分析股票 {stock_code}")
-    logger.info(f"分析周期: {periods}")
-    logger.info(f"分析指标: {indicators}")
-    
-    # 获取股票数据
-    stock_data, stock_name = get_stock_data_Analysis(
-        stock_code=stock_code,
-        periods=periods,
-        start_date=start_date,
-        end_date=end_date,
-        days=days
+def deprecated_entry_warning():
+    """废弃入口警告"""
+    warnings.warn(
+        f"此入口文件已废弃: /Users/hacker/PycharmProjects/freedom/bin/entry_deprecation_manager.py\n"
+        f"请使用统一入口: bin.unified_analysis_controller\n"
+        f"详情请查看文档: docs/optimization/basic_usability_architecture_plan.md",
+        DeprecationWarning,
+        stacklevel=2
     )
+
+def redirect_to_unified_controller(*args, **kwargs):
+    """重定向到统一控制器"""
+    deprecated_entry_warning()
     
-    if not stock_data:
-        logger.error(f"未获取到 {stock_code} 的数据，退出分析")
-        sys.exit(1)
+    try:
+        from bin.unified_analysis_controller import unified_controller
+    except ImportError as e:
+        print(f"❌ 无法导入统一控制器: {e}")
+        print("请确保 bin/unified_analysis_controller.py 文件存在")
+        return {'success': False, 'error': '统一控制器不可用'}
     
-    # 创建形态识别分析器
-    analyzer = PatternRecognitionAnalyzer(indicators=indicators, periods=periods)
+    # 根据文件类型判断重定向目标
+    file_type = "general_analysis"
     
-    # 运行分析
-    results = analyzer.analyze(
-        data=stock_data,
-        stock_code=stock_code,
-        stock_name=stock_name
-    )
+    if file_type == "buypoint_analysis":
+        if len(args) >= 2:
+            return unified_controller.analyze_buypoint(args[0], args[1], kwargs.get('analysis_config'))
+        else:
+            print("❌ 买点分析需要 stock_code 和 buypoint_date 参数")
+            print("使用方法: python {__file__} <stock_code> <buypoint_date>")
+            return {'success': False, 'error': '参数不足'}
     
-    # 获取评分摘要
-    score_summary = analyzer.get_score_summary()
+    elif file_type == "stock_selection":
+        if len(args) >= 1 and isinstance(args[0], dict):
+            return unified_controller.execute_stock_selection(args[0], kwargs.get('selection_params'))
+        else:
+            print("❌ 策略选股需要 strategy_config 参数")
+            print("使用方法: 请参考统一入口文档")
+            return {'success': False, 'error': '参数不足'}
     
-    # 输出结果摘要
-    print("\n" + "="*60)
-    print(f"股票: {stock_code} ({stock_name})")
-    print(f"分析时间: {results['analysis_time']}")
-    print("="*60)
+    elif file_type == "strategy_execution":
+        # 策略执行重定向到选股
+        strategy_config = {'name': kwargs.get('strategy_name', 'unknown')}
+        return unified_controller.execute_stock_selection(strategy_config, kwargs)
     
-    # 输出总评分和推荐
-    print(f"\n综合评分: {score_summary['total_score']:.2f}/100")
-    print(f"推荐意见: {score_summary['recommendation']}")
-    print(f"评分置信度: {score_summary['confidence']:.2f}")
-    
-    # 输出各指标评分
-    print("\n各指标评分:")
-    for indicator, score in score_summary['by_indicator'].items():
-        print(f"  - {indicator}: {score:.2f}/100")
-    
-    # 输出各周期评分
-    print("\n各周期评分:")
-    for period, score in score_summary['by_period'].items():
-        print(f"  - {period}: {score:.2f}/100")
-    
-    # 输出最新形态
-    latest_patterns = analyzer.get_latest_patterns(top_n=5)
-    
-    print("\n最新形态(Top 5):")
-    for pattern in latest_patterns:
-        signal_type = "看涨" if pattern['signal_type'] == "bullish" else "看跌" if pattern['signal_type'] == "bearish" else "中性"
-        print(f"  - {pattern['display_name']} ({pattern['indicator_id']}/{pattern['period']}): {signal_type}")
-    
-    # 输出跨周期共同形态
-    common_patterns = results['common_patterns']
-    
-    if common_patterns:
-        print("\n跨周期共同形态:")
-        for pattern in common_patterns[:3]:  # 只显示前3个
-            periods_str = ", ".join(pattern['periods'])
-            print(f"  - {pattern['display_name']} ({pattern['indicator_id']}): 出现在 {periods_str} 周期")
-    
-    # 如果指定了详细模式，输出更多信息
-    if args.detail:
-        print("\n\n详细形态信息:")
-        
-        for period, period_data in results['periods'].items():
-            print(f"\n{period} 周期形态:")
-            for pattern in period_data['patterns'][:10]:  # 限制显示数量
-                print(f"  - {pattern['display_name']}")
-    
-    # 保存结果
-    if args.output:
-        output_path = args.output
     else:
-        # 默认保存到results目录
-        output_dir = get_result_path("pattern_analysis")
-        ensure_dir(output_dir)
-        output_path = os.path.join(
-            output_dir, 
-            f"{stock_code}_pattern_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        )
-    
-    analyzer.save_results(output_path)
-    print(f"\n分析结果已保存到: {output_path}")
+        print("❌ 无法确定重定向目标，请直接使用统一入口")
+        print("统一入口: bin/unified_analysis_controller.py")
+        return {'success': False, 'error': '无法确定重定向目标'}
 
+# 为向后兼容提供的函数别名
+main = redirect_to_unified_controller
+analyze = redirect_to_unified_controller
+execute = redirect_to_unified_controller
+run = redirect_to_unified_controller
+select = redirect_to_unified_controller
+detect = redirect_to_unified_controller
 
 if __name__ == "__main__":
-    main_24() 
+    deprecated_entry_warning()
+    
+    print(f"⚠️  此文件已废弃: entry_deprecation_manager.py")
+    print(f"📁 原文件类型: general_analysis")
+    print(f"🔄 请使用统一入口: bin/unified_analysis_controller.py")
+    print()
+    print("📖 使用示例:")
+    print("   python bin/unified_analysis_controller.py buypoint --stock 000001 --date 2024-01-15")
+    print("   python bin/unified_analysis_controller.py selection --strategy momentum")
+    print("   python bin/unified_analysis_controller.py indicators --stock 000001 --date 2024-01-15 --indicators RSI,MACD")
+    print()
+    print("📚 详细文档: docs/optimization/basic_usability_architecture_plan.md")
+    
+    # 尝试自动重定向
+    if len(sys.argv) > 1:
+        print("🔄 尝试自动重定向...")
+        result = redirect_to_unified_controller(*sys.argv[1:])
+        if result.get('success'):
+            print("✅ 重定向成功")
+        else:
+            print(f"❌ 重定向失败: {result.get('error')}")

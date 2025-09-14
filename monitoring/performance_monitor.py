@@ -360,14 +360,14 @@ class Performancemonitor_monitor:
             
             # 尝试获取连接池统计
             try:
-                from db.enhanced_connection_pool import get_connection_pool
-                pool = get_connection_pool()
-                pool_stats = pool.get_stats_Monitor()
-                
+                from db.connection_pool_adapter import get_connection_pool_adapter
+                adapter = get_connection_pool_adapter()
+                pool_stats = adapter.get_statistics()
+
                 self.add_metric('connection_requests', pool_stats.get('total_requests', 0))
                 self.add_metric('connection_errors', pool_stats.get('total_errors', 0))
                 self.add_metric('connection_avg_response_time', pool_stats.get('avg_response_time', 0))
-                
+
             except Exception as e:
                 logger.debug(f"获取连接池统计失败: {e}")
             
@@ -618,15 +618,15 @@ class Healthchecker_monitor:
 def database_health_check() -> Dict[str, Any]:
     """数据库健康检查"""
     try:
-        from db.enhanced_connection_pool import get_connection_pool
-        pool = get_connection_pool()
+        from db.connection_pool_adapter import get_connection_pool_adapter
+        adapter = get_connection_pool_adapter()
 
-        with pool.get_connection() as conn:
+        with adapter.get_connection() as conn:
             start_time = time.time()
             result = conn.execute("SELECT 1")
             query_time = time.time() - start_time
 
-            pool_stats = pool.get_stats_Monitor()
+            pool_stats = adapter.get_statistics()
 
             status = 'healthy'
             if query_time > 5.0:
