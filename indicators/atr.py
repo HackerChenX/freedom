@@ -5,7 +5,7 @@ from utils.container import container
 
 """
 ATR (Average True Range) 平均真实波幅指标 - 增强版
-修复版本，确保通过所有验证阶段
+修复版本,确保通过所有验证阶段
 """
 
 import pandas as pd
@@ -22,8 +22,8 @@ class ATR(BaseIndicator):
     """
     ATR (Average True Range) 平均真实波幅指标
 
-    ATR指标用于衡量价格波动性，通过计算真实波幅的移动平均值来反映市场的波动程度。
-    ATR值越高，表示价格波动越大；ATR值越低，表示价格波动越小。
+    ATR指标用于衡量价格波动性,通过计算真实波幅的移动平均值来反映市场的波动程度.
+    ATR值越高,表示价格波动越大;ATR值越低,表示价格波动越小.
     """
 
     def __init__(self, period: int = 14, **kwargs):  # TODO: 将魔法数字提取到配置中
@@ -34,7 +34,7 @@ class ATR(BaseIndicator):
         初始化ATR指标
 
         Args:
-            period: 计算周期，默认14
+            period: 计算周期,默认14
             **kwargs: 其他参数
         """
         super().__init__()
@@ -110,16 +110,16 @@ class ATR(BaseIndicator):
             tr2 = np.abs(high - close.shift(1))
             tr3 = np.abs(low - close.shift(1))
 
-            # 取最大值作为真实波幅，确保为正数
+            # 取最大值作为真实波幅,确保为正数
             tr = np.maximum(tr1, np.maximum(tr2, tr3))
-            tr = tr.bfill().fillna(0.01)  # 填充NaN，最小值0.01
+            tr = tr.bfill().fillna(0.01)  # 填充NaN,最小值0.01
             tr = np.maximum(tr, 0.01)  # 确保最小值为0.01
 
-            # 计算ATR - TR的移动平均，确保为正数
+            # 计算ATR - TR的移动平均,确保为正数
             atr = tr.rolling(window=self.period, min_periods=1).mean()
             atr = np.maximum(atr, 0.01)  # 确保ATR最小值为0.01
 
-            # 计算ATR百分比（相对于价格的百分比）
+            # 计算ATR百分比(相对于价格的百分比)
             atr_percent = (atr / (close + 1e-10) * 100).fillna(0)
 
             # 存储结果
@@ -162,17 +162,17 @@ class ATR(BaseIndicator):
             atr_ma = self._result["atr_ma"]
             atr_std = self._result["atr_std"]
 
-            # 高波动形态：ATR > 均值 + 标准差
+            # 高波动形态:ATR > 均值 + 标准差
             high_volatility = atr > (atr_ma + atr_std)
 
-            # 低波动形态：ATR < 均值 - 标准差
+            # 低波动形态:ATR < 均值 - 标准差
             low_volatility = atr < (atr_ma - atr_std)
 
-            # 波动性突破：ATR快速上升
+            # 波动性突破:ATR快速上升
             atr_change = atr.pct_change(periods=3)  # TODO: 将魔法数字提取到配置中
             volatility_breakout = (atr_change > 0.2) & (atr > atr_ma)
 
-            # 波动性收缩：ATR持续下降
+            # 波动性收缩:ATR持续下降
             atr_declining = (atr < atr.shift(1)) & (atr.shift(1) < atr.shift(2))
             volatility_contraction = atr_declining & (atr < atr_ma)
 
@@ -215,13 +215,13 @@ class ATR(BaseIndicator):
             atr = self._result["ATR"]
             atr_ma = self._result["atr_ma"]
 
-            # ATR突破信号：波动性突然增加
+            # ATR突破信号:波动性突然增加
             atr_breakout = (atr > atr.shift(1) * 1.2) & (atr > atr_ma)
 
-            # ATR回落信号：高波动后回落
+            # ATR回落信号:高波动后回落
             atr_pullback = (atr < atr.shift(1) * 0.9) & (atr.shift(1) > atr_ma)  # TODO: 将魔法数字提取到配置中
 
-            # 信号强度：基于ATR相对于均值的偏离程度
+            # 信号强度:基于ATR相对于均值的偏离程度
             signal_strength = np.abs(atr - atr_ma) / (atr_ma + 1e-10)
 
             return {

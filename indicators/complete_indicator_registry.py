@@ -5,7 +5,7 @@ from indicators.base_indicator import BaseIndicator
 """
 完整的88+指标注册管理器
 
-支持系统中所有88+个技术指标的注册和管理，实现生产级的指标体系
+支持系统中所有88+个技术指标的注册和管理,实现生产级的指标体系
 """
 
 import logging
@@ -35,31 +35,31 @@ class CompleteIndicatorRegistry:
         total_registered = 0
         total_failed = 0
 
-        # 1. 核心指标（6个）
+        # 1. 核心指标(6个)
         total_registered += self._register_core_indicators()
 
-        # 2. 趋势指标（10个）
+        # 2. 趋势指标(10个)
         total_registered += self._register_trend_indicators()
 
-        # 3. 振荡器指标（9个）  # TODO: 将魔法数字提取到配置中
+        # 3. 振荡器指标(9个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_oscillator_indicators()
 
-        # 4. 成交量指标（9个）  # TODO: 将魔法数字提取到配置中
+        # 4. 成交量指标(9个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_volume_indicators()
 
-        # 5. 波动性指标（4个）  # TODO: 将魔法数字提取到配置中
+        # 5. 波动性指标(4个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_volatility_indicators()
 
-        # 6. ZXM体系指标（35个）  # TODO: 将魔法数字提取到配置中
+        # 6. ZXM体系指标(35个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_zxm_indicators()
 
-        # 7. 形态识别指标（21个）  # TODO: 将魔法数字提取到配置中
+        # 7. 形态识别指标(21个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_pattern_indicators()
 
-        # 8. 增强指标（3个）  # TODO: 将魔法数字提取到配置中
+        # 8. 增强指标(3个)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_enhanced_indicators()
 
-        # 9. 其他专业指标（剩余）  # TODO: 将魔法数字提取到配置中
+        # 9. 其他专业指标(剩余)  # TODO: 将魔法数字提取到配置中
         total_registered += self._register_professional_indicators()
 
         total_failed = len(self._failed_indicators)
@@ -183,8 +183,8 @@ class CompleteIndicatorRegistry:
             "ZXM_DAILY_TREND_UP": "indicators.zxm.trend_indicators.ZxmdailyTrendUp",
             "ZXM_WEEKLY_TREND_UP": "indicators.zxm.trend_indicators.ZxmweeklyTrendUp",
             "ZXM_MONTHLY_KDJ_TREND_UP": "indicators.zxm.trend_indicators.ZxmmonthlyKdjtrendUp",
-            "ZXM_WEEKLY_MACD": "indicators.zxm.trend_indicators.ZxmweeklyMacd",  # 修复类名：ZXMWeeklyMACD -> ZxmweeklyMacd
-            "ZXM_MONTHLY_MACD": "indicators.zxm.trend_indicators.ZxmmonthlyMacd",  # 修复类名：ZXMMonthlyMACD -> ZxmmonthlyMacd
+            "ZXM_WEEKLY_MACD": "indicators.zxm.trend_indicators.ZxmweeklyMacd",  # 修复类名:ZXMWeeklyMACD -> ZxmweeklyMacd
+            "ZXM_MONTHLY_MACD": "indicators.zxm.trend_indicators.ZxmmonthlyMacd",  # 修复类名:ZXMMonthlyMACD -> ZxmmonthlyMacd
             # 弹性指标
             "ZXM_AMPLITUDE_ELASTICITY": "indicators.zxm.elasticity_indicators.AmplitudeElasticity",
             "ZXM_RISE_ELASTICITY": "indicators.zxm.elasticity_indicators.ZxmriseElasticity",
@@ -194,7 +194,7 @@ class CompleteIndicatorRegistry:
             "ZXM_BUYPOINT_SCORE": "indicators.zxm.score_indicators.ZxmbuyPointScore",
             "ZXM_TREND_SCORE": "indicators.zxm.score_indicators.StockScoreCalculator",  # 修复类名
             "ZXM_ELASTIC_SCORE": "indicators.zxm.score_indicators.ZxmelasticityScore",
-            # 其他专业指标（修复路径和类名）
+            # 其他专业指标(修复路径和类名)
             "ZXM_VOLUME_ENERGY": "indicators.zxm.market_breadth.ZxmmarketBreadth",
             "ZXM_PRICE_POSITION": "indicators.zxm.diagnostics.ZXMDiagnostics",
             "ZXM_TECHNICAL_FORM": "indicators.zxm.selection_model.SelectionModel",
@@ -278,10 +278,10 @@ class CompleteIndicatorRegistry:
             "VORTEX": "indicators.vortex.Vortex",
             # 市场微观结构
             "BIAS": "indicators.bias.BIAS",
-            "MTM": "indicators.mtm.Mtm",  # 修复类名：MTM -> Mtm
+            "MTM": "indicators.mtm.Mtm",  # 修复类名:MTM -> Mtm
             "RSIMA": "indicators.rsima.Rsima",
             # 复合指标
-            "COMPOSITE": "indicators.composite.COMPOSITE",  # 修复类名：Composite -> COMPOSITE
+            "COMPOSITE": "indicators.composite.COMPOSITE",  # 修复类名:Composite -> COMPOSITE
             "SYNERGY": "indicators.synergy.Synergy",
             "UNIFIED_MA": "indicators.unified_ma.UNIFIED_MA",
             # 评分框架
@@ -300,17 +300,17 @@ class CompleteIndicatorRegistry:
 
         for name, class_path in indicators.items():
             try:
-                # 尝试动态导入和验证 - 严格模式，不允许任何回退
+                # 尝试动态导入和验证 - 严格模式,不允许任何回退
                 if self._validate_indicator_path(class_path):
                     self._indicators[name] = class_path
                     self._registration_log.append(f"✅ {category}: {name}")
                     logger.debug(f"✅ 成功注册 {category}: {name}")
                     registered_count += 1
                 else:
-                    # 严格模式：导入失败直接记录为失败，不使用任何回退
+                    # 严格模式:导入失败直接记录为失败,不使用任何回退
                     self._failed_indicators.append(f"{name}: 指标路径验证失败 - {class_path}")
                     logger.error(f"❌ 指标验证失败 {category}: {name} - 路径: {class_path}")
-                    # 不增加registered_count，确保失败的指标不被注册
+                    # 不增加registered_count,确保失败的指标不被注册
 
             except Exception as e:
                 self._failed_indicators.append(f"{name}: {e}")
@@ -336,11 +336,11 @@ class CompleteIndicatorRegistry:
             return None
 
         try:
-            # 如果已经是实例，直接返回
+            # 如果已经是实例,直接返回
             if hasattr(indicator_path, "calculate"):
                 return indicator_path
 
-            # 如果是字符串路径，创建实例
+            # 如果是字符串路径,创建实例
             if isinstance(indicator_path, str):
                 module_path, class_name = indicator_path.rsplit(".", 1)
                 module = importlib.import_module(module_path)
@@ -361,7 +361,7 @@ class CompleteIndicatorRegistry:
                                 n=9, m1=3, m2=3
                             )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         except Exception as e3:
-                            # 严格模式：如果都失败，返回None，不使用任何回退
+                            # 严格模式:如果都失败,返回None,不使用任何回退
                             logger.error(
                                 f"指标 {name} 实例化完全失败: 无参数失败, period=20失败, n=9,m1=3,m2=3失败"
                             )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -370,7 +370,7 @@ class CompleteIndicatorRegistry:
             return indicator_path
         except Exception as e:
             logger.error(f"创建指标 {name} 实例失败: {e}")
-            # 严格模式：不使用任何回退，直接返回None
+            # 严格模式:不使用任何回退,直接返回None
             return None
 
     def create_indicator(self, name: str, **kwargs):
@@ -391,11 +391,11 @@ class CompleteIndicatorRegistry:
         if indicator_path is None:
             raise ValueError(f"未注册的指标: {name}")
 
-        # 严格模式：不允许real.前缀的指标
+        # 严格模式:不允许real.前缀的指标
         if indicator_path.startswith("real."):
             raise ValueError(f"不允许使用real前缀的指标: {name}")
 
-        # 动态导入并创建指标实例 - 严格模式，失败即抛出异常
+        # 动态导入并创建指标实例 - 严格模式,失败即抛出异常
         try:
             module_path, class_name = indicator_path.rsplit(".", 1)
             module = importlib.import_module(module_path)
@@ -403,14 +403,14 @@ class CompleteIndicatorRegistry:
             return indicator_class(**kwargs)
         except Exception as e:
             logger.error(f"创建指标 {name} 实例失败: {e}")
-            # 严格模式：失败直接抛出异常，不使用任何回退
+            # 严格模式:失败直接抛出异常,不使用任何回退
             raise ValueError(f"指标 {name} 创建失败: {e}")
 
     # _create_real_indicator方法已移除 - 严格模式不允许任何real回退
 
     @property
     def indicators(self) -> Dict[str, Any]:
-        """获取所有指标（属性访问）"""
+        """获取所有指标(属性访问)"""
         return self._indicators.copy()
 
     def get_all_indicators(self) -> Dict[str, Any]:
@@ -432,7 +432,7 @@ class CompleteIndicatorRegistry:
         return indicator_classes
 
     def get_all_indicator_paths(self) -> Dict[str, str]:
-        """获取所有指标路径（原始方法）"""
+        """获取所有指标路径(原始方法)"""
         return self._indicators.copy()
 
     def get_indicator_count(self) -> int:
@@ -486,7 +486,7 @@ def initialize_indicators():
     """初始化所有指标"""
     try:
         registered_count = _instance.register_all_indicators()
-        logger.info(f"指标系统初始化完成，共注册 {registered_count} 个指标")
+        logger.info(f"指标系统初始化完成,共注册 {registered_count} 个指标")
         return registered_count
     except Exception as e:
         logger.error(f"指标注册失败: {e}")
@@ -499,17 +499,17 @@ INDICATOR_REGISTRY = _instance._indicators  # 导出指标注册表字典
 
 
 def get_all_indicators() -> Dict[str, Any]:
-    """获取所有已注册的指标（全局函数）"""
+    """获取所有已注册的指标(全局函数)"""
     return _instance.get_all_indicators()
 
 
 def get_indicator_count() -> int:
-    """获取已注册指标数量（全局函数）"""
+    """获取已注册指标数量(全局函数)"""
     return _instance.get_indicator_count()
 
 
 def get_failed_indicators() -> List[str]:
-    """获取注册失败的指标列表（全局函数）"""
+    """获取注册失败的指标列表(全局函数)"""
     return _instance.get_failed_indicators()
 
 
@@ -522,7 +522,7 @@ if __name__ != "__main__":
         计算指标值
 
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
 
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

@@ -3,8 +3,8 @@ from indicators.base_indicator import BaseIndicator
 """
 高级向量化指标计算器
 
-将向量化计算覆盖率从7.6%大幅提升到30%+。  # TODO: 将魔法数字提取到配置中
-实现32个主要技术指标的高性能向量化计算。
+将向量化计算覆盖率从7.6%大幅提升到30%+.  # TODO: 将魔法数字提取到配置中
+实现32个主要技术指标的高性能向量化计算.
 
 Author: System
 Date: 2025-01-15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -17,13 +17,13 @@ import warnings
 import time
 from dataclasses import dataclass
 
-# Numba是可选依赖，如果不可用则使用普通函数
+# Numba是可选依赖,如果不可用则使用普通函数
 try:
     from numba import jit, njit
     NUMBA_AVAILABLE = True
 except ImportError:
     NUMBA_AVAILABLE = False
-    # 如果numba不可用，创建空装饰器
+    # 如果numba不可用,创建空装饰器
     def jit(*args, **kwargs):
         def decorator_advanced_vectorized_calculator(func):
             return func
@@ -56,9 +56,9 @@ class AdvancedVectorizedCalculator(BaseIndicator):
     """
     高级向量化指标计算器
     
-    目标：将向量化覆盖率从7.6%提升到30%+  # TODO: 将魔法数字提取到配置中
+    目标:将向量化覆盖率从7.6%提升到30%+  # TODO: 将魔法数字提取到配置中
     
-    包含32个向量化指标：
+    包含32个向量化指标:
     1. 核心指标(6个): MA, EMA, MACD, RSI, BOLL, PSY
     2. 趋势指标(8个): DMA, DMI, ADX, AROON, SAR, TRIX, CCI, WMA
     3. 振荡器指标(6个): KDJ, WR, CMO, STOCHRSI, MOMENTUM, ROC  # TODO: 将魔法数字提取到配置中  
@@ -85,7 +85,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         logger.info(f"🚀 高级向量化计算器初始化完成")
         logger.info(f"   已注册 {len(self.vectorized_indicators)} 个向量化指标")
         if not NUMBA_AVAILABLE:
-            logger.warning("⚠️ Numba不可用，将使用普通函数计算")
+            logger.warning("⚠️ Numba不可用,将使用普通函数计算")
     
     def _register_vectorized_indicators(self):
         """注册所有向量化指标"""
@@ -215,7 +215,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
                     logger.error(f"批量计算失败 {indicator_name}: {e}")
                     continue
             else:
-                logger.warning(f"指标 {indicator_name} 未实现向量化，跳过")
+                logger.warning(f"指标 {indicator_name} 未实现向量化,跳过")
         
         total_time = time.time() - total_start_time
         logger.info(f"批量向量化计算完成: {len(results)}/{len(indicator_list)} 个指标, "
@@ -227,7 +227,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
     
     @njit
     def _fast_ma(self, prices: np.ndarray, period: int) -> np.ndarray:
-        """快速移动平均计算（Numba优化）"""
+        """快速移动平均计算(Numba优化)"""
         result = np.empty_like(prices)
         result[:period-1] = np.nan
         
@@ -290,7 +290,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
     
     @njit
     def _fast_rsi(self, prices: np.ndarray, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> np.ndarray:  # TODO: 将魔法数字提取到配置中
-        """快速RSI计算（Numba优化）"""
+        """快速RSI计算(Numba优化)"""
         result = np.empty_like(prices)
         result[:period] = np.nan
         
@@ -393,7 +393,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         close: np.ndarray, 
         period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """快速DMI计算（Numba优化）"""
+        """快速DMI计算(Numba优化)"""
         n = len(high)
         pdi = np.empty(n)
         mdi = np.empty(n)
@@ -481,7 +481,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         
         n = len(high_prices)
         sar = np.empty(n)
-        trend = np.ones(n)  # 1为上升趋势，-1为下降趋势
+        trend = np.ones(n)  # 1为上升趋势,-1为下降趋势
         af = np.full(n, af_start)
         ep = np.empty(n)  # 极值点
         
@@ -585,7 +585,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         close: np.ndarray, 
         period: int = 9  # TODO: 将魔法数字提取到配置中
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """快速KDJ计算（Numba优化）"""
+        """快速KDJ计算(Numba优化)"""
         n = len(close)
         k = np.empty(n)
         d = np.empty(n)
@@ -701,7 +701,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
     
     @njit
     def _fast_obv(self, close: np.ndarray, volume: np.ndarray) -> np.ndarray:
-        """快速OBV计算（Numba优化）"""
+        """快速OBV计算(Numba优化)"""
         n = len(close)
         obv = np.empty(n)
         obv[0] = volume[0]
@@ -819,7 +819,7 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         close: np.ndarray, 
         period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     ) -> np.ndarray:
-        """快速ATR计算（Numba优化）"""
+        """快速ATR计算(Numba优化)"""
         n = len(high)
         tr = np.empty(n)
         atr = np.empty(n)
@@ -944,11 +944,11 @@ class AdvancedVectorizedCalculator(BaseIndicator):
         """获取向量化统计信息"""
         vectorized_count = len(self.vectorized_indicators)
         
-        # 假设总共有105个指标（基于之前的分析）
+        # 假设总共有105个指标(基于之前的分析)
         total_indicators = 105  # TODO: 将魔法数字提取到配置中
         vectorization_coverage = vectorized_count / total_indicators * 100
         
-        # 计算性能改进（基于历史数据）
+        # 计算性能改进(基于历史数据)
         avg_calculation_time = np.mean(list(self.performance_stats['calculation_times'].values())) if self.performance_stats['calculation_times'] else 0
         estimated_speedup = 3.5  # 向量化平均加速比  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
@@ -1058,6 +1058,6 @@ if __name__ == "__main__":
     print(f"提升幅度: +{report['optimization_impact']['coverage_improvement']}")
     
     if float(report['vectorization_overview']['coverage_percentage'].rstrip('%')) >= 30.0:  # TODO: 将魔法数字提取到配置中
-        print("🎉 成功达成30%+向量化覆盖率目标！")
+        print("🎉 成功达成30%+向量化覆盖率目标!")
     else:
         print("🔄 继续优化中...") 

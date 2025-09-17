@@ -29,8 +29,8 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
     """
     趋向指标(DMI) (DMI)
 
-    分类：趋势类指标
-    描述：判断趋势强度与方向
+    分类:趋势类指标
+    描述:判断趋势强度与方向
     """
 
     def __init__(self, **kwargs):
@@ -38,18 +38,18 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         初始化趋向指标(DMI)指标
 
         Args:
-            **kwargs: 指标参数，支持period、adx_threshold等
+            **kwargs: 指标参数,支持period,adx_threshold等
         """
         super().__init__()
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
         self.name = "DMI"
-        self.description = "趋向指标，判断趋势强度与方向"
+        self.description = "趋向指标,判断趋势强度与方向"
 
-        # 先设置默认值，确保属性存在
+        # 先设置默认值,确保属性存在
         self.period = 14  # TODO: 将魔法数字提取到配置中
         self.adx_threshold = 25.0  # TODO: 将魔法数字提取到配置中
         self.adx_period = self.period
-        # minimum_periods 是 @property，不需要手动设置
+        # minimum_periods 是 @property,不需要手动设置
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters()
@@ -62,12 +62,12 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         return {"period": 14, "adx_threshold": 25.0}  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def _get_default_parameters(self) -> Dict[str, Any]:
-        """获取默认参数（标准接口）"""
+        """获取默认参数(标准接口)"""
         return self._get_default_parameters_dmi()
 
     def set_parameters(self, **kwargs):
         """
-        设置指标参数（标准接口）
+        设置指标参数(标准接口)
         """
         return self.set_parameters_Dmi(**kwargs)
 
@@ -76,7 +76,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         设置指标参数
 
         Args:
-            **kwargs: 参数字典，支持以下参数：
+            **kwargs: 参数字典,支持以下参数:
                 - period: 计算周期
                 - adx_threshold: ADX趋势强度阈值
         """
@@ -95,11 +95,11 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("DMI", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -130,7 +130,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         Args:
             df: 包含OHLCV数据的Data_frame
-                必须包含以下列：
+                必须包含以下列:
                 - close: 收盘价
                 - high: 最高价
                 - low: 最低价
@@ -166,7 +166,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
             (df_copy["down_move"] > df_copy["up_move"]) & (df_copy["down_move"] > 0), df_copy["down_move"], 0
         )
 
-        # 计算平滑后的TR、+DM和-DM
+        # 计算平滑后的TR,+DM和-DM
         df_copy["TR_" + str(self.period)] = df_copy["TR"].rolling(window=self.period).sum()
         df_copy["+DM_" + str(self.period)] = df_copy["+DM"].rolling(window=self.period).sum()
         df_copy["-DM_" + str(self.period)] = df_copy["-DM"].rolling(window=self.period).sum()
@@ -222,7 +222,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算DMI
         if not self.has_result():
@@ -305,7 +305,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         if recent_pdi.isna().all() or recent_mdi.isna().all() or recent_adx.isna().all():
             return patterns
 
-        # 获取最后一个有效值，增加更好的边界检查
+        # 获取最后一个有效值,增加更好的边界检查
         valid_pdi = recent_pdi.dropna()
         valid_mdi = recent_mdi.dropna()
         valid_adx = recent_adx.dropna()
@@ -368,7 +368,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
                     patterns.append("ADX高位钝化")
 
         except (IndexError, KeyError) as e:
-            # 如果出现索引错误，返回空列表
+            # 如果出现索引错误,返回空列表
             logger.warning(f"DMI形态识别出现索引错误: {e}")
             return []
 
@@ -387,11 +387,11 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         cross_score = pd.Series(0.0, index=pdi.index)
 
-        # +DI上穿-DI（多头信号）+25分
+        # +DI上穿-DI(多头信号)+25分
         pdi_cross_up_mdi = crossover(pdi, mdi)
         cross_score += pdi_cross_up_mdi * 25  # TODO: 将魔法数字提取到配置中
 
-        # -DI上穿+DI（空头信号）-25分
+        # -DI上穿+DI(空头信号)-25分
         mdi_cross_up_pdi = crossover(mdi, pdi)
         cross_score -= mdi_cross_up_pdi * 25  # TODO: 将魔法数字提取到配置中
 
@@ -420,19 +420,19 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         strength_score = pd.Series(0.0, index=adx.index)
 
-        # ADX > 25（强趋势）+20分  # TODO: 将魔法数字提取到配置中
+        # ADX > 25(强趋势)+20分  # TODO: 将魔法数字提取到配置中
         strong_trend = adx > 25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         strength_score += strong_trend * 20  # TODO: 将魔法数字提取到配置中
 
-        # ADX > 40（极强趋势）+25分  # TODO: 将魔法数字提取到配置中
+        # ADX > 40(极强趋势)+25分  # TODO: 将魔法数字提取到配置中
         very_strong_trend = adx > 40  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         strength_score += very_strong_trend * 25  # TODO: 将魔法数字提取到配置中
 
-        # ADX < 20（弱趋势）-10分  # TODO: 将魔法数字提取到配置中
+        # ADX < 20(弱趋势)-10分  # TODO: 将魔法数字提取到配置中
         weak_trend = adx < 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         strength_score -= weak_trend * 10
 
-        # ADX < 15（无趋势）-15分  # TODO: 将魔法数字提取到配置中
+        # ADX < 15(无趋势)-15分  # TODO: 将魔法数字提取到配置中
         no_trend = (
             adx < 15
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -517,11 +517,11 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         confirm_score = pd.Series(0.0, index=adx.index)
 
-        # ADX > ADXR（趋势加强）+10分
+        # ADX > ADXR(趋势加强)+10分
         adx_above_adxr = adx > adxr
         confirm_score += adx_above_adxr * 10
 
-        # ADX < ADXR（趋势减弱）-5分
+        # ADX < ADXR(趋势减弱)-5分
         adx_below_adxr = adx < adxr
         confirm_score -= adx_below_adxr * 5  # TODO: 将魔法数字提取到配置中
 
@@ -548,15 +548,15 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         pattern_score = pd.Series(0.0, index=pdi.index)
 
-        # 强势多头形态：+DI > -DI且ADX > 25  # TODO: 将魔法数字提取到配置中
+        # 强势多头形态:+DI > -DI且ADX > 25  # TODO: 将魔法数字提取到配置中
         strong_bullish = (pdi > mdi) & (adx > 25)  # TODO: 将魔法数字提取到配置中
         pattern_score += strong_bullish * 20  # TODO: 将魔法数字提取到配置中
 
-        # 强势空头形态：-DI > +DI且ADX > 25  # TODO: 将魔法数字提取到配置中
+        # 强势空头形态:-DI > +DI且ADX > 25  # TODO: 将魔法数字提取到配置中
         strong_bearish = (mdi > pdi) & (adx > 25)  # TODO: 将魔法数字提取到配置中
         pattern_score -= strong_bearish * 20  # TODO: 将魔法数字提取到配置中
 
-        # 震荡形态：ADX < 20且DI线接近
+        # 震荡形态:ADX < 20且DI线接近
         sideways = (adx < 20) & (abs(pdi - mdi) < 5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         pattern_score -= sideways * 10
 
@@ -659,10 +659,10 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
             pdi_trend = pdi_extremes[-1] - pdi_extremes[-2]
             mdi_trend = mdi_extremes[-1] - mdi_extremes[-2]
 
-            # 正背离：价格创新低但+DI未创新低
+            # 正背离:价格创新低但+DI未创新低
             if price_trend < -0.01 and pdi_trend > 2:
                 return "正背离"
-            # 负背离：价格创新高但+DI未创新高
+            # 负背离:价格创新高但+DI未创新高
             elif price_trend > 0.01 and pdi_trend < -2:
                 return "负背离"
 
@@ -685,7 +685,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         recent_adx = adx.tail(periods)
 
-        # 高位钝化：ADX在高位且变化很小
+        # 高位钝化:ADX在高位且变化很小
         return (recent_adx > threshold).all() and (
             recent_adx.max() - recent_adx.min()
         ) < 5  # TODO: 将魔法数字提取到配置中
@@ -723,7 +723,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # -DI上穿+DI为卖出信号
         df_copy.loc[crossover(df_copy["MDI"], df_copy["PDI"]), "dmi_signal"] = -1
 
-        # 强化信号：ADX > 25表示趋势显著
+        # 强化信号:ADX > 25表示趋势显著
         df_copy.loc[(df_copy["dmi_signal"] == 1) & (df_copy["ADX"] < 25), "dmi_signal"] = (
             0  # TODO: 将魔法数字提取到配置中
         )
@@ -738,12 +738,12 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         生成DMI指标标准化交易信号
 
         Args:
-            data: 输入数据，包含OHLCV数据
+            data: 输入数据,包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
 
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 确保已计算DMI指标
         if not self.has_result():
@@ -778,79 +778,79 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         adx = self._result["ADX"]
         adxr = self._result["ADXR"]
 
-        # 1. +DI上穿-DI，买入信号
+        # 1. +DI上穿-DI,买入信号
         di_crossover = crossover(pdi, mdi)
         signals.loc[di_crossover, "buy_signal"] = True
         signals.loc[di_crossover, "neutral_signal"] = False
         signals.loc[di_crossover, "trend"] = 1
         signals.loc[di_crossover, "signal_type"] = "DI金叉"
-        signals.loc[di_crossover, "signal_desc"] = "+DI上穿-DI，多头趋势确立"
+        signals.loc[di_crossover, "signal_desc"] = "+DI上穿-DI,多头趋势确立"
         signals.loc[di_crossover, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossover, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossover, "risk_level"] = "中"
 
-        # 2. -DI上穿+DI，卖出信号
+        # 2. -DI上穿+DI,卖出信号
         di_crossunder = crossover(mdi, pdi)
         signals.loc[di_crossunder, "sell_signal"] = True
         signals.loc[di_crossunder, "neutral_signal"] = False
         signals.loc[di_crossunder, "trend"] = -1
         signals.loc[di_crossunder, "signal_type"] = "DI死叉"
-        signals.loc[di_crossunder, "signal_desc"] = "-DI上穿+DI，空头趋势确立"
+        signals.loc[di_crossunder, "signal_desc"] = "-DI上穿+DI,空头趋势确立"
         signals.loc[di_crossunder, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossunder, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossunder, "risk_level"] = "中"
 
-        # 3. ADX上升且大于阈值，趋势增强信号  # TODO: 将魔法数字提取到配置中
+        # 3. ADX上升且大于阈值,趋势增强信号  # TODO: 将魔法数字提取到配置中
         adx_rising = (adx > adx.shift(1)) & (adx > 25)  # TODO: 将魔法数字提取到配置中
 
-        # 强多头趋势信号：ADX上升且+DI>-DI
+        # 强多头趋势信号:ADX上升且+DI>-DI
         strong_uptrend = adx_rising & (pdi > mdi)
         signals.loc[strong_uptrend, "buy_signal"] = True
         signals.loc[strong_uptrend, "neutral_signal"] = False
         signals.loc[strong_uptrend, "trend"] = 1
         signals.loc[strong_uptrend, "signal_type"] = "强多头趋势"
-        signals.loc[strong_uptrend, "signal_desc"] = "ADX上升且+DI>-DI，多头趋势增强"
+        signals.loc[strong_uptrend, "signal_desc"] = "ADX上升且+DI>-DI,多头趋势增强"
         signals.loc[strong_uptrend, "confidence"] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, "position_size"] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, "risk_level"] = "低"
 
-        # 强空头趋势信号：ADX上升且-DI>+DI
+        # 强空头趋势信号:ADX上升且-DI>+DI
         strong_downtrend = adx_rising & (mdi > pdi)
         signals.loc[strong_downtrend, "sell_signal"] = True
         signals.loc[strong_downtrend, "neutral_signal"] = False
         signals.loc[strong_downtrend, "trend"] = -1
         signals.loc[strong_downtrend, "signal_type"] = "强空头趋势"
-        signals.loc[strong_downtrend, "signal_desc"] = "ADX上升且-DI>+DI，空头趋势增强"
+        signals.loc[strong_downtrend, "signal_desc"] = "ADX上升且-DI>+DI,空头趋势增强"
         signals.loc[strong_downtrend, "confidence"] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, "position_size"] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, "risk_level"] = "低"
 
-        # 4. ADX下降，趋势减弱信号  # TODO: 将魔法数字提取到配置中
+        # 4. ADX下降,趋势减弱信号  # TODO: 将魔法数字提取到配置中
         adx_falling = (adx < adx.shift(1)) & (adx > 20)  # TODO: 将魔法数字提取到配置中
 
-        # 多头趋势减弱信号：ADX下降且+DI>-DI
+        # 多头趋势减弱信号:ADX下降且+DI>-DI
         weakening_uptrend = adx_falling & (pdi > mdi)
         signals.loc[weakening_uptrend, "buy_signal"] = True
         signals.loc[weakening_uptrend, "neutral_signal"] = False
         signals.loc[weakening_uptrend, "trend"] = 1
         signals.loc[weakening_uptrend, "signal_type"] = "减弱多头趋势"
-        signals.loc[weakening_uptrend, "signal_desc"] = "ADX下降且+DI>-DI，多头趋势减弱"
+        signals.loc[weakening_uptrend, "signal_desc"] = "ADX下降且+DI>-DI,多头趋势减弱"
         signals.loc[weakening_uptrend, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_uptrend, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_uptrend, "risk_level"] = "中"
 
-        # 空头趋势减弱信号：ADX下降且-DI>+DI
+        # 空头趋势减弱信号:ADX下降且-DI>+DI
         weakening_downtrend = adx_falling & (mdi > pdi)
         signals.loc[weakening_downtrend, "sell_signal"] = True
         signals.loc[weakening_downtrend, "neutral_signal"] = False
         signals.loc[weakening_downtrend, "trend"] = -1
         signals.loc[weakening_downtrend, "signal_type"] = "减弱空头趋势"
-        signals.loc[weakening_downtrend, "signal_desc"] = "ADX下降且-DI>+DI，空头趋势减弱"
+        signals.loc[weakening_downtrend, "signal_desc"] = "ADX下降且-DI>+DI,空头趋势减弱"
         signals.loc[weakening_downtrend, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_downtrend, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_downtrend, "risk_level"] = "中"
 
-        # 5. ADX非常低，无趋势信号  # TODO: 将魔法数字提取到配置中
+        # 5. ADX非常低,无趋势信号  # TODO: 将魔法数字提取到配置中
         no_trend = (
             adx < 15
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -859,12 +859,12 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         signals.loc[no_trend, "sell_signal"] = False
         signals.loc[no_trend, "trend"] = 0
         signals.loc[no_trend, "signal_type"] = "无趋势"
-        signals.loc[no_trend, "signal_desc"] = "ADX低于15，市场处于无趋势震荡状态"
+        signals.loc[no_trend, "signal_desc"] = "ADX低于15,市场处于无趋势震荡状态"
         signals.loc[no_trend, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[no_trend, "position_size"] = 0.0
         signals.loc[no_trend, "risk_level"] = "中"
 
-        # 6. ADX非常高，趋势过热信号  # TODO: 将魔法数字提取到配置中
+        # 6. ADX非常高,趋势过热信号  # TODO: 将魔法数字提取到配置中
         extreme_trend = adx > 50  # TODO: 将魔法数字提取到配置中
 
         # 根据DI判断是多头还是空头过热
@@ -873,7 +873,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         signals.loc[extreme_uptrend, "neutral_signal"] = False
         signals.loc[extreme_uptrend, "trend"] = 1
         signals.loc[extreme_uptrend, "signal_type"] = "极端多头趋势"
-        signals.loc[extreme_uptrend, "signal_desc"] = "ADX极高且+DI>-DI，多头趋势过热"
+        signals.loc[extreme_uptrend, "signal_desc"] = "ADX极高且+DI>-DI,多头趋势过热"
         signals.loc[extreme_uptrend, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_uptrend, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_uptrend, "risk_level"] = "高"
@@ -883,7 +883,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         signals.loc[extreme_downtrend, "neutral_signal"] = False
         signals.loc[extreme_downtrend, "trend"] = -1
         signals.loc[extreme_downtrend, "signal_type"] = "极端空头趋势"
-        signals.loc[extreme_downtrend, "signal_desc"] = "ADX极高且-DI>+DI，空头趋势过热"
+        signals.loc[extreme_downtrend, "signal_desc"] = "ADX极高且-DI>+DI,空头趋势过热"
         signals.loc[extreme_downtrend, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_downtrend, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_downtrend, "risk_level"] = "高"
@@ -981,38 +981,38 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 根据ADX值判断市场环境
         signals["market_env"] = "sideways_market"  # 默认震荡市场
 
-        # ADX高且+DI>-DI，上升趋势市场
+        # ADX高且+DI>-DI,上升趋势市场
         uptrend_market = (adx > 25) & (pdi > mdi)  # TODO: 将魔法数字提取到配置中
         signals.loc[uptrend_market, "market_env"] = "bull_market"
 
-        # ADX高且-DI>+DI，下降趋势市场
+        # ADX高且-DI>+DI,下降趋势市场
         downtrend_market = (adx > 25) & (mdi > pdi)  # TODO: 将魔法数字提取到配置中
         signals.loc[downtrend_market, "market_env"] = "bear_market"
 
-        # ADX低，震荡市场
+        # ADX低,震荡市场
         strong_sideways = adx < 15  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_sideways, "market_env"] = "sideways_market"
 
         # 设置成交量确认
         if "volume" in data.columns:
-            # 如果有成交量数据，检查成交量是否支持当前信号
+            # 如果有成交量数据,检查成交量是否支持当前信号
             vol = data["volume"]
             vol_avg = vol.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
 
             # 成交量大于20日均量1.5倍为放量
             vol_increase = vol > vol_avg * 1.5  # TODO: 将魔法数字提取到配置中
 
-            # 买入信号且成交量放大，确认信号
+            # 买入信号且成交量放大,确认信号
             signals.loc[signals["buy_signal"] & vol_increase, "volume_confirmation"] = True
 
-            # 卖出信号且成交量放大，确认信号
+            # 卖出信号且成交量放大,确认信号
             signals.loc[signals["sell_signal"] & vol_increase, "volume_confirmation"] = True
 
         return signals
 
     def get_patterns_Dmi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        识别所有已定义的DMI形态，并以Data_frame形式返回
+        识别所有已定义的DMI形态,并以Data_frame形式返回
 
         Args:
             data: 输入数据
@@ -1101,7 +1101,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 adx_values = self._result["ADX"].dropna()
                 if len(adx_values) > 0:
                     last_adx = adx_values.iloc[-1]
-                    # ADX越高，置信度越高
+                    # ADX越高,置信度越高
                     if last_adx > 40:  # TODO: 将魔法数字提取到配置中
                         confidence += 0.2
                     elif last_adx > 25:  # TODO: 将魔法数字提取到配置中
@@ -1127,7 +1127,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="DMI_GOLDEN_CROSS",
             display_name="DMI金叉",
-            description="+DI上穿-DI，显示多头趋势开始",
+            description="+DI上穿-DI,显示多头趋势开始",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=30.0,  # TODO: 将魔法数字提取到配置中
@@ -1137,7 +1137,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="DMI_DEATH_CROSS",
             display_name="DMI死叉",
-            description="-DI上穿+DI，显示空头趋势开始",
+            description="-DI上穿+DI,显示空头趋势开始",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
@@ -1148,7 +1148,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="ADX_STRONG_TREND",
             display_name="ADX强趋势",
-            description="ADX大于25，表示趋势强劲",
+            description="ADX大于25,表示趋势强劲",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -1158,7 +1158,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="ADX_WEAK_TREND",
             display_name="ADX弱趋势",
-            description="ADX小于20，表示趋势疲弱，可能进入盘整",
+            description="ADX小于20,表示趋势疲弱,可能进入盘整",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -1169,7 +1169,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="ADX_RISING",
             display_name="ADX上升",
-            description="ADX上升，趋势强度增强",
+            description="ADX上升,趋势强度增强",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -1179,7 +1179,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="ADX_FALLING",
             display_name="ADX下降",
-            description="ADX下降，趋势强度减弱，可能预示反转或盘整",
+            description="ADX下降,趋势强度减弱,可能预示反转或盘整",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -1199,37 +1199,37 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         pattern_info_map = {
             "DMI_GOLDEN_CROSS": {
                 "name": "DMI金叉",
-                "description": "+DI上穿-DI，显示多头趋势开始",
+                "description": "+DI上穿-DI,显示多头趋势开始",
                 "strength": "strong",
                 "type": "bullish",
             },
             "DMI_DEATH_CROSS": {
                 "name": "DMI死叉",
-                "description": "-DI上穿+DI，显示空头趋势开始",
+                "description": "-DI上穿+DI,显示空头趋势开始",
                 "strength": "strong",
                 "type": "bearish",
             },
             "ADX_STRONG_TREND": {
                 "name": "ADX强趋势",
-                "description": "ADX大于25，表示趋势强劲",
+                "description": "ADX大于25,表示趋势强劲",
                 "strength": "medium",
                 "type": "neutral",
             },
             "ADX_WEAK_TREND": {
                 "name": "ADX弱趋势",
-                "description": "ADX小于20，表示趋势疲弱",
+                "description": "ADX小于20,表示趋势疲弱",
                 "strength": "weak",
                 "type": "neutral",
             },
             "ADX_RISING": {
                 "name": "ADX上升",
-                "description": "ADX上升，趋势强度增强",
+                "description": "ADX上升,趋势强度增强",
                 "strength": "medium",
                 "type": "neutral",
             },
             "ADX_FALLING": {
                 "name": "ADX下降",
-                "description": "ADX下降，趋势强度减弱",
+                "description": "ADX下降,趋势强度减弱",
                 "strength": "weak",
                 "type": "neutral",
             },
@@ -1247,13 +1247,13 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
             },
             "DMI_TREND_WEAKENING": {
                 "name": "DMI趋势减弱",
-                "description": "ADX下降，当前趋势强度减弱",
+                "description": "ADX下降,当前趋势强度减弱",
                 "strength": "medium",
                 "type": "neutral",
             },
             "DMI_NO_TREND": {
                 "name": "DMI无趋势",
-                "description": "ADX低于15，市场处于无趋势状态",
+                "description": "ADX低于15,市场处于无趋势状态",
                 "strength": "weak",
                 "type": "neutral",
             },
@@ -1295,7 +1295,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取DMI形态"""
+        """真实实现:获取DMI形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -1348,7 +1348,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算DMI原始评分"""
+        """真实实现:计算DMI原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -1366,11 +1366,11 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         adx = dmi_data.get("ADX", pd.Series(index=data.index))
 
         # 1. 基于趋势方向的评分
-        # PDI > MDI 加分（上升趋势）
+        # PDI > MDI 加分(上升趋势)
         uptrend_condition = pdi > mdi
         score += uptrend_condition * 15  # TODO: 将魔法数字提取到配置中
 
-        # MDI > PDI 减分（下降趋势）
+        # MDI > PDI 减分(下降趋势)
         downtrend_condition = mdi > pdi
         score -= downtrend_condition * 15  # TODO: 将魔法数字提取到配置中
 
@@ -1403,17 +1403,17 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         score -= mdi_cross_up * 12  # TODO: 将魔法数字提取到配置中
 
         # 4. 基于ADX趋势的评分  # TODO: 将魔法数字提取到配置中
-        # ADX上升加分（趋势加强）
+        # ADX上升加分(趋势加强)
         adx_rising = adx > adx.shift(1)
         score += adx_rising * 5  # TODO: 将魔法数字提取到配置中
 
-        # ADX下降减分（趋势减弱）
+        # ADX下降减分(趋势减弱)
         adx_falling = adx < adx.shift(1)
         score -= adx_falling * 5  # TODO: 将魔法数字提取到配置中
 
         # 5. 基于PDI和MDI差值的评分  # TODO: 将魔法数字提取到配置中
         di_diff = np.abs(pdi - mdi)
-        # 差值越大，趋势越明确
+        # 差值越大,趋势越明确
         diff_bonus = np.minimum(di_diff / 2, 10)  # 最多10分奖励
         score += diff_bonus
 
@@ -1421,7 +1421,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         return score.clip(0, 100)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成DMI交易信号"""
+        """真实实现:生成DMI交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -1477,7 +1477,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算DMI综合评分"""
+        """真实实现:计算DMI综合评分"""
         if data.empty:
             return {"score": 50.0, "confidence": 0.0, "signals": {}}  # TODO: 将魔法数字提取到配置中
 
@@ -1563,7 +1563,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置DMI参数"""
+        """真实实现:设置DMI参数"""
         # 验证并设置period参数
         if "period" in kwargs:
             period = kwargs["period"]
@@ -1596,15 +1596,15 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         logger.info(f"DMI参数已更新")
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成DMI交易信号"""
+        """真实实现:生成DMI交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算DMI指标"""
+        """真实实现:计算DMI指标"""
         return self._calculate_dmi(data, **kwargs)
 
     def calculate_confidence_Dmi(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """真实实现：计算DMI置信度"""
+        """真实实现:计算DMI置信度"""
         if score.empty:
             return 0.3  # TODO: 将魔法数字提取到配置中
 
@@ -1651,19 +1651,19 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         return max(0.0, min(1.0, confidence))
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_Dmi(score, patterns, signals)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：识别形态"""
+        """兼容性方法:识别形态"""
         return self.get_patterns(data, **kwargs)
 
     def calculate_raw_score_dmi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
     def _classify_adx_strength(self, adx_value: float) -> str:
-        """真实实现：分类ADX强度"""
+        """真实实现:分类ADX强度"""
         if adx_value > 40:  # TODO: 将魔法数字提取到配置中
             return "very_strong"
         elif adx_value > 25:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1680,7 +1680,7 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         DirectionalMovementIndex指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -1689,14 +1689,14 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
 
 def get_directionalmovementindex():
-    """获取DirectionalMovementIndex实例（通过依赖注入）"""
+    """获取DirectionalMovementIndex实例(通过依赖注入)"""
     try:
         container = get_service_container()
         if not container.is_registered(DirectionalMovementIndex):
             container.register_singleton(DirectionalMovementIndex)
         return container.get_service(DirectionalMovementIndex)
     except Exception:
-        # 降级处理：如果依赖注入失败，直接创建实例
+        # 降级处理:如果依赖注入失败,直接创建实例
         return DirectionalMovementIndex()
 
 
@@ -1705,5 +1705,5 @@ def get_dmi_indicator(**kwargs):
     return DirectionalMovementIndex(**kwargs)
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 DMI = DirectionalMovementIndex

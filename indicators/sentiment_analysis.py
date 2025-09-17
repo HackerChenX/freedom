@@ -34,7 +34,7 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_sentimentanalysis()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -54,6 +54,9 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -64,16 +67,16 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('SENTIMENT_ANALYSIS', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
         self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
-        # 🔧 Ultra Think修复：同步更新minimum_periods
+        # 🔧 Ultra Think修复:同步更新minimum_periods
         self._minimum_periods = self.period
     
     def calculate_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -102,7 +105,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        # 🔧 Ultra Think修复:正确处理NaN值,使用min_periods=1确保有足够数据
         df[f'SENTIMENT_ANALYSIS_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
         
@@ -112,7 +115,7 @@ from db.sql_manager import SQLManager, QueryType
 
         return df
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_sentimentanalysis(data, **kwargs)
@@ -140,7 +143,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_raw_score_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Analysis_Sentiment_Analysis(data, **kwargs)
         return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
@@ -158,7 +161,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM市场情绪指标
 
-    分析市场整体情绪状态，包括恐慌贪婪指数、投资者情绪等
+    分析市场整体情绪状态,包括恐慌贪婪指数,投资者情绪等
     """
 
     def __init__(self, **kwargs):
@@ -171,9 +174,9 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 指标参数
         """
-        # 移除super().__init__调用，直接设置属性
+        # 移除super().__init__调用,直接设置属性
         self.name = "ZXMMarketSentiment"
-        self.description = "ZXM市场情绪指标，分析市场整体情绪状态"
+        self.description = "ZXM市场情绪指标,分析市场整体情绪状态"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_marketsentiment()
@@ -235,7 +238,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 检查数据量是否足够
         if len(data) < self.minimum_periods:
-            logger.warning(f"ZXM_MARKET_SENTIMENT: 数据量不足，需要至少 {self.minimum_periods} 行，实际 {len(data)} 行")
+            logger.warning(f"ZXM_MARKET_SENTIMENT: 数据量不足,需要至少 {self.minimum_periods} 行,实际 {len(data)} 行")
             # 返回带有默认值的DataFrame
             result = data.copy()
             result['FearGreedIndex'] = 50.0  # TODO: 将魔法数字提取到配置中
@@ -274,11 +277,11 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         close = result['close']
         returns = close.pct_change()
 
-        # 计算价格动量（0-100）
+        # 计算价格动量(0-100)
         momentum = returns.rolling(window=self.fear_greed_period).mean()
         momentum_normalized = ((momentum - momentum.min()) / (momentum.max() - momentum.min()) * 100).fillna(50)  # TODO: 将魔法数字提取到配置中
 
-        # 计算波动率（反向，高波动=恐慌）
+        # 计算波动率(反向,高波动=恐慌)
         volatility = returns.rolling(window=self.volatility_period).std()
         volatility_normalized = (100 - ((volatility - volatility.min()) / (volatility.max() - volatility.min()) * 100)).fillna(50)  # TODO: 将魔法数字提取到配置中
 
@@ -301,7 +304,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         high = result['high']
         low = result['low']
 
-        # 计算价格位置（收盘价在高低点中的位置）
+        # 计算价格位置(收盘价在高低点中的位置)
         price_position = ((close - low) / (high - low) * 100).fillna(50)  # TODO: 将魔法数字提取到配置中
 
         # 计算趋势强度
@@ -360,10 +363,10 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         composite_sentiment = result['CompositeSentiment']
 
-        # 极度恐慌信号（买入机会）
+        # 极度恐慌信号(买入机会)
         result['ExtremeFearSignal'] = composite_sentiment <= 20  # TODO: 将魔法数字提取到配置中
 
-        # 极度贪婪信号（卖出警告）
+        # 极度贪婪信号(卖出警告)
         result['ExtremeGreedSignal'] = composite_sentiment >= 80  # TODO: 将魔法数字提取到配置中
 
         # 情绪转折信号
@@ -455,7 +458,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return {
             'indicator_type': 'ZXM_MARKET_SENTIMENT',
             'category': 'sentiment_analysis',
-            'description': 'ZXM市场情绪指标，分析市场整体情绪状态',
+            'description': 'ZXM市场情绪指标,分析市场整体情绪状态',
             'version': '1.0.0',
             'author': 'ZXM',
             'metrics': [

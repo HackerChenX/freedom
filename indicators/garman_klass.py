@@ -6,8 +6,8 @@ from utils.container import container
 """
 Garman-Klass波动率指标
 
-Garman-Klass波动率是一种更精确的波动率估计方法，它利用开盘价、最高价、最低价和收盘价
-来计算波动率，比仅使用收盘价的方法更准确。
+Garman-Klass波动率是一种更精确的波动率估计方法,它利用开盘价,最高价,最低价和收盘价
+来计算波动率,比仅使用收盘价的方法更准确.
 """
 
 import numpy as np
@@ -26,16 +26,16 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     Garman-Klass波动率指标
 
-    分类：波动性指标
-    描述：利用OHLC数据计算更精确的波动率
+    分类:波动性指标
+    描述:利用OHLC数据计算更精确的波动率
 
-    计算公式：
+    计算公式:
     GK = ln(H/L) * ln(H/L) - (2*ln(2)-1) * ln(C/O) * ln(C/O)
-    其中：H=最高价, L=最低价, C=收盘价, O=开盘价
+    其中:H=最高价, L=最低价, C=收盘价, O=开盘价
 
-    信号解释：
-    - 数值越大：波动率越高
-    - 数值越小：波动率越低
+    信号解释:
+    - 数值越大:波动率越高
+    - 数值越小:波动率越低
     - 可用于风险管理和仓位调整
     """
 
@@ -47,8 +47,8 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化Garman-Klass波动率指标
 
         Args:
-            period: 计算周期，默认20
-            annualize: 是否年化，默认True
+            period: 计算周期,默认20
+            annualize: 是否年化,默认True
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
@@ -100,7 +100,7 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             df = df[(df["high"] > 0) & (df["low"] > 0) & (df["open"] > 0) & (df["close"] > 0)].copy()
 
             if df.empty:
-                logger.warning("数据中包含非正数，无法计算Garman-Klass波动率")
+                logger.warning("数据中包含非正数,无法计算Garman-Klass波动率")
                 return pd.DataFrame()
 
             # 计算对数比率
@@ -113,7 +113,7 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 计算滚动平均波动率
             gk_volatility = gk_estimator.rolling(window=self.period).mean()
 
-            # 年化处理（假设252个交易日）
+            # 年化处理(假设252个交易日)
             if self.annualize:
                 gk_volatility_annualized = np.sqrt(gk_volatility * 252)  # TODO: 将魔法数字提取到配置中
             else:
@@ -200,13 +200,13 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         percentiles = df["volatility_percentile"]
 
         # 波动率突破信号
-        # 从低波动率突破到高波动率（趋势可能开始）
+        # 从低波动率突破到高波动率(趋势可能开始)
         low_to_high = (percentiles > 70) & (
             percentiles.shift(1) < 30
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signals[low_to_high] = 1
 
-        # 从高波动率回落到低波动率（趋势可能结束）
+        # 从高波动率回落到低波动率(趋势可能结束)
         high_to_low = (percentiles < 30) & (
             percentiles.shift(1) > 70
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -240,19 +240,19 @@ class GarmanKlass(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return {
                 "signal": 1,
                 "strength": min(latest_percentile / 100, 1.0),
-                "description": f"波动率突破信号，当前状态：{latest_regime}（{latest_percentile:.1f}%分位）",
+                "description": f"波动率突破信号,当前状态:{latest_regime}({latest_percentile:.1f}%分位)",
             }
         elif latest_signal == -1:
             return {
                 "signal": -1,
                 "strength": min((100 - latest_percentile) / 100, 1.0),
-                "description": f"波动率回落信号，当前状态：{latest_regime}（{latest_percentile:.1f}%分位）",
+                "description": f"波动率回落信号,当前状态:{latest_regime}({latest_percentile:.1f}%分位)",
             }
         else:
             return {
                 "signal": 0,
                 "strength": 0,
-                "description": f"波动率正常，当前状态：{latest_regime}（{latest_percentile:.1f}%分位）",
+                "description": f"波动率正常,当前状态:{latest_regime}({latest_percentile:.1f}%分位)",
             }
 
     def get_pattern_info(self) -> Dict[str, Any]:

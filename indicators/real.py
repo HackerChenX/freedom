@@ -30,7 +30,7 @@ try:
         return real_indicator_factory.get_available_indicators()
     
 except ImportError:
-    # 如果real_technical_indicators不存在，创建Mock实现
+    # 如果real_technical_indicators不存在,创建Mock实现
     class MockRealIndicatorFactory(BaseIndicator):
         """Mock真实指标工厂"""
         

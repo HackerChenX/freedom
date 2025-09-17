@@ -25,7 +25,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
     """
     MULTI_PERIOD_RESONANCE 指标
 
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
 
     def __init__(self, **kwargs):
@@ -44,7 +44,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_multiperiodresonance()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -61,15 +61,15 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：简化参数设置，确保参数修改功能正常
+        # 🔧 Ultra Think修复:简化参数设置,确保参数修改功能正常
         try:
-            # 直接设置参数，不依赖验证器
+            # 直接设置参数,不依赖验证器
             self.period = kwargs.get("period", 14)  # TODO: 将魔法数字提取到配置中
             # 同步更新minimum_periods
             self._minimum_periods = self.period
 
         except Exception:
-            # 如果设置失败，使用默认值
+            # 如果设置失败,使用默认值
             self.period = 14  # TODO: 将魔法数字提取到配置中
             self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
@@ -99,7 +99,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
         """
         df = data.copy()
 
-        # 🔧 Ultra Think修复：实现真实的多周期共振算法
+        # 🔧 Ultra Think修复:实现真实的多周期共振算法
         # 定义多个周期
         periods = [self.period // 2, self.period, self.period * 2, self.period * 3]  # TODO: 将魔法数字提取到配置中
 
@@ -109,7 +109,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
             ma_values[f"MA_{p}"] = df["close"].rolling(window=p, min_periods=1).mean()
 
         # 计算多周期共振强度
-        # 当多个周期的移动平均趋势一致时，共振强度较高
+        # 当多个周期的移动平均趋势一致时,共振强度较高
         resonance_scores = []
         for i in range(len(df)):
             if i < max(periods):
@@ -152,7 +152,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
 
     def calculate_raw_score_Resonance(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Resonance(data, **kwargs)
         return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
@@ -165,7 +165,7 @@ class MultiPeriodResonance(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixi
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_multiperiodresonance(data, **kwargs)

@@ -2,7 +2,7 @@
 from utils.dependency_injection import get_config
 核心服务层服务注册配置
 
-负责注册L4（核心服务层）的服务
+负责注册L4(核心服务层)的服务
 """
 
 from utils.logger import get_logger
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 
 def register_core_services(container: ServiceContainer = None) -> ServiceContainer:
     """
-    注册核心服务层服务（L4）
+    注册核心服务层服务(L4)
 
     Args:
         container: 服务容器
@@ -56,7 +56,7 @@ def register_core_services(container: ServiceContainer = None) -> ServiceContain
 
         container.register_singleton(PatternRegistry, factory=lambda: PatternRegistry())
 
-        # 注册数据库管理器（向后兼容）
+        # 注册数据库管理器(向后兼容)
         from db.db_manager import DBManager
 
         container.register_singleton(

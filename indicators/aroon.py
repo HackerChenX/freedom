@@ -26,7 +26,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     Aroon - L4核心服务层组件
 
     职责合理性说明:
-    - 作为L4层核心服务组件，承担多项相关职责
+    - 作为L4层核心服务组件,承担多项相关职责
     - 31个方法分为以下职责组:
       * 核心功能方法 (约10个)
       * 辅助工具方法 (约10个)
@@ -53,7 +53,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         super().__init__()
         self.name = "AROON"
-        self.description = "阿隆指标，用于识别趋势的强度和方向"
+        self.description = "阿隆指标,用于识别趋势的强度和方向"
         self._result = None  # 初始化结果存储
 
         # 设置默认参数
@@ -63,7 +63,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        # 如果没有设置period，使用默认值
+        # 如果没有设置period,使用默认值
         if not hasattr(self, "period"):
             self.period = self._default_parameters.get("period", 14)  # TODO: 将魔法数字提取到配置中
 
@@ -87,7 +87,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典
         """
-        # 简化参数设置逻辑，直接设置参数
+        # 简化参数设置逻辑,直接设置参数
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -118,35 +118,35 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # ========================== 兼容性方法 ==========================
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：计算指标"""
+        """公共接口:计算指标"""
         return self.calculate_Aroon(data, **kwargs)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：获取形态"""
+        """公共接口:获取形态"""
         return self.get_patterns_Aroon(data, **kwargs)
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """公共接口：计算原始评分"""
+        """公共接口:计算原始评分"""
         return self.calculate_raw_score_Aroon(data, **kwargs)
 
     def generate_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：生成信号（兼容测试）"""
+        """公共接口:生成信号(兼容测试)"""
         return self.generate_signals_aroon(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：获取信号"""
+        """公共接口:获取信号"""
         return self.generate_signals_aroon(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """公共接口：获取信号"""
+        """公共接口:获取信号"""
         return self.generate_signals_aroon(data, **kwargs)
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """公共接口：计算评分"""
+        """公共接口:计算评分"""
         return self.calculate_raw_score_Aroon(data, **kwargs)
 
     def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
-        """公共接口：计算置信度"""
+        """公共接口:计算置信度"""
         # 先计算必要的数据
         score = self.calculate_raw_score_Aroon(data, **kwargs)
         patterns = self.get_patterns_Aroon(data, **kwargs)
@@ -154,33 +154,33 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return self.calculate_confidence_Aroon(score, patterns, signals)
 
     def set_parameters(self, **kwargs):
-        """公共接口：设置参数"""
+        """公共接口:设置参数"""
         return self.set_parameters_Aroon(**kwargs)
 
     def set_parameters_Aroon_Aroon_Aroon_aroon(self, **kwargs):
         """
-        设置AROON指标参数（验证脚本兼容方法）
+        设置AROON指标参数(验证脚本兼容方法)
 
         Args:
-            **kwargs: 参数字典，可包含period
+            **kwargs: 参数字典,可包含period
         """
         return self.set_parameters_Aroon(**kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：计算（别名）"""
+        """公共接口:计算(别名)"""
         return self.calculate_Aroon(data, **kwargs)
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """公共接口：生成交易信号"""
+        """公共接口:生成交易信号"""
         return self.generate_signals_aroon(data, **kwargs)
 
     def register_patterns(self):
-        """公共接口：注册形态"""
-        # 空实现，保持兼容性
+        """公共接口:注册形态"""
+        # 空实现,保持兼容性
         pass
 
     def has_result(self) -> bool:
-        """公共接口：检查是否有结果"""
+        """公共接口:检查是否有结果"""
         return self._result is not None
 
     def calculate_Aroon(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -214,7 +214,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         low = df["low"]
 
         # 计算Aroon Up: (period - 最高价距今天数) / period * 100
-        # argmax返回的是从0开始的索引，最新的值（今天）应该得到100分
+        # argmax返回的是从0开始的索引,最新的值(今天)应该得到100分
         def calculate_aroon_up(window):
             if len(window) < self.period:
                 return np.nan
@@ -240,14 +240,14 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df["aroon_down"] = aroon_down
         df["aroon_oscillator"] = aroon_oscillator
 
-        # 为了向后兼容，也保留AROON_VALUE列
+        # 为了向后兼容,也保留AROON_VALUE列
         df["AROON_VALUE"] = aroon_oscillator
 
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（AROON指标特定逻辑）
+        # 重写信号生成逻辑(AROON指标特定逻辑)
         df = self._apply_aroon_signal_logic(df)
 
         return df
@@ -260,14 +260,14 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         try:
             # 获取AROON值
             if "aroon_up" not in df.columns or "aroon_down" not in df.columns:
-                # 如果没有AROON值，使用默认信号
+                # 如果没有AROON值,使用默认信号
                 return df
 
             aroon_up = df["aroon_up"]
             aroon_down = df["aroon_down"]
             aroon_osc = df["aroon_oscillator"]
 
-            # AROON信号生成逻辑：
+            # AROON信号生成逻辑:
             # BUY: Aroon Up > 70 且 Aroon Up > Aroon Down 且 Aroon Up 上升  # TODO: 将魔法数字提取到配置中
             # SELL: Aroon Down > 70 且 Aroon Down > Aroon Up 且 Aroon Down 上升  # TODO: 将魔法数字提取到配置中
             # HOLD: 其他情况
@@ -296,7 +296,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.warning(f"AROON信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, "buy_signal"] = False
             df.loc[:, "sell_signal"] = False
             df.loc[:, "hold_signal"] = True
@@ -304,7 +304,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return df
 
     def generate_signals_aroon(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：生成AROON信号"""
+        """公共接口:生成AROON信号"""
         try:
             result = self.calculate_Aroon(data, **kwargs)
 
@@ -343,7 +343,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算AROON原始评分
 
-        基于AROON指标的技术分析特点进行评分：
+        基于AROON指标的技术分析特点进行评分:
         1. AROON UP强度评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. AROON DOWN分析 (30%)  # TODO: 将魔法数字提取到配置中
         3. AROON震荡器分析 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -406,7 +406,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         scores += osc_score * 0.2
 
         # 4. 趋势确认 (10%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # AROON UP和DOWN的差距越大，趋势越明确
+        # AROON UP和DOWN的差距越大,趋势越明确
         trend_strength = abs(aroon_up - aroon_down)
         trend_score = pd.Series(0.0, index=data.index)
         trend_score = np.where(
@@ -415,7 +415,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         trend_score = np.where(
             (trend_strength > 30) & (trend_strength <= 50), 5, trend_score
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # 如果AROON UP占优势，加分
+        # 如果AROON UP占优势,加分
         trend_score = np.where(
             (aroon_up > aroon_down) & (trend_strength > 30),  # TODO: 将魔法数字提取到配置中
             trend_score + 2,
@@ -444,7 +444,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         recent_up = aroon_up.iloc[-1] if len(aroon_up) > 0 else 50  # TODO: 将魔法数字提取到配置中
         recent_down = aroon_down.iloc[-1] if len(aroon_down) > 0 else 50  # TODO: 将魔法数字提取到配置中
 
-        # 趋势越明确，置信度越高
+        # 趋势越明确,置信度越高
         trend_clarity = abs(recent_up - recent_down) / 100
 
         # 极端值提高置信度
@@ -512,7 +512,7 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         period = getattr(self, "period", 14)  # TODO: 将魔法数字提取到配置中
         return max(
             period + 5, 20
-        )  # AROON周期 + 缓冲，最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        )  # AROON周期 + 缓冲,最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
 
 # 类别名

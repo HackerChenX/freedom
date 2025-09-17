@@ -23,7 +23,7 @@ class CompositeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
     """
     COMPOSITE_INDICATOR 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, **kwargs):
@@ -59,6 +59,9 @@ class CompositeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -69,7 +72,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('COMPOSITE_INDICATOR', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -78,7 +81,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -107,7 +110,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 最小化实现:返回原数据加上一个简单的计算列
         df[f'COMPOSITE_INDICATOR_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
@@ -115,8 +118,8 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于评分值的阈值判断
-        # 对于state_type指标，使用评分阈值模式
+        # 重写专用信号逻辑:基于评分值的阈值判断
+        # 对于state_type指标,使用评分阈值模式
         score_threshold = 50.0  # 默认阈值  # TODO: 将魔法数字提取到配置中
         df.loc[:, 'buy_signal'] = df[f'COMPOSITE_INDICATOR_VALUE'] >= score_threshold
         df.loc[:, 'sell_signal'] = df[f'COMPOSITE_INDICATOR_VALUE'] < score_threshold
@@ -129,7 +132,7 @@ from db.sql_manager import SQLManager, QueryType
         if not self.has_result():
             self.calculate_Indicator(data, **kwargs)
         
-        # 复合指标评分：多指标综合分析
+        # 复合指标评分:多指标综合分析
         df = data.copy()
         
         # 1. 价格动量指标
@@ -199,14 +202,14 @@ from db.sql_manager import SQLManager, QueryType
         return pd.DataFrame(index=data.index)
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 composite_indicator = COMPOSITE_INDICATOR
     @property
     def minimum_periods(self) -> int:
         """
         CompositeIndicator指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数
@@ -217,7 +220,7 @@ composite_indicator = COMPOSITE_INDICATOR
         计算指标值
         
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
             
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

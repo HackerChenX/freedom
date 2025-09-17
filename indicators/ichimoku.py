@@ -4,7 +4,7 @@ from utils.logger import get_logger
 """
 ICHIMOKU 指标 (一目均衡表)
 
-一目均衡表是日本技术分析师一目山人发明的技术指标，用于判断价格趋势和支撑阻力位。
+一目均衡表是日本技术分析师一目山人发明的技术指标,用于判断价格趋势和支撑阻力位.
 """
 
 import pandas as pd
@@ -24,23 +24,23 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     ICHIMOKU 指标 (一目均衡表)
     
     特点:
-    1. 由五条线组成：转换线、基准线、先行带A、先行带B、滞后线
-    2. 用于判断趋势方向、强度和支撑阻力位
+    1. 由五条线组成:转换线,基准线,先行带A,先行带B,滞后线
+    2. 用于判断趋势方向,强度和支撑阻力位
     3. 云图(Kumo)提供动态支撑阻力区域  # TODO: 将魔法数字提取到配置中
     4. 多时间框架分析工具  # TODO: 将魔法数字提取到配置中
     
     计算方法:
     1. 转换线(Tenkan-sen) = (9日最高价 + 9日最低价) / 2
     2. 基准线(Kijun-sen) = (26日最高价 + 26日最低价) / 2
-    3. 先行带A(Senkou Span A) = (转换线 + 基准线) / 2，向前移动26日  # TODO: 将魔法数字提取到配置中
-    4. 先行带B(Senkou Span B) = (52日最高价 + 52日最低价) / 2，向前移动26日  # TODO: 将魔法数字提取到配置中
-    5. 滞后线(Chikou Span) = 收盘价，向后移动26日  # TODO: 将魔法数字提取到配置中
+    3. 先行带A(Senkou Span A) = (转换线 + 基准线) / 2,向前移动26日  # TODO: 将魔法数字提取到配置中
+    4. 先行带B(Senkou Span B) = (52日最高价 + 52日最低价) / 2,向前移动26日  # TODO: 将魔法数字提取到配置中
+    5. 滞后线(Chikou Span) = 收盘价,向后移动26日  # TODO: 将魔法数字提取到配置中
     
     参数:
-    - tenkan_period: 转换线周期，默认为9
-    - kijun_period: 基准线周期，默认为26
-    - senkou_period: 先行带周期，默认为52
-    - chikou_period: 滞后线周期，默认为26
+    - tenkan_period: 转换线周期,默认为9
+    - kijun_period: 基准线周期,默认为26
+    - senkou_period: 先行带周期,默认为52
+    - chikou_period: 滞后线周期,默认为26
     """
     
     def __init__(self, **kwargs):
@@ -49,7 +49,7 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # self.cache_service = container.resolve("ICacheService")
         """
         初始化ICHIMOKU指标
-        全球金融软件巅峰级标准：完整参数初始化 + 架构兼容性
+        全球金融软件巅峰级标准:完整参数初始化 + 架构兼容性
         
         Args:
             **kwargs: 指标参数
@@ -62,7 +62,7 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_ichimoku()
         
-        # 全球金融软件巅峰级参数初始化：确保所有核心参数都设置为实例属性
+        # 全球金融软件巅峰级参数初始化:确保所有核心参数都设置为实例属性
         self.tenkan_period = self._default_parameters.get("tenkan_period", 9)  # TODO: 将魔法数字提取到配置中
         self.kijun_period = self._default_parameters.get("kijun_period", 26)  # TODO: 将魔法数字提取到配置中
         self.senkou_period = self._default_parameters.get("senkou_period", 52)  # TODO: 将魔法数字提取到配置中
@@ -93,6 +93,9 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -103,11 +106,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ICHIMOKU', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -195,8 +198,8 @@ from db.sql_manager import SQLManager, QueryType
         ichimoku_signal += chikou_above_price * 15  # 滞后线在价格上方  # TODO: 将魔法数字提取到配置中
         ichimoku_signal += (~chikou_above_price) * (-15)  # 滞后线在价格下方  # TODO: 将魔法数字提取到配置中
         
-        # 云图颜色（先行带A与先行带B的关系）
-        green_kumo = senkou_span_a > senkou_span_b  # 绿云（上升云）
+        # 云图颜色(先行带A与先行带B的关系)
+        green_kumo = senkou_span_a > senkou_span_b  # 绿云(上升云)
         ichimoku_signal += green_kumo * 10
         ichimoku_signal += (~green_kumo) * (-10)
         
@@ -215,7 +218,7 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（ICHIMOKU指标特定逻辑）
+        # 重写信号生成逻辑(ICHIMOKU指标特定逻辑)
         df = self._apply_ichimoku_signal_logic(df)
 
         return df
@@ -237,9 +240,9 @@ from db.sql_manager import SQLManager, QueryType
             kumo_bottom = df['ICHIMOKU_KUMO_BOTTOM']
             chikou = df['ICHIMOKU_CHIKOU']
 
-            # 一目均衡表信号生成逻辑：
-            # 强买入信号：价格>云图 AND 转换线>基准线 AND 滞后线>价格(26日前)
-            # 强卖出信号：价格<云图 AND 转换线<基准线 AND 滞后线<价格(26日前)
+            # 一目均衡表信号生成逻辑:
+            # 强买入信号:价格>云图 AND 转换线>基准线 AND 滞后线>价格(26日前)
+            # 强卖出信号:价格<云图 AND 转换线<基准线 AND 滞后线<价格(26日前)
             
             # 基本条件
             price_above_kumo = close_price > kumo_top
@@ -247,7 +250,7 @@ from db.sql_manager import SQLManager, QueryType
             tenkan_above_kijun = tenkan > kijun
             tenkan_below_kijun = tenkan < kijun
             
-            # 滞后线确认（需要考虑移位）
+            # 滞后线确认(需要考虑移位)
             chikou_confirm_buy = chikou.shift(self.chikou_period) > close_price
             chikou_confirm_sell = chikou.shift(self.chikou_period) < close_price
 
@@ -270,7 +273,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"ICHIMOKU信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -281,11 +284,11 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算一目均衡表的原始评分
         
-        基于一目均衡表的多重信号确认进行评分：
-        1. 价格与云图关系：价格在云图上方/下方/内部的评分
-        2. 转换线与基准线关系：金叉死叉的评分
-        3. 滞后线确认：滞后线与价格的关系  # TODO: 将魔法数字提取到配置中
-        4. 云图特征：云图厚度和颜色的评分  # TODO: 将魔法数字提取到配置中
+        基于一目均衡表的多重信号确认进行评分:
+        1. 价格与云图关系:价格在云图上方/下方/内部的评分
+        2. 转换线与基准线关系:金叉死叉的评分
+        3. 滞后线确认:滞后线与价格的关系  # TODO: 将魔法数字提取到配置中
+        4. 云图特征:云图厚度和颜色的评分  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Ichimoku(data, **kwargs)
@@ -398,19 +401,19 @@ from db.sql_manager import SQLManager, QueryType
             current_senkou_b = senkou_b.iloc[i]
             current_thickness = kumo_thickness.iloc[i]
             
-            # 云图颜色（绿云vs红云）
+            # 云图颜色(绿云vs红云)
             if current_senkou_a > current_senkou_b:
-                # 绿云（上升云）- 看涨
+                # 绿云(上升云)- 看涨
                 kumo_color_score = 15.0  # TODO: 将魔法数字提取到配置中
             else:
-                # 红云（下降云）- 看跌
+                # 红云(下降云)- 看跌
                 kumo_color_score = 5.0  # TODO: 将魔法数字提取到配置中
             
-            # 云图厚度（厚度越大，支撑阻力越强）
+            # 云图厚度(厚度越大,支撑阻力越强)
             if current_close > 0:
                 thickness_ratio = current_thickness / current_close
                 if thickness_ratio > 0.03:  # TODO: 将魔法数字提取到配置中
-                    kumo_thickness_score = 5.0  # 厚云图，强支撑阻力  # TODO: 将魔法数字提取到配置中
+                    kumo_thickness_score = 5.0  # 厚云图,强支撑阻力  # TODO: 将魔法数字提取到配置中
                 elif thickness_ratio > 0.01:
                     kumo_thickness_score = 3.0  # 中等厚度  # TODO: 将魔法数字提取到配置中
                 else:
@@ -490,7 +493,7 @@ from db.sql_manager import SQLManager, QueryType
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         全球金融软件巅峰级标准公共计算接口
-        符合BaseIndicator规范，统一调用入口
+        符合BaseIndicator规范,统一调用入口
         """
         result = self.calculate_Ichimoku(data, **kwargs)
         self._result = result  # 保存结果供其他方法使用
@@ -498,8 +501,8 @@ from db.sql_manager import SQLManager, QueryType
         
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        核心计算逻辑，实现抽象方法
-        全球金融软件巅峰级标准：真实数学计算 + 完整功能实现
+        核心计算逻辑,实现抽象方法
+        全球金融软件巅峰级标准:真实数学计算 + 完整功能实现
         """
         return self.calculate(data, **kwargs)
     
@@ -527,7 +530,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         全球金融软件巅峰级ICHIMOKU原始评分计算
         
-        基于一目均衡表的技术分析特点进行评分：
+        基于一目均衡表的技术分析特点进行评分:
         1. 云图支撑阻力准确性评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. 转换线基准线交叉有效性评分 (25%)  # TODO: 将魔法数字提取到配置中
         3. 滞后线确认评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -581,7 +584,7 @@ from db.sql_manager import SQLManager, QueryType
             golden_cross = (tenkan > kijun) & (tenkan.shift(1) <= kijun.shift(1))
             death_cross = (tenkan < kijun) & (tenkan.shift(1) >= kijun.shift(1))
             
-            # 交叉的有效性（结合价格确认）
+            # 交叉的有效性(结合价格确认)
             valid_golden = golden_cross & (close > close.shift(1))
             valid_death = death_cross & (close < close.shift(1))
             
@@ -595,7 +598,7 @@ from db.sql_manager import SQLManager, QueryType
         chikou_score = pd.Series(0.0, index=data.index)
         
         if not chikou.empty:
-            # 滞后线与价格的关系（26天前的收盘价与当前价格比较）
+            # 滞后线与价格的关系(26天前的收盘价与当前价格比较)
             chikou_above_price = chikou > close.shift(26).fillna(close)  # TODO: 将魔法数字提取到配置中
             chikou_below_price = chikou < close.shift(26).fillna(close)  # TODO: 将魔法数字提取到配置中
             
@@ -716,7 +719,7 @@ from db.sql_manager import SQLManager, QueryType
                 else:
                     self._default_parameters = {key: value}
                 
-                # 全球金融软件巅峰级标准：同时更新实例属性
+                # 全球金融软件巅峰级标准:同时更新实例属性
                 setattr(self, key, value)
 
     @property
@@ -724,7 +727,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         Ichimoku指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

@@ -23,7 +23,7 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     AD (Accumulation/Distribution Line) 累积分布线指标
 
-    生产级实现：真实数学计算 + 完整功能 + 架构兼容
+    生产级实现:真实数学计算 + 完整功能 + 架构兼容
 
     核心算法: AD Line = Σ[((Close-Low)-(High-Close))/(High-Low) * Volume]
     """
@@ -51,21 +51,21 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """核心计算逻辑，实现抽象方法"""
+        """核心计算逻辑,实现抽象方法"""
         return self._calculate_ad_production(data, **kwargs)
 
     def _calculate_ad_production(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生产级AD指标计算
 
-        实现真实的累积分布线算法：
+        实现真实的累积分布线算法:
         AD Line = Σ[((Close-Low)-(High-Close))/(High-Low) * Volume]
         """
         df = data.copy()
 
         # 确保数据有足够长度
         if len(df) < 1:
-            logger.warning("数据长度不足，无法计算AD指标")
+            logger.warning("数据长度不足,无法计算AD指标")
             df["AD"] = np.nan
             return df
 
@@ -79,17 +79,17 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算Money Flow Multiplier
         mfm = ((df["close"] - df["low"]) - (df["high"] - df["close"])) / high_low_diff
 
-        # 处理除零情况：当高低价相等时，根据收盘价与前一交易日的关系确定MFM
+        # 处理除零情况:当高低价相等时,根据收盘价与前一交易日的关系确定MFM
         for i in range(len(df)):
             if pd.isna(mfm.iloc[i]) or np.isinf(mfm.iloc[i]):
                 if i > 0:
-                    # 如果收盘价高于前一交易日，MFM = 1
+                    # 如果收盘价高于前一交易日,MFM = 1
                     if df["close"].iloc[i] > df["close"].iloc[i - 1]:
                         mfm.iloc[i] = 1.0
-                    # 如果收盘价低于前一交易日，MFM = -1
+                    # 如果收盘价低于前一交易日,MFM = -1
                     elif df["close"].iloc[i] < df["close"].iloc[i - 1]:
                         mfm.iloc[i] = -1.0
-                    # 如果收盘价等于前一交易日，MFM = 0
+                    # 如果收盘价等于前一交易日,MFM = 0
                     else:
                         mfm.iloc[i] = 0.0
                 else:
@@ -179,7 +179,7 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         AD指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -191,10 +191,10 @@ class AccumulationDistribution(AD):
     """
     累积/派发线指标 (Accumulation/Distribution Line)
 
-    AD指标将每日的成交量按照收盘价与最高最低价的关系进行加权，
-    以反映成交量与价格的关系，评估资金流入流出情况。
+    AD指标将每日的成交量按照收盘价与最高最低价的关系进行加权,
+    以反映成交量与价格的关系,评估资金流入流出情况.
 
-    该指标常用于判断价格趋势的强弱，特别是通过量价背离来预测价格可能的反转。
+    该指标常用于判断价格趋势的强弱,特别是通过量价背离来预测价格可能的反转.
     """
 
     def __init__(self, name: str = "AD", description: str = "累积/派发线指标"):
@@ -219,7 +219,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_GOLDEN_CROSS",
             display_name="AD金叉",
-            description="AD上穿其均线，表明买盘资金增加",
+            description="AD上穿其均线,表明买盘资金增加",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -229,7 +229,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_DEATH_CROSS",
             display_name="AD死叉",
-            description="AD下穿其均线，表明卖盘资金增加",
+            description="AD下穿其均线,表明卖盘资金增加",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -240,7 +240,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_PRICE_DIVERGENCE_TOP",
             display_name="AD与价格顶背离",
-            description="价格创新高但AD未创新高，表明上涨动能减弱",
+            description="价格创新高但AD未创新高,表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -250,7 +250,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_PRICE_DIVERGENCE_BOTTOM",
             display_name="AD与价格底背离",
-            description="价格创新低但AD未创新低，表明下跌动能减弱",
+            description="价格创新低但AD未创新低,表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -261,7 +261,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_UPTREND",
             display_name="AD上升趋势",
-            description="AD持续上升，表明买盘持续涌入",
+            description="AD持续上升,表明买盘持续涌入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -271,7 +271,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_DOWNTREND",
             display_name="AD下降趋势",
-            description="AD持续下降，表明卖盘持续涌出",
+            description="AD持续下降,表明卖盘持续涌出",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -282,7 +282,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_RAPID_INCREASE",
             display_name="AD快速上涨",
-            description="AD快速上涨，表明买盘资金快速涌入",
+            description="AD快速上涨,表明买盘资金快速涌入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=12.0,  # TODO: 将魔法数字提取到配置中
@@ -292,7 +292,7 @@ class AccumulationDistribution(AD):
         self.register_pattern_to_registry(
             pattern_id="AD_RAPID_DECREASE",
             display_name="AD快速下跌",
-            description="AD快速下跌，表明卖盘资金快速涌出",
+            description="AD快速下跌,表明卖盘资金快速涌出",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-12.0,  # TODO: 将魔法数字提取到配置中
@@ -301,7 +301,7 @@ class AccumulationDistribution(AD):
 
     def calculate_confidence_Ad(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算AD指标的置信度。
+        计算AD指标的置信度.
         """
         return 0.5  # TODO: 将魔法数字提取到配置中
 
@@ -366,7 +366,7 @@ class AccumulationDistribution(AD):
 
         result = []
 
-        # 如果没有计算结果，先计算
+        # 如果没有计算结果,先计算
         if not self.has_result_Ad():
             self.calculate(data)
 
@@ -407,7 +407,7 @@ class AccumulationDistribution(AD):
             price_trend = data["close"].pct_change(5, fill_method=None).iloc[-1]  # TODO: 将魔法数字提取到配置中
             ad_trend = ad_data.pct_change(5, fill_method=None).iloc[-1]  # TODO: 将魔法数字提取到配置中
 
-            # 价格上涨但AD下降（顶背离）
+            # 价格上涨但AD下降(顶背离)
             if price_trend > 0.02 and ad_trend < -0.02:
                 pattern_data = {
                     "pattern_id": "AD_PRICE_DIVERGENCE_TOP",
@@ -418,7 +418,7 @@ class AccumulationDistribution(AD):
                     "details": {"price_trend": float(price_trend), "ad_trend": float(ad_trend)},
                 }
                 result.append(pattern_data)
-            # 价格下跌但AD上升（底背离）
+            # 价格下跌但AD上升(底背离)
             elif price_trend < -0.02 and ad_trend > 0.02:
                 pattern_data = {
                     "pattern_id": "AD_PRICE_DIVERGENCE_BOTTOM",
@@ -461,14 +461,14 @@ class AccumulationDistribution(AD):
 
     def calculate_score_Ad(self, data: pd.DataFrame, **kwargs) -> float:
         """
-        计算AD指标评分（0-100分制）
+        计算AD指标评分(0-100分制)
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            float: 综合评分（0-100）
+            float: 综合评分(0-100)
         """
         raw_score = self.calculate_raw_score_Ad(data, **kwargs)
 
@@ -502,13 +502,13 @@ class AccumulationDistribution(AD):
         from indicators.base_indicator import Market_environment
 
         if market_env == Market_environment.BULL_MARKET:
-            # 牛市中增强多头信号，弱化空头信号
+            # 牛市中增强多头信号,弱化空头信号
             if score > 50:  # TODO: 将魔法数字提取到配置中
                 return score + (score - 50) * 0.2  # 多头信号增强  # TODO: 将魔法数字提取到配置中
             else:
                 return score + (score - 50) * 0.1  # 空头信号减弱  # TODO: 将魔法数字提取到配置中
         elif market_env == Market_environment.BEAR_MARKET:
-            # 熊市中增强空头信号，弱化多头信号
+            # 熊市中增强空头信号,弱化多头信号
             if score < 50:  # TODO: 将魔法数字提取到配置中
                 return score - (50 - score) * 0.2  # 空头信号增强  # TODO: 将魔法数字提取到配置中
             else:
@@ -524,7 +524,7 @@ class AccumulationDistribution(AD):
                     50 + (score - 50) * 0.8
                 )  # 中性信号更中性  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:
-            # 震荡市场，保持原评分
+            # 震荡市场,保持原评分
             return score
 
     def has_result_Ad(self) -> bool:
@@ -536,12 +536,12 @@ class AccumulationDistribution(AD):
         生成AD指标的标准化交易信号
 
         Args:
-            data: 输入数据，包含OHLCV数据
+            data: 输入数据,包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
 
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 确保已计算AD指标
         if not self.has_result_Ad():
@@ -582,29 +582,29 @@ class AccumulationDistribution(AD):
             logger.warning(f"计算ATR失败: {e}")
             atr_values = pd.Series(0, index=data.index)
 
-        # 1. AD上穿其均线，买入信号
+        # 1. AD上穿其均线,买入信号
         ad_crossover_ma = crossover(ad, ad_ma)
         signals.loc[ad_crossover_ma, "buy_signal"] = True
         signals.loc[ad_crossover_ma, "neutral_signal"] = False
         signals.loc[ad_crossover_ma, "trend"] = 1
         signals.loc[ad_crossover_ma, "signal_type"] = "AD金叉"
-        signals.loc[ad_crossover_ma, "signal_desc"] = "AD上穿其均线，表明买盘资金增加"
+        signals.loc[ad_crossover_ma, "signal_desc"] = "AD上穿其均线,表明买盘资金增加"
         signals.loc[ad_crossover_ma, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[ad_crossover_ma, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[ad_crossover_ma, "risk_level"] = "中"
 
-        # 2. AD下穿其均线，卖出信号
+        # 2. AD下穿其均线,卖出信号
         ad_crossunder_ma = crossunder(ad, ad_ma)
         signals.loc[ad_crossunder_ma, "sell_signal"] = True
         signals.loc[ad_crossunder_ma, "neutral_signal"] = False
         signals.loc[ad_crossunder_ma, "trend"] = -1
         signals.loc[ad_crossunder_ma, "signal_type"] = "AD死叉"
-        signals.loc[ad_crossunder_ma, "signal_desc"] = "AD下穿其均线，表明卖盘资金增加"
+        signals.loc[ad_crossunder_ma, "signal_desc"] = "AD下穿其均线,表明卖盘资金增加"
         signals.loc[ad_crossunder_ma, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[ad_crossunder_ma, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[ad_crossunder_ma, "risk_level"] = "中"
 
-        # 3. 正背离信号（价格创新低，但AD未创新低）  # TODO: 将魔法数字提取到配置中
+        # 3. 正背离信号(价格创新低,但AD未创新低)  # TODO: 将魔法数字提取到配置中
         if "close" in data.columns:
             close = data["close"]
 
@@ -612,7 +612,7 @@ class AccumulationDistribution(AD):
             lows_close = pd.Series(np.nan, index=close.index)
             lows_ad = pd.Series(np.nan, index=ad.index)
 
-            # 简单的局部低点检测：如果一个点比前后N个点都低，则为局部低点
+            # 简单的局部低点检测:如果一个点比前后N个点都低,则为局部低点
             window = 5  # TODO: 将魔法数字提取到配置中
             for i in range(window, len(close) - window):
                 if close.iloc[i] == close.iloc[i - window : i + window + 1].min():
@@ -620,7 +620,7 @@ class AccumulationDistribution(AD):
                 if ad.iloc[i] == ad.iloc[i - window : i + window + 1].min():
                     lows_ad.iloc[i] = ad.iloc[i]
 
-            # 检测正背离：价格创新低但AD未创新低
+            # 检测正背离:价格创新低但AD未创新低
             for i in range(window * 2, len(close)):
                 if pd.notna(lows_close.iloc[i]) and pd.notna(
                     lows_close.iloc[i - window * 2 : i - window].dropna().min()
@@ -639,7 +639,7 @@ class AccumulationDistribution(AD):
                             else np.nan
                         )
 
-                        # AD未创新低（正背离）
+                        # AD未创新低(正背离)
                         if pd.notna(recent_low_ad) and pd.notna(prev_low_ad) and recent_low_ad > prev_low_ad:
                             # 只有在没有其他信号时才设置背离信号
                             if not signals.iloc[i]["buy_signal"] and not signals.iloc[i]["sell_signal"]:
@@ -648,7 +648,7 @@ class AccumulationDistribution(AD):
                                 signals.iloc[i, signals.columns.get_loc("trend")] = 1
                                 signals.iloc[i, signals.columns.get_loc("signal_type")] = "AD正背离"
                                 signals.iloc[i, signals.columns.get_loc("signal_desc")] = (
-                                    "价格创新低但AD未创新低，表明下跌动能减弱"
+                                    "价格创新低但AD未创新低,表明下跌动能减弱"
                                 )
                                 signals.iloc[i, signals.columns.get_loc("confidence")] = (
                                     75.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -658,7 +658,7 @@ class AccumulationDistribution(AD):
                                 )
                                 signals.iloc[i, signals.columns.get_loc("risk_level")] = "低"
 
-            # 4. 负背离信号（价格创新高，但AD未创新高）  # TODO: 将魔法数字提取到配置中
+            # 4. 负背离信号(价格创新高,但AD未创新高)  # TODO: 将魔法数字提取到配置中
             highs_close = pd.Series(np.nan, index=close.index)
             highs_ad = pd.Series(np.nan, index=ad.index)
 
@@ -669,7 +669,7 @@ class AccumulationDistribution(AD):
                 if ad.iloc[i] == ad.iloc[i - window : i + window + 1].max():
                     highs_ad.iloc[i] = ad.iloc[i]
 
-            # 检测负背离：价格创新高但AD未创新高
+            # 检测负背离:价格创新高但AD未创新高
             for i in range(window * 2, len(close)):
                 if pd.notna(highs_close.iloc[i]) and pd.notna(
                     highs_close.iloc[i - window * 2 : i - window].dropna().max()
@@ -688,7 +688,7 @@ class AccumulationDistribution(AD):
                             else np.nan
                         )
 
-                        # AD未创新高（负背离）
+                        # AD未创新高(负背离)
                         if pd.notna(recent_high_ad) and pd.notna(prev_high_ad) and recent_high_ad < prev_high_ad:
                             # 只有在没有其他信号时才设置背离信号
                             if not signals.iloc[i]["buy_signal"] and not signals.iloc[i]["sell_signal"]:
@@ -697,7 +697,7 @@ class AccumulationDistribution(AD):
                                 signals.iloc[i, signals.columns.get_loc("trend")] = -1
                                 signals.iloc[i, signals.columns.get_loc("signal_type")] = "AD负背离"
                                 signals.iloc[i, signals.columns.get_loc("signal_desc")] = (
-                                    "价格创新高但AD未创新高，表明上涨动能减弱"
+                                    "价格创新高但AD未创新高,表明上涨动能减弱"
                                 )
                                 signals.iloc[i, signals.columns.get_loc("confidence")] = (
                                     75.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -722,7 +722,7 @@ class AccumulationDistribution(AD):
                     signals.iloc[i, signals.columns.get_loc("buy_signal")] = True
                     signals.iloc[i, signals.columns.get_loc("neutral_signal")] = False
                     signals.iloc[i, signals.columns.get_loc("signal_type")] = "AD上升趋势"
-                    signals.iloc[i, signals.columns.get_loc("signal_desc")] = "AD持续上升，表明买盘持续涌入"
+                    signals.iloc[i, signals.columns.get_loc("signal_desc")] = "AD持续上升,表明买盘持续涌入"
                     signals.iloc[i, signals.columns.get_loc("confidence")] = (
                         60.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     )
@@ -735,7 +735,7 @@ class AccumulationDistribution(AD):
                     signals.iloc[i, signals.columns.get_loc("sell_signal")] = True
                     signals.iloc[i, signals.columns.get_loc("neutral_signal")] = False
                     signals.iloc[i, signals.columns.get_loc("signal_type")] = "AD下降趋势"
-                    signals.iloc[i, signals.columns.get_loc("signal_desc")] = "AD持续下降，表明卖盘持续涌出"
+                    signals.iloc[i, signals.columns.get_loc("signal_desc")] = "AD持续下降,表明卖盘持续涌出"
                     signals.iloc[i, signals.columns.get_loc("confidence")] = (
                         60.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     )
@@ -830,17 +830,17 @@ class AccumulationDistribution(AD):
 
         # 设置成交量确认
         if "volume" in data.columns:
-            # 如果有成交量数据，检查成交量是否支持当前信号
+            # 如果有成交量数据,检查成交量是否支持当前信号
             vol = data["volume"]
             vol_avg = vol.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
 
             # 成交量大于20日均量1.5倍为放量
             vol_increase = vol > vol_avg * 1.5  # TODO: 将魔法数字提取到配置中
 
-            # 买入信号且成交量放大，确认信号
+            # 买入信号且成交量放大,确认信号
             signals.loc[signals["buy_signal"] & vol_increase, "volume_confirmation"] = True
 
-            # 卖出信号且成交量放大，确认信号
+            # 卖出信号且成交量放大,确认信号
             signals.loc[signals["sell_signal"] & vol_increase, "volume_confirmation"] = True
 
         return signals
@@ -854,7 +854,7 @@ class AccumulationDistribution(AD):
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算AD指标
         if not self.has_result_Ad():
@@ -936,14 +936,14 @@ class AccumulationDistribution(AD):
             and ad.iloc[last_valid_idx - 1] < ad_ma.iloc[last_valid_idx - 1]
             and ad.iloc[last_valid_idx] > ad_ma.iloc[last_valid_idx]
         ):
-            patterns.append("AD金叉（AD上穿均线）")
+            patterns.append("AD金叉(AD上穿均线)")
 
         if (
             last_valid_idx - 1 >= -len(ad)
             and ad.iloc[last_valid_idx - 1] > ad_ma.iloc[last_valid_idx - 1]
             and ad.iloc[last_valid_idx] < ad_ma.iloc[last_valid_idx]
         ):
-            patterns.append("AD死叉（AD下穿均线）")
+            patterns.append("AD死叉(AD下穿均线)")
 
         # 2. AD趋势形态
         if last_valid_idx >= 20:  # TODO: 将魔法数字提取到配置中
@@ -952,21 +952,21 @@ class AccumulationDistribution(AD):
             ) / 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             if ad_slope > 0:
-                patterns.append("AD上升趋势（买盘持续涌入）")
+                patterns.append("AD上升趋势(买盘持续涌入)")
 
                 # 上升趋势强度判断
                 if (
                     ad_slope > ad.iloc[last_valid_idx - 20 : last_valid_idx].diff().std() * 2
                 ):  # TODO: 将魔法数字提取到配置中
-                    patterns.append("AD强势上升（买盘强烈涌入）")
+                    patterns.append("AD强势上升(买盘强烈涌入)")
             else:
-                patterns.append("AD下降趋势（卖盘持续涌出）")
+                patterns.append("AD下降趋势(卖盘持续涌出)")
 
                 # 下降趋势强度判断
                 if (
                     abs(ad_slope) > ad.iloc[last_valid_idx - 20 : last_valid_idx].diff().std() * 2
                 ):  # TODO: 将魔法数字提取到配置中
-                    patterns.append("AD强势下降（卖盘强烈涌出）")
+                    patterns.append("AD强势下降(卖盘强烈涌出)")
 
         # 3. AD背离形态  # TODO: 将魔法数字提取到配置中
         if "close" in data.columns and last_valid_idx >= 40:  # TODO: 将魔法数字提取到配置中
@@ -983,9 +983,9 @@ class AccumulationDistribution(AD):
                 ad_at_last_low = ad.loc[last_20_min_idx]
                 ad_at_prev_low = ad.loc[prev_20_min_idx]
 
-                # 价格创新低但AD未创新低（正背离）
+                # 价格创新低但AD未创新低(正背离)
                 if close.loc[last_20_min_idx] < close.loc[prev_20_min_idx] and ad_at_last_low > ad_at_prev_low:
-                    patterns.append("AD正背离（价格创新低但AD未创新低）")
+                    patterns.append("AD正背离(价格创新低但AD未创新低)")
 
             # 检查最近的两个价格高点
             last_20_max_idx = close.iloc[last_valid_idx - 20 : last_valid_idx].idxmax()  # TODO: 将魔法数字提取到配置中
@@ -998,9 +998,9 @@ class AccumulationDistribution(AD):
                 ad_at_last_high = ad.loc[last_20_max_idx]
                 ad_at_prev_high = ad.loc[prev_20_max_idx]
 
-                # 价格创新高但AD未创新高（负背离）
+                # 价格创新高但AD未创新高(负背离)
                 if close.loc[last_20_max_idx] > close.loc[prev_20_max_idx] and ad_at_last_high < ad_at_prev_high:
-                    patterns.append("AD负背离（价格创新高但AD未创新高）")
+                    patterns.append("AD负背离(价格创新高但AD未创新高)")
 
         return patterns
 
@@ -1068,11 +1068,11 @@ class AccumulationDistribution(AD):
                 # 使用默认参数
                 params = self._default_parameters.copy()
 
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
 
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass

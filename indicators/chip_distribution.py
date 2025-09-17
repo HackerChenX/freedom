@@ -23,7 +23,7 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     CHIP_DISTRIBUTION 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, **kwargs):
@@ -42,7 +42,7 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_chipdistribution()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -67,6 +67,9 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -77,20 +80,20 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('CHIP_DISTRIBUTION', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
             
             # 设置参数
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
-            # 🔧 Ultra Think修复：同步更新minimum_periods
+            # 🔧 Ultra Think修复:同步更新minimum_periods
             self._minimum_periods = self.period
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
-            # 🔧 Ultra Think修复：确保异常情况下也更新minimum_periods
+            # 🔧 Ultra Think修复:确保异常情况下也更新minimum_periods
             self._minimum_periods = self.period
     
     def calculate_Distribution(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -119,18 +122,18 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 🔧 Ultra Think修复：添加测试期望的列，确保测试通过，正确处理NaN值
+        # 🔧 Ultra Think修复:添加测试期望的列,确保测试通过,正确处理NaN值
         df[f'CHIP_DISTRIBUTION_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
-        # 添加测试期望的筹码相关列：['chip_concentration', 'profit_ratio', 'chip_width_90pct', 'avg_cost']
-        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        # 添加测试期望的筹码相关列:['chip_concentration', 'profit_ratio', 'chip_width_90pct', 'avg_cost']
+        # 🔧 Ultra Think修复:正确处理NaN值,使用min_periods=1确保有足够数据
         close_ma = df['close'].rolling(window=self.period, min_periods=1).mean()
         close_std = df['close'].rolling(window=self.period, min_periods=1).std()
 
-        df['chip_concentration'] = 1.0 - (close_std / close_ma).fillna(0.5)  # 浓度：标准差越小浓度越高  # TODO: 将魔法数字提取到配置中
+        df['chip_concentration'] = 1.0 - (close_std / close_ma).fillna(0.5)  # 浓度:标准差越小浓度越高  # TODO: 将魔法数字提取到配置中
         df['profit_ratio'] = (df['close'] / close_ma - 1).fillna(0.0)  # 获利比例
-        df['chip_width_90pct'] = close_std.fillna(0.0) * 1.96  # 90%筹码宽度（近似正态分布）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        df['avg_cost'] = close_ma.fillna(df['close'])  # 平均成本，NaN时使用当前价格
+        df['chip_width_90pct'] = close_std.fillna(0.0) * 1.96  # 90%筹码宽度(近似正态分布)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        df['avg_cost'] = close_ma.fillna(df['close'])  # 平均成本,NaN时使用当前价格
         df['chip_distribution'] = df[f'CHIP_DISTRIBUTION_VALUE']
         
         
@@ -138,8 +141,8 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于评分值的阈值判断
-        # 对于state_type指标，使用评分阈值模式
+        # 重写专用信号逻辑:基于评分值的阈值判断
+        # 对于state_type指标,使用评分阈值模式
         score_threshold = 50.0  # 默认阈值  # TODO: 将魔法数字提取到配置中
         df.loc[:, 'buy_signal'] = df[f'CHIP_DISTRIBUTION_VALUE'] >= score_threshold
         df.loc[:, 'sell_signal'] = df[f'CHIP_DISTRIBUTION_VALUE'] < score_threshold
@@ -147,10 +150,10 @@ from db.sql_manager import SQLManager, QueryType
 
         return df
     
-    # 🔧 Ultra Think修复：添加通用calculate方法，确保测试兼容性
+    # 🔧 Ultra Think修复:添加通用calculate方法,确保测试兼容性
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        通用计算方法，供测试框架使用
+        通用计算方法,供测试框架使用
         """
         return self.calculate_Distribution(data, **kwargs)
     
@@ -159,7 +162,7 @@ from db.sql_manager import SQLManager, QueryType
         if not self.has_result_Indicator():
             self.calculate_Distribution(data, **kwargs)
         
-        # 筹码分布评分：基于成交量和价格分布分析
+        # 筹码分布评分:基于成交量和价格分布分析
         df = data.copy()
         
         # 计算筹码分布相关指标
@@ -181,7 +184,7 @@ from db.sql_manager import SQLManager, QueryType
         price_std = df['close'].rolling(window=20).std()  # TODO: 将魔法数字提取到配置中
         price_concentration = 1 / (1 + price_std / df['close'])
         
-        # 5. 换手率估算（简化）  # TODO: 将魔法数字提取到配置中
+        # 5. 换手率估算(简化)  # TODO: 将魔法数字提取到配置中
         turnover_rate_proxy = volume_ratio
         
         # 复合评分计算
@@ -243,7 +246,7 @@ from db.sql_manager import SQLManager, QueryType
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
-    # 🔧 Ultra Think修复：添加缺失的抽象方法实现，按照已验证的修复模式
+    # 🔧 Ultra Think修复:添加缺失的抽象方法实现,按照已验证的修复模式
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         实现基类要求的抽象方法
@@ -266,7 +269,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         实现基类要求的置信度计算方法
         """
-        # 筹码分布置信度：基于评分分布和形态稳定性
+        # 筹码分布置信度:基于评分分布和形态稳定性
         if len(score) == 0:
             return 0.0
         
@@ -296,5 +299,5 @@ from db.sql_manager import SQLManager, QueryType
         self.set_parameters_Distribution(**kwargs)
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 chip_distribution = ChipDistribution

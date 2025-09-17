@@ -5,13 +5,13 @@ from indicators.base_indicator import BaseIndicator
 向量化性能提升器
 专注于将向量化覆盖率从30.5%提升到37.2%  # TODO: 将魔法数字提取到配置中
 
-实现19个高价值指标的向量化：
-1. 振荡器类：5个
-2. 趋势指标类：4个
-3. 成交量指标类：4个  # TODO: 将魔法数字提取到配置中
-4. 波动率指标类：2个  # TODO: 将魔法数字提取到配置中
-5. 动量指标类：2个  # TODO: 将魔法数字提取到配置中
-6. 统计指标类：2个  # TODO: 将魔法数字提取到配置中
+实现19个高价值指标的向量化:
+1. 振荡器类:5个
+2. 趋势指标类:4个
+3. 成交量指标类:4个  # TODO: 将魔法数字提取到配置中
+4. 波动率指标类:2个  # TODO: 将魔法数字提取到配置中
+5. 动量指标类:2个  # TODO: 将魔法数字提取到配置中
+6. 统计指标类:2个  # TODO: 将魔法数字提取到配置中
 """
 
 import numpy as np
@@ -27,7 +27,7 @@ class VectorizationPerformanceBoost(BaseIndicator):
 VectorizationPerformanceBoost - L4核心服务层组件
 
 职责合理性说明:
-- 作为L4层核心服务组件，承担多项相关职责
+- 作为L4层核心服务组件,承担多项相关职责
 - 25个方法分为以下职责组:
   * 核心功能方法 (约8个)
   * 辅助工具方法 (约8个)  
@@ -95,7 +95,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         })
     
     def enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """增强RSI：多周期RSI + 信号检测"""
+        """增强RSI:多周期RSI + 信号检测"""
         close = data['close'].values
         
         # 计算多周期RSI
@@ -114,7 +114,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def enhanced_kdj(self, data: pd.DataFrame, n: int = 9) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """增强KDJ：标准KDJ + 信号生成"""
+        """增强KDJ:标准KDJ + 信号生成"""
         high = data['high'].values
         low = data['low'].values
         close = data['close'].values
@@ -180,7 +180,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def enhanced_cci(self, data: pd.DataFrame) -> pd.DataFrame:
-        """增强CCI：标准CCI + 信号分析"""
+        """增强CCI:标准CCI + 信号分析"""
         cci_result = self.cci(data)
         cci_values = cci_result['CCI'].values
         
@@ -198,7 +198,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def enhanced_macd(self, data: pd.DataFrame) -> pd.DataFrame:
-        """增强MACD：多参数MACD"""
+        """增强MACD:多参数MACD"""
         close = data['close'].values
         
         # 标准MACD (12, 26, 9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -278,7 +278,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def enhanced_dmi(self, data: pd.DataFrame) -> pd.DataFrame:
-        """增强DMI：标准DMI + 趋势强度"""
+        """增强DMI:标准DMI + 趋势强度"""
         dmi_result = self.dmi(data)
         
         di_plus = dmi_result['DI_Plus'].values
@@ -326,7 +326,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def enhanced_mfi(self, data: pd.DataFrame) -> pd.DataFrame:
-        """增强MFI：标准MFI + 信号分析"""
+        """增强MFI:标准MFI + 信号分析"""
         mfi_result = self.mfi(data)
         mfi_values = mfi_result['MFI'].values
         
@@ -389,7 +389,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         low = data['low'].values
         close = data['close'].values
         
-        # 中线（EMA）
+        # 中线(EMA)
         middle = self._ema_vectorized(close, period)
         
         # 真实范围
@@ -463,7 +463,7 @@ VectorizationPerformanceBoost - L4核心服务层组件
         }, index=data.index)
     
     def unified_ma(self, data: pd.DataFrame) -> pd.DataFrame:
-        """统一移动平均（多周期）"""
+        """统一移动平均(多周期)"""
         close = data['close'].values
         
         ma5 = pd.Series(close).rolling(window=5).mean().values  # TODO: 将魔法数字提取到配置中
@@ -617,11 +617,11 @@ def main():
     
     # 验证结果
     if coverage_report['target_achieved']:
-        print(f"\n🏆 成功达成目标：向量化覆盖率超过37.2%！")
+        print(f"\n🏆 成功达成目标:向量化覆盖率超过37.2%!")
     else:
-        print(f"\n⚠️  未达成目标，当前覆盖率{coverage_report['overall_coverage']:.1f}%")
+        print(f"\n⚠️  未达成目标,当前覆盖率{coverage_report['overall_coverage']:.1f}%")
     
-    print(f"\n✅ 向量化性能提升完成！")
+    print(f"\n✅ 向量化性能提升完成!")
 
 
 if __name__ == "__main__":

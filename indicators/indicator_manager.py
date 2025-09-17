@@ -61,7 +61,7 @@ class IndicatormanagerManagerIndicatorManagerIndicatorManagerindicatormanagerdup
     """
     INDICATOR_MANAGER 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def _get_default_parameters_indicatormanager(self) -> Dict[str, Any]:
@@ -88,7 +88,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('INDICATOR_MANAGER', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -97,7 +97,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Manager_Indicator_Manager(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -126,7 +126,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 最小化实现:返回原数据加上一个简单的计算列
         df[f'INDICATOR_MANAGER_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
@@ -155,7 +155,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         IndicatormanagerManagerIndicatorManagerIndicatorManagerindicatormanagerduplicate指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数
@@ -166,7 +166,7 @@ from db.sql_manager import SQLManager, QueryType
         计算指标值
         
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
             
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

@@ -51,6 +51,9 @@ class UnifiedMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -61,11 +64,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('UNIFIED_MA', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -97,7 +100,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 基本实现：返回原数据加上一个简单的计算列
+        # 基本实现:返回原数据加上一个简单的计算列
         df[f'UNIFIED_MA_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
@@ -105,8 +108,8 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于评分值的阈值判断
-        # 对于state_type指标，使用评分阈值模式
+        # 重写专用信号逻辑:基于评分值的阈值判断
+        # 对于state_type指标,使用评分阈值模式
         score_threshold = 50.0  # 默认阈值  # TODO: 将魔法数字提取到配置中
         df.loc[:, 'buy_signal'] = df[f'UNIFIED_MA_VALUE'] >= score_threshold
         df.loc[:, 'sell_signal'] = df[f'UNIFIED_MA_VALUE'] < score_threshold
@@ -119,7 +122,7 @@ from db.sql_manager import SQLManager, QueryType
         if not self.has_result():
             self.calculate_Ma(data, **kwargs)
         
-        # 统一移动平均线评分：多周期MA综合分析
+        # 统一移动平均线评分:多周期MA综合分析
         df = data.copy()
         
         # 计算多个周期的移动平均线
@@ -204,7 +207,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         UnifiedMa指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -287,6 +290,6 @@ from db.sql_manager import SQLManager, QueryType
         self.set_parameters_Ma_Unified_Ma(**kwargs)
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 UNIFIED_MA = UnifiedMa
 unified_ma = UnifiedMa

@@ -4,7 +4,7 @@ from utils.logger import get_logger
 """
 VORTEX (Vortex Indicator) 涡流指标
 
-涡流指标用于识别趋势的开始和结束，通过比较正向和负向价格运动来衡量趋势强度。
+涡流指标用于识别趋势的开始和结束,通过比较正向和负向价格运动来衡量趋势强度.
 """
 
 import pandas as pd
@@ -23,7 +23,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     VORTEX (Vortex Indicator) 涡流指标
     
-    涡流指标通过计算正向和负向价格运动的比率来识别趋势。
+    涡流指标通过计算正向和负向价格运动的比率来识别趋势.
     VI+ > VI- 表示上升趋势
     VI- > VI+ 表示下降趋势
     """
@@ -65,6 +65,9 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -75,11 +78,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VORTEX', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -101,7 +104,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        核心计算逻辑，实现抽象方法
+        核心计算逻辑,实现抽象方法
         
         Args:
             data: 包含OHLCV数据的Data_frame
@@ -137,7 +140,7 @@ from db.sql_manager import SQLManager, QueryType
         
         # 确保数据有足够的长度
         if len(df) < self.period + 1:
-            logger.warning(f"数据长度({len(df)})不足，需要至少{self.period + 1}条数据")
+            logger.warning(f"数据长度({len(df)})不足,需要至少{self.period + 1}条数据")
             df['VI_PLUS'] = np.nan
             df['VI_MINUS'] = np.nan
             df['VORTEX_DIFF'] = np.nan
@@ -197,7 +200,7 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（VORTEX指标特定逻辑）
+        # 重写信号生成逻辑(VORTEX指标特定逻辑)
         df = self._apply_vortex_signal_logic(df)
 
         return df
@@ -210,7 +213,7 @@ from db.sql_manager import SQLManager, QueryType
         try:
             # 获取VORTEX值
             if 'VI_PLUS' not in df.columns or 'VI_MINUS' not in df.columns:
-                # 如果没有VORTEX值，使用默认信号
+                # 如果没有VORTEX值,使用默认信号
                 return df
 
             vi_plus = df['VI_PLUS']
@@ -218,7 +221,7 @@ from db.sql_manager import SQLManager, QueryType
             vortex_strength = df['VORTEX_STRENGTH']
             vortex_trend = df['VORTEX_TREND']
 
-            # VORTEX信号生成逻辑：
+            # VORTEX信号生成逻辑:
             # BUY: VI+ 上穿 VI- 且强度足够
             # SELL: VI- 上穿 VI+ 且强度足够
             # HOLD: 交叉信号不明确或强度不足
@@ -250,7 +253,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"VORTEX信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -265,7 +268,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算VORTEX原始评分
         
-        基于VORTEX指标的技术分析特点进行评分：
+        基于VORTEX指标的技术分析特点进行评分:
         1. 趋势方向评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. 交叉信号评分 (30%)  # TODO: 将魔法数字提取到配置中
         3. 强度评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -422,7 +425,7 @@ from db.sql_manager import SQLManager, QueryType
         if len(vortex_strength) >= 5:  # TODO: 将魔法数字提取到配置中
             recent_strength_trend = vortex_strength.iloc[-5:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_strength_trend) > 0:
-                # 如果强度趋势一致，提高置信度
+                # 如果强度趋势一致,提高置信度
                 positive_changes = len(recent_strength_trend[recent_strength_trend > 0])
                 negative_changes = len(recent_strength_trend[recent_strength_trend < 0])
                 if positive_changes >= 3 or negative_changes >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -525,7 +528,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         Vortex指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

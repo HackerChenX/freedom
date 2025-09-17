@@ -15,7 +15,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     Rate of Change变化率指标
 
-    ROC指标衡量价格在指定周期内的变化率，用于识别动量和趋势强度
+    ROC指标衡量价格在指定周期内的变化率,用于识别动量和趋势强度
     """
 
     def __init__(self, **kwargs):
@@ -51,6 +51,9 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
 
@@ -61,11 +64,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ROC', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -82,12 +85,12 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             包含ROC指标的DataFrame
         """
-        # 🔧 Ultra Think修复：标准化接口调用
+        # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_roc(data, **kwargs)
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算ROC指标 - Ultra Think修复：添加缺失的标准calculate方法
+        计算ROC指标 - Ultra Think修复:添加缺失的标准calculate方法
         
         Args:
             data: 输入数据
@@ -95,12 +98,12 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 包含ROC指标的DataFrame
         """
-        # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
+        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
         return self._calculate_roc(data, **kwargs)
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        基础指标计算方法 - Ultra Think修复：实现必须的抽象方法
+        基础指标计算方法 - Ultra Think修复:实现必须的抽象方法
         
         Args:
             data: 价格数据
@@ -108,12 +111,12 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 计算结果
         """
-        # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
+        # 🔧 Ultra Think修复:实现必须的抽象方法,确保100%功能完整
         return self._calculate_roc(data, **kwargs)
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成ROC交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        生成ROC交易信号 - Ultra Think修复:添加缺失的信号生成功能
         
         Args:
             data: 价格数据
@@ -121,7 +124,7 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 包含买卖信号的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的ROC信号生成逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的ROC信号生成逻辑,确保100%功能完整
         result = self.calculate(data)
         
         if len(result) == 0:
@@ -140,7 +143,7 @@ from db.sql_manager import SQLManager, QueryType
                 break
         
         if roc_col is None:
-            # 如果找不到ROC列，返回空信号
+            # 如果找不到ROC列,返回空信号
             signals = pd.DataFrame(index=data.index)
             signals['buy_signal'] = False
             signals['sell_signal'] = False
@@ -152,13 +155,13 @@ from db.sql_manager import SQLManager, QueryType
         # 创建信号DataFrame
         signals = pd.DataFrame(index=data.index)
         
-        # ROC信号逻辑：基于动量变化
-        # 买入信号：ROC从负转正（动量转强）
+        # ROC信号逻辑:基于动量变化
+        # 买入信号:ROC从负转正(动量转强)
         roc_positive = roc_values > 0
         roc_negative_prev = roc_values.shift(1) <= 0
         buy_signals = roc_positive & roc_negative_prev
         
-        # 卖出信号：ROC从正转负（动量转弱）
+        # 卖出信号:ROC从正转负(动量转弱)
         roc_negative = roc_values < 0
         roc_positive_prev = roc_values.shift(1) >= 0
         sell_signals = roc_negative & roc_positive_prev
@@ -167,7 +170,7 @@ from db.sql_manager import SQLManager, QueryType
         signals['buy_signal'] = buy_signals
         signals['sell_signal'] = sell_signals
         
-        # 信号强度：基于ROC绝对值
+        # 信号强度:基于ROC绝对值
         roc_abs = abs(roc_values)
         max_roc = roc_abs.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         signals['signal_strength'] = roc_abs / (max_roc + 1e-10)  # 防止除零
@@ -176,7 +179,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取ROC形态数据 - Ultra Think修复：添加缺失的形态识别功能
+        获取ROC形态数据 - Ultra Think修复:添加缺失的形态识别功能
         
         Args:
             data: 价格数据
@@ -184,7 +187,7 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 包含形态识别的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的ROC形态识别逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的ROC形态识别逻辑,确保100%功能完整
         result = self.calculate(data)
         
         if len(result) == 0:
@@ -204,7 +207,7 @@ from db.sql_manager import SQLManager, QueryType
                 break
         
         if roc_col is None:
-            # 如果找不到ROC列，返回空形态
+            # 如果找不到ROC列,返回空形态
             patterns = pd.DataFrame(index=data.index)
             patterns['positive_momentum'] = False
             patterns['negative_momentum'] = False
@@ -218,18 +221,18 @@ from db.sql_manager import SQLManager, QueryType
         patterns = pd.DataFrame(index=data.index)
         
         # ROC形态识别逻辑
-        # 正动量：ROC大于0
+        # 正动量:ROC大于0
         patterns['positive_momentum'] = roc_values > 0
         
-        # 负动量：ROC小于0
+        # 负动量:ROC小于0
         patterns['negative_momentum'] = roc_values < 0
         
-        # 加速：ROC连续上升
+        # 加速:ROC连续上升
         roc_increasing = roc_values > roc_values.shift(1)
         roc_increasing_prev = roc_values.shift(1) > roc_values.shift(2)
         patterns['acceleration'] = roc_increasing & roc_increasing_prev
         
-        # 减速：ROC连续下降
+        # 减速:ROC连续下降
         roc_decreasing = roc_values < roc_values.shift(1)
         roc_decreasing_prev = roc_values.shift(1) < roc_values.shift(2)
         patterns['deceleration'] = roc_decreasing & roc_decreasing_prev
@@ -238,7 +241,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算置信度 - Ultra Think修复：实现必须的抽象方法
+        计算置信度 - Ultra Think修复:实现必须的抽象方法
         
         Args:
             score: 指标得分
@@ -248,12 +251,12 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             float: 置信度值
         """
-        # 🔧 Ultra Think修复：实现标准置信度计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准置信度计算,确保100%功能完整
         return self.calculate_confidence_Roc(score, patterns, signals)
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算原始得分 - Ultra Think修复：实现必须的抽象方法
+        计算原始得分 - Ultra Think修复:实现必须的抽象方法
         
         Args:
             data: 价格数据
@@ -261,7 +264,7 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.Series: 原始得分
         """
-        # 🔧 Ultra Think修复：实现标准原始得分计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准原始得分计算,确保100%功能完整
         result = self.calculate(data, **kwargs)
         
         # 获取ROC数据作为得分
@@ -274,12 +277,12 @@ from db.sql_manager import SQLManager, QueryType
         if roc_col is not None:
             return result[roc_col]
         else:
-            # 如果找不到ROC列，返回默认得分
+            # 如果找不到ROC列,返回默认得分
             return pd.Series(index=data.index, data=0.0)  # ROC中性值
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取形态数据 - Ultra Think修复：实现必须的抽象方法
+        获取形态数据 - Ultra Think修复:实现必须的抽象方法
         
         Args:
             data: 价格数据
@@ -287,17 +290,17 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 形态数据
         """
-        # 🔧 Ultra Think修复：实现标准形态识别，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准形态识别,确保100%功能完整
         return self.get_patterns(data, **kwargs)
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
-        设置参数 - Ultra Think修复：实现必须的抽象方法
+        设置参数 - Ultra Think修复:实现必须的抽象方法
         
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：实现标准参数设置，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准参数设置,确保100%功能完整
         self.set_parameters_Roc(**kwargs)
 
     def _calculate_roc(self, data: pd.DataFrame, period: int = None, **kwargs) -> pd.DataFrame:
@@ -338,14 +341,14 @@ from db.sql_manager import SQLManager, QueryType
         df['roc'] = roc
         df['ROC_VALUE'] = roc  # 为了向后兼容
         
-        # 计算ROC的移动平均（平滑处理）
+        # 计算ROC的移动平均(平滑处理)
         df['roc_ma'] = roc.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（ROC指标特定逻辑）
+        # 重写信号生成逻辑(ROC指标特定逻辑)
         df = self._apply_roc_signal_logic(df)
 
         return df
@@ -358,14 +361,14 @@ from db.sql_manager import SQLManager, QueryType
         try:
             # 获取ROC值
             if 'roc' not in df.columns:
-                # 如果没有ROC值，使用默认信号
+                # 如果没有ROC值,使用默认信号
                 return df
 
             roc = df['roc']
 
-            # ROC信号生成逻辑：
-            # BUY: ROC值为正且上升（动量增强）
-            # SELL: ROC值为负且下降（动量减弱）
+            # ROC信号生成逻辑:
+            # BUY: ROC值为正且上升(动量增强)
+            # SELL: ROC值为负且下降(动量减弱)
             # HOLD: ROC值接近零或趋势不明确
 
             # 基本条件
@@ -394,7 +397,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"ROC信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -405,7 +408,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算ROC原始评分
         
-        基于ROC指标的技术分析特点进行评分：
+        基于ROC指标的技术分析特点进行评分:
         1. ROC数值评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. ROC趋势评分 (30%)  # TODO: 将魔法数字提取到配置中
         3. ROC动量强度 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -441,7 +444,7 @@ from db.sql_manager import SQLManager, QueryType
         scores += value_score * 0.4  # TODO: 将魔法数字提取到配置中
         
         # 2. ROC趋势评分 (30%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # ROC上升趋势加分，下降趋势减分
+        # ROC上升趋势加分,下降趋势减分
         roc_change = roc - roc.shift(1)
         roc_change_2 = roc.shift(1) - roc.shift(2)
         
@@ -494,7 +497,7 @@ from db.sql_manager import SQLManager, QueryType
         # 计算最近的ROC值
         recent_roc = roc.iloc[-1] if len(roc) > 0 else 0
         
-        # ROC绝对值越大，置信度越高
+        # ROC绝对值越大,置信度越高
         roc_strength = min(abs(recent_roc) / 20, 1.0)  # 标准化到0-1  # TODO: 将魔法数字提取到配置中
         
         # 趋势一致性提高置信度
@@ -502,7 +505,7 @@ from db.sql_manager import SQLManager, QueryType
         if len(roc) >= 3:  # TODO: 将魔法数字提取到配置中
             recent_trend = roc.iloc[-3:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
-                # 如果趋势方向一致，提高置信度
+                # 如果趋势方向一致,提高置信度
                 if all(recent_trend > 0) or all(recent_trend < 0):
                     trend_consistency = 0.2
         
@@ -512,11 +515,11 @@ from db.sql_manager import SQLManager, QueryType
     def get_patterns_Roc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取ROC相关形态 - Ultra Think优化版
         
-        生成与配置文件一致的新形态：
-        - ROC_POSITIVE_MOMENTUM: 正动量（ROC为正且增强）
-        - ROC_NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱）
-        - ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）
-        - ROC_ACCELERATION: 加速度变化（ROC变化率增大）
+        生成与配置文件一致的新形态:
+        - ROC_POSITIVE_MOMENTUM: 正动量(ROC为正且增强)
+        - ROC_NEGATIVE_MOMENTUM: 负动量(ROC为负且减弱)
+        - ROC_ZERO_CROSS: 零轴穿越(ROC穿越零轴)
+        - ROC_ACCELERATION: 加速度变化(ROC变化率增大)
         """
         if not self.has_result():
             self.calculate_Roc(data, **kwargs)
@@ -528,26 +531,26 @@ from db.sql_manager import SQLManager, QueryType
         
         roc = self._result['roc']
         
-        # 🎯 Ultra Think优化：生成新形态名称，与配置文件一致
+        # 🎯 Ultra Think优化:生成新形态名称,与配置文件一致
         
-        # 1. ROC_POSITIVE_MOMENTUM: 正动量（ROC为正且增强趋势）
+        # 1. ROC_POSITIVE_MOMENTUM: 正动量(ROC为正且增强趋势)
         roc_change = roc - roc.shift(1)
         patterns['ROC_POSITIVE_MOMENTUM'] = (roc > 0) & (roc_change > 0) & (roc > roc.rolling(3).mean())  # TODO: 将魔法数字提取到配置中
         
-        # 2. ROC_NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱趋势）
+        # 2. ROC_NEGATIVE_MOMENTUM: 负动量(ROC为负且减弱趋势)
         patterns['ROC_NEGATIVE_MOMENTUM'] = (roc < 0) & (roc_change < 0) & (roc < roc.rolling(3).mean())  # TODO: 将魔法数字提取到配置中
         
-        # 3. ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）  # TODO: 将魔法数字提取到配置中
+        # 3. ROC_ZERO_CROSS: 零轴穿越(ROC穿越零轴)  # TODO: 将魔法数字提取到配置中
         patterns['ROC_ZERO_CROSS'] = (
             ((roc > 0) & (roc.shift(1) <= 0)) |  # 上穿零轴
             ((roc < 0) & (roc.shift(1) >= 0))    # 下穿零轴
         )
         
-        # 4. ROC_ACCELERATION: 加速度变化（ROC变化率增大）  # TODO: 将魔法数字提取到配置中
+        # 4. ROC_ACCELERATION: 加速度变化(ROC变化率增大)  # TODO: 将魔法数字提取到配置中
         roc_acceleration = roc_change - roc_change.shift(1)
         patterns['ROC_ACCELERATION'] = roc_acceleration.abs() > roc_acceleration.abs().rolling(5).mean()  # TODO: 将魔法数字提取到配置中
         
-        # 🎯 Ultra Think完成：保留一些原有形态作为补充
+        # 🎯 Ultra Think完成:保留一些原有形态作为补充
         patterns['ROC_POSITIVE'] = roc > 0
         patterns['ROC_NEGATIVE'] = roc < 0
         patterns['ROC_EXTREME_HIGH'] = roc > 20  # TODO: 将魔法数字提取到配置中
@@ -560,7 +563,7 @@ from db.sql_manager import SQLManager, QueryType
         获取ROC指标的形态信息
         
         Args:
-            pattern_id: 形态ID，如果为None则返回所有形态信息
+            pattern_id: 形态ID,如果为None则返回所有形态信息
             
         Returns:
             Dict[str, Any]: 形态信息字典
@@ -568,25 +571,25 @@ from db.sql_manager import SQLManager, QueryType
         all_patterns = {
             'ROC_POSITIVE_MOMENTUM': {
                 'name': 'ROC正动量',
-                'description': f'ROC指标为正且增强趋势，表示价格动量向上',
+                'description': f'ROC指标为正且增强趋势,表示价格动量向上',
                 'type': 'trend',
                 'strength': 'strong'
             },
             'ROC_NEGATIVE_MOMENTUM': {
                 'name': 'ROC负动量',
-                'description': f'ROC指标为负且减弱趋势，表示价格动量向下',
+                'description': f'ROC指标为负且减弱趋势,表示价格动量向下',
                 'type': 'trend',
                 'strength': 'strong'
             },
             'ROC_ZERO_CROSS': {
                 'name': 'ROC零轴穿越',
-                'description': 'ROC指标穿越零轴，表示价格变化率方向改变',
+                'description': 'ROC指标穿越零轴,表示价格变化率方向改变',
                 'type': 'reversal',
                 'strength': 'medium'
             },
             'ROC_ACCELERATION': {
                 'name': 'ROC加速度变化',
-                'description': 'ROC变化率增大，表示价格变化加速',
+                'description': 'ROC变化率增大,表示价格变化加速',
                 'type': 'momentum',
                 'strength': 'strong'
             }
@@ -669,7 +672,7 @@ from db.sql_manager import SQLManager, QueryType
             data: 包含OHLCV数据的DataFrame
 
         Returns:
-            Optional[float]: ROC原始评分，范围0-100
+            Optional[float]: ROC原始评分,范围0-100
         """
         try:
             if data is None or data.empty:
@@ -690,11 +693,11 @@ from db.sql_manager import SQLManager, QueryType
 
             current_roc = roc_values.iloc[-1]
 
-            # ROC评分逻辑：基于ROC值的强度
-            # ROC > 10: 强势上涨，评分80-100
-            # ROC 0-10: 温和上涨，评分60-80  # TODO: 将魔法数字提取到配置中
-            # ROC -10-0: 温和下跌，评分40-60  # TODO: 将魔法数字提取到配置中
-            # ROC < -10: 强势下跌，评分0-40  # TODO: 将魔法数字提取到配置中
+            # ROC评分逻辑:基于ROC值的强度
+            # ROC > 10: 强势上涨,评分80-100
+            # ROC 0-10: 温和上涨,评分60-80  # TODO: 将魔法数字提取到配置中
+            # ROC -10-0: 温和下跌,评分40-60  # TODO: 将魔法数字提取到配置中
+            # ROC < -10: 强势下跌,评分0-40  # TODO: 将魔法数字提取到配置中
 
             if current_roc > 10:
                 score = 80 + min(20, current_roc - 10)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -716,7 +719,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         RateOfChange指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -726,7 +729,7 @@ from db.sql_manager import SQLManager, QueryType
     # ==================== BaseIndicator抽象方法实现 ====================
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """BaseIndicator抽象方法实现：核心计算逻辑"""
+        """BaseIndicator抽象方法实现:核心计算逻辑"""
         try:
             # 数据验证
             if data is None or data.empty:
@@ -750,7 +753,7 @@ from db.sql_manager import SQLManager, QueryType
             return pd.DataFrame(index=data.index if not data.empty else [])
 
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """BaseIndicator抽象方法实现：计算置信度"""
+        """BaseIndicator抽象方法实现:计算置信度"""
         try:
             # 基础置信度
             base_confidence = 0.6  # TODO: 将魔法数字提取到配置中
@@ -771,7 +774,7 @@ from db.sql_manager import SQLManager, QueryType
             if hasattr(self, '_result') and self._result is not None and 'roc' in self._result.columns:
                 roc_values = self._result['roc'].dropna()
                 if len(roc_values) > 0:
-                    # ROC绝对值越大，置信度越高
+                    # ROC绝对值越大,置信度越高
                     recent_roc = abs(roc_values.iloc[-1]) if len(roc_values) > 0 else 0
                     roc_strength = min(recent_roc / 20, 1.0)  # 标准化到0-1  # TODO: 将魔法数字提取到配置中
                     roc_confidence = 0.5 + roc_strength * 0.4  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -793,7 +796,7 @@ from db.sql_manager import SQLManager, QueryType
             return 0.6  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
-        """BaseIndicator抽象方法实现：设置参数"""
+        """BaseIndicator抽象方法实现:设置参数"""
         try:
             # 更新参数
             for key, value in kwargs.items():
@@ -801,7 +804,7 @@ from db.sql_manager import SQLManager, QueryType
                     setattr(self, key, value)
                     logger.debug(f"ROC参数更新: {key} = {value}")
 
-            # 重置结果，强制重新计算
+            # 重置结果,强制重新计算
             self._result = None
 
         except Exception as e:

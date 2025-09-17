@@ -38,6 +38,9 @@ class FormulaIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicators_formulaindicators(self, **kwargs):
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             params = self._default_parameters.copy()
@@ -80,7 +83,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         FormulaIndicators指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数
@@ -93,36 +96,36 @@ class CrossOver(FORMULA_INDICATORS):
     
     特点:
     1. 检测各种技术指标的交叉信号
-    2. 支持金叉、死叉、零轴交叉等多种交叉类型
+    2. 支持金叉,死叉,零轴交叉等多种交叉类型
     3. 可配置交叉确认周期和强度阈值  # TODO: 将魔法数字提取到配置中
     4. 提供交叉信号的强度和可靠性评估  # TODO: 将魔法数字提取到配置中
     
     计算方法:
-    1. 计算快线和慢线（可以是移动平均、指标线等）
-    2. 检测交叉点：快线从下方穿越慢线（金叉）或从上方穿越慢线（死叉）
-    3. 评估交叉强度：基于交叉前后的价格和指标变化  # TODO: 将魔法数字提取到配置中
-    4. 确认交叉有效性：检查交叉后的持续性  # TODO: 将魔法数字提取到配置中
+    1. 计算快线和慢线(可以是移动平均,指标线等)
+    2. 检测交叉点:快线从下方穿越慢线(金叉)或从上方穿越慢线(死叉)
+    3. 评估交叉强度:基于交叉前后的价格和指标变化  # TODO: 将魔法数字提取到配置中
+    4. 确认交叉有效性:检查交叉后的持续性  # TODO: 将魔法数字提取到配置中
     
     参数:
-    - fast_period: 快线周期，默认为5
-    - slow_period: 慢线周期，默认为20
-    - confirm_period: 交叉确认周期，默认为3
-    - cross_type: 交叉类型（'ma', 'price', 'indicator'），默认为'ma'
+    - fast_period: 快线周期,默认为5
+    - slow_period: 慢线周期,默认为20
+    - confirm_period: 交叉确认周期,默认为3
+    - cross_type: 交叉类型('ma', 'price', 'indicator'),默认为'ma'
     """
     
     def _detect_golden_cross_Formula_Indicators(self, fast_line: pd.Series, slow_line: pd.Series) -> pd.Series:
         """检测金叉信号"""
         golden_cross = pd.Series(0.0, index=fast_line.index)
         
-        # 基本金叉：快线从下方穿越慢线
+        # 基本金叉:快线从下方穿越慢线
         basic_golden = (fast_line > slow_line) & (fast_line.shift(1) <= slow_line.shift(1))
         
-        # 确认金叉：交叉后持续确认周期
+        # 确认金叉:交叉后持续确认周期
         confirmed_golden = basic_golden.copy()
         for i in range(1, self.confirm_period):
             confirmed_golden &= (fast_line.shift(-i) > slow_line.shift(-i))
         
-        # 强金叉：在低位发生的金叉
+        # 强金叉:在低位发生的金叉
         price_level = (fast_line + slow_line) / 2
         price_percentile = price_level.rolling(window=50).rank(pct=True)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         strong_golden = confirmed_golden & (price_percentile < 0.3)  # TODO: 将魔法数字提取到配置中
@@ -138,15 +141,15 @@ class CrossOver(FORMULA_INDICATORS):
         """检测死叉信号"""
         death_cross = pd.Series(0.0, index=fast_line.index)
         
-        # 基本死叉：快线从上方穿越慢线
+        # 基本死叉:快线从上方穿越慢线
         basic_death = (fast_line < slow_line) & (fast_line.shift(1) >= slow_line.shift(1))
         
-        # 确认死叉：交叉后持续确认周期
+        # 确认死叉:交叉后持续确认周期
         confirmed_death = basic_death.copy()
         for i in range(1, self.confirm_period):
             confirmed_death &= (fast_line.shift(-i) < slow_line.shift(-i))
         
-        # 强死叉：在高位发生的死叉
+        # 强死叉:在高位发生的死叉
         price_level = (fast_line + slow_line) / 2
         price_percentile = price_level.rolling(window=50).rank(pct=True)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         strong_death = confirmed_death & (price_percentile > 0.7)  # TODO: 将魔法数字提取到配置中
@@ -178,7 +181,7 @@ class CrossOver(FORMULA_INDICATORS):
         trend_consistency = (fast_trend == slow_trend).rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         reliability *= trend_consistency
         
-        # 如果有成交量数据，考虑成交量确认
+        # 如果有成交量数据,考虑成交量确认
         if volume is not None:
             volume_trend = volume > volume.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
             volume_confirmation = volume_trend.rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
@@ -204,11 +207,11 @@ class CrossOver(FORMULA_INDICATORS):
         """
         计算交叉指标的原始评分
         
-        基于交叉信号的强度、可靠性和趋势确认进行评分：
-        1. 交叉信号强度：金叉/死叉的强度评估
-        2. 交叉可靠性：基于趋势一致性和成交量确认
-        3. 趋势确认：交叉后的趋势持续性  # TODO: 将魔法数字提取到配置中
-        4. 交叉位置：交叉发生的价格位置（高位/低位）  # TODO: 将魔法数字提取到配置中
+        基于交叉信号的强度,可靠性和趋势确认进行评分:
+        1. 交叉信号强度:金叉/死叉的强度评估
+        2. 交叉可靠性:基于趋势一致性和成交量确认
+        3. 趋势确认:交叉后的趋势持续性  # TODO: 将魔法数字提取到配置中
+        4. 交叉位置:交叉发生的价格位置(高位/低位)  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Indicators_Formula_Indicators(data, **kwargs)
@@ -313,15 +316,15 @@ class KDJCondition(FORMULA_INDICATORS):
         """计算超卖条件"""
         oversold = pd.Series(0.0, index=k.index)
         
-        # 基本超卖条件：K、D、J都在20以下
+        # 基本超卖条件:K,D,J都在20以下
         basic_oversold = (k < 20) & (d < 20) & (j < 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         oversold[basic_oversold] += 15  # TODO: 将魔法数字提取到配置中
         
-        # 强超卖条件：K、D、J都在10以下
+        # 强超卖条件:K,D,J都在10以下
         strong_oversold = (k < 10) & (d < 10) & (j < 10)
         oversold[strong_oversold] += 10
         
-        # 连续超卖：连续3天以上超卖
+        # 连续超卖:连续3天以上超卖
         consecutive_oversold = basic_oversold.rolling(window=3).sum() >= 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         oversold[consecutive_oversold] += 8  # TODO: 将魔法数字提取到配置中
         
@@ -331,15 +334,15 @@ class KDJCondition(FORMULA_INDICATORS):
         """计算超买条件"""
         overbought = pd.Series(0.0, index=k.index)
         
-        # 基本超买条件：K、D、J都在80以上
+        # 基本超买条件:K,D,J都在80以上
         basic_overbought = (k > 80) & (d > 80) & (j > 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        overbought[basic_overbought] -= 10  # 超买是卖出信号，给负分
+        overbought[basic_overbought] -= 10  # 超买是卖出信号,给负分
         
-        # 强超买条件：K、D、J都在90以上
+        # 强超买条件:K,D,J都在90以上
         strong_overbought = (k > 90) & (d > 90) & (j > 90)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         overbought[strong_overbought] -= 8  # TODO: 将魔法数字提取到配置中
         
-        # 连续超买：连续3天以上超买
+        # 连续超买:连续3天以上超买
         consecutive_overbought = basic_overbought.rolling(window=3).sum() >= 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         overbought[consecutive_overbought] -= 5  # TODO: 将魔法数字提取到配置中
         
@@ -390,12 +393,12 @@ class KDJCondition(FORMULA_INDICATORS):
             price_window = close.iloc[i-9:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             j_window = j.iloc[i-9:i+1]  # TODO: 将魔法数字提取到配置中
             
-            # 价格创新高但J值没有创新高（顶背离）
+            # 价格创新高但J值没有创新高(顶背离)
             if (price_window.iloc[-1] == price_window.max() and 
                 j_window.iloc[-1] < j_window.max()):
                 divergence.iloc[i] -= 12  # 顶背离是卖出信号  # TODO: 将魔法数字提取到配置中
             
-            # 价格创新低但J值没有创新低（底背离）
+            # 价格创新低但J值没有创新低(底背离)
             elif (price_window.iloc[-1] == price_window.min() and 
                   j_window.iloc[-1] > j_window.min()):
                 divergence.iloc[i] += 15  # 底背离是买入信号  # TODO: 将魔法数字提取到配置中
@@ -472,12 +475,12 @@ class MACDCondition(FORMULA_INDICATORS):
             price_window = close.iloc[i-9:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             macd_window = macd_line.iloc[i-9:i+1]  # TODO: 将魔法数字提取到配置中
             
-            # 价格创新高但MACD没有创新高（顶背离）
+            # 价格创新高但MACD没有创新高(顶背离)
             if (price_window.iloc[-1] == price_window.max() and 
                 macd_window.iloc[-1] < macd_window.max()):
                 divergence.iloc[i] -= 15  # 顶背离是卖出信号  # TODO: 将魔法数字提取到配置中
             
-            # 价格创新低但MACD没有创新低（底背离）
+            # 价格创新低但MACD没有创新低(底背离)
             elif (price_window.iloc[-1] == price_window.min() and 
                   macd_window.iloc[-1] > macd_window.min()):
                 divergence.iloc[i] += 18  # 底背离是买入信号  # TODO: 将魔法数字提取到配置中
@@ -520,30 +523,30 @@ class MACondition(FORMULA_INDICATORS):
     
     计算方法:
     1. 计算多个周期的移动平均线
-    2. 分析移动平均线的排列（多头/空头排列）
+    2. 分析移动平均线的排列(多头/空头排列)
     3. 判断价格与均线的关系  # TODO: 将魔法数字提取到配置中
     4. 计算均线的趋势强度  # TODO: 将魔法数字提取到配置中
     
     参数:
-    - short_period: 短期均线周期，默认为5
-    - medium_period: 中期均线周期，默认为10
-    - long_period: 长期均线周期，默认为20
-    - trend_period: 趋势分析周期，默认为30
+    - short_period: 短期均线周期,默认为5
+    - medium_period: 中期均线周期,默认为10
+    - long_period: 长期均线周期,默认为20
+    - trend_period: 趋势分析周期,默认为30
     """
     
     def _calculate_bullish_alignment(self, close: pd.Series, ma_short: pd.Series, ma_medium: pd.Series, ma_long: pd.Series) -> pd.Series:
         """计算多头排列"""
         bullish = pd.Series(0.0, index=close.index)
         
-        # 完美多头排列：价格 > 短期均线 > 中期均线 > 长期均线
+        # 完美多头排列:价格 > 短期均线 > 中期均线 > 长期均线
         perfect_bullish = (close > ma_short) & (ma_short > ma_medium) & (ma_medium > ma_long)
         bullish[perfect_bullish] += 25.0  # TODO: 将魔法数字提取到配置中
         
-        # 部分多头排列：价格 > 短期均线 > 中期均线
+        # 部分多头排列:价格 > 短期均线 > 中期均线
         partial_bullish = (close > ma_short) & (ma_short > ma_medium) & ~perfect_bullish
         bullish[partial_bullish] += 15.0  # TODO: 将魔法数字提取到配置中
         
-        # 基本多头：价格 > 短期均线
+        # 基本多头:价格 > 短期均线
         basic_bullish = (close > ma_short) & ~partial_bullish & ~perfect_bullish
         bullish[basic_bullish] += 8.0  # TODO: 将魔法数字提取到配置中
         
@@ -557,15 +560,15 @@ class MACondition(FORMULA_INDICATORS):
         """计算空头排列"""
         bearish = pd.Series(0.0, index=close.index)
         
-        # 完美空头排列：价格 < 短期均线 < 中期均线 < 长期均线
+        # 完美空头排列:价格 < 短期均线 < 中期均线 < 长期均线
         perfect_bearish = (close < ma_short) & (ma_short < ma_medium) & (ma_medium < ma_long)
         bearish[perfect_bearish] += 20.0  # TODO: 将魔法数字提取到配置中
         
-        # 部分空头排列：价格 < 短期均线 < 中期均线
+        # 部分空头排列:价格 < 短期均线 < 中期均线
         partial_bearish = (close < ma_short) & (ma_short < ma_medium) & ~perfect_bearish
         bearish[partial_bearish] += 12.0  # TODO: 将魔法数字提取到配置中
         
-        # 基本空头：价格 < 短期均线
+        # 基本空头:价格 < 短期均线
         basic_bearish = (close < ma_short) & ~partial_bearish & ~perfect_bearish
         bearish[basic_bearish] += 6.0  # TODO: 将魔法数字提取到配置中
         
@@ -595,7 +598,7 @@ class MACondition(FORMULA_INDICATORS):
         avg_ma = (ma_short + ma_medium + ma_long) / 3  # TODO: 将魔法数字提取到配置中
         deviation = (close - avg_ma) / avg_ma.replace(0, np.nan)
         
-        # 适度偏离给正分，过度偏离给负分
+        # 适度偏离给正分,过度偏离给负分
         moderate_deviation = (abs(deviation) > 0.02) & (abs(deviation) < 0.1)
         position[moderate_deviation] += 8.0  # TODO: 将魔法数字提取到配置中
         
@@ -663,11 +666,11 @@ class MACondition(FORMULA_INDICATORS):
         short_medium_gap = abs(ma_short - ma_medium) / ma_medium.replace(0, np.nan)
         medium_long_gap = abs(ma_medium - ma_long) / ma_long.replace(0, np.nan)
         
-        # 均线收敛（间距缩小）
+        # 均线收敛(间距缩小)
         convergence = (short_medium_gap < short_medium_gap.shift(5)) & (medium_long_gap < medium_long_gap.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         convergence_divergence[convergence] += 8.0  # TODO: 将魔法数字提取到配置中
         
-        # 均线发散（间距扩大）
+        # 均线发散(间距扩大)
         divergence = (short_medium_gap > short_medium_gap.shift(5)) & (medium_long_gap > medium_long_gap.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 在趋势方向上的发散是好信号
@@ -696,10 +699,10 @@ class GenericCondition(FORMULA_INDICATORS):
     4. 生成买卖信号和风险评估  # TODO: 将魔法数字提取到配置中
     
     参数:
-    - ma_period: 移动平均周期，默认为20
-    - rsi_period: RSI周期，默认为14
-    - volume_period: 成交量周期，默认为10
-    - trend_period: 趋势分析周期，默认为30
+    - ma_period: 移动平均周期,默认为20
+    - rsi_period: RSI周期,默认为14
+    - volume_period: 成交量周期,默认为10
+    - trend_period: 趋势分析周期,默认为30
     """
     
     def _calculate_price_condition(self, close: pd.Series, high: pd.Series, low: pd.Series) -> pd.Series:
@@ -727,7 +730,7 @@ class GenericCondition(FORMULA_INDICATORS):
         = high.rolling(window=20).max() - low.rolling(window=20).min()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         price_position = (close - low.rolling(window=20).min()) / .replace(0, np.nan)  # TODO: 将魔法数字提取到配置中
         
-        # 高位给正分，低位给负分
+        # 高位给正分,低位给负分
         high_position = price_position > 0.8  # TODO: 将魔法数字提取到配置中
         price_condition[high_position] += 10.0
         
@@ -835,11 +838,11 @@ class GenericCondition(FORMULA_INDICATORS):
         # 波动率分位数
         volatility_percentile = volatility.rolling(window=50).rank(pct=True)  # TODO: 将魔法数字提取到配置中
         
-        # 低波动率给正分（稳定上涨）
+        # 低波动率给正分(稳定上涨)
         low_volatility = volatility_percentile < 0.3  # TODO: 将魔法数字提取到配置中
         volatility_condition[low_volatility] += 10.0
         
-        # 高波动率给负分（风险较高）
+        # 高波动率给负分(风险较高)
         high_volatility = volatility_percentile > 0.8  # TODO: 将魔法数字提取到配置中
         volatility_condition[high_volatility] -= 8.0  # TODO: 将魔法数字提取到配置中
         
@@ -877,7 +880,7 @@ class GenericCondition(FORMULA_INDICATORS):
         
         return support_resistance_condition
     
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 formula_indicators = FORMULA_INDICATORS
 
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -885,7 +888,7 @@ formula_indicators = FORMULA_INDICATORS
         计算指标值
         
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
             
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

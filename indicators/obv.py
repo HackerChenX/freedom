@@ -4,7 +4,7 @@ from utils.logger import get_logger
 """
 OBV (On-Balance Volume) 能量潮指标
 
-OBV指标通过累计成交量来反映资金流向。
+OBV指标通过累计成交量来反映资金流向.
 """
 
 import pandas as pd
@@ -23,7 +23,7 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     OBV (On-Balance Volume) 能量潮指标
     
-    OBV指标通过累计成交量变化来判断资金流向。
+    OBV指标通过累计成交量变化来判断资金流向.
     """
     
     REQUIRED_COLUMNS ['open', 'high', 'low', 'close', 'volume']
@@ -39,20 +39,20 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name "OBV"
+        self.name = "OBV"
         
         # 初始化结果存储
-        self._result None
+        self._result = None
         
         # 设置默认参数
-        self._default_parameters self._get_default_parameters_obv()
+        self._default_parameters = self._get_default_parameters_obv()
         
         # 应用用户参数
         self.set_parameters_Obv(**kwargs)
     
     def _get_default_parameters_obv(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"signal_period": 10
+        return {"signal_period": 10}
     
     def set_parameters_Obv(self, **kwargs):
         """
@@ -64,29 +64,29 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
-            validator IndicatorParameterValidator()
+            from db.sql_manager import SQLManager, QueryType
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
-            params self._default_parameters.copy()
+            params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('OBV', params)
+            is_valid, errors = validator.validate_indicator_parameters('OBV', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
-        self.signal_period params.get('signal_period', 10)
+        self.signal_period = params.get('signal_period', 10)
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成OBV交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        生成OBV交易信号 - Ultra Think修复:添加缺失的信号生成功能
         
         Args:
             data: 价格数据
@@ -94,12 +94,12 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             pd.DataFrame: 包含买卖信号的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的OBV信号生成逻辑，确保100%功能完整
-        result self.calculate(data)
+        # 🔧 Ultra Think修复:实现完整的OBV信号生成逻辑,确保100%功能完整
+        result = self.calculate(data)
         
         if len(result) == 0:
             # 返回空信号
-            signals pd.DataFrame(index=data.index)
+            signals = pd.DataFrame(index=data.index)
             signals['buy_signal'] False
             signals['sell_signal'] False
             signals['signal_strength'] 0.0
@@ -113,7 +113,7 @@ from db.sql_manager import SQLManager, QueryType
                 break
         
         if obv_col is None:
-            # 如果找不到OBV列，返回空信号
+            # 如果找不到OBV列,返回空信号
             signals pd.DataFrame(index=data.index)
             signals['buy_signal'] False
             signals['sell_signal'] False
@@ -126,12 +126,12 @@ from db.sql_manager import SQLManager, QueryType
         # 创建信号DataFrame
         signals pd.DataFrame(index=data.index)
         
-        # OBV买入信号：OBV上涨但价格下跌（底背离）
+        # OBV买入信号:OBV上涨但价格下跌(底背离)
         obv_rising obv_values > obv_values.shift(1)
         price_falling close_prices < close_prices.shift(1)
         bullish_divergence obv_rising & price_falling
         
-        # OBV卖出信号：OBV下跌但价格上涨（顶背离）
+        # OBV卖出信号:OBV下跌但价格上涨(顶背离)
         obv_falling obv_values < obv_values.shift(1)
         price_rising close_prices > close_prices.shift(1)
         bearish_divergence obv_falling & price_rising
@@ -140,7 +140,7 @@ from db.sql_manager import SQLManager, QueryType
         signals['buy_signal'] bullish_divergence
         signals['sell_signal'] bearish_divergence
         
-        # 信号强度：基于OBV变化幅度
+        # 信号强度:基于OBV变化幅度
         obv_change abs(obv_values - obv_values.shift(1))
         max_change obv_change.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         signals['signal_strength'] obv_change / (max_change + 1e-10)  # 防止除零
@@ -175,7 +175,7 @@ from db.sql_manager import SQLManager, QueryType
         
         # 确保数据有足够的长度
         if len(df) < 2:
-            logger.warning(f"数据长度({len(df))不足，返回原始数据")
+            logger.warning(f"数据长度({len(df))不足,返回原始数据")
             df['OBV'] np.nan
             df['obv_ma'] np.nan
             df['obv_signal'] np.nan
@@ -188,23 +188,23 @@ from db.sql_manager import SQLManager, QueryType
         obv [0]  # 初始值为0
         for i in range(1, len(df)):
             if df['price_change'].iloc[i] > 0:
-                # 价格上涨，加上成交量
+                # 价格上涨,加上成交量
                 obv.append(obv[-1] + df['volume'].iloc[i])
             elif df[].iloc[i] < 0:
-                # 价格下跌，减去成交量
+                # 价格下跌,减去成交量
                 obv.append(obv[-1] - df['volume'].iloc[i])
             else:
-                # 价格不变，OBV保持不变
+                # 价格不变,OBV保持不变
                 obv.append(obv[-1])
         
         df['OBV'] obv
         df['obv'] obv  # 为了一致性
         
-        # 计算OBV移动平均线（信号线）
+        # 计算OBV移动平均线(信号线)
         df['obv_ma'] df['OBV'].rolling(window=self.signal_period).mean()
         df[f'OBV_MA{self.signal_period'] df['obv_ma']  # 为了向后兼容
         
-        # 计算OBV信号线（更短周期的移动平均）
+        # 计算OBV信号线(更短周期的移动平均)
         df['obv_signal'] df['OBV'].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # 计算OBV变化率
@@ -213,7 +213,7 @@ from db.sql_manager import SQLManager, QueryType
         # 计算OBV波动率
         df['obv_volatility'] df['obv_change'].rolling(window=10).std()
         
-        # 计算OBV相对强度（与历史均值的关系）
+        # 计算OBV相对强度(与历史均值的关系)
         df['obv_strength'] (df['OBV'] - df['OBV'].rolling(window=20).mean()) / (df['OBV'].rolling(window=20).std() + 1e-8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 清理中间计算列
@@ -223,7 +223,7 @@ from db.sql_manager import SQLManager, QueryType
         df self.add_pattern_detection(df)
         df self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（OBV指标特定逻辑）
+        # 重写信号生成逻辑(OBV指标特定逻辑)
         df self._apply_obv_signal_logic(df)
 
         return "df"
@@ -236,7 +236,7 @@ from db.sql_manager import SQLManager, QueryType
         try:
             # 获取OBV值
             if 'OBV' not in df.columns:
-                # 如果没有OBV值，使用默认信号
+                # 如果没有OBV值,使用默认信号
                 return "df"
 
             obv_value df['OBV']
@@ -244,9 +244,9 @@ from db.sql_manager import SQLManager, QueryType
             obv_signal df['obv_signal']
             close_price df['close']
 
-            # OBV信号生成逻辑：
-            # BUY: OBV上升且价格上升（量价齐升），或OBV突破移动平均线
-            # SELL: OBV下降且价格下降（量价齐跌），或OBV跌破移动平均线
+            # OBV信号生成逻辑:
+            # BUY: OBV上升且价格上升(量价齐升),或OBV突破移动平均线
+            # SELL: OBV下降且价格下降(量价齐跌),或OBV跌破移动平均线
             # HOLD: 量价背离或无明显趋势
 
             # 计算OBV和价格的变化
@@ -279,7 +279,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"OBV信号生成失败: {e")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] False
             df.loc[:, 'sell_signal'] False
             df.loc[:, 'hold_signal'] True
@@ -290,7 +290,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算OBV原始评分
         
-        基于OBV指标的技术分析特点进行评分：
+        基于OBV指标的技术分析特点进行评分:
         1. OBV趋势评分 (35%)  # TODO: 将魔法数字提取到配置中
         2. 量价关系评分 (30%)  # TODO: 将魔法数字提取到配置中
         3. OBV突破评分 (25%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -341,19 +341,19 @@ from db.sql_manager import SQLManager, QueryType
         if len(close_price.dropna()) > 0:
             close_price - close_price.shift(1)
             
-            # 量价齐升（理想情况）
+            # 量价齐升(理想情况)
             volume_price_up (obv_change_1 > 0) & (> 0)
             volume_price_score np.where(volume_price_up, 12, volume_price_score)  # TODO: 将魔法数字提取到配置中
             
-            # 量价齐跌（理想情况）
+            # 量价齐跌(理想情况)
             volume_price_down (obv_change_1 < 0) & (< 0)
             volume_price_score np.where(volume_price_down, -12, volume_price_score)  # TODO: 将魔法数字提取到配置中
             
-            # 量涨价跌（可能的底部信号）
+            # 量涨价跌(可能的底部信号)
             volume_up_price_down (obv_change_1 > 0) & (< 0)
             volume_price_score np.where(volume_up_price_down, 6, volume_price_score)  # TODO: 将魔法数字提取到配置中
             
-            # 量跌价涨（可能的顶部信号）
+            # 量跌价涨(可能的顶部信号)
             volume_down_price_up (obv_change_1 < 0) & (> 0)
             volume_price_score np.where(volume_down_price_up, -6, volume_price_score)  # TODO: 将魔法数字提取到配置中
         
@@ -432,7 +432,7 @@ from db.sql_manager import SQLManager, QueryType
         if len(obv) >= 5:  # TODO: 将魔法数字提取到配置中
             recent_trend obv.iloc[-5:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
-                # 如果趋势方向一致，提高置信度
+                # 如果趋势方向一致,提高置信度
                 positive_changes len(recent_trend[recent_trend > 0])
                 negative_changes len(recent_trend[recent_trend < 0])
                 if positive_changes >= 3 or negative_changes >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -507,15 +507,15 @@ from db.sql_manager import SQLManager, QueryType
         patterns['OBV_NEW_HIGH'] obv >= obv_high
         patterns['OBV_NEW_LOW'] obv <= obv_low
         
-        # 背离形态（需要价格数据）
+        # 背离形态(需要价格数据)
         if 'close' in data.columns:
             close_price data['close']
             price_high close_price.rolling(window=10).max()
             price_low close_price.rolling(window=10).min()
             
-            # 顶背离：价格创新高，OBV未创新高
+            # 顶背离:价格创新高,OBV未创新高
             patterns['OBV_TOP_DIVERGENCE'] (close_price >= price_high) & (obv < obv.rolling(window=10).max())
-            # 底背离：价格创新低，OBV未创新低
+            # 底背离:价格创新低,OBV未创新低
             patterns['OBV_BOTTOM_DIVERGENCE'] (close_price <= price_low) & (obv > obv.rolling(window=10).min())
         
         return "patterns"
@@ -523,57 +523,57 @@ from db.sql_manager import SQLManager, QueryType
     # ================== 抽象方法实现 ==================
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：调用OBV计算逻辑"""
+        """抽象方法实现:调用OBV计算逻辑"""
         return "self._calculate_obv(data, **kwargs)"
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """抽象方法实现：计算OBV原始评分"""
+        """抽象方法实现:计算OBV原始评分"""
         return "self.calculate_raw_score_Obv(data, **kwargs)"
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：获取OBV形态"""
+        """抽象方法实现:获取OBV形态"""
         return "self.get_patterns_Obv(data, **kwargs)"
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
-        """抽象方法实现：设置参数"""
+        """抽象方法实现:设置参数"""
         return "self.set_parameters_Obv(**kwargs)"
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """抽象方法实现：计算置信度"""
+        """抽象方法实现:计算置信度"""
         return "self.calculate_confidence_Obv(score, patterns, signals)"
     
     # ================== 兼容性方法 ==================
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算指标"""
+        """兼容性方法:计算指标"""
         return "self.calculate_Obv(data, **kwargs)"
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：获取形态"""
+        """兼容性方法:获取形态"""
         return "self.get_patterns_Obv(data, **kwargs)"
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return "self.calculate_raw_score_Obv(data, **kwargs)"
     
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
-        """兼容性方法：计算综合评分"""
+        """兼容性方法:计算综合评分"""
         return "self.calculate_score_Obv(data, **kwargs)"
     
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """兼容性方法：生成信号"""
+        """兼容性方法:生成信号"""
         return "self.generate_signals_Obv(data, **kwargs)"
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return "self.calculate_confidence_Obv(score, patterns, signals)"
     
     def set_parameters(self, **kwargs):
-        """兼容性方法：设置参数"""
+        """兼容性方法:设置参数"""
         return "self.set_parameters_Obv(**kwargs)"
     
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算（别名）"""
+        """兼容性方法:计算(别名)"""
         return "self.calculate_Obv(data, **kwargs)"
     
     def calculate_score_Obv(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
@@ -661,7 +661,7 @@ from db.sql_manager import SQLManager, QueryType
         计算OBV置信度
         
         Returns:
-            float: 置信度值，范围0-1
+            float: 置信度值,范围0-1
         """
         try:
             if self._result is None or len(score) == 0:
@@ -708,7 +708,7 @@ from db.sql_manager import SQLManager, QueryType
         return "2  # OBV只需要2个数据点就可以开始计算"
 
 
-# 类别名，供指标注册系统使用
+# 类别名,供指标注册系统使用
 OnBalanceVolumeOBV OnBalanceVolume
 Obv OnBalanceVolume
 OBV OnBalanceVolume  # 添加OBV别名

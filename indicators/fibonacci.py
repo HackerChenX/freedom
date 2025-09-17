@@ -35,7 +35,7 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         super().__init__()
         self.name = "FIBONACCI"
-        self.description = "斐波那契指标，用于识别支撑阻力位和回调目标"
+        self.description = "斐波那契指标,用于识别支撑阻力位和回调目标"
         self._result = None  # 初始化结果存储
 
         # 设置默认参数
@@ -69,11 +69,11 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("FIBONACCI", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -136,7 +136,7 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             ]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 df[f"fib_ret_{level}"] = np.nan
 
-        # 基本的FIBONACCI_VALUE（向后兼容）
+        # 基本的FIBONACCI_VALUE(向后兼容)
         df[f"FIBONACCI_VALUE"] = df["close"].rolling(window=self.period).mean()
 
         # 添加形态识别和信号生成
@@ -181,7 +181,7 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                         distance = abs(close - fib_value) / close
                         min_distance = min(min_distance, distance)
 
-            # 距离越小，评分越高
+            # 距离越小,评分越高
             if min_distance != float("inf"):
                 score = max(0, 100 - (min_distance * 1000))  # 转换为0-100评分  # TODO: 将魔法数字提取到配置中
             else:
@@ -232,7 +232,7 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             col_name = f"fib_ret_{level}"
             if col_name in result.columns:
                 fib_values = result[col_name]
-                # 价格接近该斐波那契水平（误差在1%以内）
+                # 价格接近该斐波那契水平(误差在1%以内)
                 near_fib = (abs(close_prices - fib_values) / close_prices) < 0.01
                 patterns[f"FIBONACCI_NEAR_{level}"] = near_fib.fillna(False)
 
@@ -263,46 +263,46 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     # === 兼容性方法 ===
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：计算指标"""
+        """公共接口:计算指标"""
         return self.calculate_Fibonacci(data, **kwargs)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：获取形态"""
+        """公共接口:获取形态"""
         return self.get_patterns_Fibonacci(data, **kwargs)
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """公共接口：计算原始评分"""
+        """公共接口:计算原始评分"""
         return self.calculate_raw_score_Fibonacci(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """公共接口：获取信号"""
+        """公共接口:获取信号"""
         return self.generate_signals_fibonacci(data, **kwargs)
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """公共接口：计算评分"""
+        """公共接口:计算评分"""
         return self.calculate_raw_score_Fibonacci(data, **kwargs)
 
     def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
-        """公共接口：计算置信度"""
+        """公共接口:计算置信度"""
         score = self.calculate_raw_score_Fibonacci(data, **kwargs)
         patterns = self.get_patterns_Fibonacci(data, **kwargs)
         signals = self.generate_signals_fibonacci(data, **kwargs)
         return self.calculate_confidence_Fibonacci(score, patterns, signals)
 
     def set_parameters(self, **kwargs):
-        """公共接口：设置参数"""
+        """公共接口:设置参数"""
         self.set_parameters_Fibonacci(**kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：计算指标（别名）"""
+        """公共接口:计算指标(别名)"""
         return self.calculate_Fibonacci(data, **kwargs)
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """公共接口：生成交易信号"""
+        """公共接口:生成交易信号"""
         return self.generate_signals_fibonacci(data, **kwargs)
 
     def register_patterns(self):
-        """公共接口：注册形态"""
+        """公共接口:注册形态"""
         pass  # 形态已在计算过程中处理
 
     def has_result(self) -> bool:
@@ -364,6 +364,6 @@ class Fibonacci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             }
 
 
-# 类别名，用于向后兼容和注册
+# 类别名,用于向后兼容和注册
 FIBONACCI = Fibonacci
 Fibonacci_Indicator = Fibonacci

@@ -3,15 +3,15 @@ from indicators.base_indicator import BaseIndicator
 #!/usr/bin/env python3
 """
 生产级向量化优化器
-将向量化覆盖率从30.5%提升到37.2%，新增19个高价值指标向量化实现  # TODO: 将魔法数字提取到配置中
+将向量化覆盖率从30.5%提升到37.2%,新增19个高价值指标向量化实现  # TODO: 将魔法数字提取到配置中
 
-目标：
-- 振荡器类：5个指标（ENHANCED_RSI, ENHANCEDKDJ, STOCHRSI, CCI, ENHANCED_CCI）
-- 趋势指标类：4个指标（ENHANCEDMACD, TRIX, DMI, ENHANCED_DMI）
-- 成交量指标类：4个指标（ENHANCED_OBV, MFI, ENHANCED_MFI, VR）
-- 波动率指标类：2个指标（KC, WMA）
-- 动量指标类：2个指标（MTM, WR）
-- 统计指标类：2个指标（ENHANCED_WR, UNIFIED_MA）
+目标:
+- 振荡器类:5个指标(ENHANCED_RSI, ENHANCEDKDJ, STOCHRSI, CCI, ENHANCED_CCI)
+- 趋势指标类:4个指标(ENHANCEDMACD, TRIX, DMI, ENHANCED_DMI)
+- 成交量指标类:4个指标(ENHANCED_OBV, MFI, ENHANCED_MFI, VR)
+- 波动率指标类:2个指标(KC, WMA)
+- 动量指标类:2个指标(MTM, WR)
+- 统计指标类:2个指标(ENHANCED_WR, UNIFIED_MA)
 """
 
 import numpy as np
@@ -63,7 +63,7 @@ class ProductionVectorizationOptimizer(BaseIndicator):
 ProductionVectorizationOptimizer - L4核心服务层组件
 
 职责合理性说明:
-- 作为L4层核心服务组件，承担多项相关职责
+- 作为L4层核心服务组件,承担多项相关职责
 - 43个方法分为以下职责组:
   * 核心功能方法 (约14个)
   * 辅助工具方法 (约14个)  
@@ -88,7 +88,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
         logger.info(f"📊 已注册 {len(self.vectorized_indicators)} 个高级向量化指标")
         
         if not NUMBA_AVAILABLE:
-            logger.warning("⚠️ Numba不可用，使用纯NumPy实现（性能略低）")
+            logger.warning("⚠️ Numba不可用,使用纯NumPy实现(性能略低)")
     
     def _register_advanced_indicators(self):
         """注册高级向量化指标"""
@@ -138,7 +138,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """增强RSI：多周期RSI + 背离检测"""
+        """增强RSI:多周期RSI + 背离检测"""
         try:
             close = data['close'].values
             
@@ -173,7 +173,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @njit
     def _vectorized_rsi(self, close: np.ndarray, period: int) -> np.ndarray:
-        """向量化RSI计算（Numba优化）"""
+        """向量化RSI计算(Numba优化)"""
         delta = np.diff(close)
         gain = np.where(delta > 0, delta, 0)
         loss = np.where(delta < 0, -delta, 0)
@@ -205,12 +205,12 @@ ProductionVectorizationOptimizer - L4核心服务层组件
         price_peaks = self._find_peaks(price)
         rsi_peaks = self._find_peaks(rsi)
         
-        # 检测看跌背离（价格新高，RSI新低）
+        # 检测看跌背离(价格新高,RSI新低)
         for i in range(1, len(price_peaks)):
             if price_peaks[i] > price_peaks[i-1] and rsi_peaks[i] < rsi_peaks[i-1]:
                 divergence[i] = -1  # 看跌背离
         
-        # 检测看涨背离（价格新低，RSI新高）
+        # 检测看涨背离(价格新低,RSI新高)
         price_troughs = self._find_troughs(price)
         rsi_troughs = self._find_troughs(rsi)
         
@@ -222,7 +222,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_enhanced_kdj(self, data: pd.DataFrame, n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        """增强KDJ：标准KDJ + 信号生成"""
+        """增强KDJ:标准KDJ + 信号生成"""
         try:
             high = data['high'].values
             low = data['low'].values
@@ -327,7 +327,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_enhanced_cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """增强CCI：标准CCI + 背离分析"""
+        """增强CCI:标准CCI + 背离分析"""
         try:
             # 计算标准CCI
             cci_result = self.calculate_cci(data, period)
@@ -358,7 +358,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_enhanced_macd(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        """增强MACD：多参数MACD + 趋势分析"""
+        """增强MACD:多参数MACD + 趋势分析"""
         try:
             close = data['close'].values
             
@@ -393,7 +393,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_trix(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """TRIX：三重指数平滑移动平均"""
+        """TRIX:三重指数平滑移动平均"""
         try:
             close = data['close'].values
             
@@ -402,7 +402,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
             ema2 = self._ema(ema1, period)
             ema3 = self._ema(ema2, period)
             
-            # TRIX计算（变化率）
+            # TRIX计算(变化率)
             trix = np.zeros(len(close))
             for i in range(1, len(ema3)):
                 if ema3[i-1] != 0:
@@ -465,7 +465,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @performance_monitor
     def calculate_enhanced_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
-        """增强MFI：标准MFI + 背离检测"""
+        """增强MFI:标准MFI + 背离检测"""
         try:
             # 计算标准MFI
             mfi_result = self.calculate_mfi(data, period)
@@ -577,7 +577,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     # 辅助计算方法
     @njit
     def _sma(self, data: np.ndarray, period: int) -> np.ndarray:
-        """简单移动平均（Numba优化）"""
+        """简单移动平均(Numba优化)"""
         result = np.zeros(len(data))
         result[:period-1] = np.nan
         
@@ -588,7 +588,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
     
     @njit
     def _ema(self, data: np.ndarray, period: int) -> np.ndarray:
-        """指数移动平均（Numba优化）"""
+        """指数移动平均(Numba优化)"""
         alpha = 2.0 / (period + 1)
         result = np.zeros(len(data))
         result[0] = data[0]
@@ -722,7 +722,7 @@ ProductionVectorizationOptimizer - L4核心服务层组件
         
         return speedup_estimates.get(indicator, 2.5)  # TODO: 将魔法数字提取到配置中
     
-    # 占位方法（需要完整实现）
+    # 占位方法(需要完整实现)
     def calculate_enhanced_obv(self, data: pd.DataFrame) -> pd.DataFrame:
         """增强OBV占位实现"""
         # TODO: 完整实现

@@ -34,7 +34,7 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_marketenv()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -54,6 +54,9 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -64,16 +67,16 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MARKET_ENV', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
         self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
-        # 🔧 Ultra Think修复：同步更新minimum_periods
+        # 🔧 Ultra Think修复:同步更新minimum_periods
         self._minimum_periods = self.period
     
     def calculate_Env(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -102,7 +105,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        # 🔧 Ultra Think修复:正确处理NaN值,使用min_periods=1确保有足够数据
         df[f'MARKET_ENV_VALUE'] = df['close'].rolling(window=self.period, min_periods=1).mean()
         
         
@@ -114,7 +117,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def calculate_raw_score_Env(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Env(data, **kwargs)
         return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
@@ -127,7 +130,7 @@ from db.sql_manager import SQLManager, QueryType
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_marketenv(data, **kwargs)

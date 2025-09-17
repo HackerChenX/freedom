@@ -15,7 +15,7 @@ class IIndicatorCalculator(ABC, BaseIndicator):
     """
     IIndicatorCalculator - L4层标准接口
 
-    基于L3层成功经验设计，提供统一的接口规范
+    基于L3层成功经验设计,提供统一的接口规范
     """
 
     @abstractmethod

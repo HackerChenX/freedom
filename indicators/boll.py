@@ -31,7 +31,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     布林带指标类
 
-    计算布林带上轨、中轨和下轨，支持自适应带宽和动态评估系统
+    计算布林带上轨,中轨和下轨,支持自适应带宽和动态评估系统
     """
 
     def __init__(self, **kwargs):
@@ -42,7 +42,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化布林带指标
 
         Args:
-            **kwargs: 指标参数，支持period、std_dev、ma_type等
+            **kwargs: 指标参数,支持period,std_dev,ma_type等
         """
         super().__init__()
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
@@ -57,7 +57,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         self._market_environment = "SIDEWAYS_MARKET"
 
-        # 注释掉自动形态注册，避免初始化错误
+        # 注释掉自动形态注册,避免初始化错误
         # self._register_boll_patterns()
 
         # 导入交叉检测函数
@@ -80,7 +80,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         设置指标参数
 
         Args:
-            **kwargs: 参数字典，支持以下参数：
+            **kwargs: 参数字典,支持以下参数:
                 - period: 移动平均线周期
                 - std_dev: 标准差倍数
                 - ma_type: 移动平均线类型
@@ -99,11 +99,11 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("BOLL_Boll", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -123,7 +123,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_TOUCH_UPPER",
             display_name="布林带价格触及上轨",
-            description="价格触及上轨但未突破，可能是阻力位",
+            description="价格触及上轨但未突破,可能是阻力位",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.RESISTANCE,
             default_strength=Pattern_strength.MEDIUM,
@@ -136,7 +136,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_TOUCH_LOWER",
             display_name="布林带价格触及下轨",
-            description="价格触及下轨但未突破，可能是支撑位",
+            description="价格触及下轨但未突破,可能是支撑位",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.SUPPORT,
             default_strength=Pattern_strength.MEDIUM,
@@ -149,7 +149,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_BREAK_UPPER",
             display_name="布林带价格突破上轨",
-            description="价格突破上轨，可能是强势信号",
+            description="价格突破上轨,可能是强势信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BREAKOUT,
             default_strength=Pattern_strength.STRONG,
@@ -162,7 +162,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_BREAK_LOWER",
             display_name="布林带价格突破下轨",
-            description="价格突破下轨，可能是弱势信号",
+            description="价格突破下轨,可能是弱势信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BREAKOUT,
             default_strength=Pattern_strength.STRONG,
@@ -175,7 +175,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="BANDWIDTH_EXPANDING",
             display_name="布林带宽扩大",
-            description="带宽扩大，波动性增加",
+            description="带宽扩大,波动性增加",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.VOLATILITY,
             default_strength=Pattern_strength.MEDIUM,
@@ -188,7 +188,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="BANDWIDTH_CONTRACTING",
             display_name="布林带宽收缩",
-            description="带宽收缩，波动性减小",
+            description="带宽收缩,波动性减小",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.VOLATILITY,
             default_strength=Pattern_strength.MEDIUM,
@@ -201,7 +201,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_CROSS_UP_MIDDLE",
             display_name="价格上穿布林中轨",
-            description="价格从下方穿越中轨，可能是趋势转变信号",
+            description="价格从下方穿越中轨,可能是趋势转变信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -214,7 +214,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PRICE_CROSS_DOWN_MIDDLE",
             display_name="价格下穿布林中轨",
-            description="价格从上方穿越中轨，可能是趋势转变信号",
+            description="价格从上方穿越中轨,可能是趋势转变信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -227,7 +227,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="PARALLEL_BANDS",
             display_name="布林带平行",
-            description="上下轨道平行，趋势稳定",
+            description="上下轨道平行,趋势稳定",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.TREND,
             default_strength=Pattern_strength.WEAK,
@@ -240,7 +240,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="W_BOTTOM",
             display_name="布林带W底",
-            description="价格在下轨附近形成W底，看涨信号",
+            description="价格在下轨附近形成W底,看涨信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.STRONG,
@@ -253,7 +253,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="M_TOP",
             display_name="布林带M顶",
-            description="价格在上轨附近形成M顶，看跌信号",
+            description="价格在上轨附近形成M顶,看跌信号",
             indicator_id="BOLL_Boll",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.STRONG,
@@ -267,7 +267,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "upper" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格触及上轨：收盘价接近上轨但不突破
+        # 价格触及上轨:收盘价接近上轨但不突破
         upper = data["upper"]
         close = data["close"]
         tolerance = 0.003  # 0.3%的容差  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -284,7 +284,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "lower" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格触及下轨：收盘价接近下轨但不突破
+        # 价格触及下轨:收盘价接近下轨但不突破
         lower = data["lower"]
         close = data["close"]
         tolerance = 0.003  # 0.3%的容差  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -301,7 +301,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "upper" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格突破上轨：收盘价高于上轨
+        # 价格突破上轨:收盘价高于上轨
         upper = data["upper"]
         close = data["close"]
         break_upper = close > upper
@@ -314,7 +314,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "lower" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格突破下轨：收盘价低于下轨
+        # 价格突破下轨:收盘价低于下轨
         lower = data["lower"]
         close = data["close"]
         break_lower = close < lower
@@ -325,7 +325,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _detect_bandwidth_expanding(self, data: pd.DataFrame) -> bool:
         """检测带宽扩大形态"""
         if "bandwidth" not in data.columns:
-            # 如果没有带宽列，计算带宽
+            # 如果没有带宽列,计算带宽
             if "upper" not in data.columns or "lower" not in data.columns or "middle" not in data.columns:
                 return False
 
@@ -336,7 +336,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         else:
             bandwidth = data["bandwidth"]
 
-        # 带宽扩大：当前带宽大于过去3个周期的带宽
+        # 带宽扩大:当前带宽大于过去3个周期的带宽
         expanding = (
             (bandwidth > bandwidth.shift(1))
             & (bandwidth.shift(1) > bandwidth.shift(2))
@@ -349,7 +349,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _detect_bandwidth_contracting(self, data: pd.DataFrame) -> bool:
         """检测带宽收缩形态"""
         if "bandwidth" not in data.columns:
-            # 如果没有带宽列，计算带宽
+            # 如果没有带宽列,计算带宽
             if "upper" not in data.columns or "lower" not in data.columns or "middle" not in data.columns:
                 return False
 
@@ -360,7 +360,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         else:
             bandwidth = data["bandwidth"]
 
-        # 带宽收缩：当前带宽小于过去3个周期的带宽
+        # 带宽收缩:当前带宽小于过去3个周期的带宽
         contracting = (
             (bandwidth < bandwidth.shift(1))
             & (bandwidth.shift(1) < bandwidth.shift(2))
@@ -375,7 +375,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "middle" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格向上突破中轨：价格从下方穿过中轨
+        # 价格向上突破中轨:价格从下方穿过中轨
         middle = data["middle"]
         close = data["close"]
         cross_up = (close > middle) & (close.shift(1) <= middle.shift(1))
@@ -388,7 +388,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "middle" not in data.columns or "close" not in data.columns:
             return False
 
-        # 价格向下突破中轨：价格从上方穿过中轨
+        # 价格向下突破中轨:价格从上方穿过中轨
         middle = data["middle"]
         close = data["close"]
         cross_down = (close < middle) & (close.shift(1) >= middle.shift(1))
@@ -405,7 +405,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         upper_slope = data["upper"].diff(5).iloc[-1]  # TODO: 将魔法数字提取到配置中
         lower_slope = data["lower"].diff(5).iloc[-1]  # TODO: 将魔法数字提取到配置中
 
-        # 上下轨平行：斜率差异小于阈值
+        # 上下轨平行:斜率差异小于阈值
         slope_diff = abs(upper_slope - lower_slope)
         parallel = slope_diff < 0.01 * data["middle"].iloc[-1]  # 斜率差异小于中轨的1%
 
@@ -416,7 +416,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "close" not in data.columns or "lower" not in data.columns:
             return False
 
-        # W底：价格两次接近或触及下轨，且中间有反弹
+        # W底:价格两次接近或触及下轨,且中间有反弹
         close = data["close"]
         lower = data["lower"]
 
@@ -432,7 +432,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算价格与下轨的距离
         distance = (recent_close - recent_lower) / recent_close
 
-        # 寻找两次接近下轨的点，且中间有反弹
+        # 寻找两次接近下轨的点,且中间有反弹
         touches = distance < 0.01  # 接近下轨的阈值
         touch_indices = np.where(touches)[0]
 
@@ -458,7 +458,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if "close" not in data.columns or "upper" not in data.columns:
             return False
 
-        # M顶：价格两次接近或触及上轨，且中间有回落
+        # M顶:价格两次接近或触及上轨,且中间有回落
         close = data["close"]
         upper = data["upper"]
 
@@ -474,7 +474,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算价格与上轨的距离
         distance = (recent_upper - recent_close) / recent_close
 
-        # 寻找两次接近上轨的点，且中间有回落
+        # 寻找两次接近上轨的点,且中间有回落
         touches = distance < 0.01  # 接近上轨的阈值
         touch_indices = np.where(touches)[0]
 
@@ -497,14 +497,14 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Boll(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算布林带指标的原始评分（0-100分制）
+        计算布林带指标的原始评分(0-100分制)
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列，取值范围0-100
+            pd.Series: 原始评分序列,取值范围0-100
         """
         if not self.has_result_Boll():
             self.calculate(data, **kwargs)
@@ -522,13 +522,13 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         bandwidth = (upper - lower) / middle
 
         # 计算价格相对位置
-        # 将价格位置映射到0-100：0表示在下轨以下，50表示在中轨，100表示在上轨以上
+        # 将价格位置映射到0-100:0表示在下轨以下,50表示在中轨,100表示在上轨以上
         price_position = (close - lower) / (upper - lower) * 100
 
         # 基础评分计算
-        # 1. 位置分：基于价格相对布林带的位置，贡献50分权重
-        # 映射规则：0->80, 25->65, 50->50, 75->35, 100->20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # 这种映射使得价格越接近下轨，评分越高，反之越低
+        # 1. 位置分:基于价格相对布林带的位置,贡献50分权重
+        # 映射规则:0->80, 25->65, 50->50, 75->35, 100->20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 这种映射使得价格越接近下轨,评分越高,反之越低
         position_score = np.where(
             price_position <= 50,  # TODO: 将魔法数字提取到配置中
             80
@@ -539,32 +539,32 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             * 30,  # 50-100映射到50-20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         )
 
-        # 2. 趋势分：基于价格与中轨的关系，贡献25分权重
+        # 2. 趋势分:基于价格与中轨的关系,贡献25分权重
         # 计算价格与中轨的相对关系
         price_middle_ratio = close / middle - 1
         trend_score = 50 + price_middle_ratio * 200  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 限制在30-70范围内
         trend_score = np.clip(trend_score, 30, 70)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 带宽分：基于带宽的变化，贡献25分权重  # TODO: 将魔法数字提取到配置中
+        # 3. 带宽分:基于带宽的变化,贡献25分权重  # TODO: 将魔法数字提取到配置中
         # 计算带宽变化率
         bandwidth_change = bandwidth / bandwidth.rolling(window=10).mean()
-        # 带宽扩大时得分高，收缩时得分低
+        # 带宽扩大时得分高,收缩时得分低
         bandwidth_score = np.where(
             bandwidth_change > 1,
             50
             + (bandwidth_change - 1)
-            * 50,  # 带宽扩大，加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            * 50,  # 带宽扩大,加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             50
             - (1 - bandwidth_change)
-            * 50,  # 带宽收缩，减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            * 50,  # 带宽收缩,减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         )
         # 限制在30-70范围内
         bandwidth_score = np.clip(
             bandwidth_score, 30, 70
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 合并各部分得分，按权重加权平均
+        # 合并各部分得分,按权重加权平均
         raw_score = (
             position_score * 0.5  # 位置分权重50%  # TODO: 将魔法数字提取到配置中
             + trend_score * 0.25  # 趋势分权重25%  # TODO: 将魔法数字提取到配置中
@@ -574,7 +574,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 检测形态对评分的影响
         patterns = self.identify_patterns_Boll(data, **kwargs)
 
-        # 形态影响分数：最多调整±20分
+        # 形态影响分数:最多调整±20分
         pattern_adjustment = 0
         for pattern in patterns:
             # 根据形态类型调整分数
@@ -583,9 +583,9 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             elif "超卖" in pattern or "W底" in pattern or "下轨" in pattern:
                 pattern_adjustment += 5  # 看涨形态加分  # TODO: 将魔法数字提取到配置中
             elif "收窄" in pattern:
-                pattern_adjustment += 2  # 收窄形态轻微加分（蓄势）
+                pattern_adjustment += 2  # 收窄形态轻微加分(蓄势)
             elif "扩张" in pattern:
-                pattern_adjustment -= 2  # 扩张形态轻微减分（波动）
+                pattern_adjustment -= 2  # 扩张形态轻微减分(波动)
 
         # 限制形态调整范围
         pattern_adjustment = np.clip(
@@ -607,7 +607,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             *args, **kwargs: 其他参数
 
         Returns:
-            计算完成的Data_frame，包含中轨、上轨和下轨
+            计算完成的Data_frame,包含中轨,上轨和下轨
         """
         try:
             # 空数据处理
@@ -618,7 +618,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 检查数据长度是否足够
             min_periods = self.period + 1
             if len(data) < min_periods:
-                logger.warning(f"BOLL计算: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+                logger.warning(f"BOLL计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
                 # 返回与输入数据长度相同的空结果
                 result = data.copy()
                 result["middle"] = np.nan
@@ -675,10 +675,10 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             upper = middle + (rolling_std * self.std_dev)
             lower = middle - (rolling_std * self.std_dev)
 
-            # 计算带宽（避免除零错误）
+            # 计算带宽(避免除零错误)
             bandwidth = np.where(middle != 0, (upper - lower) / middle, np.nan)
 
-            # 计算%B值（避免除零错误）
+            # 计算%B值(避免除零错误)
             band_width = upper - lower
             percent_b = np.where(band_width != 0, (close - lower) / band_width, np.nan)
 
@@ -696,7 +696,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return result
         except Exception as e:
             logger.error(f"计算布林带时出错: {e}")
-            # 返回原始数据，但添加空的布林带列
+            # 返回原始数据,但添加空的布林带列
             result = data.copy()
             result["middle"] = np.nan
             result["upper"] = np.nan
@@ -709,7 +709,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         根据历史波动率动态调整布林带标准差倍数
 
-        高波动时期减小倍数，低波动时期增大倍数，使得布林带更好地适应市场环境
+        高波动时期减小倍数,低波动时期增大倍数,使得布林带更好地适应市场环境
 
         Args:
             close: 收盘价序列
@@ -728,10 +728,10 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 检查数据长度是否足够
         if len(close) < volatility_window:
-            logger.warning(f"数据长度不足以计算自适应标准差，使用基础标准差 {base_std_dev}")
+            logger.warning(f"数据长度不足以计算自适应标准差,使用基础标准差 {base_std_dev}")
             return adaptive_std_dev
 
-        # 计算滚动波动率（使用对数收益率的标准差）
+        # 计算滚动波动率(使用对数收益率的标准差)
         returns = np.log(close / close.shift(1)).dropna()
         rolling_volatility = returns.rolling(window=volatility_window).std()
 
@@ -742,14 +742,14 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             rank_window = min(volatility_window * 2, len(valid_volatility))
             volatility_rank = rolling_volatility.rolling(window=rank_window).rank(pct=True)
 
-            # 使用布尔索引而不是位置索引，避免索引越界问题
+            # 使用布尔索引而不是位置索引,避免索引越界问题
             valid_ranks = ~volatility_rank.isna()
 
-            # 低波动（分位数低）= 更高的倍数
+            # 低波动(分位数低)= 更高的倍数
             low_volatility = (volatility_rank < 0.2) & valid_ranks
             adaptive_std_dev[low_volatility] = base_std_dev * 1.2  # 增大倍数20%
 
-            # 高波动（分位数高）= 更低的倍数
+            # 高波动(分位数高)= 更低的倍数
             high_volatility = (volatility_rank > 0.8) & valid_ranks  # TODO: 将魔法数字提取到配置中
             adaptive_std_dev[high_volatility] = base_std_dev * 0.8  # 减小倍数20%  # TODO: 将魔法数字提取到配置中
 
@@ -767,7 +767,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def analyze_bandwidth_dynamics(self, data: pd.DataFrame) -> Dict[str, pd.Series]:
         """
-        分析带宽变化趋势，识别压缩和扩张形态
+        分析带宽变化趋势,识别压缩和扩张形态
 
         Args:
             data: 包含bandwidth列的Data_frame
@@ -795,13 +795,13 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 识别带宽快速收缩
         contraction = bw_change_rate < -0.2  # 带宽20%以上的收缩
 
-        # 计算带宽历史分位数，识别极值
+        # 计算带宽历史分位数,识别极值
         if len(bandwidth.dropna()) >= 50:  # TODO: 将魔法数字提取到配置中
             bw_rank = bandwidth.rolling(window=100).rank(pct=True)
 
-            # 极低带宽（压缩状态，可能蓄势待发）
+            # 极低带宽(压缩状态,可能蓄势待发)
             extreme_low = bw_rank < threshold
-            # 极高带宽（扩张状态，可能过度波动）
+            # 极高带宽(扩张状态,可能过度波动)
             extreme_high = bw_rank > (1 - threshold)
 
             extreme = pd.Series(0, index=data.index)
@@ -852,8 +852,8 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 初始化结果
         support = pd.Series(False, index=data.index)
         resistance = pd.Series(False, index=data.index)
-        strength = pd.Series(0.0, index=data.index)  # 支撑/阻力强度，0-100
-        reversal_probability = pd.Series(0.0, index=data.index)  # 反转概率，0-100
+        strength = pd.Series(0.0, index=data.index)  # 支撑/阻力强度,0-100
+        reversal_probability = pd.Series(0.0, index=data.index)  # 反转概率,0-100
 
         close = data["close"]
         middle = data["middle"]
@@ -871,7 +871,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # 判断中轨作为支撑或阻力的有效性
             if close.iloc[i] > middle.iloc[i]:
-                # 价格在中轨上方，评估中轨作为支撑的能力
+                # 价格在中轨上方,评估中轨作为支撑的能力
                 touches = ((window_close - window_middle).abs() < (window_close * 0.002)).sum()
                 bounces = (
                     (window_close < window_middle)
@@ -886,8 +886,8 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     support.iloc[i] = True
                     strength.iloc[i] = support_strength
 
-                    # 计算反转概率（从支撑转为阻力）
-                    # 如果价格接近中轨且支撑强度较低，反转概率高
+                    # 计算反转概率(从支撑转为阻力)
+                    # 如果价格接近中轨且支撑强度较低,反转概率高
                     distance_to_middle = (close.iloc[i] - middle.iloc[i]) / middle.iloc[i]
                     if distance_to_middle < 0.01:  # 价格非常接近中轨
                         reversal_probability.iloc[i] = max(0, 100 - support_strength)
@@ -896,7 +896,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                             0, (80 - support_strength) * (0.02 / distance_to_middle)
                         )  # TODO: 将魔法数字提取到配置中
             else:
-                # 价格在中轨下方，评估中轨作为阻力的能力
+                # 价格在中轨下方,评估中轨作为阻力的能力
                 touches = ((window_close - window_middle).abs() < (window_close * 0.002)).sum()
                 rejections = (
                     (window_close > window_middle)
@@ -911,8 +911,8 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     resistance.iloc[i] = True
                     strength.iloc[i] = resistance_strength
 
-                    # 计算反转概率（从阻力转为支撑）
-                    # 如果价格接近中轨且阻力强度较低，反转概率高
+                    # 计算反转概率(从阻力转为支撑)
+                    # 如果价格接近中轨且阻力强度较低,反转概率高
                     distance_to_middle = (middle.iloc[i] - close.iloc[i]) / middle.iloc[i]
                     if distance_to_middle < 0.01:  # 价格非常接近中轨
                         reversal_probability.iloc[i] = max(0, 100 - resistance_strength)
@@ -922,7 +922,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                         )  # TODO: 将魔法数字提取到配置中
 
             # 判断中轨是否为持续的支撑或阻力
-            # 如果价格持续在中轨上方或下方，增加强度
+            # 如果价格持续在中轨上方或下方,增加强度
             price_above = (window_close > window_middle).sum()
             price_below = (window_close < window_middle).sum()
 
@@ -937,7 +937,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 # 中轨成为可靠阻力的可能性更高
                 cumulative_strength += 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             else:
-                # 价格频繁穿越中轨，支撑阻力不明显
+                # 价格频繁穿越中轨,支撑阻力不明显
                 cumulative_strength = max(0, cumulative_strength - 2)
 
             # 累积强度衰减
@@ -949,7 +949,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 确保强度在0-100范围内
             strength.iloc[i] = min(100, max(0, strength.iloc[i]))
 
-            # 分析最近的中轨穿越模式，调整反转概率
+            # 分析最近的中轨穿越模式,调整反转概率
             if i >= lookback + 3:  # TODO: 将魔法数字提取到配置中
                 recent_crosses = (
                     (
@@ -958,7 +958,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     != (close.iloc[i - 3 : i].shift(1) > middle.iloc[i - 3 : i].shift(1))
                 ).sum()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-                # 如果最近频繁穿越中轨，增加反转概率
+                # 如果最近频繁穿越中轨,增加反转概率
                 if recent_crosses >= 2:
                     reversal_probability.iloc[i] = min(
                         100, reversal_probability.iloc[i] + 20
@@ -1023,7 +1023,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if self.crossunder(recent_close, recent_lower).any():
             patterns.append("突破布林带下轨")
 
-        # 3. 带宽形态 - 优化：更精细的带宽形态识别  # TODO: 将魔法数字提取到配置中
+        # 3. 带宽形态 - 优化:更精细的带宽形态识别  # TODO: 将魔法数字提取到配置中
         bandwidth = (upper - lower) / middle
         recent_bandwidth = bandwidth.tail(recent_periods)
 
@@ -1049,7 +1049,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             elif recent_bandwidth.iloc[-1] > recent_bandwidth.iloc[-3] * 1.1:  # TODO: 将魔法数字提取到配置中
                 patterns.append("带宽快速扩张")
 
-        # 4. 弹性反转形态 - 优化：识别从边界弹回的形态  # TODO: 将魔法数字提取到配置中
+        # 4. 弹性反转形态 - 优化:识别从边界弹回的形态  # TODO: 将魔法数字提取到配置中
         price_position = (close - lower) / (upper - lower)  # 位置百分比(0-1)
         recent_position = price_position.tail(recent_periods)
 
@@ -1065,7 +1065,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append("上轨回落中轨")
 
-        # 5. 方向一致性形态 - 优化：识别价格与布林带方向一致的形态  # TODO: 将魔法数字提取到配置中
+        # 5. 方向一致性形态 - 优化:识别价格与布林带方向一致的形态  # TODO: 将魔法数字提取到配置中
         if len(middle) >= 10:
             # 计算中轨斜率和价格斜率
             middle_slope = (middle.iloc[-1] - middle.iloc[-10]) / middle.iloc[-10]
@@ -1142,10 +1142,10 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             close: 收盘价序列
             from_line: 起始线
             to_line: 目标线
-            direction: 方向，'up'或'down'
+            direction: 方向,'up'或'down'
 
         Returns:
-            pd.Series: 布尔序列，表示是否检测到此类移动
+            pd.Series: 布尔序列,表示是否检测到此类移动
         """
         movement = pd.Series(False, index=close.index)
 
@@ -1186,7 +1186,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 查找最近的两个接触点
             last_two = touch_indices[-2:]
 
-            # 确保两点之间有反弹（中间点高于两端点）
+            # 确保两点之间有反弹(中间点高于两端点)
             if (
                 len(last_two) == 2 and last_two[1] - last_two[0] >= 3
             ):  # 至少间隔3个点  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1225,7 +1225,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 查找最近的两个接触点
             last_two = touch_indices[-2:]
 
-            # 确保两点之间有回调（中间点低于两端点）
+            # 确保两点之间有回调(中间点低于两端点)
             if (
                 len(last_two) == 2 and last_two[1] - last_two[0] >= 3
             ):  # 至少间隔3个点  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1247,7 +1247,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         设置市场环境
 
         Args:
-            environment: 市场环境，可以是Market_environment枚举或字符串
+            environment: 市场环境,可以是Market_environment枚举或字符串
         """
         if isinstance(environment, str):
             self._market_environment = environment
@@ -1264,7 +1264,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         if environment not in env_mapping:
             valid_values = list(env_mapping.keys())
-            raise ValueError(f"无效的市场环境，有效值为: {', '.join(valid_values)}")
+            raise ValueError(f"无效的市场环境,有效值为: {', '.join(valid_values)}")
 
         self._market_environment = env_mapping[environment]
 
@@ -1282,7 +1282,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         根据价格数据和布林带状态检测市场环境
 
         Args:
-            data: 输入数据，包含价格数据
+            data: 输入数据,包含价格数据
 
         Returns:
             Market_environment: 检测到的市场环境
@@ -1352,12 +1352,12 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         elif (
             latest_price > latest_ma20 and latest_ma20 > latest_ma60 and latest_price > price.iloc[-20:].min() * 1.1
         ):  # TODO: 将魔法数字提取到配置中
-            # 牛市条件: 价格高于20日均线，20日均线高于60日均线，且价格比近期最低点高10%以上
+            # 牛市条件: 价格高于20日均线,20日均线高于60日均线,且价格比近期最低点高10%以上
             return "SIDEWAYS_MARKET"
         elif (
             latest_price < latest_ma20 and latest_ma20 < latest_ma60 and latest_price < price.iloc[-20:].max() * 0.9
         ):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # 熊市条件: 价格低于20日均线，20日均线低于60日均线，且价格比近期最高点低10%以上
+            # 熊市条件: 价格低于20日均线,20日均线低于60日均线,且价格比近期最高点低10%以上
             return "SIDEWAYS_MARKET"
         elif abs((latest_price / latest_ma60) - 1) < 0.05:  # TODO: 将魔法数字提取到配置中
             # 盘整市场: 价格在长期均线附近波动不超过5%
@@ -1465,7 +1465,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         w_bottom = pd.Series(False, index=data.index)
         m_top = pd.Series(False, index=data.index)
 
-        # 检测形态（每20个点检测一次，提高性能）
+        # 检测形态(每20个点检测一次,提高性能)
         for i in range(40, len(price), 5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             window_size = 40  # TODO: 将魔法数字提取到配置中
             start_idx = max(0, i - window_size)
@@ -1594,7 +1594,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             elif "背离" in pattern:
                 patterns_df.loc[last_index, "BOLL_MEAN_REVERSION"] = True
 
-        # 确保所有列都是布尔类型，填充NaN为False
+        # 确保所有列都是布尔类型,填充NaN为False
         for col in patterns_df.columns:
             patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
@@ -1608,7 +1608,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_UPPER_BREAKOUT",
             display_name="布林带上轨突破",
-            description="价格突破布林带上轨，表明强势上涨",
+            description="价格突破布林带上轨,表明强势上涨",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -1618,7 +1618,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_LOWER_BREAKOUT",
             display_name="布林带下轨突破",
-            description="价格跌破布林带下轨，表明强势下跌",
+            description="价格跌破布林带下轨,表明强势下跌",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -1629,7 +1629,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_OVERBOUGHT",
             display_name="布林带超买",
-            description="价格接近或触及上轨，可能超买",
+            description="价格接近或触及上轨,可能超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1639,7 +1639,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_OVERSOLD",
             display_name="布林带超卖",
-            description="价格接近或触及下轨，可能超卖",
+            description="价格接近或触及下轨,可能超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1650,7 +1650,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_SQUEEZE",
             display_name="布林带收缩",
-            description="布林带收缩，表明波动率降低，可能酝酿突破",
+            description="布林带收缩,表明波动率降低,可能酝酿突破",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -1660,7 +1660,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_EXPANSION",
             display_name="布林带扩张",
-            description="布林带扩张，表明波动率增加，趋势可能延续",
+            description="布林带扩张,表明波动率增加,趋势可能延续",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -1671,7 +1671,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_W_BOTTOM",
             display_name="布林带W底",
-            description="价格在下轨附近形成W底，强烈看涨信号",
+            description="价格在下轨附近形成W底,强烈看涨信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=30.0,  # TODO: 将魔法数字提取到配置中
@@ -1681,7 +1681,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_M_TOP",
             display_name="布林带M顶",
-            description="价格在上轨附近形成M顶，强烈看跌信号",
+            description="价格在上轨附近形成M顶,强烈看跌信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
@@ -1692,7 +1692,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_TREND_FOLLOWING",
             display_name="布林带趋势跟随",
-            description="价格沿布林带边缘运行，表明趋势强劲",
+            description="价格沿布林带边缘运行,表明趋势强劲",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
             score_impact=0.0,
@@ -1702,7 +1702,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BOLL_MEAN_REVERSION",
             display_name="布林带均值回归",
-            description="价格向中轨回归，表明超买超卖修正",
+            description="价格向中轨回归,表明超买超卖修正",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -1718,7 +1718,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
 
         Returns:
-            Dict[str, Any]: 评分结果，包含：
+            Dict[str, Any]: 评分结果,包含:
                 - raw_score: 原始评分序列
                 - final_score: 最终评分序列
                 - market_environment: 市场环境
@@ -1792,7 +1792,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_UPPER_BREAKOUT": {
                 "id": "BOLL_UPPER_BREAKOUT",
                 "name": "布林带上轨突破",
-                "description": "价格突破布林带上轨，表明强势上涨",
+                "description": "价格突破布林带上轨,表明强势上涨",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 25.0,  # TODO: 将魔法数字提取到配置中
@@ -1800,7 +1800,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_LOWER_BREAKOUT": {
                 "id": "BOLL_LOWER_BREAKOUT",
                 "name": "布林带下轨突破",
-                "description": "价格跌破布林带下轨，表明强势下跌",
+                "description": "价格跌破布林带下轨,表明强势下跌",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -25.0,  # TODO: 将魔法数字提取到配置中
@@ -1808,7 +1808,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_SQUEEZE": {
                 "id": "BOLL_SQUEEZE",
                 "name": "布林带收缩",
-                "description": "布林带收缩，表明波动率降低，可能酝酿突破",
+                "description": "布林带收缩,表明波动率降低,可能酝酿突破",
                 "type": "NEUTRAL",
                 "strength": "MEDIUM",
                 "score_impact": 0.0,
@@ -1816,7 +1816,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_EXPANSION": {
                 "id": "BOLL_EXPANSION",
                 "name": "布林带扩张",
-                "description": "布林带扩张，表明波动率增加，趋势可能延续",
+                "description": "布林带扩张,表明波动率增加,趋势可能延续",
                 "type": "NEUTRAL",
                 "strength": "MEDIUM",
                 "score_impact": 0.0,
@@ -1824,7 +1824,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_MEAN_REVERSION": {
                 "id": "BOLL_MEAN_REVERSION",
                 "name": "布林带均值回归",
-                "description": "价格向中轨回归，表明超买超卖修正",
+                "description": "价格向中轨回归,表明超买超卖修正",
                 "type": "NEUTRAL",
                 "strength": "MEDIUM",
                 "score_impact": 0.0,
@@ -1832,7 +1832,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "BOLL_TREND_FOLLOWING": {
                 "id": "BOLL_TREND_FOLLOWING",
                 "name": "布林带趋势跟随",
-                "description": "价格沿布林带边缘运行，表明趋势强劲",
+                "description": "价格沿布林带边缘运行,表明趋势强劲",
                 "type": "NEUTRAL",
                 "strength": "STRONG",
                 "score_impact": 15.0,  # TODO: 将魔法数字提取到配置中
@@ -1865,21 +1865,21 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         adjusted_score = score.copy()
 
         if market_env == "SIDEWAYS_MARKET":
-            # 牛市环境下，上涨信号得分提高，下跌信号得分降低
+            # 牛市环境下,上涨信号得分提高,下跌信号得分降低
             adjusted_score = np.where(
                 score > 50,  # TODO: 将魔法数字提取到配置中
                 score + (score - 50) * 0.2,  # 多头信号增强  # TODO: 将魔法数字提取到配置中
                 score + (score - 50) * 0.1,
             )  # 空头信号减弱  # TODO: 将魔法数字提取到配置中
         elif market_env == "SIDEWAYS_MARKET":
-            # 熊市环境下，下跌信号得分提高，上涨信号得分降低
+            # 熊市环境下,下跌信号得分提高,上涨信号得分降低
             adjusted_score = np.where(
                 score < 50,  # TODO: 将魔法数字提取到配置中
                 score - (50 - score) * 0.2,  # 空头信号增强  # TODO: 将魔法数字提取到配置中
                 score - (score - 50) * 0.1,
             )  # 多头信号减弱  # TODO: 将魔法数字提取到配置中
         elif market_env == "SIDEWAYS_MARKET":
-            # 高波动市场，极端信号得分更加极端，中性信号得分更加中性
+            # 高波动市场,极端信号得分更加极端,中性信号得分更加中性
             adjusted_score = np.where(
                 (score > 60) | (score < 40),  # 极端信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 score
@@ -1902,33 +1902,33 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             signals: 生成的信号
 
         Returns:
-            float: 置信度（0-1）
+            float: 置信度(0-1)
         """
-        # 基础置信度：0.5  # TODO: 将魔法数字提取到配置中
+        # 基础置信度:0.5  # TODO: 将魔法数字提取到配置中
         confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 根据形态数量调整置信度
         if len(patterns) >= 3:  # TODO: 将魔法数字提取到配置中
-            confidence += 0.1  # 多种形态同时出现，置信度提高
+            confidence += 0.1  # 多种形态同时出现,置信度提高
 
         # 根据评分极端程度调整置信度
         latest_score = score.iloc[-1]
         if latest_score > 80 or latest_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            confidence += 0.15  # 评分极端，置信度提高  # TODO: 将魔法数字提取到配置中
+            confidence += 0.15  # 评分极端,置信度提高  # TODO: 将魔法数字提取到配置中
         elif 40 <= latest_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            confidence -= 0.1  # 评分中性，置信度降低
+            confidence -= 0.1  # 评分中性,置信度降低
 
         # 根据信号强度调整置信度
         if "buy_strength" in signals and signals["buy_strength"].iloc[-1] >= 4:  # TODO: 将魔法数字提取到配置中
-            confidence += 0.1  # 强买入信号，置信度提高
+            confidence += 0.1  # 强买入信号,置信度提高
         if "sell_strength" in signals and signals["sell_strength"].iloc[-1] >= 4:  # TODO: 将魔法数字提取到配置中
-            confidence += 0.1  # 强卖出信号，置信度提高
+            confidence += 0.1  # 强卖出信号,置信度提高
 
         # 根据高质量形态调整置信度
         high_quality_patterns = ["布林带挤压后突破", "W底形态", "M顶形态", "持续上轨压制", "持续下轨支撑"]
         for pattern in high_quality_patterns:
             if pattern in patterns:
-                confidence += 0.05  # 高质量形态，置信度提高  # TODO: 将魔法数字提取到配置中
+                confidence += 0.05  # 高质量形态,置信度提高  # TODO: 将魔法数字提取到配置中
 
         # 限制置信度范围在0-1之间
         return max(0.0, min(1.0, confidence))
@@ -1958,15 +1958,15 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        # 只更新_parameters字典，避免直接设置只读属性
+        # 只更新_parameters字典,避免直接设置只读属性
         for key, value in kwargs.items():
             if key in self._parameters:
                 self._parameters[key] = value
             elif key in ["period", "std_dev", "ma_type"]:
-                # 对于核心参数，即使不在_parameters中也要添加
+                # 对于核心参数,即使不在_parameters中也要添加
                 self._parameters[key] = value
 
-        # 如果设置了核心参数，需要重新初始化内部状态
+        # 如果设置了核心参数,需要重新初始化内部状态
         if any(key in kwargs for key in ["period", "std_dev"]):
             # 重新设置内部参数
             self._period = self._parameters.get("period", 20)  # TODO: 将魔法数字提取到配置中
@@ -1989,7 +1989,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取BOLL形态"""
+        """真实实现:获取BOLL形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -2021,13 +2021,13 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df["BOLL_MIDDLE_BREAKOUT_UP"] = (close_price > middle) & (close_price.shift(1) <= middle.shift(1))
         patterns_df["BOLL_MIDDLE_BREAKOUT_DOWN"] = (close_price < middle) & (close_price.shift(1) >= middle.shift(1))
 
-        # 4. 布林带收缩形态（带宽变窄）  # TODO: 将魔法数字提取到配置中
+        # 4. 布林带收缩形态(带宽变窄)  # TODO: 将魔法数字提取到配置中
         if not upper.empty and not lower.empty:
             bandwidth = (upper - lower) / middle
             bandwidth_ma = bandwidth.rolling(10).mean()
             patterns_df["BOLL_SQUEEZE"] = bandwidth < bandwidth_ma * 0.8  # TODO: 将魔法数字提取到配置中
 
-            # 5. 布林带扩张形态（带宽变宽）  # TODO: 将魔法数字提取到配置中
+            # 5. 布林带扩张形态(带宽变宽)  # TODO: 将魔法数字提取到配置中
             patterns_df["BOLL_EXPANSION"] = bandwidth > bandwidth_ma * 1.2
 
         # 6. 价格回归中轨形态  # TODO: 将魔法数字提取到配置中
@@ -2044,7 +2044,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算BOLL原始评分"""
+        """真实实现:计算BOLL原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -2090,13 +2090,13 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             bandwidth = (upper - lower) / middle
             bandwidth_ma = bandwidth.rolling(20).mean()  # TODO: 将魔法数字提取到配置中
 
-            # 布林带收缩时加分（可能有突破）
+            # 布林带收缩时加分(可能有突破)
             squeeze_condition = (
                 bandwidth < bandwidth_ma * 0.8
             )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             score += squeeze_condition * 10
 
-            # 布林带过度扩张时减分（可能回归）
+            # 布林带过度扩张时减分(可能回归)
             expansion_condition = bandwidth > bandwidth_ma * 1.5  # TODO: 将魔法数字提取到配置中
             score -= expansion_condition * 8  # TODO: 将魔法数字提取到配置中
 
@@ -2128,7 +2128,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return score.clip(0, 100)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成BOLL交易信号"""
+        """真实实现:生成BOLL交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -2210,7 +2210,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算BOLL综合评分"""
+        """真实实现:计算BOLL综合评分"""
         if data.empty:
             return {"score": 50.0, "confidence": 0.0, "signals": {}}  # TODO: 将魔法数字提取到配置中
 
@@ -2287,7 +2287,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置BOLL参数"""
+        """真实实现:设置BOLL参数"""
         # 验证并设置period参数
         if "period" in kwargs:
             period = kwargs["period"]
@@ -2318,7 +2318,7 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         logger.info(f"BOLL参数已更新")
 
     def register_patterns(self):
-        """真实实现：注册BOLL形态到全局注册表"""
+        """真实实现:注册BOLL形态到全局注册表"""
         try:
             registry = PatternRegistry()
 
@@ -2357,25 +2357,25 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成BOLL交易信号"""
+        """真实实现:生成BOLL交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算BOLL指标"""
+        """真实实现:计算BOLL指标"""
         return self._calculate_boll(data, **kwargs)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_Boll(score, patterns, signals)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：识别形态"""
+        """兼容性方法:识别形态"""
         return self.get_patterns(data, **kwargs)
 
     def calculate_raw_score_boll(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 BOLL = BollBoll

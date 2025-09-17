@@ -23,8 +23,8 @@ logger = get_logger(__name__)
 class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     移动平均线(MA_Ma)
-    分类：趋势类指标
-    描述：计算价格的简单移动平均。
+    分类:趋势类指标
+    描述:计算价格的简单移动平均.
     """
 
     # MA指标只需要close列
@@ -37,7 +37,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         初始化移动平均线(MA_Ma)指标
         Args:
-            **kwargs: 指标参数，支持period、price_field等
+            **kwargs: 指标参数,支持period,price_field等
         """
         super().__init__()
         self.name = "MA_Ma"
@@ -78,7 +78,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         设置指标参数
 
         Args:
-            **kwargs: 参数字典，支持以下参数：
+            **kwargs: 参数字典,支持以下参数:
                 - period: 移动平均线周期
                 - ma_type: MA类型 ('SMA', 'EMA', 'WMA')
                 - price_field: 价格字段选择
@@ -97,10 +97,10 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("MA_Ma", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
         except Exception:
-            # 如果验证器模块有问题，静默处理
+            # 如果验证器模块有问题,静默处理
             params = self._default_parameters.copy()
             params.update(kwargs)
 
@@ -110,7 +110,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "periods", [5, 10, 20, 60]
         )  # 多周期支持  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.price_field = params.get("price_field", "close")
-        self.ma_type_param = params.get("ma_type", "SMA")  # 支持SMA、EMA、WMA
+        self.ma_type_param = params.get("ma_type", "SMA")  # 支持SMA,EMA,WMA
 
         # 确保主要周期在periods列表中
         if self.period not in self.periods:
@@ -123,7 +123,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _calculate_ma(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        计算移动平均线(支持SMA、EMA、WMA)
+        计算移动平均线(支持SMA,EMA,WMA)
         """
         # 边界条件检查
         if data is None or data.empty:
@@ -132,7 +132,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(data) == 0:
             return pd.DataFrame()
 
-        # 从原始数据开始，确保保留所有基础列
+        # 从原始数据开始,确保保留所有基础列
         result_df = data.copy()
 
         # 确保close列存在
@@ -143,7 +143,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 处理close列包含NaN的情况
         if close_series.isna().all():
-            # 如果所有值都是NaN，返回带有NaN的MA列的结果
+            # 如果所有值都是NaN,返回带有NaN的MA列的结果
             result_df["ma"] = np.nan
             for p in self.periods:
                 result_df[f"{self.ma_type}{p}"] = np.nan
@@ -154,18 +154,18 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 获取close列的值
             close_values = close_series.values if hasattr(close_series, "values") else close_series
 
-            # 如果是多维数组，展平它
+            # 如果是多维数组,展平它
             if hasattr(close_values, "flatten"):
                 close_values = close_values.flatten()
 
             # 确保数据长度与索引长度匹配
             expected_length = len(data.index)
             if len(close_values) != expected_length:
-                # 如果长度不匹配，只取需要的长度
+                # 如果长度不匹配,只取需要的长度
                 if len(close_values) > expected_length:
                     close_values = close_values[:expected_length]
                 else:
-                    # 如果数据不足，用NaN填充
+                    # 如果数据不足,用NaN填充
                     close_values = np.pad(
                         close_values, (0, expected_length - len(close_values)), constant_values=np.nan
                     )
@@ -178,7 +178,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             ma_values = self._calculate_single_ma(close_series, p, self.ma_type_param)
             result_df[f"{self.ma_type}{p}"] = ma_values
 
-        # 添加主要周期的ma列（用于测试兼容性）
+        # 添加主要周期的ma列(用于测试兼容性)
         main_ma = self._calculate_single_ma(close_series, self.period, self.ma_type_param)
         result_df["ma"] = main_ma
 
@@ -196,7 +196,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result_df = self.add_pattern_detection(result_df)
         result_df = self.add_signal_generation(result_df)
 
-        # 重写信号生成逻辑（MA指标特定逻辑）
+        # 重写信号生成逻辑(MA指标特定逻辑)
         result_df = self._apply_ma_signal_logic(result_df)
 
         return result_df
@@ -259,18 +259,18 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 获取收盘价
             close_price = result_df["close"]
 
-            # 获取主要MA线（使用设定的周期）
+            # 获取主要MA线(使用设定的周期)
             ma_col = f"{self.ma_type}{self.period}"
             if ma_col not in result_df.columns:
-                # 如果没有主要MA线，使用默认信号
+                # 如果没有主要MA线,使用默认信号
                 return result_df
 
             ma_line = result_df[ma_col]
 
-            # MA信号生成逻辑：
+            # MA信号生成逻辑:
             # BUY: 价格在MA线之上
             # SELL: 价格在MA线之下
-            # HOLD: 价格接近MA线（±1%范围内）
+            # HOLD: 价格接近MA线(±1%范围内)
 
             price_above_ma = close_price > ma_line
             price_below_ma = close_price < ma_line
@@ -288,7 +288,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.warning(f"MA信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             result_df.loc[:, "buy_signal"] = False
             result_df.loc[:, "sell_signal"] = False
             result_df.loc[:, "hold_signal"] = True
@@ -297,7 +297,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Ma(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算MA原始评分。
+        计算MA原始评分.
         """
         # 确保已计算MA指标
         if not self.has_result():
@@ -417,7 +417,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                         # 检查MA排列是否有序
                         sorted_mas = sorted(latest_mas)
                         if latest_mas == sorted_mas or latest_mas == sorted_mas[::-1]:
-                            confidence += 0.1  # MA排列有序，增加置信度
+                            confidence += 0.1  # MA排列有序,增加置信度
             except:
                 pass
 
@@ -426,8 +426,8 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def get_patterns_Ma(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         识别MA技术形态
-        - 金叉/死叉：基于最短和次短周期均线。
-        - 多头/空头排列：基于最短和最长周期均线。
+        - 金叉/死叉:基于最短和次短周期均线.
+        - 多头/空头排列:基于最短和最长周期均线.
         """
         patterns = {}
         if len(self.periods) < 2 or not all(c in data.columns for c in self.ma_cols):
@@ -450,7 +450,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def register_patterns_Ma(self):
         """
-        注册与该指标相关的技术形态。
+        注册与该指标相关的技术形态.
         """
         if len(self.periods) < 2:
             return
@@ -462,23 +462,23 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
             display_name=f"MA_Ma({p_short},{p_medium})金叉",
-            description=f"当短期MA({p_short})上穿中期MA({p_medium})时，被视为看涨信号。",
+            description=f"当短期MA({p_short})上穿中期MA({p_medium})时,被视为看涨信号.",
             pattern_type=Pattern_type.BULLISH,
             polarity="POSITIVE",
         )
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_DEATH_CROSS",
             display_name=f"MA_Ma({p_short},{p_medium})死叉",
-            description=f"当短期MA({p_short})下穿中期MA({p_medium})时，被视为看跌信号。",
+            description=f"当短期MA({p_short})下穿中期MA({p_medium})时,被视为看跌信号.",
             pattern_type=Pattern_type.BEARISH,
             polarity="NEGATIVE",
         )
 
-        # 注册MA排列形态（从centralized mapping迁移）
+        # 注册MA排列形态(从centralized mapping迁移)
         self.register_pattern_to_registry(
             pattern_id="MA_BULLISH_ARRANGEMENT",
             display_name="均线多头排列",
-            description="短期均线在长期均线之上，形成多头排列",
+            description="短期均线在长期均线之上,形成多头排列",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -488,7 +488,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="MA_BEARISH_ARRANGEMENT",
             display_name="均线空头排列",
-            description="短期均线在长期均线之下，形成空头排列",
+            description="短期均线在长期均线之下,形成空头排列",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -518,7 +518,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="MA_BULLISH_ARRANGEMENT",
             display_name="MA多头排列",
-            description=f"短期MA({p_short})在长期MA({p_long})之上，表明市场处于强劲上升趋势。",
+            description=f"短期MA({p_short})在长期MA({p_long})之上,表明市场处于强劲上升趋势.",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -527,7 +527,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="MA_BEARISH_ARRANGEMENT",
             display_name="MA空头排列",
-            description=f"短期MA({p_short})在长期MA({p_long})之下，表明市场处于强劲下降趋势。",
+            description=f"短期MA({p_short})在长期MA({p_long})之下,表明市场处于强劲下降趋势.",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -562,7 +562,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             f"MA_{p_short}_{p_medium}_GOLDEN_CROSS": {
                 "id": f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
                 "name": f"MA_Ma({p_short},{p_medium})金叉",
-                "description": f"短期MA({p_short})上穿中期MA({p_medium})，看涨信号",
+                "description": f"短期MA({p_short})上穿中期MA({p_medium}),看涨信号",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 20.0,  # TODO: 将魔法数字提取到配置中
@@ -570,7 +570,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             f"MA_{p_short}_{p_medium}_DEATH_CROSS": {
                 "id": f"MA_{p_short}_{p_medium}_DEATH_CROSS",
                 "name": f"MA_Ma({p_short},{p_medium})死叉",
-                "description": f"短期MA({p_short})下穿中期MA({p_medium})，看跌信号",
+                "description": f"短期MA({p_short})下穿中期MA({p_medium}),看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0,  # TODO: 将魔法数字提取到配置中
@@ -578,7 +578,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "MA_BULLISH_ARRANGEMENT": {
                 "id": "MA_BULLISH_ARRANGEMENT",
                 "name": "MA多头排列",
-                "description": f"短期MA({p_short})在长期MA({p_long})之上，强劲上升趋势",
+                "description": f"短期MA({p_short})在长期MA({p_long})之上,强劲上升趋势",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
                 "score_impact": 25.0,  # TODO: 将魔法数字提取到配置中
@@ -586,7 +586,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "MA_BEARISH_ARRANGEMENT": {
                 "id": "MA_BEARISH_ARRANGEMENT",
                 "name": "MA空头排列",
-                "description": f"短期MA({p_short})在长期MA({p_long})之下，强劲下降趋势",
+                "description": f"短期MA({p_short})在长期MA({p_long})之下,强劲下降趋势",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
                 "score_impact": -25.0,  # TODO: 将魔法数字提取到配置中
@@ -652,7 +652,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 检查数据长度
         if len(data) < 1:
-            raise ValueError("数据长度不足，至少需要1个数据点")
+            raise ValueError("数据长度不足,至少需要1个数据点")
 
         # 检查close列数据类型
         try:
@@ -674,7 +674,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         获取MA形态识别结果
 
         Returns:
-            pd.DataFrame: 形态识别结果，包含各种MA形态
+            pd.DataFrame: 形态识别结果,包含各种MA形态
         """
         if data is None and hasattr(self, "_result") and self._result is not None:
             data_to_use = self._result
@@ -695,7 +695,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             patterns["MA_BULLISH_ARRANGEMENT"] = False
             patterns["MA_BEARISH_ARRANGEMENT"] = False
 
-            # 如果有多个MA，检测多头/空头排列
+            # 如果有多个MA,检测多头/空头排列
             if len(ma_cols) >= 2:
                 ma_short = data_to_use[ma_cols[0]]
                 ma_long = data_to_use[ma_cols[-1]]
@@ -712,7 +712,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算MA原始评分
 
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 评分序列,取值范围0-100
         """
         if data is None:
             return pd.Series(50.0)  # TODO: 将魔法数字提取到配置中
@@ -738,10 +738,10 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ma = result[ma_cols[0]]
         price = data["close"] if "close" in data.columns else result["close"]
 
-        # 评分逻辑：价格相对于MA的位置
+        # 评分逻辑:价格相对于MA的位置
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 价格在MA之上加分，之下减分
+        # 价格在MA之上加分,之下减分
         price_above_ma = price > ma
         price_below_ma = price < ma
 
@@ -840,7 +840,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算MA置信度
 
         Returns:
-            float: 置信度值，范围0-1
+            float: 置信度值,范围0-1
         """
         # 简单的置信度计算
         if score.empty:
@@ -854,7 +854,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成交易信号（兼容性方法）
+        生成交易信号(兼容性方法)
 
         Returns:
             pd.DataFrame: 交易信号DataFrame
@@ -898,7 +898,7 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             ma5 = data["ma5"]
             ma20 = data["ma20"]
 
-            # 检查金叉：MA5上穿MA20
+            # 检查金叉:MA5上穿MA20
             if len(ma5) >= 2 and len(ma20) >= 2:
                 if ma5.iloc[-1] > ma20.iloc[-1] and ma5.iloc[-2] <= ma20.iloc[-2]:
                     patterns.append("MA金叉")

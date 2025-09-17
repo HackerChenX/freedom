@@ -25,13 +25,13 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     肯特纳通道指标 (Keltner Channel)
 
-    肯特纳通道是一种波动通道指标，由中轨(通常为EMA)加减一定倍数的ATR形成上下轨。
-    相比于布林带使用标准差，肯特纳通道使用ATR衡量波动性，对价格突破和异常波动的反应更平滑。
+    肯特纳通道是一种波动通道指标,由中轨(通常为EMA)加减一定倍数的ATR形成上下轨.
+    相比于布林带使用标准差,肯特纳通道使用ATR衡量波动性,对价格突破和异常波动的反应更平滑.
 
     参数:
-        period: 中轨移动平均周期，默认为20
-        atr_period: ATR计算周期，默认为10
-        multiplier: ATR乘数，用于计算通道宽度，默认为2.0
+        period: 中轨移动平均周期,默认为20
+        atr_period: ATR计算周期,默认为10
+        multiplier: ATR乘数,用于计算通道宽度,默认为2.0
     """
 
     def __init__(
@@ -46,7 +46,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
         """初始化KC指标"""
-        # 不调用super().__init__()，直接初始化属性
+        # 不调用super().__init__(),直接初始化属性
         self.name = name
         self.description = description
         self.indicator_type = Indicator_enum.KC.name
@@ -91,7 +91,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             upper = result["kc_upper"]
             lower = result["kc_lower"]
 
-            # KC信号：突破上轨=买入，跌破下轨=卖出
+            # KC信号:突破上轨=买入,跌破下轨=卖出
             signals_df["buy_signal"] = (close > upper).astype(int)
             signals_df["sell_signal"] = (close < lower).astype(int)
 
@@ -212,7 +212,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算通道宽度百分比(相对于中轨价格)
         result["kc_width"] = (result["kc_upper"] - result["kc_lower"]) / result["kc_middle"] * 100
 
-        # 计算价格相对于通道的位置(0-100%)，0表示在下轨，100表示在上轨
+        # 计算价格相对于通道的位置(0-100%),0表示在下轨,100表示在上轨
         channel_range = result["kc_upper"] - result["kc_lower"]
         # 避免除以零的情况
         result["kc_position"] = np.where(
@@ -285,55 +285,55 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 判断价格与通道的关系
         if crossover(result["close"], result["kc_upper"]).any():  # 价格上穿上轨
             signal_type = "上穿上轨"
-            signal_desc = "价格上穿肯特纳通道上轨，显示强势突破"
+            signal_desc = "价格上穿肯特纳通道上轨,显示强势突破"
             cross_type = "GOLDEN_CROSS"
             score = 80  # TODO: 将魔法数字提取到配置中
         elif crossunder(result["close"], result["kc_lower"]).any():  # 价格下穿下轨
             signal_type = "下穿下轨"
-            signal_desc = "价格下穿肯特纳通道下轨，显示弱势突破"
+            signal_desc = "价格下穿肯特纳通道下轨,显示弱势突破"
             cross_type = "DEATH_CROSS"
             score = 20  # TODO: 将魔法数字提取到配置中
         elif current_price > kc_upper:  # 价格在上轨之上
             signal_type = "上轨之上"
-            signal_desc = "价格位于肯特纳通道上轨之上，显示超买状态"
+            signal_desc = "价格位于肯特纳通道上轨之上,显示超买状态"
             cross_type = Cross_type.NO_CROSS
             score = (
                 70 + (current_price - kc_upper) / kc_upper * 100
             )  # 根据超出程度增加评分  # TODO: 将魔法数字提取到配置中
         elif current_price < kc_lower:  # 价格在下轨之下
             signal_type = "下轨之下"
-            signal_desc = "价格位于肯特纳通道下轨之下，显示超卖状态"
+            signal_desc = "价格位于肯特纳通道下轨之下,显示超卖状态"
             cross_type = "NO_CROSS"
             score = (
                 30 - (kc_lower - current_price) / kc_lower * 100
             )  # 根据超出程度减少评分  # TODO: 将魔法数字提取到配置中
         elif crossover(result["close"], result["kc_middle"]).any():  # 价格上穿中轨
             signal_type = "上穿中轨"
-            signal_desc = "价格上穿肯特纳通道中轨，显示由弱转强"
+            signal_desc = "价格上穿肯特纳通道中轨,显示由弱转强"
             cross_type = "GOLDEN_CROSS"
             score = 60  # TODO: 将魔法数字提取到配置中
         elif crossunder(result["close"], result["kc_middle"]).any():  # 价格下穿中轨
             signal_type = "下穿中轨"
-            signal_desc = "价格下穿肯特纳通道中轨，显示由强转弱"
+            signal_desc = "价格下穿肯特纳通道中轨,显示由强转弱"
             cross_type = "DEATH_CROSS"
             score = 40  # TODO: 将魔法数字提取到配置中
         elif current_price > kc_middle:  # 价格在中轨和上轨之间
             signal_type = "中上区域"
-            signal_desc = "价格位于肯特纳通道中轨和上轨之间，显示温和强势"
+            signal_desc = "价格位于肯特纳通道中轨和上轨之间,显示温和强势"
             cross_type = "NO_CROSS"
             score = (
                 55 + kc_position * 0.15
             )  # 根据位置线性调整55-70  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif current_price < kc_middle:  # 价格在中轨和下轨之间
             signal_type = "中下区域"
-            signal_desc = "价格位于肯特纳通道中轨和下轨之间，显示温和弱势"
+            signal_desc = "价格位于肯特纳通道中轨和下轨之间,显示温和弱势"
             cross_type = "NO_CROSS"
             score = (
                 45 - (100 - kc_position) * 0.15
             )  # 根据位置线性调整30-45  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:  # 价格在中轨上
             signal_type = "中轨位置"
-            signal_desc = "价格位于肯特纳通道中轨，显示中性"
+            signal_desc = "价格位于肯特纳通道中轨,显示中性"
             cross_type = "NO_CROSS"
             score = 50  # TODO: 将魔法数字提取到配置中
 
@@ -341,18 +341,18 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if kc_width_chg > 10:
             if current_price > kc_middle:
                 score += 5  # TODO: 将魔法数字提取到配置中
-                signal_desc += f"，通道宽度扩大({kc_width_chg:.2f}%)，上升波动加剧"
+                signal_desc += f",通道宽度扩大({kc_width_chg:.2f}%),上升波动加剧"
             else:
                 score -= 5  # TODO: 将魔法数字提取到配置中
-                signal_desc += f"，通道宽度扩大({kc_width_chg:.2f}%)，下降波动加剧"
+                signal_desc += f",通道宽度扩大({kc_width_chg:.2f}%),下降波动加剧"
         elif kc_width_chg < -10:
-            signal_desc += f"，通道宽度收窄({kc_width_chg:.2f}%)，波动减弱，可能酝酿大行情"
+            signal_desc += f",通道宽度收窄({kc_width_chg:.2f}%),波动减弱,可能酝酿大行情"
 
         # 考虑通道宽度绝对水平
         if kc_width > 10:
-            signal_desc += f"，当前通道宽度较大({kc_width:.2f}%)，市场波动性高"
+            signal_desc += f",当前通道宽度较大({kc_width:.2f}%),市场波动性高"
         elif kc_width < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            signal_desc += f"，当前通道宽度较小({kc_width:.2f}%)，市场波动性低，可能即将爆发"
+            signal_desc += f",当前通道宽度较小({kc_width:.2f}%),市场波动性低,可能即将爆发"
 
         # 计算建议仓位(0-100%)
         if score >= 70:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -389,16 +389,16 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 风险等级(1-5)  # TODO: 将魔法数字提取到配置中
         risk_level = 3  # TODO: 将魔法数字提取到配置中
         if kc_width > 8:  # TODO: 将魔法数字提取到配置中
-            risk_level = 4  # 通道宽度大，波动性高  # TODO: 将魔法数字提取到配置中
+            risk_level = 4  # 通道宽度大,波动性高  # TODO: 将魔法数字提取到配置中
         elif kc_width < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            risk_level = 2  # 通道宽度小，波动性低
+            risk_level = 2  # 通道宽度小,波动性低
 
         # 止损计算
         if buy_signal:
-            # 止损设为通道下轨或最近5天最低价，取较高者
+            # 止损设为通道下轨或最近5天最低价,取较高者
             stop_loss = max(kc_lower, df["low"].iloc[-5:].min())  # TODO: 将魔法数字提取到配置中
         elif sell_signal:
-            # 止损设为通道上轨或最近5天最高价，取较低者
+            # 止损设为通道上轨或最近5天最高价,取较低者
             stop_loss = min(kc_upper, df["high"].iloc[-5:].max())  # TODO: 将魔法数字提取到配置中
         else:
             stop_loss = None
@@ -440,7 +440,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data: 包含OHLCV数据的Data_frame
 
         Returns:
-            包含评分的Series，范围0-100
+            包含评分的Series,范围0-100
         """
         # 确保已计算指标
         if not isinstance(data, pd.DataFrame) or "kc_middle" not in data.columns:
@@ -509,11 +509,11 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 考虑通道宽度变化
         width_chg = data["kc_width_chg"]
-        # 通道扩大，上升波动
+        # 通道扩大,上升波动
         up_vol_mask = (width_chg > 10) & (close > middle)
         score[up_vol_mask] += 5  # TODO: 将魔法数字提取到配置中
 
-        # 通道扩大，下降波动
+        # 通道扩大,下降波动
         down_vol_mask = (width_chg > 10) & (close < middle)
         score[down_vol_mask] -= 5  # TODO: 将魔法数字提取到配置中
 
@@ -576,9 +576,9 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # 通道宽度适中时置信度较高
                     if 3 <= last_width <= 10:  # TODO: 将魔法数字提取到配置中
                         confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    elif last_width > 15:  # 通道过宽，波动性过高  # TODO: 将魔法数字提取到配置中
+                    elif last_width > 15:  # 通道过宽,波动性过高  # TODO: 将魔法数字提取到配置中
                         confidence -= 0.1
-                    elif last_width < 1:  # 通道过窄，可能即将突破
+                    elif last_width < 1:  # 通道过窄,可能即将突破
                         confidence += 0.1
             except:
                 pass
@@ -759,7 +759,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_BREAK_UPPER",
             display_name="KC上轨突破",
-            description="价格突破肯特纳通道上轨，强势信号",
+            description="价格突破肯特纳通道上轨,强势信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -769,7 +769,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_BREAK_LOWER",
             display_name="KC下轨突破",
-            description="价格跌破肯特纳通道下轨，弱势信号",
+            description="价格跌破肯特纳通道下轨,弱势信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -780,7 +780,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_BREAK_MIDDLE_UP",
             display_name="KC中轨向上突破",
-            description="价格向上突破肯特纳通道中轨，由弱转强",
+            description="价格向上突破肯特纳通道中轨,由弱转强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -790,7 +790,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_BREAK_MIDDLE_DOWN",
             display_name="KC中轨向下突破",
-            description="价格向下突破肯特纳通道中轨，由强转弱",
+            description="价格向下突破肯特纳通道中轨,由强转弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -801,7 +801,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_EXTREME_OVERBOUGHT",
             display_name="KC极度超买",
-            description="价格远超肯特纳通道上轨，极度超买",
+            description="价格远超肯特纳通道上轨,极度超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -811,7 +811,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_EXTREME_OVERSOLD",
             display_name="KC极度超卖",
-            description="价格远低于肯特纳通道下轨，极度超卖",
+            description="价格远低于肯特纳通道下轨,极度超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -822,7 +822,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_WIDE_CHANNEL",
             display_name="KC通道扩张",
-            description="肯特纳通道宽度扩张，波动性增加但方向不确定",
+            description="肯特纳通道宽度扩张,波动性增加但方向不确定",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -832,14 +832,14 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_NARROW_CHANNEL",
             display_name="KC通道收缩",
-            description="肯特纳通道宽度收缩，可能酝酿突破但方向不确定",
+            description="肯特纳通道宽度收缩,可能酝酿突破但方向不确定",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
             polarity="NEUTRAL",
         )
 
-        # 注册KC状态形态（从centralized mapping迁移）
+        # 注册KC状态形态(从centralized mapping迁移)
         self.register_pattern_to_registry(
             pattern_id="KC_ABOVE_MIDDLE",
             display_name="KC中轨上方",
@@ -863,7 +863,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_CONTRACTING",
             display_name="KC通道收缩",
-            description="肯特纳通道收缩，波动率降低",
+            description="肯特纳通道收缩,波动率降低",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -873,7 +873,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KC_EXPANDING",
             display_name="KC通道扩张",
-            description="肯特纳通道扩张，波动率增加",
+            description="肯特纳通道扩张,波动率增加",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -906,7 +906,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "超买区域": {
                 "id": "超买区域",
                 "name": "超买区域",
-                "description": "指标进入超买区域，可能面临回调压力",
+                "description": "指标进入超买区域,可能面临回调压力",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
                 "score_impact": -10.0,
@@ -914,7 +914,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "超卖区域": {
                 "id": "超卖区域",
                 "name": "超卖区域",
-                "description": "指标进入超卖区域，可能出现反弹机会",
+                "description": "指标进入超卖区域,可能出现反弹机会",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
                 "score_impact": 10.0,
@@ -922,7 +922,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "中性区域": {
                 "id": "中性区域",
                 "name": "中性区域",
-                "description": "指标处于中性区域，趋势不明确",
+                "description": "指标处于中性区域,趋势不明确",
                 "type": "NEUTRAL",
                 "strength": "WEAK",
                 "score_impact": 0.0,
@@ -931,7 +931,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "上升趋势": {
                 "id": "上升趋势",
                 "name": "上升趋势",
-                "description": "指标显示上升趋势，看涨信号",
+                "description": "指标显示上升趋势,看涨信号",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 15.0,  # TODO: 将魔法数字提取到配置中
@@ -939,7 +939,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "下降趋势": {
                 "id": "下降趋势",
                 "name": "下降趋势",
-                "description": "指标显示下降趋势，看跌信号",
+                "description": "指标显示下降趋势,看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -15.0,  # TODO: 将魔法数字提取到配置中
@@ -948,7 +948,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "买入信号": {
                 "id": "买入信号",
                 "name": "买入信号",
-                "description": "指标产生买入信号，建议关注",
+                "description": "指标产生买入信号,建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 20.0,  # TODO: 将魔法数字提取到配置中
@@ -956,7 +956,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "卖出信号": {
                 "id": "卖出信号",
                 "name": "卖出信号",
-                "description": "指标产生卖出信号，建议谨慎",
+                "description": "指标产生卖出信号,建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0,  # TODO: 将魔法数字提取到配置中
@@ -997,12 +997,12 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 # 使用默认参数
                 params = self._default_parameters.copy()
 
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 setattr(self, key, value)
 
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     @property
@@ -1010,7 +1010,7 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         KeltnerChannel指标所需的最少数据周期数
 
-        计算逻辑：基于参数 period(20), atr_period(10) 计算  # TODO: 将魔法数字提取到配置中
+        计算逻辑:基于参数 period(20), atr_period(10) 计算  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数

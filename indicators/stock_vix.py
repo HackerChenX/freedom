@@ -4,8 +4,8 @@ from utils.logger import get_logger
 """
 STOCK_VIX 指标 (股票波动率指标)
 
-基于历史价格波动计算的股票波动率指标，类似于VIX指数的概念。
-用于衡量股票价格的波动程度和市场恐慌情绪。
+基于历史价格波动计算的股票波动率指标,类似于VIX指数的概念.
+用于衡量股票价格的波动程度和市场恐慌情绪.
 """
 
 import pandas as pd
@@ -31,14 +31,14 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     4. 低VIX值表示低波动和平静市场  # TODO: 将魔法数字提取到配置中
     
     计算方法:
-    1. 计算对数收益率：ln(今日收盘价/昨日收盘价)
+    1. 计算对数收益率:ln(今日收盘价/昨日收盘价)
     2. 计算收益率的滚动标准差
     3. 年化波动率 = 标准差 * sqrt(252)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     4. VIX值 = 年化波动率 * 100  # TODO: 将魔法数字提取到配置中
     
     参数:
-    - period: 计算周期，默认为20
-    - annualize_factor: 年化因子，默认为252（交易日）
+    - period: 计算周期,默认为20
+    - annualize_factor: 年化因子,默认为252(交易日)
     """
     
     def __init__(self, **kwargs):
@@ -57,7 +57,7 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_stockvix()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 20  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -77,6 +77,9 @@ class StockVix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -87,14 +90,14 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('STOCK_VIX', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
-        # 🔧 Ultra Think修复：设置参数并同步更新minimum_periods
+        # 🔧 Ultra Think修复:设置参数并同步更新minimum_periods
         self.period = kwargs.get('period', 20)  # TODO: 将魔法数字提取到配置中
         self.annualize_factor = kwargs.get('annualize_factor', 252)  # TODO: 将魔法数字提取到配置中
         # 同步更新minimum_periods
@@ -132,20 +135,20 @@ from db.sql_manager import SQLManager, QueryType
         # 1. 计算对数收益率
         log_returns = np.log(close / close.shift(1))
         
-        # 2. 计算滚动标准差（使用min_periods=1确保有数据输出）
+        # 2. 计算滚动标准差(使用min_periods=1确保有数据输出)
         rolling_std = log_returns.rolling(window=self.period, min_periods=1).std()
         
         # 3. 年化波动率  # TODO: 将魔法数字提取到配置中
         annualized_volatility = rolling_std * np.sqrt(self.annualize_factor)
         
-        # 4. VIX值（以百分比形式）  # TODO: 将魔法数字提取到配置中
+        # 4. VIX值(以百分比形式)  # TODO: 将魔法数字提取到配置中
         vix_value = annualized_volatility * 100
         
         # 5. 计算其他相关指标  # TODO: 将魔法数字提取到配置中
-        # 短期波动率（5日）
+        # 短期波动率(5日)
         short_volatility = log_returns.rolling(window=5, min_periods=1).std() * np.sqrt(self.annualize_factor) * 100  # TODO: 将魔法数字提取到配置中
 
-        # 长期波动率（60日）
+        # 长期波动率(60日)
         long_volatility = log_returns.rolling(window=60, min_periods=1).std() * np.sqrt(self.annualize_factor) * 100  # TODO: 将魔法数字提取到配置中
         
         # 波动率比率
@@ -171,7 +174,7 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于波动率水平的信号
+        # 重写专用信号逻辑:基于波动率水平的信号
         df = self._apply_vix_signal_logic(df)
 
         return df
@@ -193,9 +196,9 @@ from db.sql_manager import SQLManager, QueryType
             low_threshold = vix_quantiles[0.2]
             high_threshold = vix_quantiles[0.8]  # TODO: 将魔法数字提取到配置中
             
-            # VIX信号生成逻辑：
-            # 低波动率（VIX低）+ 波动率上升 = 买入信号（波动率从低位回升）
-            # 高波动率（VIX高）+ 波动率下降 = 卖出信号（恐慌情绪缓解）
+            # VIX信号生成逻辑:
+            # 低波动率(VIX低)+ 波动率上升 = 买入信号(波动率从低位回升)
+            # 高波动率(VIX高)+ 波动率下降 = 卖出信号(恐慌情绪缓解)
             
             low_vix = vix_value < low_threshold
             high_vix = vix_value > high_threshold
@@ -214,7 +217,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"STOCK_VIX信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -225,13 +228,13 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算股票VIX指标的原始评分
         
-        基于波动率水平、趋势和市场情绪进行评分：
-        1. 波动率水平：适中波动率得高分，极端波动率得低分
-        2. 波动率趋势：波动率变化的方向和幅度
-        3. 相对波动率：与历史波动率的比较  # TODO: 将魔法数字提取到配置中
-        4. 波动率稳定性：波动率本身的波动程度  # TODO: 将魔法数字提取到配置中
+        基于波动率水平,趋势和市场情绪进行评分:
+        1. 波动率水平:适中波动率得高分,极端波动率得低分
+        2. 波动率趋势:波动率变化的方向和幅度
+        3. 相对波动率:与历史波动率的比较  # TODO: 将魔法数字提取到配置中
+        4. 波动率稳定性:波动率本身的波动程度  # TODO: 将魔法数字提取到配置中
         """
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Vix_Stock_Vix(data, **kwargs)
         
@@ -262,7 +265,7 @@ from db.sql_manager import SQLManager, QueryType
             current_ratio = volatility_ratio.iloc[i]
             
             # 1. 波动率水平评分 (30分)
-            # 适中的波动率得高分，极端波动率得低分
+            # 适中的波动率得高分,极端波动率得低分
             if current_vix < vix_quantiles[0.1]:
                 # 极低波动率 - 可能预示变盘
                 level_score = 15.0  # TODO: 将魔法数字提取到配置中
@@ -303,7 +306,7 @@ from db.sql_manager import SQLManager, QueryType
                 else:
                     # 波动率下降
                     if current_change < -0.2:
-                        trend_score = 25.0  # TODO: 将魔法数字提取到配置中  # 急剧下降（恐慌缓解）
+                        trend_score = 25.0  # TODO: 将魔法数字提取到配置中  # 急剧下降(恐慌缓解)
                     elif current_change < -0.1:
                         trend_score = 22.0  # 明显下降  # TODO: 将魔法数字提取到配置中
                     else:
@@ -357,7 +360,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def calculate_confidence_Vix_Stock_Vix(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        # 🔧 Ultra Think修复：移除has_result检查
+        # 🔧 Ultra Think修复:移除has_result检查
         # if not self.has_result():
         #     return 0.5  # TODO: 将魔法数字提取到配置中
         
@@ -383,7 +386,7 @@ from db.sql_manager import SQLManager, QueryType
     
     def get_patterns_Vix_Stock_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Vix_Stock_Vix(data, **kwargs)
         
@@ -406,7 +409,7 @@ from db.sql_manager import SQLManager, QueryType
         
         return patterns
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_stockvix(data, **kwargs)
@@ -433,5 +436,5 @@ from db.sql_manager import SQLManager, QueryType
         return getattr(self, '_minimum_periods', 20)  # TODO: 将魔法数字提取到配置中
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 STOCK_VIX = StockVix

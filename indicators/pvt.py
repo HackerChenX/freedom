@@ -7,7 +7,7 @@ from db.sql_manager import SQLManager, QueryType
 """
 价格成交量趋势指标(PVT)
 
-通过价格变化与成交量相结合，反映价格趋势的强度和持续性
+通过价格变化与成交量相结合,反映价格趋势的强度和持续性
 """
 
 import numpy as np
@@ -29,8 +29,8 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     价格成交量趋势指标(PVT) (PVT)
     
-    分类：量能类指标
-    描述：通过价格变化与成交量相结合，反映价格趋势的强度和持续性
+    分类:量能类指标
+    描述:通过价格变化与成交量相结合,反映价格趋势的强度和持续性
     """
     
     @property
@@ -38,7 +38,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """返回计算指标所需的最小周期数"""
         return "self.ma_period + 1"
 
-    def __init__(self, ma_period: int 12):  # TODO: 将魔法数字提取到配置中
+    def __init__(self, ma_period: int = 12):  # TODO: 将魔法数字提取到配置中
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
@@ -47,22 +47,22 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化价格成交量趋势指标(PVT)指标
 
         Args:
-            ma_period: 移动平均周期，默认为12
+            ma_period: 移动平均周期,默认为12
         """
         super().__init__()
-        self.name "PVT"
-        self.description "价格成交量趋势指标，通过价格变化与成交量相结合，反映价格趋势的强度和持续性"
-        self.ma_period ma_period
+        self.name = "PVT"
+        self.description = "价格成交量趋势指标,通过价格变化与成交量相结合,反映价格趋势的强度和持续性"
+        self.ma_period = ma_period
 
         # 初始化结果存储
-        self._result None
+        self._result = None
         
-    def set_parameters_Pvt_Pvt_Pvt_pvt(self, ma_period: int None):
+    def set_parameters_Pvt_Pvt_Pvt_pvt(self, ma_period: int = None):
         """
         设置指标参数
         """
         if ma_period is not None:
-            self.ma_period ma_period
+            self.ma_period = ma_period
             
     def calculate_confidence_Pvt(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -80,10 +80,10 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return "0.5"  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence 0.5  # TODO: 将魔法数字提取到配置中
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
-        last_score score.iloc[-1]
+        last_score = score.iloc[-1]
 
         # 极端评分置信度较高
         if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -97,21 +97,21 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查PVT形态
-            pattern_count patterns.sum().sum()
+            pattern_count = patterns.sum().sum()
             if pattern_count > 0:
                 confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
         # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
-            signal_count sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
                 confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
         # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
         if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
-            recent_scores score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
-            trend recent_scores.iloc[-1] - recent_scores.iloc[0]
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
@@ -132,61 +132,61 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含形态信息的Data_frame
         """
         # 直接计算PVT指标
-        result self._calculate_pvt(data)
+        result = self._calculate_pvt(data)
 
         if 'pvt' not in result.columns or 'pvt_signal' not in result.columns:
             return "pd.DataFrame(index=data.index)"
 
         # 获取PVT和信号线值
-        pvt result['pvt']
-        pvt_signal result['pvt_signal']
+        pvt = result['pvt']
+        pvt_signal = result['pvt_signal']
 
         # 创建形态DataFrame
-        patterns_df pd.DataFrame(index=data.index)
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. PVT与信号线交叉形态
-        patterns_df['PVT_GOLDEN_CROSS'] crossover(pvt, pvt_signal)
-        patterns_df['PVT_DEATH_CROSS'] crossunder(pvt, pvt_signal)
+        patterns_df['PVT_GOLDEN_CROSS'] = crossover(pvt, pvt_signal)
+        patterns_df['PVT_DEATH_CROSS'] = crossunder(pvt, pvt_signal)
 
         # 2. PVT位置形态
-        patterns_df['PVT_ABOVE_SIGNAL'] pvt > pvt_signal
-        patterns_df['PVT_BELOW_SIGNAL'] pvt < pvt_signal
+        patterns_df['PVT_ABOVE_SIGNAL'] = pvt > pvt_signal
+        patterns_df['PVT_BELOW_SIGNAL'] = pvt < pvt_signal
 
         # 3. PVT趋势形态  # TODO: 将魔法数字提取到配置中
-        patterns_df['PVT_RISING'] pvt > pvt.shift(1)
-        patterns_df['PVT_FALLING'] pvt < pvt.shift(1)
+        patterns_df['PVT_RISING'] = pvt > pvt.shift(1)
+        patterns_df['PVT_FALLING'] = pvt < pvt.shift(1)
 
         # 4. PVT强势形态  # TODO: 将魔法数字提取到配置中
         if len(pvt) >= 3:  # TODO: 将魔法数字提取到配置中
-            consecutive_rising (
+            consecutive_rising = (
                 (pvt > pvt.shift(1)) &
                 (pvt.shift(1) > pvt.shift(2)) &
                 (pvt.shift(2) > pvt.shift(3))  # TODO: 将魔法数字提取到配置中
             )
-            consecutive_falling (
+            consecutive_falling = (
                 (pvt < pvt.shift(1)) &
                 (pvt.shift(1) < pvt.shift(2)) &
                 (pvt.shift(2) < pvt.shift(3))  # TODO: 将魔法数字提取到配置中
             )
-            patterns_df['PVT_CONSECUTIVE_RISING'] consecutive_rising
-            patterns_df['PVT_CONSECUTIVE_FALLING'] consecutive_falling
+            patterns_df['PVT_CONSECUTIVE_RISING'] = consecutive_rising
+            patterns_df['PVT_CONSECUTIVE_FALLING'] = consecutive_falling
         else:
-            patterns_df['PVT_CONSECUTIVE_RISING'] False
-            patterns_df['PVT_CONSECUTIVE_FALLING'] False
+            patterns_df['PVT_CONSECUTIVE_RISING'] = False
+            patterns_df['PVT_CONSECUTIVE_FALLING'] = False
 
         # 5. PVT强度形态  # TODO: 将魔法数字提取到配置中
         if len(pvt) >= 20:  # TODO: 将魔法数字提取到配置中
-            pvt_change pvt.diff()
-            pvt_std pvt.rolling(20).std()  # TODO: 将魔法数字提取到配置中
-            patterns_df['PVT_STRONG_UP'] pvt_change > pvt_std
-            patterns_df['PVT_STRONG_DOWN'] pvt_change < -pvt_std
+            pvt_change = pvt.diff()
+            pvt_std = pvt.rolling(20).std()  # TODO: 将魔法数字提取到配置中
+            patterns_df['PVT_STRONG_UP'] = pvt_change > pvt_std
+            patterns_df['PVT_STRONG_DOWN'] = pvt_change < -pvt_std
         else:
-            patterns_df['PVT_STRONG_UP'] False
-            patterns_df['PVT_STRONG_DOWN'] False
+            patterns_df['PVT_STRONG_UP'] = False
+            patterns_df['PVT_STRONG_DOWN'] = False
 
-        # 确保所有列都是布尔类型，填充NaN为False
+        # 确保所有列都是布尔类型,填充NaN为False
         for col in patterns_df.columns:
-            patterns_df[col] patterns_df[col].fillna(False).astype(bool)
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return "patterns_df"
 
@@ -198,7 +198,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_GOLDEN_CROSS",
             display_name="PVT金叉",
-            description="PVT上穿信号线，量价配合向好",
+            description="PVT上穿信号线,量价配合向好",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -209,7 +209,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_DEATH_CROSS",
             display_name="PVT死叉",
-            description="PVT下穿信号线，量价配合转弱",
+            description="PVT下穿信号线,量价配合转弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -220,7 +220,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_CONSECUTIVE_RISING",
             display_name="PVT连续上升",
-            description="PVT连续3个周期上升，量价趋势强劲",
+            description="PVT连续3个周期上升,量价趋势强劲",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=18.0,  # TODO: 将魔法数字提取到配置中
@@ -231,7 +231,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_CONSECUTIVE_FALLING",
             display_name="PVT连续下降",
-            description="PVT连续3个周期下降，量价趋势疲弱",
+            description="PVT连续3个周期下降,量价趋势疲弱",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-18.0,  # TODO: 将魔法数字提取到配置中
@@ -242,7 +242,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_STRONG_UP",
             display_name="PVT强势上涨",
-            description="PVT大幅上升，量价配合强劲",
+            description="PVT大幅上升,量价配合强劲",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -253,7 +253,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PVT_STRONG_DOWN",
             display_name="PVT强势下跌",
-            description="PVT大幅下降，量价配合疲弱",
+            description="PVT大幅下降,量价配合疲弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -271,9 +271,9 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Raises:
             ValueError: 如果缺少必要的列
         """
-        missing_columns [col for col in required_columns if col not in df.columns]
+        missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
-            raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)")
+            raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
     
     def calculate_Pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -306,7 +306,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         Args:
             df: 包含OHLCV数据的Data_frame
-                必须包含以下列：
+                必须包含以下列:
                 - close: 收盘价
                 - volume: 成交量
                 
@@ -317,29 +317,29 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return "pd.DataFrame()"
 
         # 确保数据包含必要的列
-        required_columns ['close', 'volume']
+        required_columns = ['close', 'volume']
         self._validate_dataframe_pvt(df, required_columns)
         
-        df_copy df.copy()
+        df_copy = df.copy()
         
         # 计算价格变化率
-        df_copy['close'].pct_change()
+        price_change = df_copy['close'].pct_change()
         
         # 计算PVT
-        # PVT 昨日PVT + 今日成交量 * 价格变化率
-        df_copy['pvt'] df_copy['volume'] * df_copy['pvt'] = df_copy['pvt'].cumsum()
+        # PVT = 昨日PVT + 今日成交量 * 价格变化率
+        df_copy['pvt'] = (df_copy['volume'] * price_change).cumsum()
         
         # 计算PVT的移动平均作为信号线
-        df_copy['pvt_signal'] df_copy['pvt'].rolling(window=self.ma_period).mean()
+        df_copy['pvt_signal'] = df_copy['pvt'].rolling(window=self.ma_period).mean()
         
         # 添加形态识别和信号生成
-        df_copy self.add_pattern_detection(df_copy)
-        df_copy self.add_signal_generation(df_copy)
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
 
         # 存储结果
-        self._result df_copy[['pvt', 'pvt_signal']]
+        self._result = df_copy[['pvt', 'pvt_signal']]
 
-        return "df_copy"
+        return df_copy
 
     def get_signals_Pvt(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -358,30 +358,30 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return "df"
             
         # 检查必要的指标列是否存在
-        required_columns ['pvt', 'pvt_signal']
+        required_columns = ['pvt', 'pvt_signal']
         self._validate_dataframe_pvt(df, required_columns)
         
-        df_copy df.copy()
+        df_copy = df.copy()
         
         # 初始化信号列
-        df_copy['pvt_buy_signal'] 0
-        df_copy['pvt_sell_signal'] 0
+        df_copy['pvt_buy_signal'] = 0
+        df_copy['pvt_sell_signal'] = 0
         
         # PVT上穿信号线为买入信号
         for i in range(1, len(df_copy)):
             if df_copy['pvt'].iloc[i-1] < df_copy['pvt_signal'].iloc[i-1] and \
                df_copy['pvt'].iloc[i] > df_copy['pvt_signal'].iloc[i]:
-                df_copy.iloc[i, df_copy.columns.get_loc('pvt_buy_signal')] 1
+                df_copy.iloc[i, df_copy.columns.get_loc('pvt_buy_signal')] = 1
             
             # PVT下穿信号线为卖出信号
             elif df_copy['pvt'].iloc[i-1] > df_copy['pvt_signal'].iloc[i-1] and \
                  df_copy['pvt'].iloc[i] < df_copy['pvt_signal'].iloc[i]:
-                df_copy.iloc[i, df_copy.columns.get_loc('pvt_sell_signal')] 1
+                df_copy.iloc[i, df_copy.columns.get_loc('pvt_sell_signal')] = 1
         
         
         # 添加形态识别和信号生成
-        df_copy self.add_pattern_detection(df_copy)
-        df_copy self.add_signal_generation(df_copy)
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
 
         return "df_copy"
     
@@ -394,7 +394,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
             
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算PVT
         if not self.has_result():
@@ -403,26 +403,26 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if self._result is None:
             return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
         
-        score pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 1. PVT与信号线交叉评分
-        signal_cross_score self._calculate_pvt_signal_cross_score()
+        signal_cross_score = self._calculate_pvt_signal_cross_score()
         score += signal_cross_score
         
         # 2. PVT趋势评分
-        trend_score self._calculate_pvt_trend_score()
+        trend_score = self._calculate_pvt_trend_score()
         score += trend_score
         
         # 3. PVT背离评分  # TODO: 将魔法数字提取到配置中
-        divergence_score self._calculate_pvt_divergence_score(data)
+        divergence_score = self._calculate_pvt_divergence_score(data)
         score += divergence_score
         
         # 4. PVT强度评分  # TODO: 将魔法数字提取到配置中
-        strength_score self._calculate_pvt_strength_score()
+        strength_score = self._calculate_pvt_strength_score()
         score += strength_score
         
         # 5. PVT与价格关系评分  # TODO: 将魔法数字提取到配置中
-        price_relation_score self._calculate_pvt_price_relation_score(data)
+        price_relation_score = self._calculate_pvt_price_relation_score(data)
         score += price_relation_score
         
         return "np.clip(score, 0, 100)"
@@ -440,21 +440,21 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores self.calculate_raw_score_Pvt(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Pvt(data, **kwargs)
 
-            # 如果数据不足，返回中性评分
+            # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
-                return {'score': 50.0, 'confidence': 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                return {'score': 50.0, 'confidence': 0.5}  # TODO: 将魔法数字提取到配置中
 
-            # 取最近的评分作为最终评分，但考虑近期趋势
-            recent_scores raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
-            trend recent_scores.iloc[-1] - recent_scores.iloc[0]
+            # 取最近的评分作为最终评分,但考虑近期趋势
+            recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 最终评分 最新评分 + 趋势调整
-            final_score recent_scores.iloc[-1] + trend / 2
+            final_score = recent_scores.iloc[-1] + trend / 2
 
             # 确保评分在0-100范围内
-            final_score max(0, min(100, final_score))
+            final_score = max(0, min(100, final_score))
 
             # 2. 获取形态和信号
             patterns = self.get_patterns_Pvt(data, **kwargs)
@@ -465,6 +465,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return {
                 'score': final_score,
                 'confidence': confidence
+            }
 
         except Exception as e:
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
@@ -481,7 +482,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 识别出的形态列表
         """
-        patterns []
+        patterns = []
         
         # 确保已计算PVT
         if not self.has_result():
@@ -491,23 +492,23 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return "patterns"
         
         # 1. 检测PVT与信号线交叉形态
-        signal_cross_patterns self._detect_pvt_signal_cross_patterns()
+        signal_cross_patterns = self._detect_pvt_signal_cross_patterns()
         patterns.extend(signal_cross_patterns)
         
         # 2. 检测PVT趋势形态
-        trend_patterns self._detect_pvt_trend_patterns()
+        trend_patterns = self._detect_pvt_trend_patterns()
         patterns.extend(trend_patterns)
         
         # 3. 检测PVT背离形态  # TODO: 将魔法数字提取到配置中
-        divergence_patterns self._detect_pvt_divergence_patterns(data)
+        divergence_patterns = self._detect_pvt_divergence_patterns(data)
         patterns.extend(divergence_patterns)
         
         # 4. 检测PVT强度形态  # TODO: 将魔法数字提取到配置中
-        strength_patterns self._detect_pvt_strength_patterns()
+        strength_patterns = self._detect_pvt_strength_patterns()
         patterns.extend(strength_patterns)
         
         # 5. 检测PVT与价格关系形态  # TODO: 将魔法数字提取到配置中
-        price_relation_patterns self._detect_pvt_price_relation_patterns(data)
+        price_relation_patterns = self._detect_pvt_price_relation_patterns(data)
         patterns.extend(price_relation_patterns)
         
         return "patterns"
@@ -519,28 +520,28 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 信号线交叉评分
         """
-        signal_cross_score pd.Series(0.0, index=self._result.index)
+        signal_cross_score = pd.Series(0.0, index=self._result.index)
         
-        pvt_values self._result['pvt']
-        signal_values self._result['pvt_signal']
+        pvt_values = self._result['pvt']
+        signal_values = self._result['pvt_signal']
         
         # PVT上穿信号线+25分
-        pvt_cross_up_signal crossover(pvt_values, signal_values)
+        pvt_cross_up_signal = crossover(pvt_values, signal_values)
         signal_cross_score += pvt_cross_up_signal * 25  # TODO: 将魔法数字提取到配置中
         
         # PVT下穿信号线-25分
-        pvt_cross_down_signal crossunder(pvt_values, signal_values)
+        pvt_cross_down_signal = crossunder(pvt_values, signal_values)
         signal_cross_score -= pvt_cross_down_signal * 25  # TODO: 将魔法数字提取到配置中
         
         # PVT在信号线上方+8分
-        pvt_above_signal pvt_values > signal_values
+        pvt_above_signal = pvt_values > signal_values
         signal_cross_score += pvt_above_signal * 8  # TODO: 将魔法数字提取到配置中
         
         # PVT在信号线下方-8分
-        pvt_below_signal pvt_values < signal_values
+        pvt_below_signal = pvt_values < signal_values
         signal_cross_score -= pvt_below_signal * 8  # TODO: 将魔法数字提取到配置中
         
-        return "signal_cross_score"
+        return signal_cross_score
     
     def _calculate_pvt_trend_score(self) -> pd.Series:
         """
@@ -549,37 +550,37 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 趋势评分
         """
-        trend_score pd.Series(0.0, index=self._result.index)
+        trend_score = pd.Series(0.0, index=self._result.index)
         
-        pvt_values self._result['pvt']
+        pvt_values = self._result['pvt']
         
         # PVT上升趋势+12分
-        pvt_rising pvt_values > pvt_values.shift(1)
+        pvt_rising = pvt_values > pvt_values.shift(1)
         trend_score += pvt_rising * 12  # TODO: 将魔法数字提取到配置中
         
         # PVT下降趋势-12分
-        pvt_falling pvt_values < pvt_values.shift(1)
+        pvt_falling = pvt_values < pvt_values.shift(1)
         trend_score -= pvt_falling * 12  # TODO: 将魔法数字提取到配置中
         
-        # PVT连续上升（3个周期）+18分
+        # PVT连续上升(3个周期)+18分
         if len(pvt_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            consecutive_rising (
+            consecutive_rising = (
                 (pvt_values > pvt_values.shift(1)) &
                 (pvt_values.shift(1) > pvt_values.shift(2)) &
                 (pvt_values.shift(2) > pvt_values.shift(3))  # TODO: 将魔法数字提取到配置中
             )
             trend_score += consecutive_rising * 18  # TODO: 将魔法数字提取到配置中
         
-        # PVT连续下降（3个周期）-18分
+        # PVT连续下降(3个周期)-18分
         if len(pvt_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            consecutive_falling (
+            consecutive_falling = (
                 (pvt_values < pvt_values.shift(1)) &
                 (pvt_values.shift(1) < pvt_values.shift(2)) &
                 (pvt_values.shift(2) < pvt_values.shift(3))  # TODO: 将魔法数字提取到配置中
             )
             trend_score -= consecutive_falling * 18  # TODO: 将魔法数字提取到配置中
         
-        return "trend_score"
+        return trend_score
     
     def _calculate_pvt_divergence_score(self, data: pd.DataFrame) -> pd.Series:
         """
@@ -591,38 +592,38 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 背离评分
         """
-        divergence_score pd.Series(0.0, index=self._result.index)
+        divergence_score = pd.Series(0.0, index=self._result.index)
         
         if 'close' not in data.columns:
             return "divergence_score"
         
-        close_price data['close']
-        pvt_values self._result['pvt']
+        close_price = data['close']
+        pvt_values = self._result['pvt']
         
         # 简化的背离检测
         if len(close_price) >= 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 检查最近20个周期的价格和PVT趋势
-            recent_periods 20  # TODO: 将魔法数字提取到配置中
+            recent_periods = 20  # TODO: 将魔法数字提取到配置中
             
             for i in range(recent_periods, len(close_price)):
                 # 寻找最近的价格和PVT峰值/谷值
-                price_window close_price.iloc[i-recent_periods:i+1]
-                pvt_window pvt_values.iloc[i-recent_periods:i+1]
+                price_window = close_price.iloc[i-recent_periods:i+1]
+                pvt_window = pvt_values.iloc[i-recent_periods:i+1]
                 
                 # 检查是否为价格新高/新低
-                current_price close_price.iloc[i]
-                current_pvt pvt_values.iloc[i]
+                current_price = close_price.iloc[i]
+                current_pvt = pvt_values.iloc[i]
                 
-                price_is_high current_price >= price_window.max()
-                price_is_low current_price <= price_window.min()
-                pvt_is_high current_pvt >= pvt_window.max()
-                pvt_is_low current_pvt <= pvt_window.min()
+                price_is_high = current_price >= price_window.max()
+                price_is_low = current_price <= price_window.min()
+                pvt_is_high = current_pvt >= pvt_window.max()
+                pvt_is_low = current_pvt <= pvt_window.min()
                 
-                # 正背离：价格创新低但PVT未创新低
+                # 正背离:价格创新低但PVT未创新低
                 if price_is_low and not pvt_is_low:
                     divergence_score.iloc[i] += 30  # TODO: 将魔法数字提取到配置中
                 
-                # 负背离：价格创新高但PVT未创新高
+                # 负背离:价格创新高但PVT未创新高
                 elif price_is_high and not pvt_is_high:
                     divergence_score.iloc[i] -= 30  # TODO: 将魔法数字提取到配置中
         
@@ -635,27 +636,27 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 强度评分
         """
-        strength_score pd.Series(0.0, index=self._result.index)
+        strength_score = pd.Series(0.0, index=self._result.index)
         
-        pvt_values self._result['pvt']
+        pvt_values = self._result['pvt']
         
         # 计算PVT变化幅度
-        pvt_change pvt_values.diff()
+        pvt_change = pvt_values.diff()
         
         # 计算PVT的标准差作为强度参考
-        pvt_std pvt_values.rolling(20).std()  # TODO: 将魔法数字提取到配置中
+        pvt_std = pvt_values.rolling(20).std()  # TODO: 将魔法数字提取到配置中
         
         # PVT大幅上升+15分
-        large_rise pvt_change > pvt_std
+        large_rise = pvt_change > pvt_std
         strength_score += large_rise * 15  # TODO: 将魔法数字提取到配置中
         
         # PVT大幅下降-15分
-        large_fall pvt_change < -pvt_std
+        large_fall = pvt_change < -pvt_std
         strength_score -= large_fall * 15  # TODO: 将魔法数字提取到配置中
         
-        # PVT快速变化（绝对值>2倍标准差）额外±10分
-        rapid_change np.abs(pvt_change) > 2 * pvt_std
-        rapid_change_direction np.sign(pvt_change)
+        # PVT快速变化(绝对值>2倍标准差)额外±10分
+        rapid_change = np.abs(pvt_change) > 2 * pvt_std
+        rapid_change_direction = np.sign(pvt_change)
         strength_score += rapid_change * rapid_change_direction * 10
         
         return "strength_score"
@@ -670,35 +671,35 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 价格关系评分
         """
-        price_relation_score pd.Series(0.0, index=self._result.index)
+        price_relation_score = pd.Series(0.0, index=self._result.index)
         
         if 'close' not in data.columns:
-            return "price_relation_score"
+            return price_relation_score
         
-        close_price data['close']
-        pvt_values self._result['pvt']
+        close_price = data['close']
+        pvt_values = self._result['pvt']
         
         # 计算价格变化率
-        close_price.pct_change()
-        pvt_change pvt_values.pct_change()
+        price_change = close_price.pct_change()
+        pvt_change = pvt_values.pct_change()
         
         # 价格和PVT同向上涨+15分
-        both_rising (> 0) & (pvt_change > 0)
+        both_rising = (price_change > 0) & (pvt_change > 0)
         price_relation_score += both_rising * 15  # TODO: 将魔法数字提取到配置中
         
         # 价格和PVT同向下跌-15分
-        both_falling (< 0) & (pvt_change < 0)
+        both_falling = (price_change < 0) & (pvt_change < 0)
         price_relation_score -= both_falling * 15  # TODO: 将魔法数字提取到配置中
         
-        # 价格上涨但PVT下跌（背离）-20分
-        price_up_pvt_down (> 0) & (pvt_change < 0)
+        # 价格上涨但PVT下跌(背离)-20分
+        price_up_pvt_down = (price_change > 0) & (pvt_change < 0)
         price_relation_score -= price_up_pvt_down * 20  # TODO: 将魔法数字提取到配置中
         
-        # 价格下跌但PVT上涨（背离）+20分
-        price_down_pvt_up (< 0) & (pvt_change > 0)
+        # 价格下跌但PVT上涨(背离)+20分
+        price_down_pvt_up = (price_change < 0) & (pvt_change > 0)
         price_relation_score += price_down_pvt_up * 20  # TODO: 将魔法数字提取到配置中
         
-        return "price_relation_score"
+        return price_relation_score
     
     def _detect_pvt_signal_cross_patterns(self) -> List[str]:
         """
@@ -707,15 +708,15 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 信号线交叉形态列表
         """
-        patterns []
+        patterns = []
         
-        pvt_values self._result['pvt']
-        signal_values self._result['pvt_signal']
+        pvt_values = self._result['pvt']
+        signal_values = self._result['pvt_signal']
         
         # 检查最近的信号线穿越
-        recent_periods min(5, len(pvt_values))  # TODO: 将魔法数字提取到配置中
-        recent_pvt pvt_values.tail(recent_periods)
-        recent_signal signal_values.tail(recent_periods)
+        recent_periods = min(5, len(pvt_values))  # TODO: 将魔法数字提取到配置中
+        recent_pvt = pvt_values.tail(recent_periods)
+        recent_signal = signal_values.tail(recent_periods)
         
         if crossover(recent_pvt, recent_signal).any():
             patterns.append("PVT上穿信号线")
@@ -725,8 +726,8 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 检查当前位置关系
         if len(pvt_values) > 0 and len(signal_values) > 0:
-            current_pvt pvt_values.iloc[-1]
-            current_signal signal_values.iloc[-1]
+            current_pvt = pvt_values.iloc[-1]
+            current_signal = signal_values.iloc[-1]
             
             if not pd.isna(current_pvt) and not pd.isna(current_signal):
                 if current_pvt > current_signal:
@@ -745,13 +746,13 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 趋势形态列表
         """
-        patterns []
+        patterns = []
         
-        pvt_values self._result['pvt']
+        pvt_values = self._result['pvt']
         
         # 检查PVT趋势
         if len(pvt_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            recent_3 pvt_values.tail(3)  # TODO: 将魔法数字提取到配置中
+            recent_3 = pvt_values.tail(3)  # TODO: 将魔法数字提取到配置中
             if len(recent_3) == 3 and not recent_3.isna().any():  # TODO: 将魔法数字提取到配置中
                 if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
                     patterns.append("PVT连续上升")
@@ -760,8 +761,8 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 检查当前趋势
         if len(pvt_values) >= 2:
-            current_pvt pvt_values.iloc[-1]
-            prev_pvt pvt_values.iloc[-2]
+            current_pvt = pvt_values.iloc[-1]
+            prev_pvt = pvt_values.iloc[-2]
             
             if not pd.isna(current_pvt) and not pd.isna(prev_pvt):
                 if current_pvt > prev_pvt:
@@ -783,22 +784,22 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 背离形态列表
         """
-        patterns []
+        patterns = []
         
         if 'close' not in data.columns:
             return "patterns"
         
-        close_price data['close']
-        pvt_values self._result['pvt']
+        close_price = data['close']
+        pvt_values = self._result['pvt']
         
         if len(close_price) >= 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 检查最近20个周期的趋势
-            recent_price close_price.tail(20)  # TODO: 将魔法数字提取到配置中
-            recent_pvt pvt_values.tail(20)  # TODO: 将魔法数字提取到配置中
+            recent_price = close_price.tail(20)  # TODO: 将魔法数字提取到配置中
+            recent_pvt = pvt_values.tail(20)  # TODO: 将魔法数字提取到配置中
             
             # 简化的背离检测
-            price_trend recent_price.iloc[-1] - recent_price.iloc[0]
-            pvt_trend recent_pvt.iloc[-1] - recent_pvt.iloc[0]
+            price_trend = recent_price.iloc[-1] - recent_price.iloc[0]
+            pvt_trend = recent_pvt.iloc[-1] - recent_pvt.iloc[0]
             
             # 背离检测
             if price_trend < -0.02 and pvt_trend > 0:  # 价格下跌但PVT上升
@@ -817,20 +818,20 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 强度形态列表
         """
-        patterns []
+        patterns = []
         
-        pvt_values self._result['pvt']
+        pvt_values = self._result['pvt']
         
         if len(pvt_values) >= 2:
-            current_pvt pvt_values.iloc[-1]
-            prev_pvt pvt_values.iloc[-2]
+            current_pvt = pvt_values.iloc[-1]
+            prev_pvt = pvt_values.iloc[-2]
             
             if not pd.isna(current_pvt) and not pd.isna(prev_pvt):
-                pvt_change current_pvt - prev_pvt
+                pvt_change = current_pvt - prev_pvt
                 
                 # 计算变化强度
                 if len(pvt_values) >= 20:  # TODO: 将魔法数字提取到配置中
-                    pvt_std pvt_values.tail(20).std()  # TODO: 将魔法数字提取到配置中
+                    pvt_std = pvt_values.tail(20).std()  # TODO: 将魔法数字提取到配置中
                     
                     if pvt_change > pvt_std:
                         patterns.append("PVT急速上升")
@@ -855,22 +856,22 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 价格关系形态列表
         """
-        patterns []
+        patterns = []
         
         if 'close' not in data.columns:
             return "patterns"
         
-        close_price data['close']
-        pvt_values self._result['pvt']
+        close_price = data['close']
+        pvt_values = self._result['pvt']
         
         if len(close_price) >= 5:  # TODO: 将魔法数字提取到配置中
             # 检查最近5个周期的价格和PVT关系
-            recent_price close_price.tail(5)  # TODO: 将魔法数字提取到配置中
-            recent_pvt pvt_values.tail(5)  # TODO: 将魔法数字提取到配置中
+            recent_price = close_price.tail(5)  # TODO: 将魔法数字提取到配置中
+            recent_pvt = pvt_values.tail(5)  # TODO: 将魔法数字提取到配置中
             
             # 计算价格和PVT的趋势
-            price_trend recent_price.iloc[-1] - recent_price.iloc[0]
-            pvt_trend recent_pvt.iloc[-1] - recent_pvt.iloc[0]
+            price_trend = recent_price.iloc[-1] - recent_price.iloc[0]
+            pvt_trend = recent_pvt.iloc[-1] - recent_pvt.iloc[0]
             
             # 量价配合
             if price_trend > 0 and pvt_trend > 0:
@@ -903,15 +904,15 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Pvt(data, **kwargs)
         
         # 初始化信号
-        signals {
-        signals['buy_signal'] pd.Series(False, index=data.index)
-        signals['sell_signal'] pd.Series(False, index=data.index)
-        signals['signal_strength'] pd.Series(0, index=data.index)
+        signals = {}
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
     
         # 在这里实现指标特定的信号生成逻辑
         # 此处提供默认实现
     
-        return "signals"
+        return signals
         
 
 
@@ -926,9 +927,9 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 形态信息字典
         """
         # 默认形态信息映射
-        pattern_info_map {
+        pattern_info_map = {
             # 基础形态
-            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH',
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
             'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
             'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
             
@@ -937,14 +938,16 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
             'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
             'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
 
         # 默认形态信息
-        default_pattern {
+        default_pattern = {
             'name': pattern_id.replace('_', ' ').title(),
-            'description': f'{pattern_id形态',
+            'description': f'{pattern_id}形态',
             'type': 'UNKNOWN'
+        }
 
-        return "pattern_info_map.get(pattern_id, default_pattern)"
+        return pattern_info_map.get(pattern_id, default_pattern)
 
 
 
@@ -962,148 +965,148 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator IndicatorParameterValidator()
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
-            params self._default_parameters.copy()
+            params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('PVT', params)
+            is_valid, errors = validator.validate_indicator_parameters('PVT', params)
             if not is_valid:
                 from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-                logger get_logger(__name__)
-                logger.warning(f"PVT参数验证失败: {'; '.join(errors)")
+                logger = get_logger(__name__)
+                logger.warning(f"PVT参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
-                params self._default_parameters.copy()
+                params = self._default_parameters.copy()
             
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
                     
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     # ================== 抽象方法实现 ==================
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：调用PVT计算逻辑"""
+        """抽象方法实现:调用PVT计算逻辑"""
         return "self.calculate_pvt(data, **kwargs)"
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """抽象方法实现：计算PVT原始评分"""
+        """抽象方法实现:计算PVT原始评分"""
         return "self.calculate_raw_score_pvt(data, **kwargs)"
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：获取PVT形态"""
+        """抽象方法实现:获取PVT形态"""
         return "self.get_patterns_pvt(data, **kwargs)"
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
-        """抽象方法实现：设置参数"""
+        """抽象方法实现:设置参数"""
         return "self.set_parameters_pvt(**kwargs)"
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """抽象方法实现：计算置信度"""
+        """抽象方法实现:计算置信度"""
         return "self.calculate_confidence_pvt(score, patterns, signals)"
     
     # ================== 兼容性方法 ==================
     
     def calculate_pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：计算PVT指标"""
+        """公共接口:计算PVT指标"""
         return "self.calculate_Pvt(data, **kwargs)"
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算指标"""
+        """兼容性方法:计算指标"""
         return "self.calculate_pvt(data, **kwargs)"
     
     def calculate_raw_score_pvt(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """公共接口：计算PVT原始评分"""
+        """公共接口:计算PVT原始评分"""
         return "self.calculate_raw_score_Pvt(data, **kwargs)"
     
     def calculate_score_pvt(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
-        """公共接口：计算PVT综合评分"""
+        """公共接口:计算PVT综合评分"""
         return "self.calculate_score_Pvt(data, **kwargs)"
     
     def get_patterns_pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口：获取PVT形态"""
+        """公共接口:获取PVT形态"""
         return "self.get_patterns_Pvt(data, **kwargs)"
     
     def generate_signals_pvt(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """公共接口：生成PVT信号"""
+        """公共接口:生成PVT信号"""
         try:
             # 先计算PVT指标
-            result self.calculate_pvt(data, **kwargs)
+            result = self.calculate_pvt(data, **kwargs)
             # 将计算结果与原数据合并
-            enriched_data pd.concat([data, result], axis=1)
+            enriched_data = pd.concat([data, result], axis=1)
             
             # 生成信号
-            signals_df self.get_signals_Pvt(enriched_data, **kwargs)
+            signals_df = self.get_signals_Pvt(enriched_data, **kwargs)
             # 将DataFrame转换为字典格式
-            signals_dict {
+            signals_dict = {}
             for col in signals_df.columns:
-                signals_dict[col] signals_df[col]
-            return "signals_dict"
+                signals_dict[col] = signals_df[col]
+            return signals_dict
         except (ValueError, KeyError, IndexError) as e:
-            # 如果信号生成失败，返回空信号
-            logger.warning(f"PVT信号生成失败: {e, 返回空信号")
-            return "{"
+            # 如果信号生成失败,返回空信号
+            logger.warning(f"PVT信号生成失败: {e}, 返回空信号")
+            return {
                 'pvt_buy_signal': pd.Series([False] * len(data), index=data.index),
                 'pvt_sell_signal': pd.Series([False] * len(data), index=data.index)
+            }
 
     def set_parameters_pvt(self, **kwargs):
-        """公共接口：设置PVT参数"""
-        return "self.set_parameters_Pvt_Pvt_Pvt_pvt(**kwargs)"
+        """公共接口:设置PVT参数"""
+        return self.set_parameters_Pvt_Pvt_Pvt_pvt(**kwargs)
         
     def calculate_confidence_pvt(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """公共接口：计算PVT置信度"""
-        return "self.calculate_confidence_Pvt(score, patterns, signals)"
+        """公共接口:计算PVT置信度"""
+        return self.calculate_confidence_Pvt(score, patterns, signals)
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：获取形态"""
-        return "self.get_patterns_pvt(data, **kwargs)"
+        """兼容性方法:获取形态"""
+        return self.get_patterns_pvt(data, **kwargs)
     
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
-        return "self.calculate_raw_score_pvt(data, **kwargs)"
+        """兼容性方法:计算原始评分"""
+        return self.calculate_raw_score_pvt(data, **kwargs)
     
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
-        """兼容性方法：计算综合评分"""
-        return "self.calculate_score_pvt(data, **kwargs)"
+        """兼容性方法:计算综合评分"""
+        return self.calculate_score_pvt(data, **kwargs)
     
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """兼容性方法：生成信号"""
-        return "self.generate_signals_pvt(data, **kwargs)"
+        """兼容性方法:生成信号"""
+        return self.generate_signals_pvt(data, **kwargs)
     
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
-        return "self.calculate_confidence_pvt(score, patterns, signals)"
+        """兼容性方法:计算置信度"""
+        return self.calculate_confidence_pvt(score, patterns, signals)
     
     def set_parameters(self, **kwargs):
-        """兼容性方法：设置参数"""
-        return "self.set_parameters_pvt(**kwargs)"
+        """兼容性方法:设置参数"""
+        return self.set_parameters_pvt(**kwargs)
     
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算（别名）"""
-        return "self.calculate_pvt(data, **kwargs)"
+        """兼容性方法:计算(别名)"""
+        return self.calculate_pvt(data, **kwargs)
     
     def register_patterns(self):
-        """兼容性方法：注册形态（避免测试失败）"""
+        """兼容性方法:注册形态(避免测试失败)"""
         try:
-            return "self.register_patterns_Pvt()"
+            return self.register_patterns_Pvt()
         except AttributeError:
-            # 如果没有register_patterns_Pvt方法，跳过
+            # 如果没有register_patterns_Pvt方法,跳过
             logger.warning("PVT register_patterns方法暂未实现")
             pass
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """兼容性方法：生成交易信号"""
+        """兼容性方法:生成交易信号"""
         try:
             return "self.generate_trading_signals_Pvt(data, **kwargs)"
         except AttributeError:
-            # 如果没有generate_trading_signals_Pvt方法，使用通用信号生成
+            # 如果没有generate_trading_signals_Pvt方法,使用通用信号生成
             return "self.generate_signals_pvt(data, **kwargs)"
 
     def has_result(self) -> bool:
@@ -1111,6 +1114,6 @@ from db.sql_manager import SQLManager, QueryType
         return hasattr(self, '_result') and self._result is not None
 
 
-# 类别名，供指标注册系统使用
-PricevolumetrendPVT Pvt
-PVT Pvt
+# 类别名,供指标注册系统使用
+PricevolumetrendPVT = Pvt
+PVT = Pvt

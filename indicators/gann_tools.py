@@ -23,7 +23,7 @@ class GannTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     GANN_TOOLS 指标
     
-    江恩工具指标，基于江恩理论的角度线和时间周期分析
+    江恩工具指标,基于江恩理论的角度线和时间周期分析
     主要分析价格与时间的几何关系和周期性规律
     """
     
@@ -69,6 +69,9 @@ class GannTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
 
@@ -79,7 +82,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('GANN_TOOLS', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -90,7 +93,7 @@ from db.sql_manager import SQLManager, QueryType
             self.time_cycles = params.get('time_cycles', [7, 14, 21, 30, 45, 60, 90, 120, 180])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 20  # TODO: 将魔法数字提取到配置中
             self.gann_angles = [1/8, 1/4, 1/3, 1/2, 1/1, 2/1, 3/1, 4/1, 8/1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             self.time_cycles = [7, 14, 21, 30, 45, 60, 90, 120, 180]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -209,13 +212,13 @@ from db.sql_manager import SQLManager, QueryType
                 # 检查当前是否接近周期性转折点
                 current_pos = len(df) % cycle
                 
-                # 在周期的关键位置（1/4, 1/2, 3/4, 1）给予信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                # 在周期的关键位置(1/4, 1/2, 3/4, 1)给予信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 if current_pos in [cycle//4, cycle//2, 3*cycle//4, 0]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    # 价格接近周期高点，可能反转
+                    # 价格接近周期高点,可能反转
                     if close.iloc[-1] >= cycle_high.iloc[-1] * 0.95:  # TODO: 将魔法数字提取到配置中
                         signal.iloc[-1] += 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     
-                    # 价格接近周期低点，可能反转
+                    # 价格接近周期低点,可能反转
                     if close.iloc[-1] <= cycle_low.iloc[-1] * 1.05:  # TODO: 将魔法数字提取到配置中
                         signal.iloc[-1] += 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
@@ -235,7 +238,7 @@ from db.sql_manager import SQLManager, QueryType
             near_angle = (close >= angle_line * 0.98) & (close <= angle_line * 1.02)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             touch_support = (low <= angle_line * 1.01) & (close > angle_line)
             
-            # 1x1角度线（45度）权重最高
+            # 1x1角度线(45度)权重最高
             weight = 10 if angle == 1.0 else 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             support[near_angle] += weight
@@ -257,7 +260,7 @@ from db.sql_manager import SQLManager, QueryType
             near_angle = (close >= angle_line * 0.98) & (close <= angle_line * 1.02)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             touch_resistance = (high >= angle_line * 0.99) & (close < angle_line)  # TODO: 将魔法数字提取到配置中
             
-            # 1x1角度线（45度）权重最高
+            # 1x1角度线(45度)权重最高
             weight = 10 if angle == 1.0 else 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             resistance[near_angle] += weight
@@ -286,18 +289,18 @@ from db.sql_manager import SQLManager, QueryType
             above_angles += above_up.astype(int)
             below_angles += below_down.astype(int)
         
-        # 价格在大部分角度线之上，强势信号
+        # 价格在大部分角度线之上,强势信号
         strong_up = above_angles >= len(self.gann_angles) * 0.7  # TODO: 将魔法数字提取到配置中
         fan_signal[strong_up] += 15  # TODO: 将魔法数字提取到配置中
         
-        # 价格在大部分角度线之下，弱势信号
+        # 价格在大部分角度线之下,弱势信号
         strong_down = below_angles >= len(self.gann_angles) * 0.7  # TODO: 将魔法数字提取到配置中
         fan_signal[strong_down] -= 15  # TODO: 将魔法数字提取到配置中
         
         return fan_signal
     
     def _calculate_square_of_nine(self, df: pd.DataFrame) -> pd.Series:
-        """计算时间价格平方根关系（九宫格）"""
+        """计算时间价格平方根关系(九宫格)"""
         square_signal = pd.Series(0.0, index=df.index)
         
         close = df['close']
@@ -305,14 +308,14 @@ from db.sql_manager import SQLManager, QueryType
         # 计算价格的平方根
         price_sqrt = np.sqrt(close)
         
-        # 检查价格平方根是否接近整数（江恩重要价位）
+        # 检查价格平方根是否接近整数(江恩重要价位)
         sqrt_fractional = price_sqrt - np.floor(price_sqrt)
         
         # 接近整数平方根的价位是重要的江恩价位
         near_square = (sqrt_fractional < 0.1) | (sqrt_fractional > 0.9)  # TODO: 将魔法数字提取到配置中
         square_signal[near_square] += 10
         
-        # 检查价格是否在江恩的重要分数位（1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 检查价格是否在江恩的重要分数位(1/8, 1/4, 3/8, 1/2, 5/8, 3/4, 7/8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         important_fractions = [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         for frac in important_fractions:
@@ -325,11 +328,11 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算原始评分
         
-        基于江恩分析的综合评分：
-        - 角度线支撑阻力（35%权重）  # TODO: 将魔法数字提取到配置中
-        - 时间周期信号（25%权重）  # TODO: 将魔法数字提取到配置中
-        - 江恩扇形分析（25%权重）  # TODO: 将魔法数字提取到配置中
-        - 九宫格分析（15%权重）  # TODO: 将魔法数字提取到配置中
+        基于江恩分析的综合评分:
+        - 角度线支撑阻力(35%权重)  # TODO: 将魔法数字提取到配置中
+        - 时间周期信号(25%权重)  # TODO: 将魔法数字提取到配置中
+        - 江恩扇形分析(25%权重)  # TODO: 将魔法数字提取到配置中
+        - 九宫格分析(15%权重)  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Tools_Gann_Tools(data, **kwargs)
@@ -337,38 +340,38 @@ from db.sql_manager import SQLManager, QueryType
         result = self._result
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 角度线支撑阻力评分（35%权重）  # TODO: 将魔法数字提取到配置中
+        # 1. 角度线支撑阻力评分(35%权重)  # TODO: 将魔法数字提取到配置中
         angle_support = result.get('angle_support', pd.Series(0.0, index=data.index))
         angle_resistance = result.get('angle_resistance', pd.Series(0.0, index=data.index))
         
-        # 支撑强度加分，阻力强度减分
+        # 支撑强度加分,阻力强度减分
         support_score = np.clip(angle_support / 3, 0, 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         resistance_score = np.clip(angle_resistance / 3, 0, 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         score += support_score * 0.35  # TODO: 将魔法数字提取到配置中
         score -= resistance_score * 0.35  # TODO: 将魔法数字提取到配置中
         
-        # 2. 时间周期信号评分（25%权重）  # TODO: 将魔法数字提取到配置中
+        # 2. 时间周期信号评分(25%权重)  # TODO: 将魔法数字提取到配置中
         time_cycle_signal = result.get('time_cycle_signal', pd.Series(0.0, index=data.index))
         cycle_score = np.clip(time_cycle_signal / 2, 0, 20)  # TODO: 将魔法数字提取到配置中
         score += cycle_score * 0.25  # TODO: 将魔法数字提取到配置中
         
-        # 3. 江恩扇形分析评分（25%权重）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 3. 江恩扇形分析评分(25%权重)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         gann_fan_signal = result.get('gann_fan_signal', pd.Series(0.0, index=data.index))
         fan_score = np.clip(gann_fan_signal / 1.5, -20, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += fan_score * 0.25  # TODO: 将魔法数字提取到配置中
         
-        # 4. 九宫格分析评分（15%权重）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 4. 九宫格分析评分(15%权重)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         square_signal = result.get('square_of_nine', pd.Series(0.0, index=data.index))
         square_score = np.clip(square_signal / 2, 0, 15)  # TODO: 将魔法数字提取到配置中
         score += square_score * 0.15  # TODO: 将魔法数字提取到配置中
         
-        # 特殊加成：1x1角度线（45度线）的重要性
+        # 特殊加成:1x1角度线(45度线)的重要性
         close = data['close']
         if len(result) > 0 and 'gann_up_1.000' in result.columns:
             gann_1x1_up = result['gann_up_1.000']
             
-            # 价格在1x1线附近，额外加分
+            # 价格在1x1线附近,额外加分
             near_1x1 = np.abs(close - gann_1x1_up) / close < 0.02
             score[near_1x1] += 5  # TODO: 将魔法数字提取到配置中
         
@@ -386,13 +389,13 @@ from db.sql_manager import SQLManager, QueryType
         avg_score = score.mean()
         score_std = score.std()
         
-        # 评分越高，置信度越高
+        # 评分越高,置信度越高
         score_confidence = min(avg_score / 100, 1.0)
         
-        # 评分稳定性越高，置信度越高
+        # 评分稳定性越高,置信度越高
         stability_confidence = max(0.3, 1.0 - score_std / 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 江恩理论强调几何一致性，稳定性权重更高
+        # 江恩理论强调几何一致性,稳定性权重更高
         confidence = (score_confidence * 0.6 + stability_confidence * 0.4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return max(0.3, min(0.95, confidence))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -461,7 +464,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        标准计算方法，调用GANN工具计算
+        标准计算方法,调用GANN工具计算
 
         Args:
             data: 股票数据
@@ -473,5 +476,5 @@ from db.sql_manager import SQLManager, QueryType
         return self.calculate_Tools_Gann_Tools(data, **kwargs)
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 gann_tools = GannTools

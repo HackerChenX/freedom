@@ -6,8 +6,8 @@ from utils.container import container
 """
 蔡金波动率(Chaikin Volatility)指标
 
-蔡金波动率是由Marc Chaikin开发的技术指标，用于衡量市场的波动性。
-它通过计算高低价差的移动平均线的变化率来反映价格波动的程度。
+蔡金波动率是由Marc Chaikin开发的技术指标,用于衡量市场的波动性.
+它通过计算高低价差的移动平均线的变化率来反映价格波动的程度.
 """
 
 import numpy as np
@@ -26,18 +26,18 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     蔡金波动率(Chaikin Volatility)指标
 
-    分类：波动性指标
-    描述：衡量市场价格波动的程度
+    分类:波动性指标
+    描述:衡量市场价格波动的程度
 
-    计算公式：
+    计算公式:
     1. HL_Spread = High - Low
     2. EMA_HL = EMA(HL_Spread, period)
     3. Chaikin_Volatility = (EMA_HL - EMA_HL[lookback]) / EMA_HL[lookback] * 100  # TODO: 将魔法数字提取到配置中
 
-    信号解释：
-    - 正值：波动率增加
-    - 负值：波动率减少
-    - 数值大小：反映波动率变化的程度
+    信号解释:
+    - 正值:波动率增加
+    - 负值:波动率减少
+    - 数值大小:反映波动率变化的程度
     """
 
     def __init__(self, period: int = 10, lookback: int = 10, **kwargs):
@@ -48,8 +48,8 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化蔡金波动率指标
 
         Args:
-            period: EMA计算周期，默认10
-            lookback: 回望周期，默认10
+            period: EMA计算周期,默认10
+            lookback: 回望周期,默认10
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
@@ -137,13 +137,13 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals = pd.Series(0, index=df.index)
         cv = df["chaikin_volatility"]
 
-        # 波动率突然增加信号（可能预示趋势变化）
+        # 波动率突然增加信号(可能预示趋势变化)
         high_volatility = cv > cv.rolling(20).quantile(
             0.8
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signals[high_volatility] = 1
 
-        # 波动率突然减少信号（可能预示盘整）
+        # 波动率突然减少信号(可能预示盘整)
         low_volatility = cv < cv.rolling(20).quantile(0.2)  # TODO: 将魔法数字提取到配置中
         signals[low_volatility] = -1
 
@@ -195,16 +195,16 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "strength": min(
                     abs(latest_cv) / 50, 1.0
                 ),  # TODO: 将魔法数字提取到配置中  # 标准化强度  # TODO: 将魔法数字提取到配置中
-                "description": f"波动率增加信号，当前等级：{latest_level}",
+                "description": f"波动率增加信号,当前等级:{latest_level}",
             }
         elif latest_signal == -1:
             return {
                 "signal": -1,
                 "strength": min(abs(latest_cv) / 50, 1.0),  # TODO: 将魔法数字提取到配置中
-                "description": f"波动率减少信号，当前等级：{latest_level}",
+                "description": f"波动率减少信号,当前等级:{latest_level}",
             }
         else:
-            return {"signal": 0, "strength": 0, "description": f"波动率正常，当前等级：{latest_level}"}
+            return {"signal": 0, "strength": 0, "description": f"波动率正常,当前等级:{latest_level}"}
 
     def get_pattern_info(self) -> Dict[str, Any]:
         """获取指标模式信息"""

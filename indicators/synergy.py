@@ -51,6 +51,9 @@ class Synergy(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -61,11 +64,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('SYNERGY', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -97,7 +100,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 基本实现：返回原数据加上一个简单的计算列
+        # 基本实现:返回原数据加上一个简单的计算列
         df[f'SYNERGY_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
@@ -126,7 +129,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         Synergy指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数

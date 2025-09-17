@@ -3,7 +3,7 @@ from utils.container import container
 
 """
 简化的形态识别指标实现
-为THREE_BLACK_CROWS、THREE_WHITE_SOLDIERS、V_SHAPED_REVERSAL提供基础实现
+为THREE_BLACK_CROWS,THREE_WHITE_SOLDIERS,V_SHAPED_REVERSAL提供基础实现
 """
 
 import pandas as pd
@@ -108,7 +108,7 @@ class VShapedReversalIndicator(BaseIndicator):
         # 在最低点前后价格快速下跌和上涨
         for i in range(2, len(data) - 2):
             if local_min.iloc[i]:
-                # 检查前两天是否下跌，后两天是否上涨
+                # 检查前两天是否下跌,后两天是否上涨
                 before_decline = (close.iloc[i - 1] < close.iloc[i - 2]) and (close.iloc[i] < close.iloc[i - 1])
                 after_rise = (close.iloc[i + 1] > close.iloc[i]) and (close.iloc[i + 2] > close.iloc[i + 1])
 

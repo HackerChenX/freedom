@@ -8,7 +8,7 @@ from utils.logger import get_logger
 """
 KDJ指标
 
-随机指标KDJ，用于分析价格是否处于超买或超卖状态
+随机指标KDJ,用于分析价格是否处于超买或超卖状态
 """
 
 import numpy as np
@@ -40,7 +40,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         KdjKdj - L4核心服务层组件
 
     职责合理性说明:
-    - 作为L4层核心服务组件，承担多项相关职责
+    - 作为L4层核心服务组件,承担多项相关职责
     - 54个方法分为以下职责组:
       * 核心功能方法 (约18个)
       * 辅助工具方法 (约18个)
@@ -52,7 +52,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     KDJ随机指标
     
-    KDJ指标是RSI和随机指标的结合体，是一种超买超卖指标，用于判断股价走势的超买超卖状态。
+    KDJ指标是RSI和随机指标的结合体,是一种超买超卖指标,用于判断股价走势的超买超卖状态.
     """
 
     def __init__(
@@ -65,9 +65,9 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化KDJ指标
 
         Args:
-            n: RSV周期，默认为9
-            m1: K值平滑因子，默认为3
-            m2: D值平滑因子，默认为3
+            n: RSV周期,默认为9
+            m1: K值平滑因子,默认为3
+            m2: D值平滑因子,默认为3
         """
         super().__init__()
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
@@ -88,7 +88,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_GOLDEN_CROSS",
             display_name="KDJ金叉",
-            description="K线从下方突破D线，买入信号",
+            description="K线从下方突破D线,买入信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -97,7 +97,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_DEATH_CROSS",
             display_name="KDJ死叉",
-            description="K线从上方跌破D线，卖出信号",
+            description="K线从上方跌破D线,卖出信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -106,7 +106,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERBOUGHT",
             display_name="KDJ超买",
-            description="K值高于80，超买信号",
+            description="K值高于80,超买信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-10.0,
@@ -115,7 +115,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERSOLD",
             display_name="KDJ超卖",
-            description="K值低于20，超卖信号",
+            description="K值低于20,超卖信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -124,7 +124,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_BULLISH_DIVERGENCE",
             display_name="KDJ看涨背离",
-            description="价格创新低而KDJ未创新低，底部反转信号",
+            description="价格创新低而KDJ未创新低,底部反转信号",
             pattern_type="REVERSAL",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -133,7 +133,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_BEARISH_DIVERGENCE",
             display_name="KDJ看跌背离",
-            description="价格创新高而KDJ未创新高，顶部反转信号",
+            description="价格创新高而KDJ未创新高,顶部反转信号",
             pattern_type="REVERSAL",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -141,7 +141,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         )
 
     def set_parameters_Kdj_Kdj_Kdj_kdj(self, **kwargs):
-        """设置指标参数，可设置 'n', 'm1', 'm2'"""
+        """设置指标参数,可设置 'n', 'm1', 'm2'"""
         if "n" in kwargs:
             self.n = int(kwargs["n"])
         if "m1" in kwargs:
@@ -154,7 +154,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         获取KDJ指标的技术形态
 
         Args:
-            data: 输入数据，通常是K线数据
+            data: 输入数据,通常是K线数据
             **kwargs: 其他参数
 
         Returns:
@@ -175,15 +175,15 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df["KDJ_OVERBOUGHT"] = self._detect_overbought(calculated_data)
         patterns_df["KDJ_OVERSOLD"] = self._detect_oversold(calculated_data)
 
-        # 背离形态检测 - 这些方法返回布尔值而不是Series，需要逐行检测
-        # 由于计算成本较高，只在最后一行检测背离
+        # 背离形态检测 - 这些方法返回布尔值而不是Series,需要逐行检测
+        # 由于计算成本较高,只在最后一行检测背离
         if len(data) > 0:
             last_idx = data.index[-1]
             patterns_df.loc[last_idx, "KDJ_BULLISH_DIVERGENCE"] = self._detect_bullish_divergence(calculated_data)
             patterns_df.loc[last_idx, "KDJ_BEARISH_DIVERGENCE"] = self._detect_bearish_divergence(calculated_data)
 
-            # 填充其他行为False，使用最新pandas方法避免FutureWarning
-            # 先转换为bool类型，再填充False值
+            # 填充其他行为False,使用最新pandas方法避免FutureWarning
+            # 先转换为bool类型,再填充False值
             patterns_df["KDJ_BULLISH_DIVERGENCE"] = (
                 patterns_df["KDJ_BULLISH_DIVERGENCE"].astype("boolean").fillna(False)
             )
@@ -195,13 +195,13 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_confidence_Kdj(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
-        计算KDJ指标的置信度。
+        计算KDJ指标的置信度.
 
-        置信度基于以下因素：
-        1.  KDJ值的位置：处于超买/超卖区的信号更可信。
-        2.  J值的方向和极端性：J值是领先指标，其极端值和快速转向可以增强信心。
-        3.  KDJ三线的排列形态：三线同向发散表明趋势强劲，收敛则表明犹豫。  # TODO: 将魔法数字提取到配置中
-        4.  K、D线间距：距离越大，趋势越明确。  # TODO: 将魔法数字提取到配置中
+        置信度基于以下因素:
+        1.  KDJ值的位置:处于超买/超卖区的信号更可信.
+        2.  J值的方向和极端性:J值是领先指标,其极端值和快速转向可以增强信心.
+        3.  KDJ三线的排列形态:三线同向发散表明趋势强劲,收敛则表明犹豫.  # TODO: 将魔法数字提取到配置中
+        4.  K,D线间距:距离越大,趋势越明确.  # TODO: 将魔法数字提取到配置中
 
         Args:
             score: 原始评分序列 (当前未使用)
@@ -212,7 +212,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度 (0.0 - 1.0)
         """
         if not self.has_result() or len(self.result) < 5:  # TODO: 将魔法数字提取到配置中
-            return 0.5  # 数据不足，返回中性置信度  # TODO: 将魔法数字提取到配置中
+            return 0.5  # 数据不足,返回中性置信度  # TODO: 将魔法数字提取到配置中
 
         # 获取最新的KDJ值
         latest_kdj = self.result.iloc[-1]
@@ -220,13 +220,13 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         confidence = 0.5  # 基础置信度  # TODO: 将魔法数字提取到配置中
 
-        # 1. 位置因素: K值越极端，置信度越高
+        # 1. 位置因素: K值越极端,置信度越高
         k_extremity = (
             abs(k - 50) / 50.0
         )  # (0 for k=50, 1 for k=0 or 100)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         confidence += k_extremity * 0.2  # 最大贡献+0.2
 
-        # 2. J值因素: J值是领先指标，绝对值越大，信号越明确
+        # 2. J值因素: J值是领先指标,绝对值越大,信号越明确
         j_factor = min(
             abs(j - 50) / 100.0, 1.0
         )  # (0 for j=50, 1 for j>=150 or j<=-50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -240,7 +240,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if is_uptrend or is_downtrend:
                 confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
-        # 4. K、D线间距: 距离越大，趋势越明确  # TODO: 将魔法数字提取到配置中
+        # 4. K,D线间距: 距离越大,趋势越明确  # TODO: 将魔法数字提取到配置中
         kd_spread = abs(k - d)
         spread_factor = min(kd_spread / 20.0, 1.0)  # 假设20是比较大的间距  # TODO: 将魔法数字提取到配置中
         confidence += spread_factor * 0.1  # 最大贡献+0.1
@@ -250,7 +250,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_score_Kdj(self, data: pd.DataFrame, **kwargs) -> dict:
         """
-        计算KDJ指标评分（0-100分制）
+        计算KDJ指标评分(0-100分制)
 
         Args:
             data: 输入数据
@@ -296,7 +296,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self, series1: pd.Series, series2: pd.Series, window: int = 3, cross_type: str = "above"
     ) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
-        更稳健的交叉检测，考虑交叉后的持续性
+        更稳健的交叉检测,考虑交叉后的持续性
 
         Args:
             series1: 第一个序列 (例如, K线)
@@ -316,18 +316,18 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 计算前后位置关系
         if cross_type == "above":
-            # 查找从下向上穿越的点（金叉）
-            # 前一点，series1低于或等于series2
+            # 查找从下向上穿越的点(金叉)
+            # 前一点,series1低于或等于series2
             condition_before = series1.shift(1) <= series2.shift(1)
-            # 当前点，series1高于series2
+            # 当前点,series1高于series2
             condition_after = series1 > series2
             # 结合两个条件找到交叉点
             cross_points = condition_before & condition_after
         else:
-            # 查找从上向下穿越的点（死叉）
-            # 前一点，series1高于或等于series2
+            # 查找从上向下穿越的点(死叉)
+            # 前一点,series1高于或等于series2
             condition_before = series1.shift(1) >= series2.shift(1)
-            # 当前点，series1低于series2
+            # 当前点,series1低于series2
             condition_after = series1 < series2
             # 结合两个条件找到交叉点
             cross_points = condition_before & condition_after
@@ -335,23 +335,23 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 找到所有潜在交叉点的索引
         cross_indices = np.where(cross_points)[0]
 
-        # 没有发现交叉点，返回全False序列
+        # 没有发现交叉点,返回全False序列
         if len(cross_indices) == 0:
             return result
 
         # 对每个交叉点应用更严格的确认
         for idx in cross_indices:
-            # 跳过开始的点，确保有前置数据
+            # 跳过开始的点,确保有前置数据
             if idx < 2:
                 continue
 
-            # 跳过结尾的点，确保有后续数据用于确认
+            # 跳过结尾的点,确保有后续数据用于确认
             if idx >= len(series1) - window:
                 continue
 
             # 确认交叉点前后的趋势方向
             if cross_type == "above":
-                # 金叉：确保交叉前series1一直低于series2，交叉后一直高于
+                # 金叉:确保交叉前series1一直低于series2,交叉后一直高于
                 before_cross = series1.iloc[idx - window : idx] < series2.iloc[idx - window : idx]
                 after_cross = series1.iloc[idx : idx + window] > series2.iloc[idx : idx + window]
 
@@ -359,7 +359,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 if before_cross.sum() >= window / 2 and after_cross.sum() >= window / 2:
                     result.iloc[idx] = True
             else:
-                # 死叉：确保交叉前series1一直高于series2，交叉后一直低于
+                # 死叉:确保交叉前series1一直高于series2,交叉后一直低于
                 before_cross = series1.iloc[idx - window : idx] > series2.iloc[idx - window : idx]
                 after_cross = series1.iloc[idx : idx + window] < series2.iloc[idx : idx + window]
 
@@ -390,7 +390,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
 
-        # 底背离：价格创新低，但KDJ指标未创新低
+        # 底背离:价格创新低,但KDJ指标未创新低
         try:
             # 获取最近20个周期的数据
             close = data["close"].iloc[-20:].values  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -426,7 +426,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             k_val1 = k_values[idx1]
             k_val2 = k_values[idx2]
 
-            # 如果价格第二个低点低于第一个低点，但K第二个低点高于第一个低点，则形成底背离
+            # 如果价格第二个低点低于第一个低点,但K第二个低点高于第一个低点,则形成底背离
             return val2 < val1 and k_val2 > k_val1
         except Exception as e:
             logger.error(f"检测KDJ底背离形态出错: {e}")
@@ -441,7 +441,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
 
-        # 顶背离：价格创新高，但KDJ指标未创新高
+        # 顶背离:价格创新高,但KDJ指标未创新高
         try:
             # 获取最近20个周期的数据
             close = data["close"].iloc[-20:].values  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -477,7 +477,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             k_val1 = k_values[idx1]
             k_val2 = k_values[idx2]
 
-            # 如果价格第二个高点高于第一个高点，但K第二个高点低于第一个高点，则形成顶背离
+            # 如果价格第二个高点高于第一个高点,但K第二个高点低于第一个高点,则形成顶背离
             return val2 > val1 and k_val2 < k_val1
         except Exception as e:
             logger.error(f"检测KDJ顶背离形态出错: {e}")
@@ -496,7 +496,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         k = data["K"].iloc[-2:].values
         d = data["D"].iloc[-2:].values
 
-        # 高位交叉条件：K和D都大于75，且当前K在D上方，且前一周期K在D下方
+        # 高位交叉条件:K和D都大于75,且当前K在D上方,且前一周期K在D下方
         high_cross = (
             k[-1] > 75
             and d[-1] > 75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -519,7 +519,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         k = data["K"].iloc[-2:].values
         d = data["D"].iloc[-2:].values
 
-        # 低位交叉条件：K和D都小于25，且当前K在D上方，且前一周期K在D下方
+        # 低位交叉条件:K和D都小于25,且当前K在D上方,且前一周期K在D下方
         low_cross = (
             k[-1] < 25
             and d[-1] < 25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -543,12 +543,12 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         d = data["D"].iloc[-1]
         j = data["J"].iloc[-1]
 
-        # 三线交叉条件：K、D、J的值非常接近
+        # 三线交叉条件:K,D,J的值非常接近
         diff_kd = abs(k - d)
         diff_kj = abs(k - j)
         diff_dj = abs(d - j)
 
-        # 如果所有差值都小于2，则认为是三线交叉
+        # 如果所有差值都小于2,则认为是三线交叉
         return diff_kd < 2 and diff_kj < 2 and diff_dj < 2
 
     def _detect_j_breakthrough(self, data: pd.DataFrame) -> bool:
@@ -563,7 +563,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 获取最近5个周期的J值
         j_values = data["J"].iloc[-5:].values  # TODO: 将魔法数字提取到配置中
 
-        # J值突破条件：从负值快速上升到高于70
+        # J值突破条件:从负值快速上升到高于70
         if j_values[0] < 0 and j_values[-1] > 70:  # TODO: 将魔法数字提取到配置中
             # 检查是否是持续上升
             is_rising = True
@@ -594,7 +594,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算KDJ指标
 
         Args:
-            data: 输入数据，必须包含 'high', 'low', 'close' 列
+            data: 输入数据,必须包含 'high', 'low', 'close' 列
 
         Returns:
             pd.DataFrame: 包含K, D, J列的Data_frame
@@ -631,7 +631,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 检查数据长度是否足够
         min_periods = max(self.n, self.m1, self.m2) + 1
         if len(data) < min_periods:
-            logger.warning(f"KDJ计算: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+            logger.warning(f"KDJ计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
             # 返回与输入数据长度相同的空结果
             result = pd.DataFrame(index=data.index)
             result["K"] = np.nan
@@ -652,21 +652,21 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         df = data.copy()
 
-        # 计算RSV（改进边界条件处理）
+        # 计算RSV(改进边界条件处理)
         low_n = df["low"].rolling(window=self.n, min_periods=1).min()
         high_n = df["high"].rolling(window=self.n, min_periods=1).max()
 
-        # 避免除零错误：当high_n == low_n时，RSV设为50
+        # 避免除零错误:当high_n == low_n时,RSV设为50
         denominator = high_n - low_n
         rsv = np.where(
             denominator != 0,
             (df["close"] - low_n) / denominator * 100,
-            50.0,  # 当分母为0时，RSV设为50（中性值）  # TODO: 将魔法数字提取到配置中
+            50.0,  # 当分母为0时,RSV设为50(中性值)  # TODO: 将魔法数字提取到配置中
         )
         rsv = pd.Series(rsv, index=df.index)
         rsv = rsv.fillna(50.0)  # 将NaN值也设为50  # TODO: 将魔法数字提取到配置中
 
-        # 使用标准SMA方法计算K, D, J（符合标准KDJ公式）
+        # 使用标准SMA方法计算K, D, J(符合标准KDJ公式)
         # K值: RSV的简单移动平均
         df["K"] = rsv.rolling(window=self.m1, min_periods=1).mean()
 
@@ -676,15 +676,15 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # J值
         df["J"] = 3 * df["K"] - 2 * df["D"]  # TODO: 将魔法数字提取到配置中
 
-        # 标准KDJ初始值处理：K和D的初始值通常设为50
+        # 标准KDJ初始值处理:K和D的初始值通常设为50
         df["K"] = df["K"].fillna(50.0)  # TODO: 将魔法数字提取到配置中
         df["D"] = df["D"].fillna(50.0)  # TODO: 将魔法数字提取到配置中
         df["J"] = df["J"].fillna(50.0)  # TODO: 将魔法数字提取到配置中
 
-        # 确保K、D值在合理范围内（0-100）
+        # 确保K,D值在合理范围内(0-100)
         df["K"] = df["K"].clip(0, 100)
         df["D"] = df["D"].clip(0, 100)
-        # J值可以超出0-100范围，这是正常的
+        # J值可以超出0-100范围,这是正常的
 
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -723,7 +723,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result["kdj_j_overbought"] = result[j_col] > 100
         result["kdj_j_oversold"] = result[j_col] < 0
 
-        # 计算KDJ三线同向（顺势信号）
+        # 计算KDJ三线同向(顺势信号)
         result["kdj_uptrend"] = (result[j_col] > result[k_col]) & (result[k_col] > result[d_col])
         result["kdj_downtrend"] = (result[j_col] < result[k_col]) & (result[k_col] < result[d_col])
 
@@ -739,9 +739,9 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             d_col: D值列名
 
         Returns:
-            pd.Series: 买入信号序列（布尔值）
+            pd.Series: 买入信号序列(布尔值)
         """
-        # KDJ金叉：K线从下方穿过D线，且处于低位（<30）  # TODO: 将魔法数字提取到配置中
+        # KDJ金叉:K线从下方穿过D线,且处于低位(<30)  # TODO: 将魔法数字提取到配置中
         golden_cross = (data[k_col] > data[d_col]) & (data[k_col].shift(1) <= data[d_col].shift(1))
         low_position = data[k_col] < 30  # TODO: 将魔法数字提取到配置中
 
@@ -757,9 +757,9 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             d_col: D值列名
 
         Returns:
-            pd.Series: 卖出信号序列（布尔值）
+            pd.Series: 卖出信号序列(布尔值)
         """
-        # KDJ死叉：K线从上方穿过D线，且处于高位（>70）  # TODO: 将魔法数字提取到配置中
+        # KDJ死叉:K线从上方穿过D线,且处于高位(>70)  # TODO: 将魔法数字提取到配置中
         death_cross = (data[k_col] < data[d_col]) & (data[k_col].shift(1) >= data[d_col].shift(1))
         high_position = data[k_col] > 70  # TODO: 将魔法数字提取到配置中
 
@@ -806,7 +806,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         生成交易信号
 
         Args:
-            data: 输入数据，包含价格和指标数据
+            data: 输入数据,包含价格和指标数据
             **kwargs: 其他参数
 
         Returns:
@@ -869,7 +869,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             is_buy: 是否为买入信号
 
         Returns:
-            pd.Series: 信号强度序列，值范围1-5  # TODO: 将魔法数字提取到配置中
+            pd.Series: 信号强度序列,值范围1-5  # TODO: 将魔法数字提取到配置中
         """
         k = data["K"]
         d = data["D"]
@@ -923,7 +923,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data: 包含价格和KDJ指标的Data_frame
 
         Returns:
-            pd.DataFrame: 包含所有已识别形态的Data_frame，每列代表一种形态
+            pd.DataFrame: 包含所有已识别形态的Data_frame,每列代表一种形态
         """
         # 确保KDJ值已计算
         if not all(col in data.columns for col in ["K", "D", "J"]):
@@ -948,7 +948,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     if isinstance(detection_result, pd.Series):
                         patterns[pattern_info["display_name"]] = detection_result
                     elif isinstance(detection_result, bool):
-                        # 如果是布尔值，则在最后一行标记
+                        # 如果是布尔值,则在最后一行标记
                         if detection_result:
                             patterns.loc[patterns.index[-1], pattern_info["display_name"]] = True
 
@@ -959,14 +959,14 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Kdj(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算KDJ指标的原始评分（0-100分制）
+        计算KDJ指标的原始评分(0-100分制)
 
         Args:
             data: 输入数据
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列，取值范围0-100
+            pd.Series: 原始评分序列,取值范围0-100
         """
         if not self.has_result():
             self.calculate_Kdj(data, **kwargs)
@@ -980,9 +980,9 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         j = self._result["J"]
 
         # 基础评分计算
-        # 1. 位置分：基于K值的位置（0-100），贡献40分权重
+        # 1. 位置分:基于K值的位置(0-100),贡献40分权重
         position_score = k.copy()
-        # 调整曲线，使得中间值(50)得分为50分，两端得分递减  # TODO: 将魔法数字提取到配置中
+        # 调整曲线,使得中间值(50)得分为50分,两端得分递减  # TODO: 将魔法数字提取到配置中
         position_score = (
             50 - 40 * np.abs(position_score - 50) / 50
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -994,38 +994,38 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             k >= 80, 40 - (k - 80) * 1.5, position_score
         )  # 超买区减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 2. 趋势分：基于K和D的变化趋势，贡献30分权重
+        # 2. 趋势分:基于K和D的变化趋势,贡献30分权重
         k_trend = k - k.shift(3)  # TODO: 将魔法数字提取到配置中
         d_trend = d - d.shift(3)  # TODO: 将魔法数字提取到配置中
         trend_score = (
             50 + (k_trend + d_trend) * 3
-        )  # 上升加分，下降减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        )  # 上升加分,下降减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 限制在0-100范围内
         trend_score = np.clip(trend_score, 0, 100)
 
-        # 3. 金叉死叉分：检测金叉死叉情况，贡献20分权重  # TODO: 将魔法数字提取到配置中
+        # 3. 金叉死叉分:检测金叉死叉情况,贡献20分权重  # TODO: 将魔法数字提取到配置中
         golden_cross = (k > d) & (k.shift(1) <= d.shift(1))
         death_cross = (k < d) & (k.shift(1) >= d.shift(1))
-        # 初始化交叉得分为50分（中性）
+        # 初始化交叉得分为50分(中性)
         cross_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # 金叉加分，最近越近影响越大
+        # 金叉加分,最近越近影响越大
         for i in range(5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             mask = golden_cross.shift(i).fillna(False).astype(bool)
             score_boost = 30 * (0.8**i)  # 随距离衰减  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             cross_score = np.where(mask, 50 + score_boost, cross_score)  # TODO: 将魔法数字提取到配置中
 
-        # 死叉减分，最近越近影响越大
+        # 死叉减分,最近越近影响越大
         for i in range(5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             mask = death_cross.shift(i).fillna(False).astype(bool)
             score_drop = 30 * (0.8**i)  # 随距离衰减  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             cross_score = np.where(mask, 50 - score_drop, cross_score)  # TODO: 将魔法数字提取到配置中
 
-        # 4. J值影响分：J值对评分的调整，贡献10分权重  # TODO: 将魔法数字提取到配置中
+        # 4. J值影响分:J值对评分的调整,贡献10分权重  # TODO: 将魔法数字提取到配置中
         j_score = 50 + (j - 50) * 0.2  # J值越高分数越高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         j_score = np.clip(j_score, 0, 100)
 
-        # 合并各部分得分，按权重加权平均
+        # 合并各部分得分,按权重加权平均
         raw_score = (
             position_score * 0.4  # 位置分权重40%  # TODO: 将魔法数字提取到配置中
             + trend_score * 0.3  # 趋势分权重30%  # TODO: 将魔法数字提取到配置中
@@ -1033,10 +1033,10 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             + j_score * 0.1  # J值影响分权重10%
         )
 
-        # 最后，检测形态对评分的额外影响
+        # 最后,检测形态对评分的额外影响
         patterns = self.get_patterns_Kdj(data, **kwargs)
 
-        # 形态影响分数：最多调整15分
+        # 形态影响分数:最多调整15分
         pattern_adjustment = pd.Series(0.0, index=data.index)
 
         # 使用PatternRegistry获取模式信息
@@ -1050,14 +1050,14 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pattern_info = registry.get_pattern(pattern_col)
             if pattern_info and "score_impact" in pattern_info:
                 score_impact = pattern_info["score_impact"]
-                # 对于每个时间点，如果形态存在，则应用调整
+                # 对于每个时间点,如果形态存在,则应用调整
                 for idx in patterns.index:
                     if patterns.at[idx, pattern_col]:
                         pattern_adjustment.at[idx] += np.clip(
                             score_impact, -15, 15
                         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 应用形态调整（最多±15分）
+        # 应用形态调整(最多±15分)
         pattern_adjustment = np.clip(
             pattern_adjustment, -15, 15
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1078,23 +1078,23 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         periods: int = 5,
     ) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
-        检测KDJ指标的钝化现象（高位或低位的KDJ三线趋于收敛）
+        检测KDJ指标的钝化现象(高位或低位的KDJ三线趋于收敛)
 
         Args:
             k: K值序列
             d: D值序列
             j: J值序列
-            low_threshold: 低位阈值，如果指定则检测低位钝化
-            high_threshold: 高位阈值，如果指定则检测高位钝化
+            low_threshold: 低位阈值,如果指定则检测低位钝化
+            high_threshold: 高位阈值,如果指定则检测高位钝化
             periods: 检测周期
 
         Returns:
             pd.Series: 钝化信号序列
         """
-        # 计算三线的标准差，标准差降低表示线间距离缩小，即趋于收敛
+        # 计算三线的标准差,标准差降低表示线间距离缩小,即趋于收敛
         stds = pd.DataFrame({"K": k, "D": d, "J": j}).std(axis=1)
 
-        # 计算标准差的变化率，负值表示标准差下降，即收敛
+        # 计算标准差的变化率,负值表示标准差下降,即收敛
         std_change = stds.pct_change(periods)
 
         # 初始化钝化信号
@@ -1125,7 +1125,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             k: K值序列
 
         Returns:
-            Optional[str]: 背离类型，"bullish"表示底背离，"bearish"表示顶背离，None表示无背离
+            Optional[str]: 背离类型,"bullish"表示底背离,"bearish"表示顶背离,None表示无背离
         """
         # 至少需要20个数据点才能进行背离分析
         if len(price) < 20 or len(k) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1159,7 +1159,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             last_price_low, prev_price_low = recent_price_lows[-1], recent_price_lows[-2]
             last_k_low, prev_k_low = recent_k_lows[-1], recent_k_lows[-2]
 
-            # 检查底背离：价格创新低但KDJ不创新低
+            # 检查底背离:价格创新低但KDJ不创新低
             if (
                 price.iloc[recent][last_price_low] < price.iloc[recent][prev_price_low]
                 and k.iloc[recent][last_k_low] > k.iloc[recent][prev_k_low]
@@ -1171,7 +1171,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             last_price_high, prev_price_high = recent_price_highs[-1], recent_price_highs[-2]
             last_k_high, prev_k_high = recent_k_highs[-1], recent_k_highs[-2]
 
-            # 检查顶背离：价格创新高但KDJ不创新高
+            # 检查顶背离:价格创新高但KDJ不创新高
             if (
                 price.iloc[recent][last_price_high] > price.iloc[recent][prev_price_high]
                 and k.iloc[recent][last_k_high] < k.iloc[recent][prev_k_high]
@@ -1207,7 +1207,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             price_min_idx = price_window.idxmin()
             indicator_min_idx = indicator_window.idxmin()
 
-            # 如果最低点不一致，说明存在背离
+            # 如果最低点不一致,说明存在背离
             if price_min_idx != indicator_min_idx:
                 # 计算价格新低的程度
                 price_latest_min = price_window.iloc[-5:].min()  # TODO: 将魔法数字提取到配置中
@@ -1224,7 +1224,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     1.5 if indicator_latest_min < 20 else 1.0
                 )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-                # 综合评分: 价格下跌越多，指标改善越明显，评分越高
+                # 综合评分: 价格下跌越多,指标改善越明显,评分越高
                 return min(
                     100, 50 + price_decline * 100 * weight + indicator_improve * 10
                 )  # TODO: 将魔法数字提取到配置中
@@ -1233,7 +1233,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             price_max_idx = price_window.idxmax()
             indicator_max_idx = indicator_window.idxmax()
 
-            # 如果最高点不一致，说明存在背离
+            # 如果最高点不一致,说明存在背离
             if price_max_idx != indicator_max_idx:
                 # 计算价格新高的程度
                 price_latest_max = price_window.iloc[-5:].max()  # TODO: 将魔法数字提取到配置中
@@ -1250,7 +1250,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     1.5 if indicator_latest_max > 80 else 1.0
                 )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-                # 综合评分: 价格上涨越多，指标减弱越明显，评分越高
+                # 综合评分: 价格上涨越多,指标减弱越明显,评分越高
                 return min(100, 50 + price_rise * 100 * weight + indicator_weaken * 10)  # TODO: 将魔法数字提取到配置中
 
         return 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1263,42 +1263,42 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pattern_id: 形态ID
 
         Returns:
-            dict: 形态信息字典，包含name, description, strength等
+            dict: 形态信息字典,包含name, description, strength等
         """
         pattern_info_map = {
             "KDJ_GOLDEN_CROSS": {
                 "name": "KDJ金叉",
-                "description": "K线上穿D线，表示买入信号",
+                "description": "K线上穿D线,表示买入信号",
                 "strength": "medium",
                 "type": "bullish",
             },
             "KDJ_DEATH_CROSS": {
                 "name": "KDJ死叉",
-                "description": "K线下穿D线，表示卖出信号",
+                "description": "K线下穿D线,表示卖出信号",
                 "strength": "medium",
                 "type": "bearish",
             },
             "KDJ_OVERSOLD": {
                 "name": "KDJ超卖",
-                "description": "KDJ值低于20，表示超卖状态",
+                "description": "KDJ值低于20,表示超卖状态",
                 "strength": "strong",
                 "type": "bullish",
             },
             "KDJ_OVERBOUGHT": {
                 "name": "KDJ超买",
-                "description": "KDJ值高于80，表示超买状态",
+                "description": "KDJ值高于80,表示超买状态",
                 "strength": "strong",
                 "type": "bearish",
             },
             "KDJ_BULLISH_DIVERGENCE": {
                 "name": "KDJ牛市背离",
-                "description": "价格创新低而KDJ不创新低，表示看涨信号",
+                "description": "价格创新低而KDJ不创新低,表示看涨信号",
                 "strength": "strong",
                 "type": "bullish",
             },
             "KDJ_BEARISH_DIVERGENCE": {
                 "name": "KDJ熊市背离",
-                "description": "价格创新高而KDJ不创新高，表示看跌信号",
+                "description": "价格创新高而KDJ不创新高,表示看跌信号",
                 "strength": "strong",
                 "type": "bearish",
             },
@@ -1317,7 +1317,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_GOLDEN_CROSS",
             display_name="KDJ金叉",
-            description="K线上穿D线形成金叉，表明短期动量转强",
+            description="K线上穿D线形成金叉,表明短期动量转强",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1328,7 +1328,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_DEATH_CROSS",
             display_name="KDJ死叉",
-            description="K线下穿D线形成死叉，表明短期动量转弱",
+            description="K线下穿D线形成死叉,表明短期动量转弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1339,7 +1339,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERBOUGHT",
             display_name="KDJ超买",
-            description="KDJ值超过80，进入超买区域，需警惕回调风险",
+            description="KDJ值超过80,进入超买区域,需警惕回调风险",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1350,7 +1350,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_OVERSOLD",
             display_name="KDJ超卖",
-            description="KDJ值低于20，进入超卖区域，存在反弹机会",
+            description="KDJ值低于20,进入超卖区域,存在反弹机会",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1361,7 +1361,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_BULLISH_DIVERGENCE",
             display_name="KDJ底背离",
-            description="价格创新低而KDJ未创新低，形成底背离",
+            description="价格创新低而KDJ未创新低,形成底背离",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -1372,7 +1372,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="KDJ_BEARISH_DIVERGENCE",
             display_name="KDJ顶背离",
-            description="价格创新高而KDJ未创新高，形成顶背离",
+            description="价格创新高而KDJ未创新高,形成顶背离",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -1406,15 +1406,15 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
-        # 只更新_parameters字典，避免直接设置只读属性
+        # 只更新_parameters字典,避免直接设置只读属性
         for key, value in kwargs.items():
             if key in self._parameters:
                 self._parameters[key] = value
             elif key in ["n", "m1", "m2", "k_period", "k_slowing", "d_period"]:
-                # 对于核心参数，即使不在_parameters中也要添加
+                # 对于核心参数,即使不在_parameters中也要添加
                 self._parameters[key] = value
 
-        # 如果设置了核心参数，需要重新初始化内部状态
+        # 如果设置了核心参数,需要重新初始化内部状态
         if any(key in kwargs for key in ["n", "m1", "m2"]):
             # 重新设置内部参数
             self._n = self._parameters.get("n", 9)  # TODO: 将魔法数字提取到配置中
@@ -1438,7 +1438,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取KDJ形态"""
+        """真实实现:获取KDJ形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -1477,7 +1477,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 7. 顶背离形态  # TODO: 将魔法数字提取到配置中
         if len(data) >= 20:  # TODO: 将魔法数字提取到配置中
-            # 简化的背离检测：价格创新高但KDJ未创新高
+            # 简化的背离检测:价格创新高但KDJ未创新高
             price_high = data["high"].rolling(10).max()
             kdj_high = k_values.rolling(10).max()
             patterns_df["KDJ_BEARISH_DIVERGENCE"] = (
@@ -1486,7 +1486,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 & (k_values > 70)  # TODO: 将魔法数字提取到配置中
             )
 
-            # 底背离形态：价格创新低但KDJ未创新低
+            # 底背离形态:价格创新低但KDJ未创新低
             price_low = data["low"].rolling(10).min()
             kdj_low = k_values.rolling(10).min()
             patterns_df["KDJ_BULLISH_DIVERGENCE"] = (
@@ -1498,7 +1498,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算KDJ原始评分"""
+        """真实实现:计算KDJ原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -1526,11 +1526,11 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         golden_cross = crossover(k_values, d_values)
         death_cross = crossunder(k_values, d_values)
 
-        # 金叉加分，特别是在超卖区域
+        # 金叉加分,特别是在超卖区域
         score += golden_cross * 20  # TODO: 将魔法数字提取到配置中
         score += (golden_cross & (k_values < 50)) * 10  # 低位金叉额外加分  # TODO: 将魔法数字提取到配置中
 
-        # 死叉减分，特别是在超买区域
+        # 死叉减分,特别是在超买区域
         score -= death_cross * 20  # TODO: 将魔法数字提取到配置中
         score -= (death_cross & (k_values > 50)) * 10  # 高位死叉额外减分  # TODO: 将魔法数字提取到配置中
 
@@ -1554,7 +1554,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return score.clip(0, 100)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成KDJ交易信号"""
+        """真实实现:生成KDJ交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -1616,7 +1616,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算KDJ综合评分"""
+        """真实实现:计算KDJ综合评分"""
         if data.empty:
             return {"score": 50.0, "confidence": 0.0, "signals": {}}
 
@@ -1682,7 +1682,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置KDJ参数"""
+        """真实实现:设置KDJ参数"""
         # 验证并设置n参数
         if "n" in kwargs:
             n = kwargs["n"]
@@ -1711,7 +1711,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         logger.info(f"KDJ参数已更新: n={self.n}, m1={self.m1}, m2={self.m2}")
 
     def register_patterns(self):
-        """真实实现：注册KDJ形态到全局注册表"""
+        """真实实现:注册KDJ形态到全局注册表"""
         try:
             registry = PatternRegistry()
 
@@ -1759,21 +1759,21 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成KDJ交易信号"""
+        """真实实现:生成KDJ交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算KDJ指标"""
+        """真实实现:计算KDJ指标"""
         return self.calculate_Kdj(data, **kwargs)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_Kdj(score, patterns, signals)
 
     def _detect_robust_crossover(
         self, series1: pd.Series, series2: pd.Series, window: int = 2, cross_type: str = "above"
     ) -> pd.Series:
-        """真实实现：鲁棒交叉检测"""
+        """真实实现:鲁棒交叉检测"""
         if len(series1) < window + 1 or len(series2) < window + 1:
             return pd.Series(False, index=series1.index)
 
@@ -1781,7 +1781,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         for i in range(window, len(series1)):
             if cross_type == "above":
-                # 检查是否从下方穿越到上方，并且保持一定时间
+                # 检查是否从下方穿越到上方,并且保持一定时间
                 before_cross = all(series1.iloc[i - window : i] <= series2.iloc[i - window : i])
                 after_cross = all(series1.iloc[i : i + 1] > series2.iloc[i : i + 1])
 
@@ -1789,7 +1789,7 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     result.iloc[i] = True
 
             elif cross_type == "below":
-                # 检查是否从上方穿越到下方，并且保持一定时间
+                # 检查是否从上方穿越到下方,并且保持一定时间
                 before_cross = all(series1.iloc[i - window : i] >= series2.iloc[i - window : i])
                 after_cross = all(series1.iloc[i : i + 1] < series2.iloc[i : i + 1])
 
@@ -1799,5 +1799,5 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 KDJ = KdjKdj

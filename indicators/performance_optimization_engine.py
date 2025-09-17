@@ -3,7 +3,7 @@ from utils.container import container
 from indicators.base_indicator import BaseIndicator
 """
 指标计算性能优化引擎
-提供指标计算缓存、批量优化、时间预测和调度优化
+提供指标计算缓存,批量优化,时间预测和调度优化
 """
 
 import time
@@ -114,7 +114,7 @@ class IndicatorCacheService(BaseIndicator):
                     logger.debug(f"缓存命中: {indicator_name}")
                     return self.memory_cache[cache_key]
                 else:
-                    # 过期，删除缓存
+                    # 过期,删除缓存
                     del self.memory_cache[cache_key]
                     if cache_key in self.cache_access_times:
                         del self.cache_access_times[cache_key]
@@ -249,7 +249,7 @@ class IndicatorPerformanceProfiler(BaseIndicator):
     def predict_calculation_time(self, indicator_name: str, data_size: int) -> float:
         """预测指标计算时间"""
         if indicator_name not in self.profiles:
-            # 没有历史数据，使用默认估算
+            # 没有历史数据,使用默认估算
             return self._estimate_default_time(indicator_name, data_size)
         
         profile = self.profiles[indicator_name]
@@ -571,7 +571,7 @@ __all__ = [
         计算指标值
         
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
             
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

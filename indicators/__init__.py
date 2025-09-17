@@ -9,7 +9,6 @@ from indicators.base_indicator import BaseIndicator
 from indicators.factory import IndicatorFactory
 
 __all__ = [
-    # 基础类
     "BaseIndicator",
     "IndicatorFactory",
 ]

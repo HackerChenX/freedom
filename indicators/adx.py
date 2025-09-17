@@ -7,7 +7,7 @@ from db.sql_manager import SQLManager, QueryType
 """
 ADX - 平均方向指数
 
-DMI系统的一部分，用于评估趋势的强度，无论方向如何
+DMI系统的一部分,用于评估趋势的强度,无论方向如何
 """
 
 import numpy as np
@@ -39,7 +39,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
     """
     平均方向指数(ADX)
     
-    衡量趋势的强度，而不考虑其方向。ADX的读数越高，趋势越强
+    衡量趋势的强度,而不考虑其方向.ADX的读数越高,趋势越强
     """
     
     def __init__(self, params: Dict[str, Any] = None, **kwargs):
@@ -50,9 +50,9 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         初始化ADX指标
 
         Args:
-            params: 参数字典，可包含：
-                - period: ADX计算周期，默认为14
-                - strong_trend: 强趋势阈值，默认为25
+            params: 参数字典,可包含:
+                - period: ADX计算周期,默认为14
+                - strong_trend: 强趋势阈值,默认为25
         """
         super().__init__()
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
@@ -107,15 +107,15 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         注册ADX指标形态
         """
         try:
-            # 简化形态注册，避免复杂的依赖
+            # 简化形态注册,避免复杂的依赖
             logger.info("ADX形态注册完成")
         except Exception as e:
             logger.warning(f"ADX形态注册失败: {e}")
-            # 继续执行，不影响指标计算
+            # 继续执行,不影响指标计算
 
     
     def set_parameters_Adx_Adx_Adx_adx(self, **kwargs):
-        """设置指标参数，可设置 'period', 'strong_trend'"""
+        """设置指标参数,可设置 'period', 'strong_trend'"""
         for key, value in kwargs.items():
             if key in self.params:
                 self.params[key] = value
@@ -139,7 +139,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         
         # 确保数据有足够的长度
         if len(df) < period + 1:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({period + 1})，返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({period + 1}),返回原始数据")
             df[f'ADX{period}'] = np.nan
             df[f'PDI{period}'] = np.nan
             df[f'MDI{period}'] = np.nan
@@ -177,7 +177,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         df['tr3'] = abs(df['low'] - df['close'].shift(1))
         df['tr'] = df[['tr1', 'tr2', 'tr3']].max(axis=1)
         
-        # 计算平滑的+DM、-DM和TR
+        # 计算平滑的+DM,-DM和TR
         df['smooth_plus_dm'] = df['plus_dm'].rolling(window=period).sum()
         df['smooth_minus_dm'] = df['minus_dm'].rolling(window=period).sum()
         df['smooth_tr'] = df['tr'].rolling(window=period).sum()
@@ -206,7 +206,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         # 添加趋势方向
         df[f'trend_direction_{period}'] = np.where(df[f'PDI{period}'] > df[f'MDI{period}'], 'up', 'down')
         
-        # 创建标准字段名映射（为了兼容性）
+        # 创建标准字段名映射(为了兼容性)
         df['ADX'] = df[f'ADX{period}']
         df['PDI'] = df[f'PDI{period}']
         df['MDI'] = df[f'MDI{period}']
@@ -271,7 +271,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         # 2. -DI上穿+DI为卖出信号
         df_copy.loc[crossover(df_copy['MDI'], df_copy['PDI']), 'adx_signal'] = -1
         
-        # 3. 强化信号：ADX > 25表示趋势显著  # TODO: 将魔法数字提取到配置中
+        # 3. 强化信号:ADX > 25表示趋势显著  # TODO: 将魔法数字提取到配置中
         df_copy.loc[(df_copy['adx_signal'] == 1) & (df_copy['ADX'] < 25), 'adx_signal'] = 0  # TODO: 将魔法数字提取到配置中
         df_copy.loc[(df_copy['adx_signal'] == -1) & (df_copy['ADX'] < 25), 'adx_signal'] = 0  # TODO: 将魔法数字提取到配置中
         
@@ -282,12 +282,12 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         生成ADX指标标准化交易信号
         
         Args:
-            data: 输入数据，包含OHLCV数据
+            data: 输入数据,包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
                 
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 确保已计算ADX指标
         if not self.has_result():
@@ -329,91 +329,91 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
             logger.warning(f"计算ATR失败: {e}")
             atr_values = pd.Series(0, index=data.index)
         
-        # 1. +DI上穿-DI，买入信号
+        # 1. +DI上穿-DI,买入信号
         di_crossover = crossover(pdi, mdi)
         signals.loc[di_crossover, 'buy_signal'] = True
         signals.loc[di_crossover, 'neutral_signal'] = False
         signals.loc[di_crossover, 'trend'] = 1
         signals.loc[di_crossover, 'signal_type'] = 'DI金叉'
-        signals.loc[di_crossover, 'signal_desc'] = '+DI上穿-DI，多头趋势确立'
+        signals.loc[di_crossover, 'signal_desc'] = '+DI上穿-DI,多头趋势确立'
         signals.loc[di_crossover, 'confidence'] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossover, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossover, 'risk_level'] = '中'
         
-        # 2. -DI上穿+DI，卖出信号
+        # 2. -DI上穿+DI,卖出信号
         di_crossunder = crossover(mdi, pdi)
         signals.loc[di_crossunder, 'sell_signal'] = True
         signals.loc[di_crossunder, 'neutral_signal'] = False
         signals.loc[di_crossunder, 'trend'] = -1
         signals.loc[di_crossunder, 'signal_type'] = 'DI死叉'
-        signals.loc[di_crossunder, 'signal_desc'] = '-DI上穿+DI，空头趋势确立'
+        signals.loc[di_crossunder, 'signal_desc'] = '-DI上穿+DI,空头趋势确立'
         signals.loc[di_crossunder, 'confidence'] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossunder, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[di_crossunder, 'risk_level'] = '中'
         
-        # 3. ADX上升且大于阈值，趋势增强信号  # TODO: 将魔法数字提取到配置中
+        # 3. ADX上升且大于阈值,趋势增强信号  # TODO: 将魔法数字提取到配置中
         adx_rising = (adx > adx.shift(1)) & (adx > 25)  # TODO: 将魔法数字提取到配置中
         
-        # 强多头趋势信号：ADX上升且+DI>-DI
+        # 强多头趋势信号:ADX上升且+DI>-DI
         strong_uptrend = adx_rising & (pdi > mdi)
         signals.loc[strong_uptrend, 'buy_signal'] = True
         signals.loc[strong_uptrend, 'neutral_signal'] = False
         signals.loc[strong_uptrend, 'trend'] = 1
         signals.loc[strong_uptrend, 'signal_type'] = '强多头趋势'
-        signals.loc[strong_uptrend, 'signal_desc'] = 'ADX上升且+DI>-DI，多头趋势增强'
+        signals.loc[strong_uptrend, 'signal_desc'] = 'ADX上升且+DI>-DI,多头趋势增强'
         signals.loc[strong_uptrend, 'confidence'] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, 'position_size'] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, 'risk_level'] = '低'
         
-        # 强空头趋势信号：ADX上升且-DI>+DI
+        # 强空头趋势信号:ADX上升且-DI>+DI
         strong_downtrend = adx_rising & (mdi > pdi)
         signals.loc[strong_downtrend, 'sell_signal'] = True
         signals.loc[strong_downtrend, 'neutral_signal'] = False
         signals.loc[strong_downtrend, 'trend'] = -1
         signals.loc[strong_downtrend, 'signal_type'] = '强空头趋势'
-        signals.loc[strong_downtrend, 'signal_desc'] = 'ADX上升且-DI>+DI，空头趋势增强'
+        signals.loc[strong_downtrend, 'signal_desc'] = 'ADX上升且-DI>+DI,空头趋势增强'
         signals.loc[strong_downtrend, 'confidence'] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, 'position_size'] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, 'risk_level'] = '低'
         
-        # 4. ADX下降，趋势减弱信号  # TODO: 将魔法数字提取到配置中
+        # 4. ADX下降,趋势减弱信号  # TODO: 将魔法数字提取到配置中
         adx_falling = (adx < adx.shift(1)) & (adx > 20)  # TODO: 将魔法数字提取到配置中
         
-        # 多头趋势减弱信号：ADX下降且+DI>-DI
+        # 多头趋势减弱信号:ADX下降且+DI>-DI
         weakening_uptrend = adx_falling & (pdi > mdi)
         signals.loc[weakening_uptrend, 'buy_signal'] = True
         signals.loc[weakening_uptrend, 'neutral_signal'] = False
         signals.loc[weakening_uptrend, 'trend'] = 1
         signals.loc[weakening_uptrend, 'signal_type'] = '减弱多头趋势'
-        signals.loc[weakening_uptrend, 'signal_desc'] = 'ADX下降且+DI>-DI，多头趋势减弱'
+        signals.loc[weakening_uptrend, 'signal_desc'] = 'ADX下降且+DI>-DI,多头趋势减弱'
         signals.loc[weakening_uptrend, 'confidence'] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_uptrend, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_uptrend, 'risk_level'] = '中'
         
-        # 空头趋势减弱信号：ADX下降且-DI>+DI
+        # 空头趋势减弱信号:ADX下降且-DI>+DI
         weakening_downtrend = adx_falling & (mdi > pdi)
         signals.loc[weakening_downtrend, 'sell_signal'] = True
         signals.loc[weakening_downtrend, 'neutral_signal'] = False
         signals.loc[weakening_downtrend, 'trend'] = -1
         signals.loc[weakening_downtrend, 'signal_type'] = '减弱空头趋势'
-        signals.loc[weakening_downtrend, 'signal_desc'] = 'ADX下降且-DI>+DI，空头趋势减弱'
+        signals.loc[weakening_downtrend, 'signal_desc'] = 'ADX下降且-DI>+DI,空头趋势减弱'
         signals.loc[weakening_downtrend, 'confidence'] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_downtrend, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[weakening_downtrend, 'risk_level'] = '中'
         
-        # 5. ADX非常低，无趋势信号  # TODO: 将魔法数字提取到配置中
+        # 5. ADX非常低,无趋势信号  # TODO: 将魔法数字提取到配置中
         no_trend = adx < 15  # TODO: 将魔法数字提取到配置中
         signals.loc[no_trend, 'neutral_signal'] = True
         signals.loc[no_trend, 'buy_signal'] = False
         signals.loc[no_trend, 'sell_signal'] = False
         signals.loc[no_trend, 'trend'] = 0
         signals.loc[no_trend, 'signal_type'] = '无趋势'
-        signals.loc[no_trend, 'signal_desc'] = 'ADX低于15，市场处于无趋势震荡状态'
+        signals.loc[no_trend, 'signal_desc'] = 'ADX低于15,市场处于无趋势震荡状态'
         signals.loc[no_trend, 'confidence'] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[no_trend, 'position_size'] = 0.0
         signals.loc[no_trend, 'risk_level'] = '中'
         
-        # 6. ADX非常高，趋势过热信号  # TODO: 将魔法数字提取到配置中
+        # 6. ADX非常高,趋势过热信号  # TODO: 将魔法数字提取到配置中
         extreme_trend = adx > 50  # TODO: 将魔法数字提取到配置中
         
         # 根据DI判断是多头还是空头过热
@@ -422,7 +422,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         signals.loc[extreme_uptrend, 'neutral_signal'] = False
         signals.loc[extreme_uptrend, 'trend'] = 1
         signals.loc[extreme_uptrend, 'signal_type'] = '极端多头趋势'
-        signals.loc[extreme_uptrend, 'signal_desc'] = 'ADX极高且+DI>-DI，多头趋势过热'
+        signals.loc[extreme_uptrend, 'signal_desc'] = 'ADX极高且+DI>-DI,多头趋势过热'
         signals.loc[extreme_uptrend, 'confidence'] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_uptrend, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_uptrend, 'risk_level'] = '高'
@@ -432,7 +432,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         signals.loc[extreme_downtrend, 'neutral_signal'] = False
         signals.loc[extreme_downtrend, 'trend'] = -1
         signals.loc[extreme_downtrend, 'signal_type'] = '极端空头趋势'
-        signals.loc[extreme_downtrend, 'signal_desc'] = 'ADX极高且-DI>+DI，空头趋势过热'
+        signals.loc[extreme_downtrend, 'signal_desc'] = 'ADX极高且-DI>+DI,空头趋势过热'
         signals.loc[extreme_downtrend, 'confidence'] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_downtrend, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[extreme_downtrend, 'risk_level'] = '高'
@@ -446,7 +446,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         signals.loc[adxr_confirmed_uptrend, 'neutral_signal'] = False
         signals.loc[adxr_confirmed_uptrend, 'trend'] = 1
         signals.loc[adxr_confirmed_uptrend, 'signal_type'] = 'ADXR确认多头'
-        signals.loc[adxr_confirmed_uptrend, 'signal_desc'] = 'ADXR与ADX同步上升，确认多头趋势'
+        signals.loc[adxr_confirmed_uptrend, 'signal_desc'] = 'ADXR与ADX同步上升,确认多头趋势'
         signals.loc[adxr_confirmed_uptrend, 'confidence'] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[adxr_confirmed_uptrend, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[adxr_confirmed_uptrend, 'risk_level'] = '低'
@@ -457,7 +457,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         signals.loc[adxr_confirmed_downtrend, 'neutral_signal'] = False
         signals.loc[adxr_confirmed_downtrend, 'trend'] = -1
         signals.loc[adxr_confirmed_downtrend, 'signal_type'] = 'ADXR确认空头'
-        signals.loc[adxr_confirmed_downtrend, 'signal_desc'] = 'ADXR与ADX同步上升，确认空头趋势'
+        signals.loc[adxr_confirmed_downtrend, 'signal_desc'] = 'ADXR与ADX同步上升,确认空头趋势'
         signals.loc[adxr_confirmed_downtrend, 'confidence'] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[adxr_confirmed_downtrend, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[adxr_confirmed_downtrend, 'risk_level'] = '低'
@@ -467,21 +467,21 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
             if i > 0:  # 跳过第一个数据点
                 adx_val = adx.iloc[i] if i < len(adx) else 0
                 
-                # ADX > 45，极强趋势，+15分  # TODO: 将魔法数字提取到配置中
+                # ADX > 45,极强趋势,+15分  # TODO: 将魔法数字提取到配置中
                 if adx_val > 45:  # TODO: 将魔法数字提取到配置中
                     if signals.iloc[i]['trend'] > 0:
                         signals.iloc[i, signals.columns.get_loc('score')] = 85  # TODO: 将魔法数字提取到配置中
                     elif signals.iloc[i]['trend'] < 0:
                         signals.iloc[i, signals.columns.get_loc('score')] = 15  # TODO: 将魔法数字提取到配置中
                 
-                # ADX > 25，强趋势，+10分  # TODO: 将魔法数字提取到配置中
+                # ADX > 25,强趋势,+10分  # TODO: 将魔法数字提取到配置中
                 elif adx_val > 25:  # TODO: 将魔法数字提取到配置中
                     if signals.iloc[i]['trend'] > 0:
                         signals.iloc[i, signals.columns.get_loc('score')] = 70  # TODO: 将魔法数字提取到配置中
                     elif signals.iloc[i]['trend'] < 0:
                         signals.iloc[i, signals.columns.get_loc('score')] = 30  # TODO: 将魔法数字提取到配置中
                 
-                # ADX < 15，无趋势，分数接近50  # TODO: 将魔法数字提取到配置中
+                # ADX < 15,无趋势,分数接近50  # TODO: 将魔法数字提取到配置中
                 elif adx_val < 15:  # TODO: 将魔法数字提取到配置中
                     signals.iloc[i, signals.columns.get_loc('score')] = 50  # TODO: 将魔法数字提取到配置中
         
@@ -510,31 +510,31 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         # 根据ADX值判断市场环境
         signals['market_env'] = '中性'  # 默认中性市场
         
-        # ADX高且+DI>-DI，上升趋势市场
+        # ADX高且+DI>-DI,上升趋势市场
         uptrend_market = (adx > 25) & (pdi > mdi)  # TODO: 将魔法数字提取到配置中
         signals.loc[uptrend_market, 'market_env'] = '强势'
         
-        # ADX高且-DI>+DI，下降趋势市场
+        # ADX高且-DI>+DI,下降趋势市场
         downtrend_market = (adx > 25) & (mdi > pdi)  # TODO: 将魔法数字提取到配置中
         signals.loc[downtrend_market, 'market_env'] = '弱势'
         
-        # ADX低，震荡市场
+        # ADX低,震荡市场
         strong_sideways = adx < 15  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_sideways, 'market_env'] = '震荡'
         
         # 设置成交量确认
         if 'volume' in data.columns:
-            # 如果有成交量数据，检查成交量是否支持当前信号
+            # 如果有成交量数据,检查成交量是否支持当前信号
             vol = data['volume']
             vol_avg = vol.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
             
             # 成交量大于20日均量1.5倍为放量
             vol_increase = vol > vol_avg * 1.5  # TODO: 将魔法数字提取到配置中
             
-            # 买入信号且成交量放大，确认信号
+            # 买入信号且成交量放大,确认信号
             signals.loc[signals['buy_signal'] & vol_increase, 'volume_confirmation'] = True
             
-            # 卖出信号且成交量放大，确认信号
+            # 卖出信号且成交量放大,确认信号
             signals.loc[signals['sell_signal'] & vol_increase, 'volume_confirmation'] = True
         
         return signals 
@@ -548,7 +548,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
             **kwargs: 其他参数
             
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算ADX
         if not self.has_result():
@@ -560,7 +560,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         period = self.params["period"]
         strong_trend = self.params["strong_trend"]
         
-        # 获取ADX和DI数据，优先使用标准字段名
+        # 获取ADX和DI数据,优先使用标准字段名
         adx = self._result.get('ADX', self._result.get(f'ADX{period}', pd.Series(np.nan, index=data.index)))
         pdi = self._result.get('PDI', self._result.get(f'PDI{period}', pd.Series(np.nan, index=data.index)))
         mdi = self._result.get('MDI', self._result.get(f'MDI{period}', pd.Series(np.nan, index=data.index)))
@@ -568,37 +568,37 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         # 初始化评分
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. ADX强度评分（-20到+40分）
+        # 1. ADX强度评分(-20到+40分)
         adx_strength_score = pd.Series(0.0, index=data.index)
         
-        # ADX > strong_trend（强趋势）+30分
+        # ADX > strong_trend(强趋势)+30分
         strong_trend_mask = adx > strong_trend
         adx_strength_score += strong_trend_mask * 30  # TODO: 将魔法数字提取到配置中
         
-        # ADX > strong_trend * 1.5（极强趋势）+40分  # TODO: 将魔法数字提取到配置中
+        # ADX > strong_trend * 1.5(极强趋势)+40分  # TODO: 将魔法数字提取到配置中
         very_strong_trend_mask = adx > strong_trend * 1.5  # TODO: 将魔法数字提取到配置中
         adx_strength_score += very_strong_trend_mask * 10  # 额外10分
         
-        # ADX < strong_trend * 0.6（弱趋势）-20分  # TODO: 将魔法数字提取到配置中
+        # ADX < strong_trend * 0.6(弱趋势)-20分  # TODO: 将魔法数字提取到配置中
         weak_trend_mask = adx < strong_trend * 0.6  # TODO: 将魔法数字提取到配置中
         adx_strength_score -= weak_trend_mask * 20  # TODO: 将魔法数字提取到配置中
         
         score += adx_strength_score
         
-        # 2. DI线位置评分（-15到+15分）
+        # 2. DI线位置评分(-15到+15分)
         di_position_score = pd.Series(0.0, index=data.index)
         
-        # +DI > -DI（多头优势）+15分
+        # +DI > -DI(多头优势)+15分
         bullish_di_mask = pdi > mdi
         di_position_score += bullish_di_mask * 15  # TODO: 将魔法数字提取到配置中
         
-        # -DI > +DI（空头优势）-15分
+        # -DI > +DI(空头优势)-15分
         bearish_di_mask = mdi > pdi
         di_position_score -= bearish_di_mask * 15  # TODO: 将魔法数字提取到配置中
         
         score += di_position_score
         
-        # 3. ADX趋势评分（-10到+15分）  # TODO: 将魔法数字提取到配置中
+        # 3. ADX趋势评分(-10到+15分)  # TODO: 将魔法数字提取到配置中
         adx_trend_score = pd.Series(0.0, index=data.index)
         
         if len(adx) >= 3:  # TODO: 将魔法数字提取到配置中
@@ -612,26 +612,26 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         
         score += adx_trend_score
         
-        # 4. ADX动量评分（-15到+15分）  # TODO: 将魔法数字提取到配置中
+        # 4. ADX动量评分(-15到+15分)  # TODO: 将魔法数字提取到配置中
         adx_momentum_score = pd.Series(0.0, index=data.index)
         
         if len(adx) >= 6:  # TODO: 将魔法数字提取到配置中
             # ADX与5日前相比的变化
             adx_momentum = adx - adx.shift(5)  # TODO: 将魔法数字提取到配置中
-            adx_momentum_score = adx_momentum / 5  # 每天上升1点，得1分  # TODO: 将魔法数字提取到配置中
+            adx_momentum_score = adx_momentum / 5  # 每天上升1点,得1分  # TODO: 将魔法数字提取到配置中
             adx_momentum_score = adx_momentum_score.clip(-15, 15)  # 限制在±15分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         score += adx_momentum_score
         
-        # 5. 趋势交叉评分（-15到+15分）  # TODO: 将魔法数字提取到配置中
+        # 5. 趋势交叉评分(-15到+15分)  # TODO: 将魔法数字提取到配置中
         cross_score = pd.Series(0.0, index=data.index)
         
         if len(pdi) >= 2 and len(mdi) >= 2:
-            # +DI上穿-DI，加15分
+            # +DI上穿-DI,加15分
             pdi_cross_above_mdi = (pdi > mdi) & (pdi.shift(1) <= mdi.shift(1))
             cross_score += pdi_cross_above_mdi * 15  # TODO: 将魔法数字提取到配置中
             
-            # -DI上穿+DI，减15分
+            # -DI上穿+DI,减15分
             mdi_cross_above_pdi = (mdi > pdi) & (mdi.shift(1) <= pdi.shift(1))
             cross_score -= mdi_cross_above_pdi * 15  # TODO: 将魔法数字提取到配置中
         
@@ -687,7 +687,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         di_sum = last_pdi + last_mdi
         di_ratio = di_diff / di_sum if di_sum > 0 else 0
 
-        di_confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 + di_ratio * 0.4  # 差距越大，置信度越高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        di_confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 + di_ratio * 0.4  # 差距越大,置信度越高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 3. 基于形态的置信度  # TODO: 将魔法数字提取到配置中
         pattern_confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -730,7 +730,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         if not self.has_result():
             self._calculate_adx(data)
 
-        # 如果没有结果或数据不足，返回空DataFrame
+        # 如果没有结果或数据不足,返回空DataFrame
         if self._result is None or len(self._result) < 2:
             return pd.DataFrame(index=data.index)
 
@@ -751,8 +751,8 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         patterns_df['ADX_STRONG_FALLING'] = (adx > strong_trend) & (adx < adx.shift(1))
         patterns_df['ADX_WEAK_TREND'] = adx <= strong_trend
 
-        # 🔧 关键修复：添加ADX_TREND_STRENGTH形态计算
-        # ADX趋势强度：基于ADX值的强度分级
+        # 🔧 关键修复:添加ADX_TREND_STRENGTH形态计算
+        # ADX趋势强度:基于ADX值的强度分级
         patterns_df['ADX_TREND_STRENGTH'] = (
             (adx > 25) |  # 强趋势  # TODO: 将魔法数字提取到配置中
             (adx > 20) |  # 中等趋势  # TODO: 将魔法数字提取到配置中
@@ -769,12 +769,12 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
 
         # 4. ADX趋势反转形态  # TODO: 将魔法数字提取到配置中
         if len(adx) >= 5:  # TODO: 将魔法数字提取到配置中
-            # ADX趋势增强：连续3天上升且之前连续下降
+            # ADX趋势增强:连续3天上升且之前连续下降
             adx_rising_3 = (adx > adx.shift(1)) & (adx.shift(1) > adx.shift(2)) & (adx.shift(2) > adx.shift(3))  # TODO: 将魔法数字提取到配置中
             adx_falling_before = (adx.shift(3) < adx.shift(4)) & (adx.shift(4) < adx.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_TREND_STRENGTHENING'] = adx_rising_3 & adx_falling_before
 
-            # ADX趋势减弱：连续3天下降且之前连续上升
+            # ADX趋势减弱:连续3天下降且之前连续上升
             adx_falling_3 = (adx < adx.shift(1)) & (adx.shift(1) < adx.shift(2)) & (adx.shift(2) < adx.shift(3))  # TODO: 将魔法数字提取到配置中
             adx_rising_before = (adx.shift(3) > adx.shift(4)) & (adx.shift(4) > adx.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_TREND_WEAKENING'] = adx_falling_3 & adx_rising_before
@@ -788,7 +788,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         patterns_df['ADX_EXTREME_UPTREND'] = (pdi > mdi) & (pdi_mdi_ratio > 3)  # TODO: 将魔法数字提取到配置中
         patterns_df['ADX_EXTREME_DOWNTREND'] = (mdi > pdi) & (pdi_mdi_ratio > 3)  # TODO: 将魔法数字提取到配置中
 
-        # 确保所有列都是布尔类型，填充NaN为False
+        # 确保所有列都是布尔类型,填充NaN为False
         for col in patterns_df.columns:
             patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
@@ -827,7 +827,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_STRONG_RISING",
             display_name="ADX强度上升趋势",
-            description="ADX值高于阈值且继续上升，表示强趋势增强",
+            description="ADX值高于阈值且继续上升,表示强趋势增强",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
             score_impact=0.0,
@@ -837,7 +837,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_STRONG_FALLING",
             display_name="ADX强度下降趋势",
-            description="ADX值高于阈值但开始下降，表示强趋势可能减弱",
+            description="ADX值高于阈值但开始下降,表示强趋势可能减弱",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -847,7 +847,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_WEAK_TREND",
             display_name="ADX弱趋势",
-            description="ADX值低于阈值，表示趋势不明显，可能处于震荡市场",
+            description="ADX值低于阈值,表示趋势不明显,可能处于震荡市场",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -858,7 +858,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_BULLISH_CROSS",
             display_name="ADX看涨交叉",
-            description="+DI上穿-DI，表示可能开始上升趋势",
+            description="+DI上穿-DI,表示可能开始上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -868,7 +868,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_BEARISH_CROSS",
             display_name="ADX看跌交叉",
-            description="-DI上穿+DI，表示可能开始下降趋势",
+            description="-DI上穿+DI,表示可能开始下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -879,7 +879,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_UPTREND",
             display_name="ADX上升趋势",
-            description="+DI大于-DI，表示处于上升趋势",
+            description="+DI大于-DI,表示处于上升趋势",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -889,7 +889,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_DOWNTREND",
             display_name="ADX下降趋势",
-            description="-DI大于+DI，表示处于下降趋势",
+            description="-DI大于+DI,表示处于下降趋势",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -900,7 +900,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_TREND_STRENGTHENING",
             display_name="ADX趋势增强",
-            description="ADX从下降转为上升，表示趋势即将增强",
+            description="ADX从下降转为上升,表示趋势即将增强",
             pattern_type="NEUTRAL",
             default_strength="STRONG",
             score_impact=0.0,
@@ -910,18 +910,18 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_TREND_WEAKENING",
             display_name="ADX趋势减弱",
-            description="ADX从上升转为下降，表示趋势即将减弱",
+            description="ADX从上升转为下降,表示趋势即将减弱",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
             polarity="NEUTRAL"
         )
 
-        # 🔧 关键修复：添加ADX_TREND_STRENGTH形态注册
+        # 🔧 关键修复:添加ADX_TREND_STRENGTH形态注册
         self.register_pattern_to_registry(
             pattern_id="ADX_TREND_STRENGTH",
             display_name="ADX趋势强度",
-            description="ADX值表示当前趋势的强度，值越高趋势越强",
+            description="ADX值表示当前趋势的强度,值越高趋势越强",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -932,7 +932,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_EXTREME_UPTREND",
             display_name="ADX极端上升趋势",
-            description="+DI远大于-DI，表示极端上升趋势，可能即将反转",
+            description="+DI远大于-DI,表示极端上升趋势,可能即将反转",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=18.0,  # TODO: 将魔法数字提取到配置中
@@ -942,7 +942,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.register_pattern_to_registry(
             pattern_id="ADX_EXTREME_DOWNTREND",
             display_name="ADX极端下降趋势",
-            description="-DI远大于+DI，表示极端下降趋势，可能即将反转",
+            description="-DI远大于+DI,表示极端下降趋势,可能即将反转",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-18.0,  # TODO: 将魔法数字提取到配置中
@@ -983,7 +983,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         
         Args:
             df: 包含ADX指标的Data_frame
-            ax: matplotlib轴对象，如果为None则创建新的
+            ax: matplotlib轴对象,如果为None则创建新的
             **kwargs: 额外绘图参数
             
         Returns:
@@ -995,7 +995,7 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         required_columns = ['PDI', 'MDI', 'ADX', 'ADXR']
         self._validate_dataframe_adx(df, required_columns)
         
-        # 创建新的轴对象（如果未提供）
+        # 创建新的轴对象(如果未提供)
         if ax is None:
             fig, ax = plt.subplots(figsize=(10, 5))  # TODO: 将魔法数字提取到配置中
             
@@ -1077,7 +1077,7 @@ from db.sql_manager import SQLManager, QueryType
                 # 使用默认参数
                 params = self._default_parameters.copy()
             
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 setattr(self, key, value)
 
@@ -1087,7 +1087,7 @@ from db.sql_manager import SQLManager, QueryType
             self.params.update(params)
                     
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     # ==================== 抽象方法实现 ====================
@@ -1119,7 +1119,7 @@ from db.sql_manager import SQLManager, QueryType
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取ADX形态"""
+        """真实实现:获取ADX形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -1152,13 +1152,13 @@ from db.sql_manager import SQLManager, QueryType
             # 6. ADX下降形态  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_FALLING'] = adx_values < adx_values.shift(1)
 
-            # 7. ADX突破形态（从弱趋势进入强趋势）  # TODO: 将魔法数字提取到配置中
+            # 7. ADX突破形态(从弱趋势进入强趋势)  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_BREAKOUT'] = (adx_values > 25) & (adx_values.shift(1) <= 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            # 8. ADX回落形态（从强趋势回到弱趋势）  # TODO: 将魔法数字提取到配置中
+            # 8. ADX回落形态(从强趋势回到弱趋势)  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_PULLBACK'] = (adx_values < 25) & (adx_values.shift(1) >= 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            # 9. ADX持续强势形态（连续3期以上强趋势）  # TODO: 将魔法数字提取到配置中
+            # 9. ADX持续强势形态(连续3期以上强趋势)  # TODO: 将魔法数字提取到配置中
             strong_trend = adx_values > 25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns_df['ADX_SUSTAINED_STRENGTH'] = (
                 strong_trend &
@@ -1176,7 +1176,7 @@ from db.sql_manager import SQLManager, QueryType
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算ADX原始评分"""
+        """真实实现:计算ADX原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -1209,11 +1209,11 @@ from db.sql_manager import SQLManager, QueryType
             score -= no_trend * 20  # TODO: 将魔法数字提取到配置中
 
             # 2. 基于ADX趋势的评分
-            # ADX上升加分（趋势加强）
+            # ADX上升加分(趋势加强)
             adx_rising = adx_values > adx_values.shift(1)
             score += adx_rising * 8  # TODO: 将魔法数字提取到配置中
 
-            # ADX下降减分（趋势减弱）
+            # ADX下降减分(趋势减弱)
             adx_falling = adx_values < adx_values.shift(1)
             score -= adx_falling * 8  # TODO: 将魔法数字提取到配置中
 
@@ -1238,7 +1238,7 @@ from db.sql_manager import SQLManager, QueryType
             score += sustained_strength * 10
 
             # 5. 基于ADX绝对值的评分调整  # TODO: 将魔法数字提取到配置中
-            # ADX值越高，评分调整越大
+            # ADX值越高,评分调整越大
             adx_bonus = np.minimum(adx_values / 5, 10)  # 最多10分奖励  # TODO: 将魔法数字提取到配置中
             score += adx_bonus
 
@@ -1247,7 +1247,7 @@ from db.sql_manager import SQLManager, QueryType
 
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成ADX交易信号"""
+        """真实实现:生成ADX交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -1296,7 +1296,7 @@ from db.sql_manager import SQLManager, QueryType
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算ADX综合评分"""
+        """真实实现:计算ADX综合评分"""
         if data.empty:
             return {'score': 50.0, 'confidence': 0.0, 'signals': {}}  # TODO: 将魔法数字提取到配置中
 
@@ -1369,7 +1369,7 @@ from db.sql_manager import SQLManager, QueryType
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置ADX参数"""
+        """真实实现:设置ADX参数"""
         # 验证并设置period参数
         if 'period' in kwargs:
             period = kwargs['period']
@@ -1394,15 +1394,15 @@ from db.sql_manager import SQLManager, QueryType
         logger.info(f"ADX参数已更新")
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成ADX交易信号"""
+        """真实实现:生成ADX交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算ADX指标"""
+        """真实实现:计算ADX指标"""
         return self._calculate_adx(data, **kwargs)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """真实实现：计算ADX置信度"""
+        """真实实现:计算ADX置信度"""
         if score.empty:
             return 0.3  # TODO: 将魔法数字提取到配置中
 
@@ -1447,11 +1447,11 @@ from db.sql_manager import SQLManager, QueryType
         return max(0.0, min(1.0, confidence))
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：识别形态"""
+        """兼容性方法:识别形态"""
         return self.get_patterns(data, **kwargs)
 
     def calculate_raw_score_adx(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
     @property
@@ -1463,8 +1463,8 @@ from db.sql_manager import SQLManager, QueryType
             int: 最少需要的数据周期数
         """
         period = self.period
-        return max(period * 2 + 5, 35)  # ADX需要更多数据进行平滑，最少35个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        return max(period * 2 + 5, 35)  # ADX需要更多数据进行平滑,最少35个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 ADX = AverageDirectionalIndex

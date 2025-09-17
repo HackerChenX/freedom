@@ -4,7 +4,7 @@ from indicators.base_indicator import BaseIndicator
 """
 指标计算器实现
 
-提供基础的指标计算器实现，满足依赖注入需求
+提供基础的指标计算器实现,满足依赖注入需求
 """
 
 from typing import Dict, List, Optional, Any, Union
@@ -22,7 +22,7 @@ class IndicatorCalculator(BaseIndicator,IindicatorCalculator):
     """
     基础指标计算器实现
     
-    提供基本的指标计算功能，可以被策略类使用
+    提供基本的指标计算功能,可以被策略类使用
     """
     
     def __init__(self):
@@ -55,7 +55,7 @@ class IndicatorCalculator(BaseIndicator,IindicatorCalculator):
         if 'close' in data.columns:
             return data['close'].rolling(window=period).mean()
         else:
-            logger.warning("数据中没有找到 'close' 列，返回空序列")
+            logger.warning("数据中没有找到 'close' 列,返回空序列")
             return pd.Series(index=data.index, dtype=float)
     
     def get_indicator_type_Indicator_Calculator_Interface(self) -> IndicatorType:
@@ -192,7 +192,7 @@ IIndicatorCalculator = IndicatorCalculator
         计算指标值
         
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
             
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

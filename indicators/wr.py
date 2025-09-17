@@ -8,7 +8,7 @@ from utils.logger import get_logger
 """
 威廉指标(WR_Wr)
 
-与KDJ配合使用，确认超买超卖
+与KDJ配合使用,确认超买超卖
 """
 
 import numpy as np
@@ -36,8 +36,8 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     威廉指标(WR_Wr) (WR_Wr)
 
-    分类：震荡类指标
-    描述：与KDJ配合使用，确认超买超卖
+    分类:震荡类指标
+    描述:与KDJ配合使用,确认超买超卖
     """
 
     def __init__(self, **kwargs):
@@ -48,7 +48,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化WR指标
 
         Args:
-            **kwargs: 指标参数，支持period、overbought、oversold等
+            **kwargs: 指标参数,支持period,overbought,oversold等
         """
         super().__init__()
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
@@ -87,7 +87,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         设置指标参数
 
         Args:
-            **kwargs: 参数字典，支持以下参数：
+            **kwargs: 参数字典,支持以下参数:
                 - period: 计算周期
                 - overbought: 超买阈值
                 - oversold: 超卖阈值
@@ -108,11 +108,11 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("WR_Wr", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -153,7 +153,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         Args:
             df: 包含OHLCV数据的Data_frame
-                必须包含以下列：
+                必须包含以下列:
                 - close: 收盘价
                 - high: 最高价
                 - low: 最低价
@@ -197,7 +197,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算WR
         if not self.has_result():
@@ -213,11 +213,11 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         wr = self._result["wr"]
 
         # 1. 超买超卖区域评分
-        # WR_Wr < -80（超卖）+20分  # TODO: 将魔法数字提取到配置中
+        # WR_Wr < -80(超卖)+20分  # TODO: 将魔法数字提取到配置中
         oversold_condition = wr < -80  # TODO: 将魔法数字提取到配置中
         score += oversold_condition * 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # WR_Wr > -20（超买）-20分  # TODO: 将魔法数字提取到配置中
+        # WR_Wr > -20(超买)-20分  # TODO: 将魔法数字提取到配置中
         overbought_condition = wr > -20  # TODO: 将魔法数字提取到配置中
         score -= overbought_condition * 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
@@ -247,11 +247,11 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score += divergence_score
 
         # 5. WR极端值评分  # TODO: 将魔法数字提取到配置中
-        # WR_Wr < -90（极度超卖）+30分  # TODO: 将魔法数字提取到配置中
+        # WR_Wr < -90(极度超卖)+30分  # TODO: 将魔法数字提取到配置中
         extreme_oversold = wr < -90  # TODO: 将魔法数字提取到配置中
         score += extreme_oversold * 30  # TODO: 将魔法数字提取到配置中
 
-        # WR_Wr > -10（极度超买）-30分
+        # WR_Wr > -10(极度超买)-30分
         extreme_overbought = wr > -10
         score -= extreme_overbought * 30  # TODO: 将魔法数字提取到配置中
 
@@ -430,10 +430,10 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             price_trend = price_extremes[-1] - price_extremes[-2]
             wr_trend = wr_extremes[-1] - wr_extremes[-2]
 
-            # 正背离：价格创新低但WR未创新低
+            # 正背离:价格创新低但WR未创新低
             if price_trend < -0.01 and wr_trend > 2:
                 return "正背离"
-            # 负背离：价格创新高但WR未创新高
+            # 负背离:价格创新高但WR未创新高
             elif price_trend > 0.01 and wr_trend < -2:
                 return "负背离"
 
@@ -477,7 +477,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(wr) < 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
 
-        # 检测V型反转：从极端位置快速反转
+        # 检测V型反转:从极端位置快速反转
         recent_wr = wr.tail(5)  # TODO: 将魔法数字提取到配置中
 
         # 从超卖区快速反转
@@ -550,7 +550,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_OVERBOUGHT",
             display_name="WR超买",
-            description="WR值高于-20，表明市场可能超买，存在回调风险",  # TODO: 将魔法数字提取到配置中
+            description="WR值高于-20,表明市场可能超买,存在回调风险",  # TODO: 将魔法数字提取到配置中
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -561,7 +561,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_OVERSOLD",
             display_name="WR超卖",
-            description="WR值低于-80，表明市场可能超卖，存在反弹机会",  # TODO: 将魔法数字提取到配置中
+            description="WR值低于-80,表明市场可能超卖,存在反弹机会",  # TODO: 将魔法数字提取到配置中
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -573,7 +573,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_UPTREND",
             display_name="WR上升趋势",
-            description="WR值连续上升，表明价格相对高点接近",
+            description="WR值连续上升,表明价格相对高点接近",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -584,7 +584,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_DOWNTREND",
             display_name="WR下降趋势",
-            description="WR值连续下降，表明价格相对低点接近",
+            description="WR值连续下降,表明价格相对低点接近",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -596,7 +596,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_CROSS_ABOVE_MID",
             display_name="WR上穿中轴",
-            description="WR从下方穿越-50中轴线，表明买盘力量增强",
+            description="WR从下方穿越-50中轴线,表明买盘力量增强",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -607,7 +607,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_CROSS_BELOW_MID",
             display_name="WR下穿中轴",
-            description="WR从上方穿越-50中轴线，表明卖盘力量增强",
+            description="WR从上方穿越-50中轴线,表明卖盘力量增强",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.MEDIUM,
@@ -619,7 +619,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_BULLISH_DIVERGENCE",
             display_name="WR底背离",
-            description="价格创新低，但WR未创新低，表明下跌动能减弱",
+            description="价格创新低,但WR未创新低,表明下跌动能减弱",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.STRONG,
@@ -630,7 +630,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_BEARISH_DIVERGENCE",
             display_name="WR顶背离",
-            description="价格创新高，但WR未创新高，表明上涨动能减弱",
+            description="价格创新高,但WR未创新高,表明上涨动能减弱",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.STRONG,
@@ -642,7 +642,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_BULLISH_REVERSAL",
             display_name="WR超卖反转",
-            description="WR在超卖区见底回升，表明可能形成底部",
+            description="WR在超卖区见底回升,表明可能形成底部",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BULLISH,
             default_strength=Pattern_strength.STRONG,
@@ -653,7 +653,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.register(
             pattern_id="WR_BEARISH_REVERSAL",
             display_name="WR超买反转",
-            description="WR在超买区触顶回落，表明可能形成顶部",
+            description="WR在超买区触顶回落,表明可能形成顶部",
             indicator_id="WR_Wr",
             pattern_type=Pattern_type.BEARISH,
             default_strength=Pattern_strength.STRONG,
@@ -761,7 +761,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             (wr.shift(4) > -20) & (wr < -50) & (wr_change_5 < -20)
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 确保所有列都是布尔类型，填充NaN为False
+        # 确保所有列都是布尔类型,填充NaN为False
         for col in patterns_df.columns:
             patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
@@ -840,14 +840,14 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 1. 计算原始评分序列
             raw_scores = self.calculate_raw_score_Wr_Wr(data, **kwargs)
 
-            # 如果数据不足，返回中性评分
+            # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
                 return {
                     "score": 50.0,
                     "confidence": 0.5,
                 }  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            # 取最近的评分作为最终评分，但考虑近期趋势
+            # 取最近的评分作为最终评分,但考虑近期趋势
             recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
@@ -876,7 +876,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_EXTREME_OVERSOLD",
             display_name="WR极度超卖",
-            description="WR值低于-90，表明市场极度超卖，存在强烈反弹机会",  # TODO: 将魔法数字提取到配置中
+            description="WR值低于-90,表明市场极度超卖,存在强烈反弹机会",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -886,7 +886,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_OVERSOLD",
             display_name="WR超卖",
-            description="WR值在-90到-80之间，表明市场超卖",
+            description="WR值在-90到-80之间,表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -896,7 +896,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_OVERBOUGHT",
             display_name="WR超买",
-            description="WR值在-20到-10之间，表明市场超买",
+            description="WR值在-20到-10之间,表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -906,18 +906,18 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_EXTREME_OVERBOUGHT",
             display_name="WR极度超买",
-            description="WR值高于-10，表明市场极度超买，存在强烈回调风险",
+            description="WR值高于-10,表明市场极度超买,存在强烈回调风险",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE",
         )
 
-        # 注册WR状态形态（从centralized mapping迁移）
+        # 注册WR状态形态(从centralized mapping迁移)
         self.register_pattern_to_registry(
             pattern_id="WR_RISING",
             display_name="WR上升",
-            description="威廉指标上升，超卖状态缓解",
+            description="威廉指标上升,超卖状态缓解",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -948,7 +948,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_CROSS_ABOVE_OVERSOLD",
             display_name="WR上穿超卖线",
-            description="WR从超卖区域向上突破-80线，看涨信号",
+            description="WR从超卖区域向上突破-80线,看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -958,7 +958,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_CROSS_BELOW_OVERBOUGHT",
             display_name="WR下穿超买线",
-            description="WR从超买区域向下突破-20线，看跌信号",
+            description="WR从超买区域向下突破-20线,看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -969,7 +969,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_BULLISH_REVERSAL",
             display_name="WR超卖反转",
-            description="WR在超卖区见底回升，表明可能形成底部",
+            description="WR在超卖区见底回升,表明可能形成底部",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=18.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -979,7 +979,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="WR_BEARISH_REVERSAL",
             display_name="WR超买反转",
-            description="WR在超买区触顶回落，表明可能形成顶部",
+            description="WR在超买区触顶回落,表明可能形成顶部",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-18.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -1012,7 +1012,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "超买区域": {
                 "id": "超买区域",
                 "name": "超买区域",
-                "description": "指标进入超买区域，可能面临回调压力",
+                "description": "指标进入超买区域,可能面临回调压力",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
                 "score_impact": -10.0,
@@ -1020,7 +1020,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "超卖区域": {
                 "id": "超卖区域",
                 "name": "超卖区域",
-                "description": "指标进入超卖区域，可能出现反弹机会",
+                "description": "指标进入超卖区域,可能出现反弹机会",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
                 "score_impact": 10.0,
@@ -1028,7 +1028,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "中性区域": {
                 "id": "中性区域",
                 "name": "中性区域",
-                "description": "指标处于中性区域，趋势不明确",
+                "description": "指标处于中性区域,趋势不明确",
                 "type": "NEUTRAL",
                 "strength": "WEAK",
                 "score_impact": 0.0,
@@ -1037,7 +1037,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "上升趋势": {
                 "id": "上升趋势",
                 "name": "上升趋势",
-                "description": "指标显示上升趋势，看涨信号",
+                "description": "指标显示上升趋势,看涨信号",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 15.0,  # TODO: 将魔法数字提取到配置中
@@ -1045,7 +1045,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "下降趋势": {
                 "id": "下降趋势",
                 "name": "下降趋势",
-                "description": "指标显示下降趋势，看跌信号",
+                "description": "指标显示下降趋势,看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -15.0,  # TODO: 将魔法数字提取到配置中
@@ -1054,7 +1054,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "买入信号": {
                 "id": "买入信号",
                 "name": "买入信号",
-                "description": "指标产生买入信号，建议关注",
+                "description": "指标产生买入信号,建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
                 "score_impact": 20.0,  # TODO: 将魔法数字提取到配置中
@@ -1062,7 +1062,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "卖出信号": {
                 "id": "卖出信号",
                 "name": "卖出信号",
-                "description": "指标产生卖出信号，建议谨慎",
+                "description": "指标产生卖出信号,建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0,  # TODO: 将魔法数字提取到配置中
@@ -1102,7 +1102,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取WR形态"""
+        """真实实现:获取WR形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -1152,7 +1152,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if (
             len(data) >= 20
         ):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # 简化的背离检测：价格创新高但WR未创新高
+            # 简化的背离检测:价格创新高但WR未创新高
             price_high = data["high"].rolling(10).max()
             wr_high = wr_values.rolling(10).max()
             patterns_df["WR_BEARISH_DIVERGENCE"] = (
@@ -1161,7 +1161,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 & (wr_values > -50)  # TODO: 将魔法数字提取到配置中
             )
 
-            # 底背离形态：价格创新低但WR未创新低
+            # 底背离形态:价格创新低但WR未创新低
             price_low = data["low"].rolling(10).min()
             wr_low = wr_values.rolling(10).min()
             patterns_df["WR_BULLISH_DIVERGENCE"] = (
@@ -1173,7 +1173,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算WR原始评分"""
+        """真实实现:计算WR原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -1232,7 +1232,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         score -= wr_falling * 5  # TODO: 将魔法数字提取到配置中
 
         # 4. 基于WR距离中性位置的评分  # TODO: 将魔法数字提取到配置中
-        # WR越接近-50（中性），评分越接近50  # TODO: 将魔法数字提取到配置中
+        # WR越接近-50(中性),评分越接近50  # TODO: 将魔法数字提取到配置中
         distance_from_neutral = np.abs(wr_values + 50)  # TODO: 将魔法数字提取到配置中
         distance_bonus = np.maximum(0, 10 - distance_from_neutral / 5)  # TODO: 将魔法数字提取到配置中
         score += distance_bonus
@@ -1241,7 +1241,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return score.clip(0, 100)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成WR交易信号"""
+        """真实实现:生成WR交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -1309,7 +1309,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算WR综合评分"""
+        """真实实现:计算WR综合评分"""
         if data.empty:
             return {"score": 50.0, "confidence": 0.0, "signals": {}}  # TODO: 将魔法数字提取到配置中
 
@@ -1381,7 +1381,7 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置WR参数"""
+        """真实实现:设置WR参数"""
         # 验证并设置period参数
         if "period" in kwargs:
             period = kwargs["period"]
@@ -1410,15 +1410,15 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         logger.info(f"WR参数已更新")
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成WR交易信号"""
+        """真实实现:生成WR交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算WR指标"""
+        """真实实现:计算WR指标"""
         return self.calculate_Wr_Wr(data, **kwargs)
 
     def calculate_confidence_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """真实实现：计算WR置信度"""
+        """真实实现:计算WR置信度"""
         if score.empty:
             return 0.3  # TODO: 将魔法数字提取到配置中
 
@@ -1469,19 +1469,19 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return max(0.0, min(1.0, confidence))
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_Wr(score, patterns, signals)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：识别形态"""
+        """兼容性方法:识别形态"""
         return self.get_patterns(data, **kwargs)
 
     def calculate_raw_score_wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
     def register_patterns(self):
-        """真实实现：注册WR形态到全局注册表"""
+        """真实实现:注册WR形态到全局注册表"""
         try:
             registry = PatternRegistry()
 
@@ -1530,8 +1530,8 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         period = getattr(self, "period", 14)  # TODO: 将魔法数字提取到配置中
         return max(
             period + 5, 20
-        )  # WR周期 + 缓冲，最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        )  # WR周期 + 缓冲,最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 WR = WrWr

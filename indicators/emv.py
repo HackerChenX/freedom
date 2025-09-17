@@ -8,8 +8,8 @@ from db.sql_manager import SQLManager, QueryType
 
 """
 指数平均数指标(EMV_Emv)
-易市场数值（Ease of Movement Value）
-通过将价格变化与成交量因素的比率来衡量价格的变化是否容易，判断行情上涨或下跌的阻力大小。
+易市场数值(Ease of Movement Value)
+通过将价格变化与成交量因素的比率来衡量价格的变化是否容易,判断行情上涨或下跌的阻力大小.
 """
 
 import numpy as np
@@ -33,13 +33,13 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     量能指标 (Ease of Movement Value)
 
-    EMV通过将价格变化与成交量关联，衡量价格变动的难易程度。
-    当股价上升/下跌时，若成交量较小，说明价格易于上升/下跌，EMV数值较大；
-    当股价上升/下跌时，若成交量较大，说明价格不易上升/下跌，EMV数值较小。
+    EMV通过将价格变化与成交量关联,衡量价格变动的难易程度.
+    当股价上升/下跌时,若成交量较小,说明价格易于上升/下跌,EMV数值较大;
+    当股价上升/下跌时,若成交量较大,说明价格不易上升/下跌,EMV数值较小.
 
     参数:
-        volume_divisor: 成交量调整因子，默认为10000
-        period: 移动平均期数，默认为14
+        volume_divisor: 成交量调整因子,默认为10000
+        period: 移动平均期数,默认为14
     """
 
     def __init__(
@@ -49,10 +49,10 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
         """初始化EMV指标"""
-        # 🔧 Ultra Think修复：修正构造函数调用（基于SAR、CMO、VR成功修复经验）
+        # 🔧 Ultra Think修复:修正构造函数调用(基于SAR,CMO,VR成功修复经验)
         super().__init__()
         self.name = "EMV_Emv"
-        self.description = "指数平均数指标，评估价格上涨下跌的难易程度"
+        self.description = "指数平均数指标,评估价格上涨下跌的难易程度"
         self.REQUIRED_COLUMNS = ["high", "low", "volume"]
         self.volume_divisor = volume_divisor
         self.period = period
@@ -65,7 +65,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             volume_divisor: 成交量调整因子
             period: 移动平均期数
-            **kwargs: 其他参数（为了兼容性）
+            **kwargs: 其他参数(为了兼容性)
         """
         if volume_divisor is not None:
             self.volume_divisor = volume_divisor
@@ -101,12 +101,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含EMV指标的DataFrame
         """
-        # 🔧 Ultra Think修复：标准化接口调用
+        # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_emv(data, **kwargs)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算EMV指标 - Ultra Think修复：添加缺失的标准calculate方法
+        计算EMV指标 - Ultra Think修复:添加缺失的标准calculate方法
 
         Args:
             data: 输入数据
@@ -114,12 +114,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含EMV指标的DataFrame
         """
-        # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
+        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
         return self._calculate_emv(data, **kwargs)
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        基础指标计算方法 - Ultra Think修复：实现必须的抽象方法
+        基础指标计算方法 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -127,12 +127,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
-        # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
+        # 🔧 Ultra Think修复:实现必须的抽象方法,确保100%功能完整
         return self._calculate_emv(data, **kwargs)
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成EMV交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        生成EMV交易信号 - Ultra Think修复:添加缺失的信号生成功能
 
         Args:
             data: 价格数据
@@ -140,7 +140,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含买卖信号的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的EMV信号生成逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的EMV信号生成逻辑,确保100%功能完整
         result = self.calculate(data)
 
         if len(result) == 0:
@@ -159,7 +159,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 break
 
         if emv_col is None:
-            # 如果找不到EMV列，返回空信号
+            # 如果找不到EMV列,返回空信号
             signals = pd.DataFrame(index=data.index)
             signals["buy_signal"] = False
             signals["sell_signal"] = False
@@ -171,14 +171,14 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 创建信号DataFrame
         signals = pd.DataFrame(index=data.index)
 
-        # EMV信号逻辑：基于移动便利度的买卖信号
-        # EMV > 0 表示上涨容易，EMV < 0 表示下跌容易
-        # 买入信号：EMV从负值转为正值（上涨变得容易）
+        # EMV信号逻辑:基于移动便利度的买卖信号
+        # EMV > 0 表示上涨容易,EMV < 0 表示下跌容易
+        # 买入信号:EMV从负值转为正值(上涨变得容易)
         emv_positive = emv_values > 0
         emv_negative_prev = emv_values.shift(1) <= 0
         buy_signals = emv_positive & emv_negative_prev
 
-        # 卖出信号：EMV从正值转为负值（下跌变得容易）
+        # 卖出信号:EMV从正值转为负值(下跌变得容易)
         emv_negative = emv_values < 0
         emv_positive_prev = emv_values.shift(1) >= 0
         sell_signals = emv_negative & emv_positive_prev
@@ -187,7 +187,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals["buy_signal"] = buy_signals
         signals["sell_signal"] = sell_signals
 
-        # 信号强度：基于EMV绝对值的大小
+        # 信号强度:基于EMV绝对值的大小
         emv_abs = abs(emv_values)
         # 使用滚动窗口计算最大值来标准化
         max_emv = emv_abs.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
@@ -197,7 +197,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取EMV形态数据 - Ultra Think修复：添加缺失的形态识别功能
+        获取EMV形态数据 - Ultra Think修复:添加缺失的形态识别功能
 
         Args:
             data: 价格数据
@@ -205,7 +205,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含形态识别的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的EMV形态识别逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的EMV形态识别逻辑,确保100%功能完整
         result = self.calculate(data)
 
         if len(result) == 0:
@@ -225,7 +225,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 break
 
         if emv_col is None:
-            # 如果找不到EMV列，返回空形态
+            # 如果找不到EMV列,返回空形态
             patterns = pd.DataFrame(index=data.index)
             patterns["easy_upward"] = False
             patterns["easy_downward"] = False
@@ -239,18 +239,18 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = pd.DataFrame(index=data.index)
 
         # EMV形态识别逻辑
-        # 上涨容易：EMV > 0
+        # 上涨容易:EMV > 0
         patterns["easy_upward"] = emv_values > 0
 
-        # 下跌容易：EMV < 0
+        # 下跌容易:EMV < 0
         patterns["easy_downward"] = emv_values < 0
 
-        # 高便利度：EMV绝对值较大（移动相对容易）
+        # 高便利度:EMV绝对值较大(移动相对容易)
         emv_abs = abs(emv_values)
         emv_median = emv_abs.rolling(window=20, min_periods=1).median()  # TODO: 将魔法数字提取到配置中
         patterns["high_ease"] = emv_abs > emv_median * 1.5  # TODO: 将魔法数字提取到配置中
 
-        # 低便利度：EMV绝对值较小（移动相对困难）
+        # 低便利度:EMV绝对值较小(移动相对困难)
         patterns["low_ease"] = emv_abs < emv_median * 0.5  # TODO: 将魔法数字提取到配置中
 
         return patterns
@@ -259,7 +259,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self, score: pd.Series, patterns: pd.DataFrame, signals: dict
     ) -> float:
         """
-        计算置信度 - Ultra Think修复：实现必须的抽象方法
+        计算置信度 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             score: 指标得分
@@ -269,12 +269,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             float: 置信度值
         """
-        # 🔧 Ultra Think修复：实现标准置信度计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准置信度计算,确保100%功能完整
         return self.calculate_confidence_Emv(score, patterns, signals)
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算原始得分 - Ultra Think修复：实现必须的抽象方法
+        计算原始得分 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -282,7 +282,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 原始得分
         """
-        # 🔧 Ultra Think修复：实现标准原始得分计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准原始得分计算,确保100%功能完整
         result = self.calculate(data, **kwargs)
 
         # 获取EMV数据作为得分
@@ -295,12 +295,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if emv_col is not None:
             return result[emv_col]
         else:
-            # 如果找不到EMV列，返回默认得分
+            # 如果找不到EMV列,返回默认得分
             return pd.Series(index=data.index, data=0.0)  # EMV默认值
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取形态数据 - Ultra Think修复：实现必须的抽象方法
+        获取形态数据 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -308,17 +308,17 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 形态数据
         """
-        # 🔧 Ultra Think修复：实现标准形态识别，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准形态识别,确保100%功能完整
         return self.get_patterns(data, **kwargs)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
-        设置参数 - Ultra Think修复：实现必须的抽象方法
+        设置参数 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：实现标准参数设置，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准参数设置,确保100%功能完整
         self.set_parameters_Emv(**kwargs)
 
     def _calculate_emv(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -371,12 +371,12 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         生成EMV指标的标准化交易信号
 
         Args:
-            data: 输入数据，包含OHLCV数据
+            data: 输入数据,包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
 
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 确保已计算EMV指标
         if not self.has_result():
@@ -413,46 +413,46 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning(f"计算ATR失败: {e}")
             atr_values = pd.Series(0, index=data.index)
 
-        # 1. EMV上穿0轴，买入信号
+        # 1. EMV上穿0轴,买入信号
         emv_crossover_zero = crossover(emv, 0)
         signals.loc[emv_crossover_zero, "buy_signal"] = True
         signals.loc[emv_crossover_zero, "neutral_signal"] = False
         signals.loc[emv_crossover_zero, "trend"] = 1
         signals.loc[emv_crossover_zero, "signal_type"] = "EMV上穿0轴"
-        signals.loc[emv_crossover_zero, "signal_desc"] = "EMV上穿0轴，表明价格上涨动能增强"
+        signals.loc[emv_crossover_zero, "signal_desc"] = "EMV上穿0轴,表明价格上涨动能增强"
         signals.loc[emv_crossover_zero, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossover_zero, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossover_zero, "risk_level"] = "中"
 
-        # 2. EMV下穿0轴，卖出信号
+        # 2. EMV下穿0轴,卖出信号
         emv_crossunder_zero = crossunder(emv, 0)
         signals.loc[emv_crossunder_zero, "sell_signal"] = True
         signals.loc[emv_crossunder_zero, "neutral_signal"] = False
         signals.loc[emv_crossunder_zero, "trend"] = -1
         signals.loc[emv_crossunder_zero, "signal_type"] = "EMV下穿0轴"
-        signals.loc[emv_crossunder_zero, "signal_desc"] = "EMV下穿0轴，表明价格下跌动能增强"
+        signals.loc[emv_crossunder_zero, "signal_desc"] = "EMV下穿0轴,表明价格下跌动能增强"
         signals.loc[emv_crossunder_zero, "confidence"] = 65.0  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossunder_zero, "position_size"] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossunder_zero, "risk_level"] = "中"
 
-        # 3. EMV上穿EMV_MA，买入信号  # TODO: 将魔法数字提取到配置中
+        # 3. EMV上穿EMV_MA,买入信号  # TODO: 将魔法数字提取到配置中
         emv_crossover_ma = crossover(emv, emv_ma)
         signals.loc[emv_crossover_ma, "buy_signal"] = True
         signals.loc[emv_crossover_ma, "neutral_signal"] = False
         signals.loc[emv_crossover_ma, "trend"] = 1
         signals.loc[emv_crossover_ma, "signal_type"] = "EMV金叉"
-        signals.loc[emv_crossover_ma, "signal_desc"] = "EMV上穿其均线，表明短期动能增强"
+        signals.loc[emv_crossover_ma, "signal_desc"] = "EMV上穿其均线,表明短期动能增强"
         signals.loc[emv_crossover_ma, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossover_ma, "position_size"] = 0.2
         signals.loc[emv_crossover_ma, "risk_level"] = "中"
 
-        # 4. EMV下穿EMV_MA，卖出信号  # TODO: 将魔法数字提取到配置中
+        # 4. EMV下穿EMV_MA,卖出信号  # TODO: 将魔法数字提取到配置中
         emv_crossunder_ma = crossunder(emv, emv_ma)
         signals.loc[emv_crossunder_ma, "sell_signal"] = True
         signals.loc[emv_crossunder_ma, "neutral_signal"] = False
         signals.loc[emv_crossunder_ma, "trend"] = -1
         signals.loc[emv_crossunder_ma, "signal_type"] = "EMV死叉"
-        signals.loc[emv_crossunder_ma, "signal_desc"] = "EMV下穿其均线，表明短期动能减弱"
+        signals.loc[emv_crossunder_ma, "signal_desc"] = "EMV下穿其均线,表明短期动能减弱"
         signals.loc[emv_crossunder_ma, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_crossunder_ma, "position_size"] = 0.2
         signals.loc[emv_crossunder_ma, "risk_level"] = "中"
@@ -465,7 +465,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals.loc[high_emv, "neutral_signal"] = False
         signals.loc[high_emv, "trend"] = 1
         signals.loc[high_emv, "signal_type"] = "EMV高位"
-        signals.loc[high_emv, "signal_desc"] = "EMV处于近期高位，表明价格上涨容易"
+        signals.loc[high_emv, "signal_desc"] = "EMV处于近期高位,表明价格上涨容易"
         signals.loc[high_emv, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[high_emv, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[high_emv, "risk_level"] = "低"
@@ -475,7 +475,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals.loc[low_emv, "neutral_signal"] = False
         signals.loc[low_emv, "trend"] = -1
         signals.loc[low_emv, "signal_type"] = "EMV低位"
-        signals.loc[low_emv, "signal_desc"] = "EMV处于近期低位，表明价格下跌容易"
+        signals.loc[low_emv, "signal_desc"] = "EMV处于近期低位,表明价格下跌容易"
         signals.loc[low_emv, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[low_emv, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[low_emv, "risk_level"] = "低"
@@ -487,7 +487,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals.loc[rapid_increase, "neutral_signal"] = False
         signals.loc[rapid_increase, "trend"] = 1
         signals.loc[rapid_increase, "signal_type"] = "EMV快速上升"
-        signals.loc[rapid_increase, "signal_desc"] = "EMV快速上升，表明价格上涨动能突然增强"
+        signals.loc[rapid_increase, "signal_desc"] = "EMV快速上升,表明价格上涨动能突然增强"
         signals.loc[rapid_increase, "confidence"] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[rapid_increase, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[rapid_increase, "risk_level"] = "中"
@@ -497,7 +497,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals.loc[rapid_decrease, "neutral_signal"] = False
         signals.loc[rapid_decrease, "trend"] = -1
         signals.loc[rapid_decrease, "signal_type"] = "EMV快速下降"
-        signals.loc[rapid_decrease, "signal_desc"] = "EMV快速下降，表明价格下跌动能突然增强"
+        signals.loc[rapid_decrease, "signal_desc"] = "EMV快速下降,表明价格下跌动能突然增强"
         signals.loc[rapid_decrease, "confidence"] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[rapid_decrease, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[rapid_decrease, "risk_level"] = "中"
@@ -511,7 +511,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 # 基础分数是50
                 score = 50.0  # TODO: 将魔法数字提取到配置中
 
-                # EMV值为正加分，为负减分
+                # EMV值为正加分,为负减分
                 if emv_val > 0:
                     score += min(20, emv_val * 100)  # 最多加20分  # TODO: 将魔法数字提取到配置中
                 else:
@@ -561,31 +561,31 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 根据EMV值判断市场环境
         signals["market_env"] = "中性"  # 默认中性市场
 
-        # EMV持续为正，上升趋势市场
+        # EMV持续为正,上升趋势市场
         positive_emv = emv.rolling(window=10).mean() > 0
         signals.loc[positive_emv, "market_env"] = "强势"
 
-        # EMV持续为负，下降趋势市场
+        # EMV持续为负,下降趋势市场
         negative_emv = emv.rolling(window=10).mean() < 0
         signals.loc[negative_emv, "market_env"] = "弱势"
 
-        # EMV频繁在0轴附近波动，震荡市场
+        # EMV频繁在0轴附近波动,震荡市场
         emv_around_zero = abs(emv) < emv.std() * 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[emv_around_zero, "market_env"] = "震荡"
 
         # 设置成交量确认
         if "volume" in data.columns:
-            # 如果有成交量数据，检查成交量是否支持当前信号
+            # 如果有成交量数据,检查成交量是否支持当前信号
             vol = data["volume"]
             vol_avg = vol.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
 
             # 成交量大于20日均量1.5倍为放量
             vol_increase = vol > vol_avg * 1.5  # TODO: 将魔法数字提取到配置中
 
-            # 买入信号且成交量放大，确认信号
+            # 买入信号且成交量放大,确认信号
             signals.loc[signals["buy_signal"] & vol_increase, "volume_confirmation"] = True
 
-            # 卖出信号且成交量放大，确认信号
+            # 卖出信号且成交量放大,确认信号
             signals.loc[signals["sell_signal"] & vol_increase, "volume_confirmation"] = True
 
         return signals
@@ -599,7 +599,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算EMV指标
         if not self.has_result():
@@ -623,7 +623,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             emv_val = emv.iloc[i]
             emv_ma_val = emv_ma.iloc[i] if i < len(emv_ma) else 0
 
-            # EMV值为正加分，为负减分
+            # EMV值为正加分,为负减分
             if emv_val > 0:
                 score.iloc[i] += min(20, emv_val * 100)  # 最多加20分  # TODO: 将魔法数字提取到配置中
             else:
@@ -747,41 +747,41 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             and emv.iloc[last_valid_idx - 1] < emv_ma.iloc[last_valid_idx - 1]
             and emv.iloc[last_valid_idx] > emv_ma.iloc[last_valid_idx]
         ):
-            patterns.append("EMV金叉（EMV上穿均线）")
+            patterns.append("EMV金叉(EMV上穿均线)")
 
         if (
             last_valid_idx - 1 >= -len(emv)
             and emv.iloc[last_valid_idx - 1] > emv_ma.iloc[last_valid_idx - 1]
             and emv.iloc[last_valid_idx] < emv_ma.iloc[last_valid_idx]
         ):
-            patterns.append("EMV死叉（EMV下穿均线）")
+            patterns.append("EMV死叉(EMV下穿均线)")
 
         # 2. EMV零轴交叉
         if last_valid_idx - 1 >= -len(emv) and emv.iloc[last_valid_idx - 1] < 0 and emv.iloc[last_valid_idx] > 0:
-            patterns.append("EMV上穿零轴（由负转正）")
+            patterns.append("EMV上穿零轴(由负转正)")
 
         if last_valid_idx - 1 >= -len(emv) and emv.iloc[last_valid_idx - 1] > 0 and emv.iloc[last_valid_idx] < 0:
-            patterns.append("EMV下穿零轴（由正转负）")
+            patterns.append("EMV下穿零轴(由正转负)")
 
         # 3. EMV位置形态  # TODO: 将魔法数字提取到配置中
         emv_val = emv.iloc[last_valid_idx]
 
         if emv_val > 0:
-            patterns.append("EMV为正值（价格上涨容易）")
+            patterns.append("EMV为正值(价格上涨容易)")
 
             # 计算50日内的最大EMV值
             if len(emv) >= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 max_emv = emv.iloc[max(-50, -len(emv)) :].max()  # TODO: 将魔法数字提取到配置中
                 if emv_val > max_emv * 0.8:  # TODO: 将魔法数字提取到配置中
-                    patterns.append("EMV处于高位（强烈上涨动能）")
+                    patterns.append("EMV处于高位(强烈上涨动能)")
         else:
-            patterns.append("EMV为负值（价格下跌容易）")
+            patterns.append("EMV为负值(价格下跌容易)")
 
             # 计算50日内的最小EMV值
             if len(emv) >= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 min_emv = emv.iloc[max(-50, -len(emv)) :].min()  # TODO: 将魔法数字提取到配置中
                 if emv_val < min_emv * 0.8:  # TODO: 将魔法数字提取到配置中
-                    patterns.append("EMV处于低位（强烈下跌动能）")
+                    patterns.append("EMV处于低位(强烈下跌动能)")
 
         # 4. EMV变化形态  # TODO: 将魔法数字提取到配置中
         if last_valid_idx - 5 >= -len(emv):  # TODO: 将魔法数字提取到配置中
@@ -792,9 +792,9 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             if emv_change > 0.2:
-                patterns.append("EMV快速上升（动能迅速增强）")
+                patterns.append("EMV快速上升(动能迅速增强)")
             elif emv_change < -0.2:
-                patterns.append("EMV快速下降（动能迅速减弱）")
+                patterns.append("EMV快速下降(动能迅速减弱)")
 
         return patterns
 
@@ -853,7 +853,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             patterns_df["EMV_HIGH_EXTREME"] = emv >= emv_rolling_max * 0.9  # TODO: 将魔法数字提取到配置中
             patterns_df["EMV_LOW_EXTREME"] = emv <= emv_rolling_min * 0.9  # TODO: 将魔法数字提取到配置中
 
-        # 6. 背离形态（简化版）  # TODO: 将魔法数字提取到配置中
+        # 6. 背离形态(简化版)  # TODO: 将魔法数字提取到配置中
         if len(emv) >= 10 and "high" in data.columns:
             price_trend = (
                 data["high"].rolling(5).mean().diff(5)
@@ -873,7 +873,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_CROSS_UP_ZERO",
             display_name="EMV上穿零轴",
-            description="EMV从负值区域穿越零轴，表示买盘力量增强",
+            description="EMV从负值区域穿越零轴,表示买盘力量增强",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -883,7 +883,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_CROSS_DOWN_ZERO",
             display_name="EMV下穿零轴",
-            description="EMV从正值区域穿越零轴，表示卖盘力量增强",
+            description="EMV从正值区域穿越零轴,表示卖盘力量增强",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -894,7 +894,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_CROSS_UP_MA",
             display_name="EMV上穿均线",
-            description="EMV上穿其移动平均线，趋势转强",
+            description="EMV上穿其移动平均线,趋势转强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -904,7 +904,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_CROSS_DOWN_MA",
             display_name="EMV下穿均线",
-            description="EMV下穿其移动平均线，趋势转弱",
+            description="EMV下穿其移动平均线,趋势转弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -915,7 +915,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_STRONG_RISE",
             display_name="EMV强势上升",
-            description="EMV大幅上升，买盘力量强劲",
+            description="EMV大幅上升,买盘力量强劲",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=18.0,  # TODO: 将魔法数字提取到配置中
@@ -925,7 +925,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_STRONG_FALL",
             display_name="EMV强势下降",
-            description="EMV大幅下降，卖盘力量强劲",
+            description="EMV大幅下降,卖盘力量强劲",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-18.0,  # TODO: 将魔法数字提取到配置中
@@ -936,7 +936,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_BULLISH_DIVERGENCE",
             display_name="EMV底背离",
-            description="价格下跌但EMV上升，可能反转向上",
+            description="价格下跌但EMV上升,可能反转向上",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=30.0,  # TODO: 将魔法数字提取到配置中
@@ -946,7 +946,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="EMV_BEARISH_DIVERGENCE",
             display_name="EMV顶背离",
-            description="价格上涨但EMV下降，可能反转向下",
+            description="价格上涨但EMV下降,可能反转向下",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
@@ -966,37 +966,37 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         pattern_info_map = {
             "EMV_CROSS_UP_ZERO": {
                 "name": "EMV上穿零轴",
-                "description": "EMV从负值区域穿越零轴，表示买盘力量增强",
+                "description": "EMV从负值区域穿越零轴,表示买盘力量增强",
                 "strength": "strong",
                 "type": "bullish",
             },
             "EMV_CROSS_DOWN_ZERO": {
                 "name": "EMV下穿零轴",
-                "description": "EMV从正值区域穿越零轴，表示卖盘力量增强",
+                "description": "EMV从正值区域穿越零轴,表示卖盘力量增强",
                 "strength": "strong",
                 "type": "bearish",
             },
             "EMV_ABOVE_ZERO": {
                 "name": "EMV零轴上方",
-                "description": "EMV位于零轴上方，买盘力量占优",
+                "description": "EMV位于零轴上方,买盘力量占优",
                 "strength": "medium",
                 "type": "bullish",
             },
             "EMV_BELOW_ZERO": {
                 "name": "EMV零轴下方",
-                "description": "EMV位于零轴下方，卖盘力量占优",
+                "description": "EMV位于零轴下方,卖盘力量占优",
                 "strength": "medium",
                 "type": "bearish",
             },
             "EMV_CROSS_UP_MA": {
                 "name": "EMV上穿均线",
-                "description": "EMV上穿其移动平均线，趋势转强",
+                "description": "EMV上穿其移动平均线,趋势转强",
                 "strength": "medium",
                 "type": "bullish",
             },
             "EMV_CROSS_DOWN_MA": {
                 "name": "EMV下穿均线",
-                "description": "EMV下穿其移动平均线，趋势转弱",
+                "description": "EMV下穿其移动平均线,趋势转弱",
                 "strength": "medium",
                 "type": "bearish",
             },
@@ -1014,25 +1014,25 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             },
             "EMV_STRONG_RISE": {
                 "name": "EMV强势上升",
-                "description": "EMV大幅上升，买盘力量强劲",
+                "description": "EMV大幅上升,买盘力量强劲",
                 "strength": "medium",
                 "type": "bullish",
             },
             "EMV_STRONG_FALL": {
                 "name": "EMV强势下降",
-                "description": "EMV大幅下降，卖盘力量强劲",
+                "description": "EMV大幅下降,卖盘力量强劲",
                 "strength": "medium",
                 "type": "bearish",
             },
             "EMV_BULLISH_DIVERGENCE": {
                 "name": "EMV底背离",
-                "description": "价格下跌但EMV上升，可能反转向上",
+                "description": "价格下跌但EMV上升,可能反转向上",
                 "strength": "strong",
                 "type": "bullish",
             },
             "EMV_BEARISH_DIVERGENCE": {
                 "name": "EMV顶背离",
-                "description": "价格上涨但EMV下降，可能反转向下",
+                "description": "价格上涨但EMV下降,可能反转向下",
                 "strength": "strong",
                 "type": "bearish",
             },
@@ -1104,13 +1104,13 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 # 使用默认参数
                 params = self._default_parameters.copy()
 
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
 
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     @property
@@ -1118,7 +1118,7 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         EmvEmv指标所需的最少数据周期数
 
-        计算逻辑：基于参数 period(14) 计算  # TODO: 将魔法数字提取到配置中
+        计算逻辑:基于参数 period(14) 计算  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数

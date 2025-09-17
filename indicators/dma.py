@@ -24,13 +24,13 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
     """
     轨道线指标 (Different of Moving Average)
     
-    DMA指标由两条均线的差值组成，通过快速均线与慢速均线之差以及这个差值的移动平均线来判断中长期的买卖点。
-    该指标适合中长期趋势判断，是一种典型的趋势跟踪指标。
+    DMA指标由两条均线的差值组成,通过快速均线与慢速均线之差以及这个差值的移动平均线来判断中长期的买卖点.
+    该指标适合中长期趋势判断,是一种典型的趋势跟踪指标.
     
     参数:
-        fast_period: 短期均线周期，默认为10
-        slow_period: 长期均线周期，默认为50
-        ama_period: 差值平均线周期，默认为10
+        fast_period: 短期均线周期,默认为10
+        slow_period: 长期均线周期,默认为50
+        ama_period: 差值平均线周期,默认为10
     """
     
     @property
@@ -85,7 +85,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         
         # 检查必需列是否存在
         if 'close' not in df.columns:
-            # 返回空的结果DataFrame，保持原有结构
+            # 返回空的结果DataFrame,保持原有结构
             result = df.copy()
             empty_series = pd.Series(float('nan'), index=df.index)
             result['DMA'] = empty_series
@@ -107,7 +107,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         result['FAST_MA'] = result['close'].rolling(window=self.fast_period).mean()
         result['SLOW_MA'] = result['close'].rolling(window=self.slow_period).mean()
         
-        # 计算DMA值（两条均线之差）
+        # 计算DMA值(两条均线之差)
         result['DMA'] = result['FAST_MA'] - result['SLOW_MA']
         
         # 计算DMA的移动平均线(AMA)
@@ -181,37 +181,37 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         # 判断DMA和AMA的关系及DMA的绝对水平
         if crossover(result['DMA'], result['AMA']).any():  # DMA上穿AMA
             signal_type = "DMA上穿AMA"
-            signal_desc = "DMA上穿AMA，显示由空头转为多头趋势"
+            signal_desc = "DMA上穿AMA,显示由空头转为多头趋势"
             cross_type = "GOLDEN_CROSS"
             score = 70  # TODO: 将魔法数字提取到配置中
         elif crossunder(result['DMA'], result['AMA']).any():  # DMA下穿AMA
             signal_type = "DMA下穿AMA"
-            signal_desc = "DMA下穿AMA，显示由多头转为空头趋势"
+            signal_desc = "DMA下穿AMA,显示由多头转为空头趋势"
             cross_type = "DEATH_CROSS"
             score = 30  # TODO: 将魔法数字提取到配置中
         elif dma > ama and dma_pct > 0:  # DMA在AMA上方且为正
             signal_type = "多头趋势增强"
-            signal_desc = f"DMA位于AMA上方，百分比差值为{dma_pct:.2f}%，多头趋势增强"
+            signal_desc = f"DMA位于AMA上方,百分比差值为{dma_pct:.2f}%,多头趋势增强"
             cross_type = "NO_CROSS"
             score = 60 + min(30, dma_pct * 1.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif dma < ama and dma_pct < 0:  # DMA在AMA下方且为负
             signal_type = "空头趋势增强"
-            signal_desc = f"DMA位于AMA下方，百分比差值为{dma_pct:.2f}%，空头趋势增强"
+            signal_desc = f"DMA位于AMA下方,百分比差值为{dma_pct:.2f}%,空头趋势增强"
             cross_type = "NO_CROSS"
             score = 40 - min(30, abs(dma_pct * 1.5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif dma > 0 and ama > 0:  # DMA和AMA都为正
             signal_type = "弱势多头"
-            signal_desc = "DMA和AMA均为正值，处于弱势多头"
+            signal_desc = "DMA和AMA均为正值,处于弱势多头"
             cross_type = "NO_CROSS"
             score = 55  # TODO: 将魔法数字提取到配置中
         elif dma < 0 and ama < 0:  # DMA和AMA都为负
             signal_type = "弱势空头"
-            signal_desc = "DMA和AMA均为负值，处于弱势空头"
+            signal_desc = "DMA和AMA均为负值,处于弱势空头"
             cross_type = "NO_CROSS"
             score = 45  # TODO: 将魔法数字提取到配置中
         else:  # 其他情况
             signal_type = "震荡整理"
-            signal_desc = "DMA指标处于震荡状态，无明确方向"
+            signal_desc = "DMA指标处于震荡状态,无明确方向"
             cross_type = "NO_CROSS"
             score = 50  # TODO: 将魔法数字提取到配置中
             
@@ -219,11 +219,11 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         if fast_ma_chg > 2:
             score += 5  # TODO: 将魔法数字提取到配置中
             if signal_type.startswith("多头"):
-                signal_desc += f"，短期均线加速上涨({fast_ma_chg:.2f}%)"
+                signal_desc += f",短期均线加速上涨({fast_ma_chg:.2f}%)"
         elif fast_ma_chg < -2:
             score -= 5  # TODO: 将魔法数字提取到配置中
             if signal_type.startswith("空头"):
-                signal_desc += f"，短期均线加速下跌({fast_ma_chg:.2f}%)"
+                signal_desc += f",短期均线加速下跌({fast_ma_chg:.2f}%)"
                 
         # 计算建议仓位(0-100%)
         if score >= 70:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -263,10 +263,10 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
             
         # 止损计算
         if buy_signal:
-            # 止损设为当前价格的95%或最近5天最低价，取较高者
+            # 止损设为当前价格的95%或最近5天最低价,取较高者
             stop_loss = max(current_price * 0.95, df['low'].iloc[-5:].min())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif sell_signal:
-            # 止损设为当前价格的105%或最近5天最高价，取较低者
+            # 止损设为当前价格的105%或最近5天最高价,取较低者
             stop_loss = min(current_price * 1.05, df['high'].iloc[-5:].max())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:
             stop_loss = None
@@ -308,7 +308,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
             data: 包含OHLCV数据的Data_frame
             
         Returns:
-            包含评分的Series，范围0-100
+            包含评分的Series,范围0-100
         """
         # 确保已计算指标
         if not isinstance(data, pd.DataFrame) or 'DMA' not in data.columns:
@@ -549,7 +549,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_UPTREND",
             display_name="DMA上升趋势",
-            description="DMA大于0且DMA大于AMA，表示强势上升趋势",
+            description="DMA大于0且DMA大于AMA,表示强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -559,7 +559,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_DOWNTREND",
             display_name="DMA下降趋势",
-            description="DMA小于0且DMA小于AMA，表示强势下降趋势",
+            description="DMA小于0且DMA小于AMA,表示强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -570,7 +570,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_GOLDEN_CROSS",
             display_name="DMA金叉",
-            description="DMA上穿AMA，显示由空头转为多头趋势",
+            description="DMA上穿AMA,显示由空头转为多头趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=30.0,  # TODO: 将魔法数字提取到配置中
@@ -580,7 +580,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_DEATH_CROSS",
             display_name="DMA死叉",
-            description="DMA下穿AMA，显示由多头转为空头趋势",
+            description="DMA下穿AMA,显示由多头转为空头趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
@@ -612,7 +612,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_STRONG_UPTREND",
             display_name="DMA强势上涨",
-            description="DMA百分比差值大于5%，表示强势上涨",
+            description="DMA百分比差值大于5%,表示强势上涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -622,7 +622,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         self.register_pattern_to_registry(
             pattern_id="DMA_STRONG_DOWNTREND",
             display_name="DMA强势下跌",
-            description="DMA百分比差值小于-5%，表示强势下跌",  # TODO: 将魔法数字提取到配置中
+            description="DMA百分比差值小于-5%,表示强势下跌",  # TODO: 将魔法数字提取到配置中
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -634,7 +634,7 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         获取DMA指标的形态信息
 
         Args:
-            pattern_id: 形态ID，如果为None则返回所有形态信息
+            pattern_id: 形态ID,如果为None则返回所有形态信息
 
         Returns:
             Dict[str, Any]: 形态信息字典
@@ -642,49 +642,49 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         all_patterns = {
             'DMA_UPTREND': {
                 'name': 'DMA上升趋势',
-                'description': 'DMA大于0且DMA大于AMA，表示强势上升趋势',
+                'description': 'DMA大于0且DMA大于AMA,表示强势上升趋势',
                 'type': 'trend',
                 'strength': 'strong'
             },
             'DMA_DOWNTREND': {
                 'name': 'DMA下降趋势',
-                'description': 'DMA小于0且DMA小于AMA，表示强势下降趋势',
+                'description': 'DMA小于0且DMA小于AMA,表示强势下降趋势',
                 'type': 'trend',
                 'strength': 'strong'
             },
             'DMA_GOLDEN_CROSS': {
                 'name': 'DMA金叉',
-                'description': 'DMA上穿AMA，显示由空头转为多头趋势',
+                'description': 'DMA上穿AMA,显示由空头转为多头趋势',
                 'type': 'reversal',
                 'strength': 'strong'
             },
             'DMA_DEATH_CROSS': {
                 'name': 'DMA死叉',
-                'description': 'DMA下穿AMA，显示由多头转为空头趋势',
+                'description': 'DMA下穿AMA,显示由多头转为空头趋势',
                 'type': 'reversal',
                 'strength': 'strong'
             },
             'DMA_CROSS_UP_ZERO': {
                 'name': 'DMA上穿零轴',
-                'description': 'DMA从负值区域穿越零轴，趋势转正',
+                'description': 'DMA从负值区域穿越零轴,趋势转正',
                 'type': 'trend',
                 'strength': 'medium'
             },
             'DMA_CROSS_DOWN_ZERO': {
                 'name': 'DMA下穿零轴',
-                'description': 'DMA从正值区域穿越零轴，趋势转负',
+                'description': 'DMA从正值区域穿越零轴,趋势转负',
                 'type': 'trend',
                 'strength': 'medium'
             },
             'DMA_STRONG_UPTREND': {
                 'name': 'DMA强势上涨',
-                'description': 'DMA百分比差值大于5%，表示强势上涨',
+                'description': 'DMA百分比差值大于5%,表示强势上涨',
                 'type': 'trend',
                 'strength': 'medium'
             },
             'DMA_STRONG_DOWNTREND': {
                 'name': 'DMA强势下跌',
-                'description': 'DMA百分比差值小于-5%，表示强势下跌',  # TODO: 将魔法数字提取到配置中
+                'description': 'DMA百分比差值小于-5%,表示强势下跌',  # TODO: 将魔法数字提取到配置中
                 'type': 'trend',
                 'strength': 'medium'
             }
@@ -723,19 +723,22 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
             is_valid, errors = validator.validate_indicator_parameters('DMA', params)
             if not is_valid:
                 from utils.logger import get_logger
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"DMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
             
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
                     
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     # ========================= 抽象方法实现 =========================
@@ -763,7 +766,7 @@ from db.sql_manager import SQLManager, QueryType
         获取DMA形态识别结果
         
         Returns:
-            pd.DataFrame: 形态识别结果，包含各种DMA形态
+            pd.DataFrame: 形态识别结果,包含各种DMA形态
         """
         if data is None and hasattr(self, '_result') and self._result is not None:
             data_to_use = self._result
@@ -805,7 +808,7 @@ from db.sql_manager import SQLManager, QueryType
         计算DMA原始评分
         
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 评分序列,取值范围0-100
         """
         if data is None:
             return pd.Series(50.0)  # TODO: 将魔法数字提取到配置中
@@ -826,10 +829,10 @@ from db.sql_manager import SQLManager, QueryType
         dma = result['DMA']
         ama = result['AMA']
         
-        # 评分逻辑：DMA相对于AMA的位置和趋势
+        # 评分逻辑:DMA相对于AMA的位置和趋势
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # DMA在AMA之上加分，之下减分
+        # DMA在AMA之上加分,之下减分
         dma_above_ama = dma > ama
         dma_below_ama = dma < ama
         
@@ -845,7 +848,7 @@ from db.sql_manager import SQLManager, QueryType
         # 双线向下
         score[(~dma_trend) & (~ama_trend)] -= 15  # TODO: 将魔法数字提取到配置中
         
-        # 距离调整（DMA和AMA距离越大，信号越强）
+        # 距离调整(DMA和AMA距离越大,信号越强)
         distance = abs(dma - ama)
         distance_norm = distance / distance.rolling(20).mean()  # TODO: 将魔法数字提取到配置中
         score += (distance_norm - 1) * 10
@@ -855,7 +858,7 @@ from db.sql_manager import SQLManager, QueryType
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成DMA交易信号 - 100%准确率优化版本
-        简化条件，确保信号生成
+        简化条件,确保信号生成
 
         Returns:
             pd.DataFrame: 包含交易信号的DataFrame
@@ -894,14 +897,14 @@ from db.sql_manager import SQLManager, QueryType
                 signals.loc[death_cross, 'dma_strength'] = 0.9  # 提高强度  # TODO: 将魔法数字提取到配置中
                 signals.loc[death_cross, 'dma_confidence'] = 0.8  # 提高置信度  # TODO: 将魔法数字提取到配置中
 
-                # 新增：趋势跟随信号 - 增加信号数量
-                # 当DMA持续高于AMA时，生成持续买入信号
+                # 新增:趋势跟随信号 - 增加信号数量
+                # 当DMA持续高于AMA时,生成持续买入信号
                 trend_up = (dma > ama) & (dma > dma.shift(1))
                 signals.loc[trend_up, 'dma_signal'] = 1
                 signals.loc[trend_up, 'dma_strength'] = 0.6  # TODO: 将魔法数字提取到配置中
                 signals.loc[trend_up, 'dma_confidence'] = 0.6  # TODO: 将魔法数字提取到配置中
 
-                # 当DMA持续低于AMA时，生成持续卖出信号
+                # 当DMA持续低于AMA时,生成持续卖出信号
                 trend_down = (dma < ama) & (dma < dma.shift(1))
                 signals.loc[trend_down, 'dma_signal'] = -1
                 signals.loc[trend_down, 'dma_strength'] = 0.6  # TODO: 将魔法数字提取到配置中
@@ -928,7 +931,7 @@ from db.sql_manager import SQLManager, QueryType
         patterns = self.get_patterns(data, **kwargs)
         signals = self.get_signals(data, **kwargs)
         
-        # 计算平均分数（处理NaN）
+        # 计算平均分数(处理NaN)
         if not raw_score.empty:
             valid_scores = raw_score.dropna()
             avg_score = valid_scores.mean() if len(valid_scores) > 0 else 50.0  # TODO: 将魔法数字提取到配置中
@@ -942,7 +945,7 @@ from db.sql_manager import SQLManager, QueryType
         # 计算置信度
         confidence = self.calculate_confidence(raw_score, patterns, signals)
         
-        # 计算latest_score，确保不是NaN
+        # 计算latest_score,确保不是NaN
         if not raw_score.empty:
             latest_score = raw_score.iloc[-1]
             if pd.isna(latest_score):
@@ -973,7 +976,7 @@ from db.sql_manager import SQLManager, QueryType
         计算DMA置信度
         
         Returns:
-            float: 置信度值，范围0-1
+            float: 置信度值,范围0-1
         """
         # 简单的置信度计算
         if score.empty:
@@ -987,7 +990,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成交易信号（兼容性方法）
+        生成交易信号(兼容性方法)
         
         Returns:
             pd.DataFrame: 交易信号DataFrame
@@ -996,10 +999,10 @@ from db.sql_manager import SQLManager, QueryType
 
     def generate_signals(self, data: pd.DataFrame, **kwargs) -> list:
         """
-        生成信号（测试期望的方法名）
+        生成信号(测试期望的方法名)
         
         Returns:
-            list: 信号列表，每个元素是包含信号信息的字典
+            list: 信号列表,每个元素是包含信号信息的字典
         """
         signals_df = self.get_signals(data, **kwargs)
         

@@ -6,7 +6,7 @@ from utils.logger import get_logger
 """
 MFI (Money Flow Index) 资金流量指标
 
-MFI指标结合价格和成交量来衡量买卖压力。
+MFI指标结合价格和成交量来衡量买卖压力.
 """
 
 import pandas as pd
@@ -25,7 +25,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     MFI (Money Flow Index) 资金流量指标
 
-    MFI指标通过结合价格和成交量来识别超买超卖状态。
+    MFI指标通过结合价格和成交量来识别超买超卖状态.
     """
 
     def __init__(self, **kwargs):
@@ -76,11 +76,11 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("MFI", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -99,12 +99,12 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含MFI指标的DataFrame
         """
-        # 🔧 Ultra Think修复：标准化接口调用
+        # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_mfi(data, **kwargs)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算MFI指标 - Ultra Think修复：添加缺失的标准calculate方法
+        计算MFI指标 - Ultra Think修复:添加缺失的标准calculate方法
 
         Args:
             data: 输入数据
@@ -112,12 +112,12 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含MFI指标的DataFrame
         """
-        # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
+        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
         return self._calculate_mfi(data, **kwargs)
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        基础指标计算方法 - Ultra Think修复：实现必须的抽象方法
+        基础指标计算方法 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -125,12 +125,12 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
-        # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
+        # 🔧 Ultra Think修复:实现必须的抽象方法,确保100%功能完整
         return self._calculate_mfi(data, **kwargs)
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成MFI交易信号 - Ultra Think修复：添加缺失的信号生成功能
+        生成MFI交易信号 - Ultra Think修复:添加缺失的信号生成功能
 
         Args:
             data: 价格数据
@@ -138,7 +138,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含买卖信号的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的MFI信号生成逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的MFI信号生成逻辑,确保100%功能完整
         result = self.calculate(data)
 
         if len(result) == 0:
@@ -157,7 +157,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 break
 
         if mfi_col is None:
-            # 如果找不到MFI列，返回空信号
+            # 如果找不到MFI列,返回空信号
             signals = pd.DataFrame(index=data.index)
             signals["buy_signal"] = False
             signals["sell_signal"] = False
@@ -169,13 +169,13 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 创建信号DataFrame
         signals = pd.DataFrame(index=data.index)
 
-        # MFI信号逻辑：基于超买超卖区域
-        # 买入信号：MFI从超卖区域上升
+        # MFI信号逻辑:基于超买超卖区域
+        # 买入信号:MFI从超卖区域上升
         oversold_condition = mfi_values <= self.oversold
         oversold_exit = (mfi_values > self.oversold) & (mfi_values.shift(1) <= self.oversold)
         buy_signals = oversold_exit
 
-        # 卖出信号：MFI从超买区域下降
+        # 卖出信号:MFI从超买区域下降
         overbought_condition = mfi_values >= self.overbought
         overbought_exit = (mfi_values < self.overbought) & (mfi_values.shift(1) >= self.overbought)
         sell_signals = overbought_exit
@@ -184,17 +184,17 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals["buy_signal"] = buy_signals
         signals["sell_signal"] = sell_signals
 
-        # 信号强度：基于MFI偏离中性区域的程度
+        # 信号强度:基于MFI偏离中性区域的程度
         neutral_zone = 50.0  # TODO: 将魔法数字提取到配置中
         mfi_deviation = abs(mfi_values - neutral_zone)
-        max_deviation = 50.0  # MFI范围是0-100，最大偏离是50  # TODO: 将魔法数字提取到配置中
+        max_deviation = 50.0  # MFI范围是0-100,最大偏离是50  # TODO: 将魔法数字提取到配置中
         signals["signal_strength"] = mfi_deviation / max_deviation
 
         return signals
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取MFI形态数据 - Ultra Think修复：添加缺失的形态识别功能
+        获取MFI形态数据 - Ultra Think修复:添加缺失的形态识别功能
 
         Args:
             data: 价格数据
@@ -202,7 +202,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含形态识别的DataFrame
         """
-        # 🔧 Ultra Think修复：实现完整的MFI形态识别逻辑，确保100%功能完整
+        # 🔧 Ultra Think修复:实现完整的MFI形态识别逻辑,确保100%功能完整
         result = self.calculate(data)
 
         if len(result) == 0:
@@ -222,7 +222,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 break
 
         if mfi_col is None:
-            # 如果找不到MFI列，返回空形态
+            # 如果找不到MFI列,返回空形态
             patterns = pd.DataFrame(index=data.index)
             patterns["overbought"] = False
             patterns["oversold"] = False
@@ -243,14 +243,14 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 超卖区域
         patterns["oversold"] = mfi_values <= self.oversold
 
-        # 牛市背离：价格创新低，MFI创新高
+        # 牛市背离:价格创新低,MFI创新高
         price_low = close_prices.rolling(window=5, min_periods=1).min()  # TODO: 将魔法数字提取到配置中
         mfi_high = mfi_values.rolling(window=5, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         price_new_low = close_prices <= price_low.shift(1)
         mfi_new_high = mfi_values >= mfi_high.shift(1)
         patterns["divergence_bullish"] = price_new_low & mfi_new_high
 
-        # 熊市背离：价格创新高，MFI创新低
+        # 熊市背离:价格创新高,MFI创新低
         price_high = close_prices.rolling(window=5, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         mfi_low = mfi_values.rolling(window=5, min_periods=1).min()  # TODO: 将魔法数字提取到配置中
         price_new_high = close_prices >= price_high.shift(1)
@@ -263,7 +263,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self, score: pd.Series, patterns: pd.DataFrame, signals: dict
     ) -> float:
         """
-        计算置信度 - Ultra Think修复：实现必须的抽象方法
+        计算置信度 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             score: 指标得分
@@ -273,12 +273,12 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             float: 置信度值
         """
-        # 🔧 Ultra Think修复：实现标准置信度计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准置信度计算,确保100%功能完整
         return self.calculate_confidence_Mfi(score, patterns, signals)
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算原始得分 - Ultra Think修复：实现必须的抽象方法
+        计算原始得分 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -286,7 +286,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 原始得分
         """
-        # 🔧 Ultra Think修复：实现标准原始得分计算，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准原始得分计算,确保100%功能完整
         result = self.calculate(data, **kwargs)
 
         # 获取MFI数据作为得分
@@ -299,12 +299,12 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if mfi_col is not None:
             return result[mfi_col]
         else:
-            # 如果找不到MFI列，返回默认得分
+            # 如果找不到MFI列,返回默认得分
             return pd.Series(index=data.index, data=50.0)  # MFI中性值  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取形态数据 - Ultra Think修复：实现必须的抽象方法
+        获取形态数据 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -312,17 +312,17 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 形态数据
         """
-        # 🔧 Ultra Think修复：实现标准形态识别，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准形态识别,确保100%功能完整
         return self.get_patterns(data, **kwargs)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
-        设置参数 - Ultra Think修复：实现必须的抽象方法
+        设置参数 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：实现标准参数设置，确保100%功能完整
+        # 🔧 Ultra Think修复:实现标准参数设置,确保100%功能完整
         self.set_parameters_Mfi(**kwargs)
 
     def _calculate_mfi(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -339,7 +339,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 确保数据有足够的长度
         if len(df) < self.period + 1:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period + 1})，返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period + 1}),返回原始数据")
             df[f"MFI{self.period}"] = np.nan
             df["mfi"] = np.nan
             df["mfi_signal"] = np.nan
@@ -368,7 +368,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df["mfi"] = 100 - (100 / (1 + mfi_ratio))
         df[f"MFI{self.period}"] = df["mfi"]  # 为了向后兼容
 
-        # 计算MFI信号线（移动平均）
+        # 计算MFI信号线(移动平均)
         df["mfi_signal"] = df["mfi"].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
 
         # 计算MFI波动率
@@ -381,7 +381,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（MFI指标特定逻辑）
+        # 重写信号生成逻辑(MFI指标特定逻辑)
         df = self._apply_mfi_signal_logic(df)
 
         return df
@@ -394,15 +394,15 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         try:
             # 获取MFI值
             if "mfi" not in df.columns:
-                # 如果没有MFI值，使用默认信号
+                # 如果没有MFI值,使用默认信号
                 return df
 
             mfi_value = df["mfi"]
             mfi_signal = df["mfi_signal"]
 
-            # MFI信号生成逻辑：
-            # BUY: MFI从超卖区间(< 20)向上突破，或MFI上穿信号线  # TODO: 将魔法数字提取到配置中
-            # SELL: MFI从超买区间(> 80)向下突破，或MFI下穿信号线  # TODO: 将魔法数字提取到配置中
+            # MFI信号生成逻辑:
+            # BUY: MFI从超卖区间(< 20)向上突破,或MFI上穿信号线  # TODO: 将魔法数字提取到配置中
+            # SELL: MFI从超买区间(> 80)向下突破,或MFI下穿信号线  # TODO: 将魔法数字提取到配置中
             # HOLD: MFI在正常区间(20-80)且无明显突破  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 定义超买超卖区间
@@ -418,7 +418,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             mfi_above_signal = mfi_value > mfi_signal
             mfi_below_signal = mfi_value < mfi_signal
 
-            # 金叉死叉（当前上穿/下穿且前一期下穿/上穿）
+            # 金叉死叉(当前上穿/下穿且前一期下穿/上穿)
             golden_cross = mfi_above_signal & (mfi_value.shift(1) <= mfi_signal.shift(1))
             death_cross = mfi_below_signal & (mfi_value.shift(1) >= mfi_signal.shift(1))
 
@@ -438,7 +438,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.warning(f"MFI信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, "buy_signal"] = False
             df.loc[:, "sell_signal"] = False
             df.loc[:, "hold_signal"] = True
@@ -449,7 +449,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算MFI原始评分
 
-        基于MFI指标的技术分析特点进行评分：
+        基于MFI指标的技术分析特点进行评分:
         1. MFI位置评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. MFI趋势评分 (30%)  # TODO: 将魔法数字提取到配置中
         3. 超买超卖评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -473,7 +473,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基于MFI在0-100范围内的位置
         position_score = pd.Series(0.0, index=data.index)
 
-        # 中性区间(30-70)评分较低，极端区间评分较高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 中性区间(30-70)评分较低,极端区间评分较高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         position_score = np.where(
             mfi < 20, 15, position_score
         )  # 超卖区间  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -568,7 +568,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         divergence_score = pd.Series(0.0, index=data.index)
 
         if len(close_price.dropna()) > 0:
-            # 价格创新高但MFI未创新高（顶背离）
+            # 价格创新高但MFI未创新高(顶背离)
             price_high = close_price.rolling(window=5).max()  # TODO: 将魔法数字提取到配置中
             mfi_high = mfi.rolling(window=5).max()  # TODO: 将魔法数字提取到配置中
 
@@ -578,7 +578,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             top_divergence = price_new_high & mfi_not_new_high
             divergence_score = np.where(top_divergence, -8, divergence_score)  # TODO: 将魔法数字提取到配置中
 
-            # 价格创新低但MFI未创新低（底背离）
+            # 价格创新低但MFI未创新低(底背离)
             price_low = close_price.rolling(window=5).min()  # TODO: 将魔法数字提取到配置中
             mfi_low = mfi.rolling(window=5).min()  # TODO: 将魔法数字提取到配置中
 
@@ -611,7 +611,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         recent_mfi = mfi.iloc[-1] if len(mfi) > 0 else 50  # TODO: 将魔法数字提取到配置中
         recent_volatility = mfi_volatility.iloc[-1] if len(mfi_volatility) > 0 else 10
 
-        # MFI位置明确性（极端位置置信度高）
+        # MFI位置明确性(极端位置置信度高)
         position_clarity = 0
         if recent_mfi < 20 or recent_mfi > 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             position_clarity = 0.3  # TODO: 将魔法数字提取到配置中
@@ -623,11 +623,11 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(mfi) >= 3:  # TODO: 将魔法数字提取到配置中
             recent_trend = mfi.iloc[-3:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
-                # 如果趋势方向一致，提高置信度
+                # 如果趋势方向一致,提高置信度
                 if all(recent_trend > 0) or all(recent_trend < 0):
                     trend_consistency = 0.2
 
-        # 波动性适中性（波动性太高或太低都降低置信度）
+        # 波动性适中性(波动性太高或太低都降低置信度)
         volatility_appropriateness = 0
         if 5 <= recent_volatility <= 15:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             volatility_appropriateness = 0.15  # TODO: 将魔法数字提取到配置中
@@ -754,7 +754,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data: 包含OHLCV数据的DataFrame
 
         Returns:
-            Optional[float]: MFI原始评分，范围0-100
+            Optional[float]: MFI原始评分,范围0-100
         """
         try:
             if data is None or data.empty:
@@ -775,13 +775,13 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             current_mfi = mfi_values.iloc[-1]
 
-            # MFI评分逻辑：基于MFI值的位置
-            # MFI 40-60: 中性区域，评分80-100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # MFI 20-40, 60-80: 偏离中性，评分60-80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # MFI 0-20, 80-100: 极端区域，评分40-60  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            # MFI评分逻辑:基于MFI值的位置
+            # MFI 40-60: 中性区域,评分80-100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            # MFI 20-40, 60-80: 偏离中性,评分60-80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            # MFI 0-20, 80-100: 极端区域,评分40-60  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             if 40 <= current_mfi <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                # 中性区域，评分最高
+                # 中性区域,评分最高
                 distance_from_center = abs(current_mfi - 50)  # TODO: 将魔法数字提取到配置中
                 score = 100 - distance_from_center * 2
             elif 20 <= current_mfi < 40:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -808,7 +808,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         Mfi指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数

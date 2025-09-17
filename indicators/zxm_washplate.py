@@ -4,7 +4,7 @@ from utils.container import container
 ZXM_WASHPLATE 指标
 
 基于ZXM体系教程的真实洗盘形态识别算法
-实现横盘震荡洗盘、回调洗盘、假突破洗盘、时间洗盘、连续阴线洗盘等形态识别
+实现横盘震荡洗盘,回调洗盘,假突破洗盘,时间洗盘,连续阴线洗盘等形态识别
 """
 
 import pandas as pd
@@ -24,7 +24,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ZXM_WASHPLATE 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, **kwargs):
@@ -69,7 +69,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ZXM_WASHPLATE', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -78,7 +78,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Washplate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -261,7 +261,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             current_close = recent_data['close'].iloc[-1]
             quick_recovery = current_close > support_level * 0.99  # 快速收复到支撑位附近  # TODO: 将魔法数字提取到配置中
 
-            # 条件3: 突破时量能放大，收复时量能更大
+            # 条件3: 突破时量能放大,收复时量能更大
             break_vol = recent_data['volume'].iloc[-3:].max()  # TODO: 将魔法数字提取到配置中
             recovery_vol = recent_data['volume'].iloc[-1]
             vol_condition = recovery_vol > break_vol * 1.2
@@ -453,7 +453,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         ZxmWashplate指标所需的最少数据周期数
 
-        计算逻辑：洗盘识别需要足够的历史数据来分析形态
+        计算逻辑:洗盘识别需要足够的历史数据来分析形态
 
         Returns:
             int: 最少需要的数据周期数
@@ -461,9 +461,9 @@ from db.sql_manager import SQLManager, QueryType
         return 60  # 洗盘形态识别需要更多历史数据  # TODO: 将魔法数字提取到配置中
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 zxmwash_plate = ZxmWashplate
-ZXM_WASHPLATE = ZxmWashplate  # 🔧 Ultra Think修复：添加缺失的别名
+ZXM_WASHPLATE = ZxmWashplate  # 🔧 Ultra Think修复:添加缺失的别名
 
 class WashPlateType(Enum):
     """洗盘形态类型 - 基于ZXM体系教程"""

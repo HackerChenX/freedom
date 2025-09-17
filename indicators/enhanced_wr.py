@@ -15,7 +15,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     增强型Williams %R指标
 
-    在标准Williams %R基础上增加了多周期分析、自适应阈值、背离检测等功能
+    在标准Williams %R基础上增加了多周期分析,自适应阈值,背离检测等功能
     """
 
     def __init__(self, 
@@ -33,12 +33,12 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化增强型Williams %R指标
 
         Args:
-            period: Williams %R计算周期，默认14
-            overbought: 超买阈值，默认-20  # TODO: 将魔法数字提取到配置中
-            oversold: 超卖阈值，默认-80  # TODO: 将魔法数字提取到配置中
-            multi_periods: 多周期分析，默认[9, 14, 21]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            adaptive_thresholds: 是否使用自适应阈值，默认True
-            smooth_period: 平滑周期，默认3
+            period: Williams %R计算周期,默认14
+            overbought: 超买阈值,默认-20  # TODO: 将魔法数字提取到配置中
+            oversold: 超卖阈值,默认-80  # TODO: 将魔法数字提取到配置中
+            multi_periods: 多周期分析,默认[9, 14, 21]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            adaptive_thresholds: 是否使用自适应阈值,默认True
+            smooth_period: 平滑周期,默认3
             **kwargs: 其他参数
         """
         super().__init__()
@@ -87,6 +87,9 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
 
@@ -97,11 +100,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ENHANCED_WR', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -157,7 +160,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         min_length = max(self.multi_periods) + self.smooth_period + 10
         if len(data) < min_length:
-            # 数据不足，返回空结果
+            # 数据不足,返回空结果
             df = data.copy()
             df['ENHANCED_WR_VALUE'] = 50.0  # TODO: 将魔法数字提取到配置中
             df['wr_signal'] = 0
@@ -204,7 +207,7 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写专用信号逻辑：基于Williams %R的买入信号
+        # 重写专用信号逻辑:基于Williams %R的买入信号
         df['wr_signal'] = self._generate_wr_signals(df)
         df['buy_signal'] = df['wr_signal'] > 0
         df['sell_signal'] = df['wr_signal'] < 0
@@ -247,7 +250,7 @@ from db.sql_manager import SQLManager, QueryType
         wr_mean = wr.rolling(window=window).mean()
         wr_std = wr.rolling(window=window).std()
         
-        # 动态阈值：均值 ± 1.5倍标准差
+        # 动态阈值:均值 ± 1.5倍标准差
         overbought = wr_mean + 1.5 * wr_std  # TODO: 将魔法数字提取到配置中
         oversold = wr_mean - 1.5 * wr_std  # TODO: 将魔法数字提取到配置中
         
@@ -268,11 +271,11 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             背离信号序列
         """
-        # 简化的背离检测：比较价格和Williams %R的趋势方向
+        # 简化的背离检测:比较价格和Williams %R的趋势方向
         price_trend = close.rolling(window=10).apply(lambda x: 1 if x.iloc[-1] > x.iloc[0] else -1)
         wr_trend = wr.rolling(window=10).apply(lambda x: 1 if x.iloc[-1] > x.iloc[0] else -1)
         
-        # 背离：价格和Williams %R趋势方向相反
+        # 背离:价格和Williams %R趋势方向相反
         divergence = (price_trend != wr_trend).astype(int)
         
         return divergence
@@ -291,7 +294,7 @@ from db.sql_manager import SQLManager, QueryType
         wr_ma = wr.rolling(window=14).mean()  # TODO: 将魔法数字提取到配置中
         wr_std = wr.rolling(window=14).std()  # TODO: 将魔法数字提取到配置中
         
-        # 趋势强度：Williams %R偏离移动平均的程度
+        # 趋势强度:Williams %R偏离移动平均的程度
         trend_strength = abs(wr - wr_ma) / (wr_std + 1e-10)
         
         return trend_strength
@@ -313,7 +316,7 @@ from db.sql_manager import SQLManager, QueryType
         for i in range(len(df)):
             wr_values = [df[col].iloc[i] for col in wr_columns if col in df.columns]
             if len(wr_values) > 1:
-                # 计算Williams %R值的标准差，标准差越小一致性越高
+                # 计算Williams %R值的标准差,标准差越小一致性越高
                 std_dev = np.std(wr_values)
                 consistency = max(0, 1 - std_dev / 50)  # 归一化到0-1  # TODO: 将魔法数字提取到配置中
             else:
@@ -362,14 +365,14 @@ from db.sql_manager import SQLManager, QueryType
             wr_val = wr.iloc[i]
             
             if wr_val <= df['wr_oversold'].iloc[i]:
-                # 超卖区域，看涨信号
+                # 超卖区域,看涨信号
                 base_score.iloc[i] = 70 + min(20, (df['wr_oversold'].iloc[i] - wr_val) * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             elif wr_val >= df['wr_overbought'].iloc[i]:
-                # 超买区域，看跌信号
+                # 超买区域,看跌信号
                 base_score.iloc[i] = 30 - min(20, (wr_val - df['wr_overbought'].iloc[i]) * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             else:
-                # 正常区域，根据Williams %R值调整
-                # Williams %R范围是-100到0，-50为中性
+                # 正常区域,根据Williams %R值调整
+                # Williams %R范围是-100到0,-50为中性
                 if wr_val > -50:  # TODO: 将魔法数字提取到配置中
                     base_score.iloc[i] = 50 + (wr_val + 50) * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 else:
@@ -409,11 +412,11 @@ from db.sql_manager import SQLManager, QueryType
         wr = df['wr']
         wr_smooth = df['wr_smooth']
 
-        # 增强指标需要更严格的信号条件，降低信号频率到1-3%  # TODO: 将魔法数字提取到配置中
-        signal_cooldown = 15  # 信号冷却期，避免频繁信号  # TODO: 将魔法数字提取到配置中
+        # 增强指标需要更严格的信号条件,降低信号频率到1-3%  # TODO: 将魔法数字提取到配置中
+        signal_cooldown = 15  # 信号冷却期,避免频繁信号  # TODO: 将魔法数字提取到配置中
         last_signal_index = -signal_cooldown
 
-        for i in range(10, len(df)):  # 从第10个数据点开始，确保有足够历史数据
+        for i in range(10, len(df)):  # 从第10个数据点开始,确保有足够历史数据
             if pd.isna(wr.iloc[i]) or pd.isna(wr.iloc[i-1]):
                 continue
 
@@ -421,7 +424,7 @@ from db.sql_manager import SQLManager, QueryType
             if i - last_signal_index < signal_cooldown:
                 continue
 
-            # 强烈超卖反弹买入信号（更严格条件）
+            # 强烈超卖反弹买入信号(更严格条件)
             if (wr.iloc[i-1] <= df['wr_oversold'].iloc[i-1] and
                 wr.iloc[i] > df['wr_oversold'].iloc[i] and
                 df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -429,7 +432,7 @@ from db.sql_manager import SQLManager, QueryType
                 signals.iloc[i] = 1
                 last_signal_index = i
 
-            # 强烈超买回落卖出信号（更严格条件）
+            # 强烈超买回落卖出信号(更严格条件)
             elif (wr.iloc[i-1] >= df['wr_overbought'].iloc[i-1] and
                   wr.iloc[i] < df['wr_overbought'].iloc[i] and
                   df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -437,7 +440,7 @@ from db.sql_manager import SQLManager, QueryType
                 signals.iloc[i] = -1
                 last_signal_index = i
 
-            # 强烈背离信号（更严格条件）
+            # 强烈背离信号(更严格条件)
             elif (abs(df['wr_divergence'].iloc[i]) > 0.8 and  # TODO: 将魔法数字提取到配置中
                   df['wr_trend_strength'].iloc[i] > 0.6):  # TODO: 将魔法数字提取到配置中
                 if df['wr_divergence'].iloc[i] > 0 and wr.iloc[i] < -75:  # TODO: 将魔法数字提取到配置中
@@ -472,7 +475,7 @@ from db.sql_manager import SQLManager, QueryType
         score_std = score.std()
         score_range = score.max() - score.min()
 
-        # 评分变化越大，置信度越高
+        # 评分变化越大,置信度越高
         confidence = min(1.0, (score_std / 25.0 + score_range / 100.0) / 2)  # TODO: 将魔法数字提取到配置中
 
         return max(0.3, confidence)  # TODO: 将魔法数字提取到配置中
@@ -509,7 +512,7 @@ from db.sql_manager import SQLManager, QueryType
         """获取形态"""
         return self.get_patterns(data, **kwargs)
 
-    # 🔧 Ultra Think修复：添加缺失的抽象方法实现，按照已验证的修复模式
+    # 🔧 Ultra Think修复:添加缺失的抽象方法实现,按照已验证的修复模式
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         实现基类要求的抽象方法
@@ -541,7 +544,7 @@ from db.sql_manager import SQLManager, QueryType
         self.set_parameters_Wr(**kwargs)
 
 
-# 🔧 Ultra Think修复：为了向后兼容，创建别名
+# 🔧 Ultra Think修复:为了向后兼容,创建别名
 enhanced_wr = EnhancedWr
-# 修复测试导入问题：提供大写R版本的别名
+# 修复测试导入问题:提供大写R版本的别名
 EnhancedWR = EnhancedWr

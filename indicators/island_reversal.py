@@ -23,7 +23,7 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ISLAND_REVERSAL 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, **kwargs):
@@ -59,6 +59,9 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -69,7 +72,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('ISLAND_REVERSAL', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -78,7 +81,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -116,7 +119,7 @@ from db.sql_manager import SQLManager, QueryType
         df['top_island_reversal'] = False
         df['bottom_island_reversal'] = False
 
-        # 顶部岛形反转：向上跳空后又向下跳空
+        # 顶部岛形反转:向上跳空后又向下跳空
         for i in range(2, len(df)):
             # 检查是否有向上跳空
             if df['up_gap'].iloc[i-1]:
@@ -126,7 +129,7 @@ from db.sql_manager import SQLManager, QueryType
                         df.iloc[j, df.columns.get_loc('top_island_reversal')] = True
                         break
 
-        # 底部岛形反转：向下跳空后又向上跳空
+        # 底部岛形反转:向下跳空后又向上跳空
         for i in range(2, len(df)):
             # 检查是否有向下跳空
             if df['down_gap'].iloc[i-1]:
@@ -215,7 +218,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         IslandReversal指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

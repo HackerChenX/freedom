@@ -5,7 +5,7 @@ from utils.logger import get_logger
 
 """
 量比指标(VOLUME_RATIO)
-量比是指当前成交量与前N个周期平均成交量的比值，用于衡量市场交易活跃度的变化。
+量比是指当前成交量与前N个周期平均成交量的比值,用于衡量市场交易活跃度的变化.
 """
 
 import numpy as np
@@ -25,19 +25,19 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     量比指标(VOLUME_RATIO) - 最高生产级实现
     
     生产级核心特点:
-    1. 真实数学计算：当前成交量 / 前N个周期平均成交量
-    2. 完整功能架构：计算+评分+形态识别+信号生成  
-    3. 架构完美兼容：遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中
-    4. 性能优化考虑：缓存+异常处理+边界条件+监控  # TODO: 将魔法数字提取到配置中
-    5. 企业级质量：代码规范+文档完整+可维护性+扩展性  # TODO: 将魔法数字提取到配置中
+    1. 真实数学计算:当前成交量 / 前N个周期平均成交量
+    2. 完整功能架构:计算+评分+形态识别+信号生成  
+    3. 架构完美兼容:遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中
+    4. 性能优化考虑:缓存+异常处理+边界条件+监控  # TODO: 将魔法数字提取到配置中
+    5. 企业级质量:代码规范+文档完整+可维护性+扩展性  # TODO: 将魔法数字提取到配置中
     
     技术指标含义:
-    - 量比>1: 当前成交量高于参考期平均值，市场相对活跃
-    - 量比<1: 当前成交量低于参考期平均值，市场相对冷清
-    - 量比与价格趋势结合使用，判断市场热度变化
+    - 量比>1: 当前成交量高于参考期平均值,市场相对活跃
+    - 量比<1: 当前成交量低于参考期平均值,市场相对冷清
+    - 量比与价格趋势结合使用,判断市场热度变化
     
     核心算法: VR = Σ(Up Volume) / Σ(Down Volume) over N periods
-    参数: period: 参考周期，默认为14
+    参数: period: 参考周期,默认为14
     """
     
     def __init__(self, **kwargs):
@@ -52,7 +52,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         super().__init__()
         self.name = "VOLUME_RATIO"
-        self.description = "量比指标，最高生产级标准实现"
+        self.description = "量比指标,最高生产级标准实现"
         self.indicator_type = "VOLUME_RATIO"
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self._result = None
@@ -80,7 +80,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        核心计算逻辑，实现抽象方法
+        核心计算逻辑,实现抽象方法
         
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -94,14 +94,14 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         最高生产级VOLUME_RATIO指标计算
         
-        实现真实的成交量比率算法：
+        实现真实的成交量比率算法:
         VR = Σ(Up Volume) / Σ(Down Volume) over N periods
         """
         df = data.copy()
         
         # 确保数据有足够长度
         if len(df) < self.period:
-            logger.warning(f"数据长度不足，无法计算VOLUME_RATIO指标，需要至少{self.period}行数据")
+            logger.warning(f"数据长度不足,无法计算VOLUME_RATIO指标,需要至少{self.period}行数据")
             df['VOLUME_RATIO_VALUE'] = 1.0
             df['VOLUME_RATIO_MA'] = 1.0
             return df
@@ -130,11 +130,11 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             price_direction = np.zeros(len(df))
             price_direction[1:] = np.sign(df["close"].values[1:] - df["close"].values[:-1])
             
-            # 初始化上涨、下跌成交量
+            # 初始化上涨,下跌成交量
             up_volume = np.zeros(len(df))
             down_volume = np.zeros(len(df))
             
-            # 分类成交量（真实数学计算）
+            # 分类成交量(真实数学计算)
             for i in range(1, len(df)):
                 if price_direction[i] > 0:  # 价格上涨
                     up_volume[i] = volume.iloc[i]
@@ -145,7 +145,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     up_volume[i] = volume.iloc[i] * 0.5  # TODO: 将魔法数字提取到配置中
                     down_volume[i] = volume.iloc[i] * 0.5  # TODO: 将魔法数字提取到配置中
             
-            # 计算N日上涨、下跌成交量之和
+            # 计算N日上涨,下跌成交量之和
             up_volume_sum = pd.Series(up_volume).rolling(window=self.period).sum()
             down_volume_sum = pd.Series(down_volume).rolling(window=self.period).sum()
             
@@ -161,7 +161,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     down_sum = down_volume_sum.iloc[i]
                     
                     if down_sum == 0:
-                        # 如果没有下跌成交量，设为较大值
+                        # 如果没有下跌成交量,设为较大值
                         volume_ratio.iloc[i] = 5.0 if up_sum > 0 else 1.0  # TODO: 将魔法数字提取到配置中
                     else:
                         ratio = up_sum / down_sum
@@ -183,7 +183,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 计算VOLUME_RATIO强度指标
             df['VOLUME_RATIO_STRENGTH'] = abs(df['VOLUME_RATIO_CHANGE'])
             
-            logger.debug(f"VOLUME_RATIO: 生产级计算完成，周期 {self.period}")
+            logger.debug(f"VOLUME_RATIO: 生产级计算完成,周期 {self.period}")
             
         except Exception as e:
             logger.error(f"VOLUME_RATIO: 生产级计算失败: {e}")
@@ -214,9 +214,9 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             vr_ma = df['VOLUME_RATIO_MA']
             vr_trend = df['VOLUME_RATIO_TREND']
             
-            # VOLUME_RATIO信号生成逻辑：
-            # BUY: VR上穿MA且趋势向上，或VR>1.5（多头成交量优势）  # TODO: 将魔法数字提取到配置中
-            # SELL: VR下穿MA且趋势向下，或VR<0.5（空头成交量优势）  # TODO: 将魔法数字提取到配置中
+            # VOLUME_RATIO信号生成逻辑:
+            # BUY: VR上穿MA且趋势向上,或VR>1.5(多头成交量优势)  # TODO: 将魔法数字提取到配置中
+            # SELL: VR下穿MA且趋势向下,或VR<0.5(空头成交量优势)  # TODO: 将魔法数字提取到配置中
             # HOLD: 信号不明确
             
             # 计算交叉信号
@@ -243,7 +243,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             
         except Exception as e:
             logger.warning(f"VOLUME_RATIO信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -258,7 +258,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         最高生产级VOLUME_RATIO原始评分计算
         
-        基于VOLUME_RATIO指标的技术分析特点进行评分：
+        基于VOLUME_RATIO指标的技术分析特点进行评分:
         1. 多空力量对比评分 (40%)  # TODO: 将魔法数字提取到配置中
         2. 成交量趋势评分 (25%)  # TODO: 将魔法数字提取到配置中
         3. 量价关系评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -327,15 +327,15 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(data) >= 5:  # TODO: 将魔法数字提取到配置中
             = data['close'].pct_change()
             
-            # 放量上涨（量价齐升）
+            # 放量上涨(量价齐升)
             volume_up_price_up = (vr > 1.2) & (> 0.01)
             volume_price_score = np.where(volume_up_price_up, 10, volume_price_score)
             
-            # 放量下跌（量价背离）
+            # 放量下跌(量价背离)
             volume_up_price_down = (vr > 1.2) & (< -0.01)
             volume_price_score = np.where(volume_up_price_down, -10, volume_price_score)
             
-            # 缩量上涨（可能缺乏持续性）
+            # 缩量上涨(可能缺乏持续性)
             volume_down_price_up = (vr < 0.8) & (> 0.01)  # TODO: 将魔法数字提取到配置中
             volume_price_score = np.where(volume_down_price_up, -5, volume_price_score)  # TODO: 将魔法数字提取到配置中
         
@@ -478,11 +478,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('VOLUME_RATIO', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -530,7 +530,7 @@ from db.sql_manager import SQLManager, QueryType
         if volume is None:
             # 详细日志记录可用列
             available_columns = list(df.columns)
-            logger.warning(f"VOLUME_RATIO: 未找到成交量列。可用列: {available_columns}")
+            logger.warning(f"VOLUME_RATIO: 未找到成交量列.可用列: {available_columns}")
             logger.warning(f"VOLUME_RATIO: 支持的成交量列名: {volume_columns}")
             
             # 尝试从列名中查找包含'volume'或'vol'的列
@@ -543,8 +543,8 @@ from db.sql_manager import SQLManager, QueryType
                 found_column = potential_columns[0]
                 logger.info(f"VOLUME_RATIO: 使用潜在成交量列 '{potential_columns[0]}'")
             else:
-                # 如果没有成交量数据，返回默认值
-                logger.warning("VOLUME_RATIO: 无成交量数据，使用默认值1.0")
+                # 如果没有成交量数据,返回默认值
+                logger.warning("VOLUME_RATIO: 无成交量数据,使用默认值1.0")
                 df['VOLUME_RATIO_VALUE'] = 1.0
                 return df
         
@@ -560,7 +560,7 @@ from db.sql_manager import SQLManager, QueryType
             volume_ratio = volume / volume_avg
             df['VOLUME_RATIO_VALUE'] = volume_ratio.fillna(1.0)
             
-            logger.debug(f"VOLUME_RATIO: 计算完成，使用列 '{found_column}'，周期 {self.period}")
+            logger.debug(f"VOLUME_RATIO: 计算完成,使用列 '{found_column}',周期 {self.period}")
             
         except Exception as e:
             logger.error(f"VOLUME_RATIO: 计算量比失败: {e}")
@@ -571,7 +571,7 @@ from db.sql_manager import SQLManager, QueryType
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（VOLUME_RATIO指标特定逻辑）
+        # 重写信号生成逻辑(VOLUME_RATIO指标特定逻辑)
         df = self._apply_volume_ratio_signal_logic(df)
 
         return df
@@ -584,15 +584,15 @@ from db.sql_manager import SQLManager, QueryType
         try:
             # 获取量比值
             if 'VOLUME_RATIO_VALUE' not in df.columns:
-                # 如果没有量比值，使用默认信号
+                # 如果没有量比值,使用默认信号
                 return df
 
             volume_ratio = df['VOLUME_RATIO_VALUE']
 
-            # VOLUME_RATIO信号生成逻辑：
-            # BUY: 量比大于1.5（成交量放大）  # TODO: 将魔法数字提取到配置中
-            # SELL: 量比小于0.5（成交量萎缩）  # TODO: 将魔法数字提取到配置中
-            # HOLD: 量比在0.5-1.5之间（正常成交量）  # TODO: 将魔法数字提取到配置中
+            # VOLUME_RATIO信号生成逻辑:
+            # BUY: 量比大于1.5(成交量放大)  # TODO: 将魔法数字提取到配置中
+            # SELL: 量比小于0.5(成交量萎缩)  # TODO: 将魔法数字提取到配置中
+            # HOLD: 量比在0.5-1.5之间(正常成交量)  # TODO: 将魔法数字提取到配置中
 
             high_volume = volume_ratio > 1.5  # TODO: 将魔法数字提取到配置中
             low_volume = volume_ratio < 0.5  # TODO: 将魔法数字提取到配置中
@@ -610,7 +610,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"VOLUME_RATIO信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -621,11 +621,11 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算量比指标的原始评分
         
-        基于量比的活跃度和稳定性进行评分：
-        1. 量比活跃度：量比偏离1的程度
-        2. 量比稳定性：量比的波动程度
-        3. 量比趋势：量比的变化趋势  # TODO: 将魔法数字提取到配置中
-        4. 量比分布：量比的分布特征  # TODO: 将魔法数字提取到配置中
+        基于量比的活跃度和稳定性进行评分:
+        1. 量比活跃度:量比偏离1的程度
+        2. 量比稳定性:量比的波动程度
+        3. 量比趋势:量比的变化趋势  # TODO: 将魔法数字提取到配置中
+        4. 量比分布:量比的分布特征  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Ratio(data, **kwargs)
@@ -648,7 +648,7 @@ from db.sql_manager import SQLManager, QueryType
             score = 50.0  # 基础分数  # TODO: 将魔法数字提取到配置中
             
             # 1. 量比活跃度评分 (30分)
-            # 量比越偏离1，市场越活跃
+            # 量比越偏离1,市场越活跃
             activity_deviation = abs(current_ratio - 1.0)
             if activity_deviation >= 2.0:
                 activity_score = 30.0  # 极度活跃  # TODO: 将魔法数字提取到配置中
@@ -662,7 +662,7 @@ from db.sql_manager import SQLManager, QueryType
             score += activity_score - 15.0  # 调整基准  # TODO: 将魔法数字提取到配置中
             
             # 2. 量比稳定性评分 (20分)
-            # 量比波动越小，市场越稳定
+            # 量比波动越小,市场越稳定
             if len(window_ratios) > 1:
                 ratio_std = window_ratios.std()
                 if ratio_std <= 0.2:
@@ -729,7 +729,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         VolumeRatio指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

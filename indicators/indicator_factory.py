@@ -29,7 +29,7 @@ class IndicatorFactory(BaseIndicator):
 
 
 class MockIndicator(BaseIndicator):
-    """模拟指标类，用于测试"""
+    """模拟指标类,用于测试"""
 
     def __init__(self, name: str, **kwargs):
             super().__init__(name=self.__class__.__name__, **kwargs)
@@ -75,7 +75,7 @@ class MockIndicator(BaseIndicator):
                 result['MACD_HIST'] = close * 0
                 
             else:
-                # 对于其他指标，返回简单的模拟值
+                # 对于其他指标,返回简单的模拟值
                 result[self.name] = close * 0.5  # TODO: 将魔法数字提取到配置中
         
         return result

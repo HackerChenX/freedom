@@ -113,6 +113,9 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXM
             # 尝试使用列名映射
             try:
                 from utils.column_mapper import Column_mapper
+            except Exception as e:
+                logger.error(f"错误: {e}")
+                return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
                 data = ColumnMapper.standardize_columns(data, ['open', 'high', 'low', 'close', 'volume'])
 

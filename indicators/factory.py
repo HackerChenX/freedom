@@ -76,7 +76,7 @@ class IndicatorFactory:
     """
     FACTORY 指标
 
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
 
     def _get_default_parameters_factory(self) -> Dict[str, Any]:
@@ -104,14 +104,14 @@ class IndicatorFactory:
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("FACTORY", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
             # 设置参数
             self.period = params.get("period", 14)  # TODO: 将魔法数字提取到配置中
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
 
     def calculate_Factory_Factory(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -140,7 +140,7 @@ class IndicatorFactory:
         """
         df = data.copy()
 
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 最小化实现:返回原数据加上一个简单的计算列
         df[f"FACTORY_VALUE"] = df["close"].rolling(window=self.period).mean()
 
         # 添加形态识别和信号生成
@@ -168,7 +168,7 @@ class IndicatorFactory:
         """
         Factory指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -180,7 +180,7 @@ class IndicatorFactory:
         计算指标值
 
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
 
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

@@ -4,7 +4,7 @@ from indicators.base_indicator import BaseIndicator
 """
 统一指标计算基类模块
 
-提供统一的指标计算基础设施，包括：
+提供统一的指标计算基础设施,包括:
 1. 标准化的指标计算接口
 2. 通用的数据验证和处理
 3. 统一的指标注册和管理  # TODO: 将魔法数字提取到配置中
@@ -70,7 +70,7 @@ class UnifiedIndicatorCalculator(BaseIndicator,abc.ABC):
     """
     统一指标计算基类
     
-    所有技术指标都应该继承此类，确保接口一致性
+    所有技术指标都应该继承此类,确保接口一致性
     """
     
     def __init__(self, name: str, indicator_type: IndicatorType):
@@ -328,7 +328,7 @@ class TrendIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
         if isinstance(result, pd.Series):
             return np.sign(result.diff())
         elif isinstance(result, pd.DataFrame):
-            # 如果返回多列，使用第一列
+            # 如果返回多列,使用第一列
             return np.sign(result.iloc[:, 0].diff())
         else:
             return pd.Series(dtype=float)
@@ -433,7 +433,7 @@ class VolatilityIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
         if isinstance(result, pd.Series):
             return result
         elif isinstance(result, pd.DataFrame):
-            # 如果返回多列，使用第一列
+            # 如果返回多列,使用第一列
             return result.iloc[:, 0]
         else:
             return pd.Series(dtype=float)
@@ -529,7 +529,7 @@ class IndicatorCalculatorFactory(BaseIndicator):
         return result
 
 
-# 示例：简单移动平均线指标
+# 示例:简单移动平均线指标
 class SimpleMovingAverageCalculator(BaseIndicator,TrendIndicatorBase):
     """简单移动平均线"""
     

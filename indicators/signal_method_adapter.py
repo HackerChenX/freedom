@@ -3,13 +3,13 @@ from indicators.base_indicator import BaseIndicator
 """
 指标信号方法统一适配器
 
-解决128个指标信号方法命名不统一的问题：
+解决128个指标信号方法命名不统一的问题:
 - get_signals_Macd, get_signals_Dmi, get_signals_Adx 等特定命名
 - generate_signals_Rsi, generate_signals_Psy 等特定命名  
 - get_signal, get_signals, generate_signals 标准命名
 - 各种其他变体命名
 
-提供统一的信号获取接口，自动适配所有命名模式
+提供统一的信号获取接口,自动适配所有命名模式
 """
 
 import logging
@@ -23,7 +23,7 @@ class SignalMethodAdapter(BaseIndicator):
 SignalMethodAdapter - L4核心服务层组件
 
 职责合理性说明:
-- 作为L4层核心服务组件，承担多项相关职责
+- 作为L4层核心服务组件,承担多项相关职责
 - 21个方法分为以下职责组:
   * 核心功能方法 (约7个)
   * 辅助工具方法 (约7个)  
@@ -39,16 +39,16 @@ SignalMethodAdapter - L4核心服务层组件
         # self.cache_service = container.resolve("ICacheService")
         # 信号方法优先级顺序
         self.method_priority = [
-            # 标准方法（最高优先级）
+            # 标准方法(最高优先级)
             'get_signals',
             'generate_signals', 
             'get_signal',
             
-            # 特定命名方法（中等优先级）
+            # 特定命名方法(中等优先级)
             'get_signals_{indicator_name}',
             'generate_signals_{indicator_name}',
             
-            # 其他变体（较低优先级）
+            # 其他变体(较低优先级)
             'generate_trading_signals',
             'get_buy_signal',
             'get_sell_signal',
@@ -74,12 +74,12 @@ SignalMethodAdapter - L4核心服务层组件
     
     def get_unified_signal(self, indicator, data: pd.DataFrame, indicator_name: str = None) -> Dict[str, Any]:
         """
-        统一获取指标信号，自动适配所有命名模式
+        统一获取指标信号,自动适配所有命名模式
         
         Args:
             indicator: 指标实例
             data: 股票数据
-            indicator_name: 指标名称（用于特定方法查找）
+            indicator_name: 指标名称(用于特定方法查找)
             
         Returns:
             Dict[str, Any]: 统一格式的信号字典
@@ -117,7 +117,7 @@ SignalMethodAdapter - L4核心服务层组件
                 # 解析结果并统一格式
                 unified_result = self._parse_signal_result(result, indicator_name, method_name)
 
-                # 检查是否是返回0的指标，需要特殊处理
+                # 检查是否是返回0的指标,需要特殊处理
                 if unified_result['signal'] in ['0', 0] and indicator_name in ['SUPERTREND', 'ULTIMATE', 'FORCE_INDEX', 'STDDEV', 'VOLATILITY', 'CHAIKIN_VOLATILITY', 'GARMAN_KLASS']:
                     fixed_result = self._fix_zero_signal_indicators(indicator, data, indicator_name)
                     if fixed_result:
@@ -200,9 +200,9 @@ SignalMethodAdapter - L4核心服务层组件
                 if 'stddev_percentile' in calc_result.columns:
                     percentile = latest_row['stddev_percentile']
                     if pd.notna(percentile):
-                        if percentile > 80:  # 高波动率，谨慎  # TODO: 将魔法数字提取到配置中
+                        if percentile > 80:  # 高波动率,谨慎  # TODO: 将魔法数字提取到配置中
                             return {'signal': 'SELL', 'strength': 0.5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 'value': percentile}
-                        elif percentile < 20:  # 低波动率，可能机会  # TODO: 将魔法数字提取到配置中
+                        elif percentile < 20:  # 低波动率,可能机会  # TODO: 将魔法数字提取到配置中
                             return {'signal': 'BUY', 'strength': 0.5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 'value': percentile}
                         else:
                             return {'signal': 'HOLD', 'strength': 0.3, 'value': percentile}  # TODO: 将魔法数字提取到配置中
@@ -233,7 +233,7 @@ SignalMethodAdapter - L4核心服务层组件
                         else:
                             return {'signal': 'HOLD', 'strength': 0.4, 'value': regime}  # TODO: 将魔法数字提取到配置中
 
-            # 如果没有找到特定的信号列，使用通用方法
+            # 如果没有找到特定的信号列,使用通用方法
             return self._derive_generic_signal(calc_result, latest_row, indicator_name)
 
         except Exception as e:
@@ -241,7 +241,7 @@ SignalMethodAdapter - L4核心服务层组件
             return None
     
     def _get_available_signal_methods(self, indicator, indicator_name: str) -> List[str]:
-        """获取指标的所有可用信号方法，按优先级排序"""
+        """获取指标的所有可用信号方法,按优先级排序"""
         available_methods = []
 
         # 1. 检查标准方法
@@ -286,7 +286,7 @@ SignalMethodAdapter - L4核心服务层组件
         return available_methods
     
     def _parse_signal_result(self, result, indicator_name: str, method_name: str) -> Dict[str, Any]:
-        """解析信号结果，统一格式"""
+        """解析信号结果,统一格式"""
         try:
             if result is None:
                 return {'signal': 'NO_DATA', 'strength': 0.0, 'value': None, 'pattern': f'{indicator_name}_无数据'}
@@ -496,11 +496,11 @@ SignalMethodAdapter - L4核心服务层组件
                             else:
                                 return {'signal': 'HOLD', 'strength': 0.5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 'value': value}
 
-            # 2. 如果没有明确信号列，使用智能信号推导
+            # 2. 如果没有明确信号列,使用智能信号推导
             return self._intelligent_signal_derivation(calc_result, latest_row, indicator_name, data)
 
         elif isinstance(calc_result, dict):
-            # 处理字典类型返回值（如ATR）
+            # 处理字典类型返回值(如ATR)
             return self._extract_signals_from_dict(calc_result, indicator_name)
 
         return {'signal': 'NO_SIGNAL_COLUMNS', 'strength': 0.0, 'value': None}
@@ -528,7 +528,7 @@ SignalMethodAdapter - L4核心服务层组件
                     if value:
                         return {'signal': 'BUY', 'strength': 0.6, 'value': value, 'pattern': key}  # TODO: 将魔法数字提取到配置中
 
-            # 如果没有明确的信号键，检查是否有任何模式
+            # 如果没有明确的信号键,检查是否有任何模式
             if patterns:
                 return {'signal': 'PATTERN_DETECTED', 'strength': 0.5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 'value': list(patterns.keys())}
 
@@ -582,7 +582,7 @@ SignalMethodAdapter - L4核心服务层组件
 
     def _derive_sar_signal(self, calc_result: pd.DataFrame, latest_row: pd.Series, data: pd.DataFrame) -> Dict[str, Any]:
         """推导SAR/PSAR信号"""
-        # SAR指标：价格在SAR之上为买入，之下为卖出
+        # SAR指标:价格在SAR之上为买入,之下为卖出
         sar_cols = [col for col in calc_result.columns if 'sar' in col.lower()]
         if sar_cols and 'close' in calc_result.columns:
             sar_value = latest_row[sar_cols[0]]
@@ -692,7 +692,7 @@ SignalMethodAdapter - L4核心服务层组件
 
     def _derive_volatility_signal(self, calc_result: pd.DataFrame, latest_row: pd.Series, indicator_name: str) -> Dict[str, Any]:
         """推导波动性指标信号"""
-        # 波动性指标主要用于辅助判断，不直接产生买卖信号
+        # 波动性指标主要用于辅助判断,不直接产生买卖信号
         main_cols = [col for col in calc_result.columns
                     if any(name in col.upper() for name in ['ATR', 'WIDTH', 'VOLATILITY'])
                     and col.lower() not in ['open', 'high', 'low', 'close', 'volume']]
@@ -702,7 +702,7 @@ SignalMethodAdapter - L4核心服务层组件
             value = latest_row[main_col]
 
             if pd.notna(value):
-                # 波动性指标返回中性信号，但提供强度信息
+                # 波动性指标返回中性信号,但提供强度信息
                 normalized_strength = min(abs(value) / 100, 1.0) if isinstance(value, (int, float)) else 0.3  # TODO: 将魔法数字提取到配置中
                 return {'signal': 'NEUTRAL', 'strength': normalized_strength, 'value': value}
 
@@ -710,7 +710,7 @@ SignalMethodAdapter - L4核心服务层组件
 
     def _derive_generic_signal(self, calc_result: pd.DataFrame, latest_row: pd.Series, indicator_name: str) -> Dict[str, Any]:
         """通用信号推导"""
-        # 寻找数值列（排除OHLCV）
+        # 寻找数值列(排除OHLCV)
         numeric_cols = [col for col in calc_result.columns
                        if col.lower() not in ['open', 'high', 'low', 'close', 'volume']
                        and pd.api.types.is_numeric_dtype(calc_result[col])]
@@ -743,7 +743,7 @@ SignalMethodAdapter - L4核心服务层组件
             if hasattr(atr_series, 'iloc') and len(atr_series) > 0:
                 latest_atr = atr_series.iloc[-1]
                 if pd.notna(latest_atr):
-                    # ATR主要用于波动性分析，返回中性信号
+                    # ATR主要用于波动性分析,返回中性信号
                     return {'signal': 'NEUTRAL', 'strength': 0.4, 'value': latest_atr}  # TODO: 将魔法数字提取到配置中
 
         # 专门处理ZXM系列字典指标
@@ -844,7 +844,7 @@ signal_adapter = SignalMethodAdapter()
 
 def get_unified_indicator_signal(indicator, data: pd.DataFrame, indicator_name: str = None) -> Dict[str, Any]:
     """
-    全局函数：统一获取指标信号
+    全局函数:统一获取指标信号
 
     Args:
         indicator: 指标实例

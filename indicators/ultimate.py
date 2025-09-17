@@ -6,8 +6,8 @@ from utils.container import container
 """
 终极振荡器(Ultimate Oscillator)指标
 
-终极振荡器是由Larry Williams开发的动量振荡器，它结合了三个不同时间周期的价格动量，
-以减少虚假信号并提供更可靠的买卖信号。
+终极振荡器是由Larry Williams开发的动量振荡器,它结合了三个不同时间周期的价格动量,
+以减少虚假信号并提供更可靠的买卖信号.
 """
 
 import numpy as np
@@ -26,10 +26,10 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     终极振荡器(Ultimate Oscillator)指标
 
-    分类：振荡器指标
-    描述：结合三个不同周期的动量指标，减少虚假信号
+    分类:振荡器指标
+    描述:结合三个不同周期的动量指标,减少虚假信号
 
-    计算公式：
+    计算公式:
     1. BP = Close - min(Low, Previous Close)
     2. TR = max(High, Previous Close) - min(Low, Previous Close)
     3. Average7 = sum(BP, 7) / sum(TR, 7)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -37,11 +37,11 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     5. Average28 = sum(BP, 28) / sum(TR, 28)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     6. UO = 100 * (4*Average7 + 2*Average14 + Average28) / (4+2+1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-    信号解释：
-    - 超买：UO > 70  # TODO: 将魔法数字提取到配置中
-    - 超卖：UO < 30  # TODO: 将魔法数字提取到配置中
-    - 买入信号：从超卖区域向上突破
-    - 卖出信号：从超买区域向下突破
+    信号解释:
+    - 超买:UO > 70  # TODO: 将魔法数字提取到配置中
+    - 超卖:UO < 30  # TODO: 将魔法数字提取到配置中
+    - 买入信号:从超卖区域向上突破
+    - 卖出信号:从超买区域向下突破
     """
 
     def __init__(
@@ -54,9 +54,9 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化终极振荡器指标
 
         Args:
-            period1: 短期周期，默认7
-            period2: 中期周期，默认14
-            period3: 长期周期，默认28
+            period1: 短期周期,默认7
+            period2: 中期周期,默认14
+            period3: 长期周期,默认28
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
@@ -97,7 +97,7 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算终极振荡器
 
         Args:
-            data: 包含high、low、close列的DataFrame
+            data: 包含high,low,close列的DataFrame
             **kwargs: 其他参数
 
         Returns:
@@ -172,21 +172,21 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         overbought = 70  # TODO: 将魔法数字提取到配置中
         oversold = 30  # TODO: 将魔法数字提取到配置中
 
-        # 买入信号：从超卖区域向上突破30
+        # 买入信号:从超卖区域向上突破30
         buy_signal = (uo > oversold) & (uo.shift(1) <= oversold) & (uo.shift(1) < uo)
         signals[buy_signal] = 1
 
-        # 卖出信号：从超买区域向下突破70
+        # 卖出信号:从超买区域向下突破70
         sell_signal = (uo < overbought) & (uo.shift(1) >= overbought) & (uo.shift(1) > uo)
         signals[sell_signal] = -1
 
-        # 强买入信号：连续上升且突破50中线
+        # 强买入信号:连续上升且突破50中线
         strong_buy = (
             (uo > 50) & (uo.shift(1) <= 50) & (uo > uo.shift(1)) & (uo.shift(1) > uo.shift(2))
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signals[strong_buy] = 2
 
-        # 强卖出信号：连续下降且跌破50中线
+        # 强卖出信号:连续下降且跌破50中线
         strong_sell = (
             (uo < 50) & (uo.shift(1) >= 50) & (uo < uo.shift(1)) & (uo.shift(1) < uo.shift(2))
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -238,11 +238,11 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             strength = abs(latest_uo - 50) / 50  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         signal_descriptions = {
-            2: f"强买入信号，UO值：{latest_uo:.2f}，状态：{latest_status}",
-            1: f"买入信号，UO值：{latest_uo:.2f}，状态：{latest_status}",
-            0: f"无明确信号，UO值：{latest_uo:.2f}，状态：{latest_status}",
-            -1: f"卖出信号，UO值：{latest_uo:.2f}，状态：{latest_status}",
-            -2: f"强卖出信号，UO值：{latest_uo:.2f}，状态：{latest_status}",
+            2: f"强买入信号,UO值:{latest_uo:.2f},状态:{latest_status}",
+            1: f"买入信号,UO值:{latest_uo:.2f},状态:{latest_status}",
+            0: f"无明确信号,UO值:{latest_uo:.2f},状态:{latest_status}",
+            -1: f"卖出信号,UO值:{latest_uo:.2f},状态:{latest_status}",
+            -2: f"强卖出信号,UO值:{latest_uo:.2f},状态:{latest_status}",
         }
 
         return {
@@ -310,10 +310,10 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基于振荡器位置和趋势计算置信度
         latest_score = score.iloc[-1]
         if latest_score >= 70 or latest_score <= 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # 在极值区域，置信度较高
+            # 在极值区域,置信度较高
             confidence = 0.8  # TODO: 将魔法数字提取到配置中
         else:
-            # 在中间区域，置信度较低
+            # 在中间区域,置信度较低
             confidence = 0.4  # TODO: 将魔法数字提取到配置中
 
         pattern_strength = min(len(patterns) * 0.1, 0.3)  # TODO: 将魔法数字提取到配置中

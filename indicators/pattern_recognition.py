@@ -23,7 +23,7 @@ class PatternRecognition(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
     """
     PATTERN_RECOGNITION 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, **kwargs):
@@ -59,6 +59,9 @@ class PatternRecognition(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -69,7 +72,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('PATTERN_RECOGNITION', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -78,7 +81,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Recognition(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -107,7 +110,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         df = data.copy()
         
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 最小化实现:返回原数据加上一个简单的计算列
         df[f'PATTERN_RECOGNITION_VALUE'] = df['close'].rolling(window=self.period).mean()
         
         
@@ -136,7 +139,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         PatternRecognition指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

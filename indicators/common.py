@@ -1,7 +1,7 @@
 """
 技术指标公共函数模块
 
-提供统一的技术指标计算功能，用于被各个具体指标类调用
+提供统一的技术指标计算功能,用于被各个具体指标类调用
 """
 
 import numpy as np
@@ -82,7 +82,7 @@ def dma(series: Numeric_array, alpha: Union[float, Numeric_array]) -> np.ndarray
 
     Args:
         series: 输入序列
-        alpha: 平滑因子，必须在0-1之间，可以是单一值或者与series等长的序列
+        alpha: 平滑因子,必须在0-1之间,可以是单一值或者与series等长的序列
 
     Returns:
         np.ndarray: 动态移动平均线
@@ -133,7 +133,7 @@ def lowest(series: Numeric_array, periods: int) -> np.ndarray:
 
 def llv(series: Numeric_array, periods: int) -> np.ndarray:
     """
-    计算周期内最低值（LLV函数别名）
+    计算周期内最低值(LLV函数别名)
 
     Args:
         series: 输入序列
@@ -147,7 +147,7 @@ def llv(series: Numeric_array, periods: int) -> np.ndarray:
 
 def hhv(series: Numeric_array, periods: int) -> np.ndarray:
     """
-    计算周期内最高值（HHV函数别名）
+    计算周期内最高值(HHV函数别名)
 
     Args:
         series: 输入序列
@@ -165,7 +165,7 @@ def ref(series: Numeric_array, periods: int = 1) -> np.ndarray:
 
     Args:
         series: 输入序列
-        periods: 周期数，默认为1
+        periods: 周期数,默认为1
 
     Returns:
         np.ndarray: 移动后的序列
@@ -193,7 +193,7 @@ def sum(series: Numeric_array, periods: int) -> np.ndarray:
 
     Args:
         series: 输入序列
-        periods: 周期，如果为0则计算累计和
+        periods: 周期,如果为0则计算累计和
 
     Returns:
         np.ndarray: 周期内和
@@ -238,7 +238,7 @@ def macd(
     fast_ema = ema(close, fast_period)
     slow_ema = ema(close, slow_period)
 
-    # 确保前N个值为NaN，其中N = max(fast_period, slow_period) - 1
+    # 确保前N个值为NaN,其中N = max(fast_period, slow_period) - 1
     min_periods = max(fast_period, slow_period) - 1
     dif = fast_ema - slow_ema
     dif[:min_periods] = np.nan
@@ -372,14 +372,14 @@ def obv(close: Numeric_array, volume: Numeric_array) -> np.ndarray:
 
 def cross(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
-    判断两条线是否交叉（金叉）
+    判断两条线是否交叉(金叉)
 
     Args:
         series1: 第一条线
         series2: 第二条线
 
     Returns:
-        np.ndarray: 布尔数组，True表示当前位置发生了金叉
+        np.ndarray: 布尔数组,True表示当前位置发生了金叉
     """
     series1 = np.array(series1)
     series2 = np.array(series2)
@@ -388,7 +388,7 @@ def cross(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
         return np.array([False] * len(series1))
 
     # 判断向上交叉
-    # 前一个周期series1 <= series2，当前周期series1 > series2
+    # 前一个周期series1 <= series2,当前周期series1 > series2
     cond1 = np.concatenate(([False], series1[:-1] <= series2[:-1]))
     cond2 = series1 > series2
 
@@ -397,32 +397,32 @@ def cross(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
 
 def crossover(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
-    判断向上穿越情况（金叉）
+    判断向上穿越情况(金叉)
 
     Args:
         series1: 第一个序列
         series2: 第二个序列或固定值
 
     Returns:
-        np.ndarray: 布尔数组，True表示series1从下方穿过series2
+        np.ndarray: 布尔数组,True表示series1从下方穿过series2
     """
     # 确保输入是numpy数组
     s1 = np.array(series1)
 
-    # 如果series2是标量值，创建相同长度的常数数组
+    # 如果series2是标量值,创建相同长度的常数数组
     if np.isscalar(series2):
         s2 = np.full_like(s1, series2)
     else:
         s2 = np.array(series2)
 
-    # 前一个时刻series1小于等于series2，当前时刻series1大于series2
+    # 前一个时刻series1小于等于series2,当前时刻series1大于series2
     prev_leq = np.roll(s1 <= s2, 1)
     curr_gt = s1 > s2
 
     # 组合判断
     crossover_result = prev_leq & curr_gt
 
-    # 第一个元素设为False，因为没有前一个时刻的数据
+    # 第一个元素设为False,因为没有前一个时刻的数据
     crossover_result[0] = False
 
     return crossover_result
@@ -430,32 +430,32 @@ def crossover(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
 
 def crossunder(series1: Numeric_array, series2: Numeric_array) -> np.ndarray:
     """
-    判断向下穿越情况（死叉）
+    判断向下穿越情况(死叉)
 
     Args:
         series1: 第一个序列
         series2: 第二个序列或固定值
 
     Returns:
-        np.ndarray: 布尔数组，True表示series1从上方穿过series2
+        np.ndarray: 布尔数组,True表示series1从上方穿过series2
     """
     # 确保输入是numpy数组
     s1 = np.array(series1)
 
-    # 如果series2是标量值，创建相同长度的常数数组
+    # 如果series2是标量值,创建相同长度的常数数组
     if np.isscalar(series2):
         s2 = np.full_like(s1, series2)
     else:
         s2 = np.array(series2)
 
-    # 前一个时刻series1大于等于series2，当前时刻series1小于series2
+    # 前一个时刻series1大于等于series2,当前时刻series1小于series2
     prev_geq = np.roll(s1 >= s2, 1)
     curr_lt = s1 < s2
 
     # 组合判断
     crossunder_result = prev_geq & curr_lt
 
-    # 第一个元素设为False，因为没有前一个时刻的数据
+    # 第一个元素设为False,因为没有前一个时刻的数据
     crossunder_result[0] = False
 
     return crossunder_result
@@ -479,10 +479,10 @@ def barslast(condition: Numeric_array) -> np.ndarray:
 
     for i in range(len(condition)):
         if condition[i]:
-            # 条件成立，重置计数器
+            # 条件成立,重置计数器
             count = 0
         else:
-            # 条件不成立，计数器加1
+            # 条件不成立,计数器加1
             if count >= 0:
                 count += 1
 

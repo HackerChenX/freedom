@@ -22,7 +22,7 @@ from utils.logger import get_logger
 try:
     from indicators.scoring_framework import IndicatorScoreManager
 except ImportError:
-    # 如果导入失败，创建一个简单的替代类
+    # 如果导入失败,创建一个简单的替代类
     class IndicatorScoreManager(BaseIndicator):
         def __init__(self, **kwargs):
             super().__init__(name=self.__class__.__name__, **kwargs)
@@ -42,7 +42,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     SCORE_MANAGER 指标
 
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
 
     def _get_default_parameters_scoremanager(self) -> Dict[str, Any]:
@@ -70,7 +70,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("SCORE_MANAGER", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -79,7 +79,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.period = params.get("period", 14)  # TODO: 将魔法数字提取到配置中
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
 
     def calculate_Manager(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -108,7 +108,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         df = data.copy()
 
-        # 最小化实现：返回原数据加上一个简单的计算列
+        # 最小化实现:返回原数据加上一个简单的计算列
         df[f"SCORE_MANAGER_VALUE"] = df["close"].rolling(window=self.period).mean()
 
         # 添加形态识别和信号生成
@@ -136,7 +136,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         ScoreManager指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -148,7 +148,7 @@ class ScoreManager(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算指标值
 
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
 
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

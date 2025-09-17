@@ -25,7 +25,7 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     TIME_CYCLE_ANALYSIS 指标
 
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
 
     def __init__(self, **kwargs):
@@ -44,7 +44,7 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_timecycleanalysis()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -61,15 +61,15 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：简化参数设置，确保参数修改功能正常
+        # 🔧 Ultra Think修复:简化参数设置,确保参数修改功能正常
         try:
-            # 直接设置参数，不依赖验证器
+            # 直接设置参数,不依赖验证器
             self.period = kwargs.get("period", 14)  # TODO: 将魔法数字提取到配置中
             # 同步更新minimum_periods
             self._minimum_periods = self.period
 
         except Exception:
-            # 如果设置失败，使用默认值
+            # 如果设置失败,使用默认值
             self.period = 14  # TODO: 将魔法数字提取到配置中
             self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
@@ -99,7 +99,7 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         df = data.copy()
 
-        # 🔧 Ultra Think修复：正确处理NaN值，使用min_periods=1确保有足够数据
+        # 🔧 Ultra Think修复:正确处理NaN值,使用min_periods=1确保有足够数据
         df[f"TIME_CYCLE_ANALYSIS_VALUE"] = df["close"].rolling(window=self.period, min_periods=1).mean()
 
         # 添加形态识别和信号生成
@@ -110,7 +110,7 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Analysis(data, **kwargs)
         return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
@@ -123,7 +123,7 @@ class TimeCycleAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_timecycleanalysis(data, **kwargs)

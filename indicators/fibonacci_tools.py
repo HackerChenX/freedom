@@ -23,7 +23,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     FIBONACCI_TOOLS 指标
     
-    斐波那契工具指标，基于斐波那契数列的回撤和扩展分析
+    斐波那契工具指标,基于斐波那契数列的回撤和扩展分析
     主要分析价格在斐波那契关键位的支撑阻力效应
     """
     
@@ -43,7 +43,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_fibonaccitools()
 
-        # 🔧 Ultra Think修复：设置内部minimum_periods值
+        # 🔧 Ultra Think修复:设置内部minimum_periods值
         self._minimum_periods = 25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
@@ -64,9 +64,9 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典
         """
-        # 🔧 Ultra Think修复：简化参数设置，确保参数修改功能正常
+        # 🔧 Ultra Think修复:简化参数设置,确保参数修改功能正常
         try:
-            # 直接设置参数，不依赖验证器
+            # 直接设置参数,不依赖验证器
             self.period = kwargs.get('period', 20)  # TODO: 将魔法数字提取到配置中
             self.swing_period = kwargs.get('swing_period', 10)
             self.fib_levels = kwargs.get('fib_levels', [0.236, 0.382, 0.5, 0.618,  # TODO: 将魔法数字提取到配置中 0.786])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -74,7 +74,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self._minimum_periods = max(self.period, self.swing_period) + 5  # TODO: 将魔法数字提取到配置中
 
         except Exception:
-            # 如果设置失败，使用默认值
+            # 如果设置失败,使用默认值
             self.period = 20  # TODO: 将魔法数字提取到配置中
             self.swing_period = 10
             self.fib_levels = [0.236, 0.382, 0.5, 0.618,  # TODO: 将魔法数字提取到配置中 0.786]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -241,44 +241,44 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算原始评分
         
-        基于斐波那契分析的综合评分：
-        - 支撑阻力强度（40%权重）  # TODO: 将魔法数字提取到配置中
-        - 突破信号（30%权重）  # TODO: 将魔法数字提取到配置中
-        - 回撤信号（20%权重）  # TODO: 将魔法数字提取到配置中
-        - 位置评分（10%权重）
+        基于斐波那契分析的综合评分:
+        - 支撑阻力强度(40%权重)  # TODO: 将魔法数字提取到配置中
+        - 突破信号(30%权重)  # TODO: 将魔法数字提取到配置中
+        - 回撤信号(20%权重)  # TODO: 将魔法数字提取到配置中
+        - 位置评分(10%权重)
         """
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Tools(data, **kwargs)
         
         result = self._result
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 支撑阻力评分（40%权重）  # TODO: 将魔法数字提取到配置中
+        # 1. 支撑阻力评分(40%权重)  # TODO: 将魔法数字提取到配置中
         support_strength = result.get('support_strength', pd.Series(0.0, index=data.index))
         resistance_strength = result.get('resistance_strength', pd.Series(0.0, index=data.index))
         
-        # 支撑强度加分，阻力强度减分
+        # 支撑强度加分,阻力强度减分
         support_score = np.clip(support_strength / 5, 0, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         resistance_score = np.clip(resistance_strength / 5, 0, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         score += support_score * 0.4  # TODO: 将魔法数字提取到配置中
         score -= resistance_score * 0.4  # TODO: 将魔法数字提取到配置中
         
-        # 2. 突破信号评分（30%权重）  # TODO: 将魔法数字提取到配置中
+        # 2. 突破信号评分(30%权重)  # TODO: 将魔法数字提取到配置中
         breakout_signal = result.get('fib_breakout', pd.Series(0.0, index=data.index))
         breakout_score = np.clip(breakout_signal / 10, 0, 30)  # TODO: 将魔法数字提取到配置中
         score += breakout_score * 0.3  # TODO: 将魔法数字提取到配置中
         
-        # 3. 回撤信号评分（20%权重）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 3. 回撤信号评分(20%权重)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         retracement_signal = result.get('fib_retracement', pd.Series(0.0, index=data.index))
         retracement_score = np.clip(retracement_signal / 8,  # TODO: 将魔法数字提取到配置中 -20, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += retracement_score * 0.2
         
-        # 4. 位置评分（10%权重）  # TODO: 将魔法数字提取到配置中
+        # 4. 位置评分(10%权重)  # TODO: 将魔法数字提取到配置中
         fib_position = result.get('fib_position', pd.Series(0.5, index=data.index))  # TODO: 将魔法数字提取到配置中
         
-        # 在黄金分割位（0.618）附近加分  # TODO: 将魔法数字提取到配置中
+        # 在黄金分割位(0.618)附近加分  # TODO: 将魔法数字提取到配置中
         golden_ratio_bonus = np.where(
             np.abs(fib_position - 0.618) < 0.05,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             10,
@@ -286,7 +286,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         )
         score += golden_ratio_bonus * 0.1
         
-        # 在关键回撤位（0.382, 0.5）附近加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 在关键回撤位(0.382, 0.5)附近加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         key_level_bonus = np.where(
             (np.abs(fib_position - 0.382) < 0.03) | (np.abs(fib_position - 0.5) < 0.03),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             8,  # TODO: 将魔法数字提取到配置中
@@ -308,10 +308,10 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         avg_score = score.mean()
         score_std = score.std()
         
-        # 评分越高，置信度越高
+        # 评分越高,置信度越高
         score_confidence = min(avg_score / 100, 1.0)
         
-        # 评分稳定性越高，置信度越高
+        # 评分稳定性越高,置信度越高
         stability_confidence = max(0.3, 1.0 - score_std / 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 综合置信度
@@ -321,7 +321,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def get_patterns_Tools(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
-        # 🔧 Ultra Think修复：移除has_result检查，直接计算
+        # 🔧 Ultra Think修复:移除has_result检查,直接计算
         # if not self.has_result():
         #     self.calculate_Tools(data, **kwargs)
         
@@ -375,7 +375,7 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return pd.DataFrame({'patterns': [patterns]}, index=[data.index[-1]] if len(data) > 0 else [])
 
-    # 🔧 Ultra Think修复：实现BaseIndicator要求的抽象方法
+    # 🔧 Ultra Think修复:实现BaseIndicator要求的抽象方法
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """实现BaseIndicator要求的_calculate_baseindicator方法"""
         return self._calculate_fibonaccitools(data, **kwargs)
@@ -402,5 +402,5 @@ class FibonacciTools(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return getattr(self, '_minimum_periods', 25)  # TODO: 将魔法数字提取到配置中
 
 
-# 为了向后兼容，创建别名
+# 为了向后兼容,创建别名
 FIBONACCI_TOOLS = FibonacciTools

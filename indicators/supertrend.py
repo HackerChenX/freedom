@@ -6,8 +6,8 @@ from utils.container import container
 """
 超级趋势(SuperTrend)指标
 
-SuperTrend是一个基于ATR的趋势跟踪指标，它在价格图表上显示动态的支撑和阻力线。
-该指标结合了平均真实波幅(ATR)和价格的中位数来确定趋势方向。
+SuperTrend是一个基于ATR的趋势跟踪指标,它在价格图表上显示动态的支撑和阻力线.
+该指标结合了平均真实波幅(ATR)和价格的中位数来确定趋势方向.
 """
 
 import numpy as np
@@ -26,20 +26,20 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     超级趋势(SuperTrend)指标
 
-    分类：趋势指标
-    描述：基于ATR的动态支撑阻力线，用于趋势跟踪
+    分类:趋势指标
+    描述:基于ATR的动态支撑阻力线,用于趋势跟踪
 
-    计算公式：
+    计算公式:
     1. HL2 = (High + Low) / 2
     2. ATR = Average True Range
     3. Upper Band = HL2 + (multiplier * ATR)  # TODO: 将魔法数字提取到配置中
     4. Lower Band = HL2 - (multiplier * ATR)  # TODO: 将魔法数字提取到配置中
     5. SuperTrend = 根据价格与带线的关系确定  # TODO: 将魔法数字提取到配置中
 
-    信号解释：
-    - 价格在SuperTrend线上方：上升趋势
-    - 价格在SuperTrend线下方：下降趋势
-    - SuperTrend线颜色变化：趋势转换信号
+    信号解释:
+    - 价格在SuperTrend线上方:上升趋势
+    - 价格在SuperTrend线下方:下降趋势
+    - SuperTrend线颜色变化:趋势转换信号
     """
 
     def __init__(self, period: int = 10, multiplier: float = 3.0, **kwargs):  # TODO: 将魔法数字提取到配置中
@@ -50,8 +50,8 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化SuperTrend指标
 
         Args:
-            period: ATR计算周期，默认10
-            multiplier: ATR乘数，默认3.0
+            period: ATR计算周期,默认10
+            multiplier: ATR乘数,默认3.0
             **kwargs: 其他参数
         """
         super().__init__(**kwargs)
@@ -86,7 +86,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算SuperTrend指标
 
         Args:
-            data: 包含high、low、close列的DataFrame
+            data: 包含high,low,close列的DataFrame
             **kwargs: 其他参数
 
         Returns:
@@ -99,7 +99,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             df = data.copy()
 
-            # 计算HL2（高低价中位数）
+            # 计算HL2(高低价中位数)
             hl2 = (df["high"] + df["low"]) / 2
 
             # 计算ATR
@@ -109,7 +109,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             upper_band = hl2 + (self.multiplier * atr)
             lower_band = hl2 - (self.multiplier * atr)
 
-            # 计算最终上下轨（考虑前一期的值）
+            # 计算最终上下轨(考虑前一期的值)
             final_upper_band = pd.Series(index=df.index, dtype=float)
             final_lower_band = pd.Series(index=df.index, dtype=float)
 
@@ -118,7 +118,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     final_upper_band.iloc[i] = upper_band.iloc[i]
                     final_lower_band.iloc[i] = lower_band.iloc[i]
                 else:
-                    # 上轨：如果当前上轨小于前一期上轨或前一期收盘价大于前一期上轨，则使用当前上轨
+                    # 上轨:如果当前上轨小于前一期上轨或前一期收盘价大于前一期上轨,则使用当前上轨
                     if (
                         upper_band.iloc[i] < final_upper_band.iloc[i - 1]
                         or df["close"].iloc[i - 1] > final_upper_band.iloc[i - 1]
@@ -127,7 +127,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     else:
                         final_upper_band.iloc[i] = final_upper_band.iloc[i - 1]
 
-                    # 下轨：如果当前下轨大于前一期下轨或前一期收盘价小于前一期下轨，则使用当前下轨
+                    # 下轨:如果当前下轨大于前一期下轨或前一期收盘价小于前一期下轨,则使用当前下轨
                     if (
                         lower_band.iloc[i] > final_lower_band.iloc[i - 1]
                         or df["close"].iloc[i - 1] < final_lower_band.iloc[i - 1]
@@ -138,7 +138,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # 计算SuperTrend线
             supertrend = pd.Series(index=df.index, dtype=float)
-            trend_direction = pd.Series(index=df.index, dtype=int)  # 1为上升趋势，-1为下降趋势
+            trend_direction = pd.Series(index=df.index, dtype=int)  # 1为上升趋势,-1为下降趋势
 
             for i in range(len(df)):
                 if i == 0:
@@ -205,7 +205,7 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
 
-        # 计算ATR（使用简单移动平均）
+        # 计算ATR(使用简单移动平均)
         atr = true_range.rolling(window=self.period).mean()
 
         return atr
@@ -226,11 +226,11 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 趋势转换信号
         trend_change = trend_direction.diff()
 
-        # 买入信号：趋势从下降转为上升
+        # 买入信号:趋势从下降转为上升
         buy_signal = trend_change == 2  # 从-1变为1
         signals[buy_signal] = 1
 
-        # 卖出信号：趋势从上升转为下降
+        # 卖出信号:趋势从上升转为下降
         sell_signal = trend_change == -2  # 从1变为-1
         signals[sell_signal] = -1
 
@@ -264,11 +264,11 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         trend_desc = "上升趋势" if latest_trend == 1 else "下降趋势" if latest_trend == -1 else "未知趋势"
 
         if latest_signal == 1:
-            return {"signal": 1, "strength": strength, "description": f"买入信号：趋势转为上升，当前{trend_desc}"}
+            return {"signal": 1, "strength": strength, "description": f"买入信号:趋势转为上升,当前{trend_desc}"}
         elif latest_signal == -1:
-            return {"signal": -1, "strength": strength, "description": f"卖出信号：趋势转为下降，当前{trend_desc}"}
+            return {"signal": -1, "strength": strength, "description": f"卖出信号:趋势转为下降,当前{trend_desc}"}
         else:
-            return {"signal": 0, "strength": 0, "description": f"趋势持续，当前{trend_desc}"}
+            return {"signal": 0, "strength": 0, "description": f"趋势持续,当前{trend_desc}"}
 
     def get_pattern_info(self) -> Dict[str, Any]:
         """获取指标模式信息"""

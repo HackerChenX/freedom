@@ -30,7 +30,7 @@ class IndicatorScoreBase(BaseIndicator):
             data: 输入数据
 
         Returns:
-            float: 评分（0-100）
+            float: 评分(0-100)
         """
         return self.default_score
 
@@ -67,11 +67,11 @@ class ScoringFramework(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("SCORING_FRAMEWORK", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -103,7 +103,7 @@ class ScoringFramework(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         df = data.copy()
 
-        # 基本实现：返回原数据加上一个简单的计算列
+        # 基本实现:返回原数据加上一个简单的计算列
         df[f"SCORING_FRAMEWORK_VALUE"] = df["close"].rolling(window=self.period).mean()
 
         # 添加形态识别和信号生成
@@ -131,7 +131,7 @@ class ScoringFramework(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         ScoringFramework指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数
@@ -151,7 +151,7 @@ class IndicatorscoremanagerFramework(BaseIndicator):
             pattern_data: 形态数据
 
         Returns:
-            float: 评分（0-100）
+            float: 评分(0-100)
         """
         try:
             # 简化的评分逻辑
@@ -176,7 +176,7 @@ class IndicatorscoremanagerFramework(BaseIndicator):
         计算指标值
 
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
 
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框

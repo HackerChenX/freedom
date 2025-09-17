@@ -7,7 +7,7 @@ from utils.logger import get_logger
 """
 真实技术指标计算实现
 
-完全替代所有模拟实现，使用真实的数学公式计算技术指标。
+完全替代所有模拟实现,使用真实的数学公式计算技术指标.
 
 Author: AI Assistant
 Date: 2025-07-19  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中

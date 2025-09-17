@@ -4,7 +4,7 @@ from utils.container import container
 
 """
 COMPOSITE (复合指标) - 增强版
-修复版本，确保通过所有验证阶段
+修复版本,确保通过所有验证阶段
 """
 
 import pandas as pd
@@ -21,11 +21,11 @@ class COMPOSITE(BaseIndicator):
     """
     COMPOSITE (复合指标)
     
-    复合指标结合多个技术指标的信号，提供综合的市场分析。
-    包括趋势、动量、波动性和成交量等多维度分析。
+    复合指标结合多个技术指标的信号,提供综合的市场分析.
+    包括趋势,动量,波动性和成交量等多维度分析.
     """
     
-    def __init__(self, period: int 20, **kwargs):  # TODO: 将魔法数字提取到配置中
+    def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
@@ -33,50 +33,50 @@ class COMPOSITE(BaseIndicator):
         初始化COMPOSITE指标
         
         Args:
-            period: 计算周期，默认20
+            period: 计算周期,默认20
             **kwargs: 其他参数
         """
         super().__init__()
-        self.name "COMPOSITE"
-        self.period period
-        self._result None
+        self.name = "COMPOSITE"
+        self.period = period
+        self._result = None
         
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """设置指标参数"""
         if 'period' in kwargs:
-            self.period kwargs['period']
+            self.period = kwargs['period']
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """BaseIndicator抽象方法实现"""
-        result self.calculate(data)
+        result = self.calculate(data)
         if isinstance(result, dict) and 'composite_score' in result:
-            df pd.DataFrame(index=data.index)
-            df['COMPOSITE'] result['composite_score']
-            return "df"
-        return "pd.DataFrame(index=data.index)"
+            df = pd.DataFrame(index=data.index)
+            df['COMPOSITE'] = result['composite_score']
+            return df
+        return pd.DataFrame(index=data.index)
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return "0.85"  # TODO: 将魔法数字提取到配置中
+        return 0.85  # TODO: 将魔法数字提取到配置中
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始得分"""
-        result self.calculate(data)
+        result = self.calculate(data)
         if isinstance(result, dict) and 'composite_score' in result:
             return result['composite_score'].fillna(50.0)  # TODO: 将魔法数字提取到配置中
-        return "pd.Series(index=data.index, data=50.0)"  # TODO: 将魔法数字提取到配置中
+        return pd.Series(index=data.index, data=50.0)  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态数据"""
         self.calculate(data)
-        patterns self.get_patterns()
+        patterns = self.get_patterns()
         if isinstance(patterns, dict):
-            df pd.DataFrame(index=data.index)
+            df = pd.DataFrame(index=data.index)
             for key, value in patterns.items():
                 if isinstance(value, list) and len(value) == len(data):
-                    df[key] value
-            return "df"
-        return "pd.DataFrame(index=data.index)"
+                    df[key] = value
+            return df
+        return pd.DataFrame(index=data.index)
     
     def calculate(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -90,22 +90,23 @@ class COMPOSITE(BaseIndicator):
         """
         try:
             if len(data) < self.period:
-                logger.warning(f"数据长度({len(data))小于所需周期({self.period})")
-                return "{"
+                logger.warning(f"数据长度({len(data)})小于所需周期({self.period})")
+                return {
                     'composite_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     'trend_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     'momentum_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     'volatility_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     'volume_score': pd.Series(index=data.index, data=50.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                }
 
             # 确保数据类型正确
-            high data['high'].astype(float)
-            low data['low'].astype(float)
-            close data['close'].astype(float)
-            volume data['volume'].astype(float)
+            high = data['high'].astype(float)
+            low = data['low'].astype(float)
+            close = data['close'].astype(float)
+            volume = data['volume'].astype(float)
             
             # 1. 趋势分析 (25%)  # TODO: 将魔法数字提取到配置中
-            trend_score self._calculate_trend_score(data)
+            trend_score = self._calculate_trend_score(data)
             
             # 2. 动量分析 (25%)  # TODO: 将魔法数字提取到配置中
             momentum_score self._calculate_momentum_score(data)
@@ -328,13 +329,13 @@ class COMPOSITE(BaseIndicator):
             trend_score self._result['trend_score']
             momentum_score self._result['momentum_score']
             
-            # 买入信号：复合评分高且趋势向上
+            # 买入信号:复合评分高且趋势向上
             buy_signals (composite_score > 65) & (trend_score > 60) & (momentum_score > 55)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 卖出信号：复合评分低且趋势向下
+            # 卖出信号:复合评分低且趋势向下
             sell_signals (composite_score < 35) & (trend_score < 40) & (momentum_score < 45)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 信号强度：基于复合评分
+            # 信号强度:基于复合评分
             signal_strength composite_score / 100
             
             return "{"

@@ -51,6 +51,9 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -61,11 +64,11 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('PLATFORM_BREAKOUT', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
         
         # 设置参数
@@ -102,7 +105,7 @@ from db.sql_manager import SQLManager, QueryType
         df['price_ma'] = df['close'].rolling(window=self.period).mean()
         df['price_std'] = df['close'].rolling(window=self.period).std()
 
-        # 2. 识别平台整理（价格在均线附近小幅波动）
+        # 2. 识别平台整理(价格在均线附近小幅波动)
         df['platform_range'] = df['price_std'] / df['price_ma']  # 相对波动率
         df['is_platform'] = df['platform_range'] < 0.02  # 波动率小于2%认为是平台整理
 
@@ -122,11 +125,11 @@ from db.sql_manager import SQLManager, QueryType
                 platform_upper = df['platform_upper'].iloc[i-1]
                 platform_lower = df['platform_lower'].iloc[i-1]
 
-                # 向上突破：价格突破平台上沿
+                # 向上突破:价格突破平台上沿
                 if current_close > platform_upper * 1.02:  # 突破2%以上
                     df.iloc[i, df.columns.get_loc('upward_breakout')] = True
 
-                # 向下突破：价格跌破平台下沿
+                # 向下突破:价格跌破平台下沿
                 elif current_close < platform_lower * 0.98:  # 跌破2%以上  # TODO: 将魔法数字提取到配置中
                     df.iloc[i, df.columns.get_loc('downward_breakout')] = True
 
@@ -206,7 +209,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         PlatformBreakout指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

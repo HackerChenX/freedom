@@ -6,7 +6,7 @@ from utils.logger import get_logger
 """
 STOCHRSI (Stochastic RSI) 随机相对强弱指标
 
-STOCHRSI是RSI指标的随机化版本，用于识别超买超卖状态。
+STOCHRSI是RSI指标的随机化版本,用于识别超买超卖状态.
 """
 
 import pandas as pd
@@ -25,7 +25,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     STOCHRSI (Stochastic RSI) 随机相对强弱指标
 
-    STOCHRSI结合了RSI和随机指标的特点。
+    STOCHRSI结合了RSI和随机指标的特点.
     """
 
     REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]  # 标准指标列要求
@@ -81,11 +81,11 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("STOCHRSI", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证器模块有问题，静默处理
+            # 如果验证器模块有问题,静默处理
             pass
 
         # 设置参数
@@ -112,7 +112,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         检查是否已有计算结果
 
         Returns:
-            bool: 如果已有结果返回True，否则返回False
+            bool: 如果已有结果返回True,否则返回False
         """
         return hasattr(self, "_result") and self._result is not None and not self._result.empty
 
@@ -145,7 +145,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 确保数据有足够的长度
         min_length = max(self.rsi_period, self.stoch_period) + self.k_period + self.d_period
         if len(df) < min_length:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length})，返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length}),返回原始数据")
             df["STOCHRSI_K"] = np.nan
             df["STOCHRSI_D"] = np.nan
             return df
@@ -170,7 +170,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（STOCHRSI指标特定逻辑）
+        # 重写信号生成逻辑(STOCHRSI指标特定逻辑)
         df = self._apply_stochrsi_signal_logic(df)
 
         return df
@@ -183,13 +183,13 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         try:
             # 获取STOCHRSI值
             if "STOCHRSI_K" not in df.columns or "STOCHRSI_D" not in df.columns:
-                # 如果没有STOCHRSI值，使用默认信号
+                # 如果没有STOCHRSI值,使用默认信号
                 return df
 
             stochrsi_k = df["STOCHRSI_K"]
             stochrsi_d = df["STOCHRSI_D"]
 
-            # STOCHRSI信号生成逻辑：
+            # STOCHRSI信号生成逻辑:
             # BUY: STOCHRSI从超卖区间(< 20)向上突破且K线在D线之上  # TODO: 将魔法数字提取到配置中
             # SELL: STOCHRSI从超买区间(> 80)向下突破且K线在D线之下  # TODO: 将魔法数字提取到配置中
             # HOLD: STOCHRSI在正常区间(20-80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -223,7 +223,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.warning(f"STOCHRSI信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, "buy_signal"] = False
             df.loc[:, "sell_signal"] = False
             df.loc[:, "hold_signal"] = True
@@ -232,12 +232,12 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Stochrsi(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算STOCHRSI指标的原始评分（0-100分制）
+        计算STOCHRSI指标的原始评分(0-100分制)
 
-        STOCHRSI评分逻辑：
-        - STOCHRSI在20-80之间为正常区间，得分50分
-        - STOCHRSI < 20为超卖区间，越低得分越高（最高80分）
-        - STOCHRSI > 80为超买区间，越高得分越低（最低20分）
+        STOCHRSI评分逻辑:
+        - STOCHRSI在20-80之间为正常区间,得分50分
+        - STOCHRSI < 20为超卖区间,越低得分越高(最高80分)
+        - STOCHRSI > 80为超买区间,越高得分越低(最低20分)
         - 结合K线与D线的金叉死叉进行调整
 
         Args:
@@ -245,7 +245,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列，取值范围0-100
+            pd.Series: 原始评分序列,取值范围0-100
         """
         if not self.has_result():
             self.calculate_Stochrsi(data, **kwargs)
@@ -258,46 +258,46 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         d = self._result["STOCHRSI_D"]
 
         # 基础评分计算
-        # 1. 位置分：基于K值的位置，贡献60分权重
+        # 1. 位置分:基于K值的位置,贡献60分权重
         position_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # 超卖区间（K < 20）：看涨信号，得分增加  # TODO: 将魔法数字提取到配置中
+        # 超卖区间(K < 20):看涨信号,得分增加  # TODO: 将魔法数字提取到配置中
         oversold = k < 20  # TODO: 将魔法数字提取到配置中
         position_score[oversold] = 50 + np.minimum(
             30, (20 - k[oversold]) * 1.5
         )  # 最高80分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 超买区间（K > 80）：看跌信号，得分减少  # TODO: 将魔法数字提取到配置中
+        # 超买区间(K > 80):看跌信号,得分减少  # TODO: 将魔法数字提取到配置中
         overbought = k > 80  # TODO: 将魔法数字提取到配置中
         position_score[overbought] = 50 - np.minimum(
             30, (k[overbought] - 80) * 1.5
         )  # 最低20分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 正常区间（20 <= K <= 80）：中性，基于距离中线的远近微调  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 正常区间(20 <= K <= 80):中性,基于距离中线的远近微调  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         normal = (k >= 20) & (k <= 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         position_score[normal] = (
             50 + (k[normal] - 50) * 0.2
-        )  # 20时为44分，80时为56分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        )  # 20时为44分,80时为56分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 2. 金叉死叉分：基于K线与D线的交叉，贡献25分权重
+        # 2. 金叉死叉分:基于K线与D线的交叉,贡献25分权重
         cross_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # 检测金叉（K上穿D）
+        # 检测金叉(K上穿D)
         golden_cross = (k > d) & (k.shift(1) <= d.shift(1))
         cross_score[golden_cross] += 20  # 金叉加分  # TODO: 将魔法数字提取到配置中
 
-        # 检测死叉（K下穿D）
+        # 检测死叉(K下穿D)
         death_cross = (k < d) & (k.shift(1) >= d.shift(1))
         cross_score[death_cross] -= 20  # 死叉减分  # TODO: 将魔法数字提取到配置中
 
-        # 3. 趋势分：基于K值变化趋势，贡献15分权重  # TODO: 将魔法数字提取到配置中
+        # 3. 趋势分:基于K值变化趋势,贡献15分权重  # TODO: 将魔法数字提取到配置中
         k_change = k - k.shift(3)  # 3周期变化  # TODO: 将魔法数字提取到配置中
         trend_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # K值上升趋势加分，下降趋势减分
+        # K值上升趋势加分,下降趋势减分
         trend_score += np.clip(k_change * 0.3, -10, 10)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 综合评分（位置分60% + 金叉死叉分25% + 趋势分15%）  # TODO: 将魔法数字提取到配置中
+        # 4. 综合评分(位置分60% + 金叉死叉分25% + 趋势分15%)  # TODO: 将魔法数字提取到配置中
         final_score = (
             position_score * 0.6 + cross_score * 0.25 + trend_score * 0.15
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -340,7 +340,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         获取StochRSI形态识别结果
 
         Returns:
-            pd.DataFrame: 形态识别结果，包含各种StochRSI形态
+            pd.DataFrame: 形态识别结果,包含各种StochRSI形态
         """
         if data is None and hasattr(self, "_result") and self._result is not None:
             data_to_use = self._result
@@ -380,7 +380,7 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算StochRSI原始评分
 
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 评分序列,取值范围0-100
         """
         return self.calculate_raw_score_Stochrsi(data, **kwargs)
 
@@ -477,25 +477,25 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算StochRSI置信度
 
         Returns:
-            float: 置信度值，范围0-1
+            float: 置信度值,范围0-1
         """
         return self.calculate_confidence_Stochrsi(score, patterns, signals)
 
     def register_patterns(self) -> None:
-        """兼容性方法：注册形态，处理架构问题"""
+        """兼容性方法:注册形态,处理架构问题"""
         try:
             # 尝试调用实际的注册方法
             return self.register_patterns_Stochrsi()
         except AttributeError as e:
             if "'PatternRegistry' object has no attribute 'register'" in str(e):
-                # 已知的架构问题，静默处理
+                # 已知的架构问题,静默处理
                 pass
             else:
                 raise
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        生成交易信号（兼容性方法）
+        生成交易信号(兼容性方法)
 
         Returns:
             pd.DataFrame: 交易信号DataFrame

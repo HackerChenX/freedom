@@ -23,7 +23,7 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     V_SHAPED_REVERSAL 指标
     
-    自动生成的最小化实现，支持参数标准化
+    自动生成的最小化实现,支持参数标准化
     """
     
     def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
@@ -61,6 +61,9 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -71,7 +74,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('V_SHAPED_REVERSAL', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -80,7 +83,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Reversal_V_Shaped_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -114,10 +117,10 @@ from db.sql_manager import SQLManager, QueryType
         df[] = df['close'].pct_change()
         df[_ma'] = df[].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
 
-        # 2. 识别急剧下跌（V形底部的左侧）
+        # 2. 识别急剧下跌(V形底部的左侧)
         df['sharp_decline'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 识别快速反弹（V形底部的右侧）  # TODO: 将魔法数字提取到配置中
+        # 3. 识别快速反弹(V形底部的右侧)  # TODO: 将魔法数字提取到配置中
         df['sharp_rebound'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
         # 4. 识别V形底部反转  # TODO: 将魔法数字提取到配置中
@@ -129,10 +132,10 @@ from db.sql_manager import SQLManager, QueryType
                 if df['sharp_rebound'].iloc[i]:
                     df.iloc[i, df.columns.get_loc('v_bottom_reversal')] = True
 
-        # 5. 识别急剧上涨（倒V形顶部的左侧）  # TODO: 将魔法数字提取到配置中
+        # 5. 识别急剧上涨(倒V形顶部的左侧)  # TODO: 将魔法数字提取到配置中
         df['sharp_rise'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 6. 识别快速回落（倒V形顶部的右侧）  # TODO: 将魔法数字提取到配置中
+        # 6. 识别快速回落(倒V形顶部的右侧)  # TODO: 将魔法数字提取到配置中
         df['sharp_fall'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
         # 7. 识别倒V形顶部反转  # TODO: 将魔法数字提取到配置中
@@ -212,7 +215,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         VshapedReversal指标所需的最少数据周期数
         
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
         
         Returns:
             int: 最少需要的数据周期数

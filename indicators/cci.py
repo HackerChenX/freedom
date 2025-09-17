@@ -6,7 +6,7 @@ from utils.logger import get_logger
 """
 CCI_Cci (Commodity Channel Index) 顺势指标
 
-CCI指标是一种超买超卖指标，用于识别价格偏离统计平均值的程度。
+CCI指标是一种超买超卖指标,用于识别价格偏离统计平均值的程度.
 """
 
 import pandas as pd
@@ -25,7 +25,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     CCI_Cci (Commodity Channel Index) 顺势指标
 
-    CCI指标通过计算价格与其统计平均值的偏离程度来识别超买超卖状态。
+    CCI指标通过计算价格与其统计平均值的偏离程度来识别超买超卖状态.
     """
 
     def __init__(self, **kwargs):
@@ -53,7 +53,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         try:
             self.register_patterns_Cci()
         except Exception as e:
-            # 如果形态注册失败，记录警告但不影响指标初始化
+            # 如果形态注册失败,记录警告但不影响指标初始化
             import logging
 
             logging.warning(f"CCI形态注册失败: {e}")
@@ -93,11 +93,11 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("CCI_Cci", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -114,7 +114,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         return max(
             self.period + 5, 25
-        )  # CCI周期 + 缓冲，最少25个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        )  # CCI周期 + 缓冲,最少25个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def calculate_Cci(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -144,7 +144,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 确保数据有足够的长度
         if len(df) < self.period:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period})，返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period}),返回原始数据")
             df["CCI"] = np.nan
             return df
 
@@ -152,7 +152,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         required_cols = ["high", "low", "close"]
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
-            logger.warning(f"缺少必需列: {missing_cols}，返回原始数据")
+            logger.warning(f"缺少必需列: {missing_cols},返回原始数据")
             df["CCI"] = np.nan
             return df
 
@@ -175,7 +175,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（CCI指标特定逻辑）
+        # 重写信号生成逻辑(CCI指标特定逻辑)
         df = self._apply_cci_signal_logic(df)
 
         return df
@@ -189,7 +189,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 获取CCI值
             cci_col = "CCI"
             if cci_col not in df.columns:
-                # 如果没有CCI值，返回保守信号
+                # 如果没有CCI值,返回保守信号
                 df["buy_signal"] = False
                 df["sell_signal"] = False
                 df["hold_signal"] = True
@@ -206,17 +206,17 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 放宽的CCI信号生成 - 确保有信号
             for i in range(5, len(cci) - 1):  # 减少边界限制  # TODO: 将魔法数字提取到配置中
                 try:
-                    # 放宽的超卖信号：CCI < -100 (原来是-150)  # TODO: 将魔法数字提取到配置中
+                    # 放宽的超卖信号:CCI < -100 (原来是-150)  # TODO: 将魔法数字提取到配置中
                     if cci.iloc[i] < -100 and cci.iloc[i] > cci.iloc[i - 1]:
                         df.iloc[i, df.columns.get_loc("buy_signal")] = True
                         df.iloc[i, df.columns.get_loc("hold_signal")] = False
 
-                    # 放宽的超买信号：CCI > 100 (原来是150)
+                    # 放宽的超买信号:CCI > 100 (原来是150)
                     elif cci.iloc[i] > 100 and cci.iloc[i] < cci.iloc[i - 1]:
                         df.iloc[i, df.columns.get_loc("sell_signal")] = True
                         df.iloc[i, df.columns.get_loc("hold_signal")] = False
 
-                    # 新增：零轴穿越信号
+                    # 新增:零轴穿越信号
                     elif cci.iloc[i] > 0 and cci.iloc[i - 1] <= 0:  # 上穿零轴
                         df.iloc[i, df.columns.get_loc("buy_signal")] = True
                         df.iloc[i, df.columns.get_loc("hold_signal")] = False
@@ -230,7 +230,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             cci_value = df[cci_col]
 
-            # CCI信号生成逻辑：
+            # CCI信号生成逻辑:
             # BUY: CCI从超卖区间(-100以下)向上突破
             # SELL: CCI从超买区间(100以上)向下突破
             # HOLD: CCI在正常区间(-100到100)
@@ -256,7 +256,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.warning(f"CCI信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, "buy_signal"] = False
             df.loc[:, "sell_signal"] = False
             df.loc[:, "hold_signal"] = True
@@ -265,12 +265,12 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_raw_score_Cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算CCI指标的原始评分（0-100分制）
+        计算CCI指标的原始评分(0-100分制)
 
-        CCI评分逻辑：
-        - CCI在-100到100之间为正常区间，得分50分
-        - CCI_Cci < -100为超卖区间，越低得分越高（最高80分）
-        - CCI_Cci > 100为超买区间，越高得分越低（最低20分）
+        CCI评分逻辑:
+        - CCI在-100到100之间为正常区间,得分50分
+        - CCI_Cci < -100为超卖区间,越低得分越高(最高80分)
+        - CCI_Cci > 100为超买区间,越高得分越低(最低20分)
         - 结合CCI变化趋势进行调整
 
         Args:
@@ -278,7 +278,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列，取值范围0-100
+            pd.Series: 原始评分序列,取值范围0-100
         """
         if not self.has_result():
             self.calculate_Cci(data, **kwargs)
@@ -291,35 +291,35 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         cci = self._result[cci_col]
 
         # 基础评分计算
-        # 1. 位置分：基于CCI值的位置，贡献70分权重
+        # 1. 位置分:基于CCI值的位置,贡献70分权重
         position_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # 超卖区间（CCI_Cci < -100）：看涨信号，得分增加
+        # 超卖区间(CCI_Cci < -100):看涨信号,得分增加
         oversold = cci < -100
         position_score[oversold] = 50 + np.minimum(
             30, (-cci[oversold] - 100) * 0.15
         )  # 最高80分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 超买区间（CCI_Cci > 100）：看跌信号，得分减少
+        # 超买区间(CCI_Cci > 100):看跌信号,得分减少
         overbought = cci > 100
         position_score[overbought] = 50 - np.minimum(
             30, (cci[overbought] - 100) * 0.15
         )  # 最低20分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 正常区间（-100 <= CCI_Cci <= 100）：中性，基于距离零轴的远近微调
+        # 正常区间(-100 <= CCI_Cci <= 100):中性,基于距离零轴的远近微调
         normal = (cci >= -100) & (cci <= 100)
-        position_score[normal] = 50 + cci[normal] * 0.1  # -100时为40分，100时为60分  # TODO: 将魔法数字提取到配置中
+        position_score[normal] = 50 + cci[normal] * 0.1  # -100时为40分,100时为60分  # TODO: 将魔法数字提取到配置中
 
-        # 2. 趋势分：基于CCI变化趋势，贡献30分权重
+        # 2. 趋势分:基于CCI变化趋势,贡献30分权重
         cci_change = cci - cci.shift(3)  # 3周期变化  # TODO: 将魔法数字提取到配置中
         trend_score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
-        # CCI上升趋势加分，下降趋势减分
+        # CCI上升趋势加分,下降趋势减分
         trend_score += np.clip(
             cci_change * 0.2, -15, 15
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 综合评分（位置分70% + 趋势分30%）  # TODO: 将魔法数字提取到配置中
+        # 3. 综合评分(位置分70% + 趋势分30%)  # TODO: 将魔法数字提取到配置中
         final_score = (
             position_score * 0.7 + trend_score * 0.3
         )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -366,7 +366,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # ==================== 兼容性方法 - 真实实现 ====================
 
     def get_patterns(self, data: pd.DataFrame = None, **kwargs) -> pd.DataFrame:
-        """真实实现：获取CCI形态"""
+        """真实实现:获取CCI形态"""
         if data is None or data.empty:
             return pd.DataFrame()
 
@@ -401,13 +401,13 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df["CCI_ZERO_CROSS_DOWN"] = (cci_values < 0) & (cci_values.shift(1) >= 0)
 
         # 7. CCI金叉死叉形态 (基于零轴穿越和趋势确认)  # TODO: 将魔法数字提取到配置中
-        # CCI金叉：零轴上穿且有上升趋势
+        # CCI金叉:零轴上穿且有上升趋势
         cci_rising = cci_values > cci_values.shift(1)
         patterns_df["CCI_GOLDEN_CROSS"] = patterns_df["CCI_ZERO_CROSS_UP"] | (  # 零轴上穿
             (cci_values > -100) & (cci_values.shift(1) <= -100) & cci_rising
         )  # 从超卖区域上穿-100且上升
 
-        # CCI死叉：零轴下穿且有下降趋势
+        # CCI死叉:零轴下穿且有下降趋势
         cci_falling = cci_values < cci_values.shift(1)
         patterns_df["CCI_DEATH_CROSS"] = patterns_df["CCI_ZERO_CROSS_DOWN"] | (  # 零轴下穿
             (cci_values < 100) & (cci_values.shift(1) >= 100) & cci_falling
@@ -415,7 +415,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 8. 背离形态检测  # TODO: 将魔法数字提取到配置中
         if len(data) >= 20:  # TODO: 将魔法数字提取到配置中
-            # 简化的背离检测：价格创新高但CCI未创新高
+            # 简化的背离检测:价格创新高但CCI未创新高
             price_high = data["high"].rolling(10).max()
             cci_high = cci_values.rolling(10).max()
             patterns_df["CCI_BEARISH_DIVERGENCE"] = (
@@ -424,7 +424,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 & (cci_values > 50)  # TODO: 将魔法数字提取到配置中
             )
 
-            # 底背离形态：价格创新低但CCI未创新低
+            # 底背离形态:价格创新低但CCI未创新低
             price_low = data["low"].rolling(10).min()
             cci_low = cci_values.rolling(10).min()
             patterns_df["CCI_BULLISH_DIVERGENCE"] = (
@@ -436,7 +436,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return patterns_df
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """真实实现：计算CCI原始评分"""
+        """真实实现:计算CCI原始评分"""
         if data.empty:
             return pd.Series(dtype=float)
 
@@ -489,7 +489,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         score -= cci_falling * 5  # TODO: 将魔法数字提取到配置中
 
         # 4. 基于CCI强度的评分  # TODO: 将魔法数字提取到配置中
-        # CCI绝对值越大，信号越强
+        # CCI绝对值越大,信号越强
         cci_strength = np.abs(cci_values) / 100
         strength_bonus = np.minimum(cci_strength * 10, 15)  # 最大15分  # TODO: 将魔法数字提取到配置中
 
@@ -500,7 +500,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return score.clip(0, 100)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成CCI交易信号"""
+        """真实实现:生成CCI交易信号"""
         if data.empty:
             return pd.DataFrame()
 
@@ -564,7 +564,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
-        """真实实现：计算CCI综合评分"""
+        """真实实现:计算CCI综合评分"""
         if data.empty:
             return {"score": 50.0, "confidence": 0.0, "signals": {}}  # TODO: 将魔法数字提取到配置中
 
@@ -639,7 +639,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         }
 
     def set_parameters(self, **kwargs):
-        """真实实现：设置CCI参数"""
+        """真实实现:设置CCI参数"""
         # 验证并设置period参数
         if "period" in kwargs:
             period = kwargs["period"]
@@ -660,23 +660,23 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         logger.info(f"CCI参数已更新")
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：生成CCI交易信号"""
+        """真实实现:生成CCI交易信号"""
         return self.get_signals(data, **kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现：计算CCI指标"""
+        """真实实现:计算CCI指标"""
         return self.calculate_Cci(data, **kwargs)
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_Cci(score, patterns, signals)
 
     def identify_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：识别形态"""
+        """兼容性方法:识别形态"""
         return self.get_patterns(data, **kwargs)
 
     def calculate_raw_score_cci(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score(data, **kwargs)
 
     def register_patterns_Cci(self):
@@ -687,7 +687,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_ZERO_CROSS_UP",
             display_name="CCI零轴上穿",
-            description="CCI从下方穿越零轴，表明趋势转为看涨",
+            description="CCI从下方穿越零轴,表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -697,7 +697,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_ZERO_CROSS_DOWN",
             display_name="CCI零轴下穿",
-            description="CCI从上方穿越零轴，表明趋势转为看跌",
+            description="CCI从上方穿越零轴,表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -708,7 +708,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_GOLDEN_CROSS",
             display_name="CCI金叉",
-            description="CCI零轴上穿或从超卖区域回升，表明趋势转为看涨",
+            description="CCI零轴上穿或从超卖区域回升,表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -718,7 +718,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_DEATH_CROSS",
             display_name="CCI死叉",
-            description="CCI零轴下穿或从超买区域回落，表明趋势转为看跌",
+            description="CCI零轴下穿或从超买区域回落,表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -729,7 +729,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_OVERBOUGHT",
             display_name="CCI超买",
-            description="CCI值高于100，表明市场超买",
+            description="CCI值高于100,表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-10.0,
@@ -739,7 +739,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_OVERSOLD",
             display_name="CCI超卖",
-            description="CCI值低于-100，表明市场超卖",
+            description="CCI值低于-100,表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -750,7 +750,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_EXTREME_OVERBOUGHT",
             display_name="CCI极度超买",
-            description="CCI值高于200，表明市场极度超买",
+            description="CCI值高于200,表明市场极度超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -760,7 +760,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_EXTREME_OVERSOLD",
             display_name="CCI极度超卖",
-            description="CCI值低于-200，表明市场极度超卖",  # TODO: 将魔法数字提取到配置中
+            description="CCI值低于-200,表明市场极度超卖",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -771,7 +771,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_BULLISH_DIVERGENCE",
             display_name="CCI底背离",
-            description="价格创新低但CCI未创新低，看涨背离信号",
+            description="价格创新低但CCI未创新低,看涨背离信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -781,7 +781,7 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="CCI_BEARISH_DIVERGENCE",
             display_name="CCI顶背离",
-            description="价格创新高但CCI未创新高，看跌背离信号",
+            description="价格创新高但CCI未创新高,看跌背离信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -789,5 +789,5 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         )
 
 
-# 为了兼容指标注册表，创建别名
+# 为了兼容指标注册表,创建别名
 CCI = CciCci

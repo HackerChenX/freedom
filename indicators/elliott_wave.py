@@ -23,7 +23,7 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     ELLIOTT_WAVE 指标
     
-    艾略特波浪指标，基于艾略特波浪理论的5-3波浪形态分析
+    艾略特波浪指标,基于艾略特波浪理论的5-3波浪形态分析
     主要识别推动浪和调整浪的形态特征
     """
     
@@ -43,21 +43,22 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name "ELLIOTT_WAVE"
+        self.name = "ELLIOTT_WAVE"
 
         # 设置默认参数
-        self._default_parameters self._get_default_parameters_elliottwave()
+        self._default_parameters = self._get_default_parameters_elliottwave()
 
         # 应用用户参数
         self.set_parameters_Wave(**kwargs)
     
     def _get_default_parameters_elliottwave(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return "{"
+        return {
             "period": 20,  # 计算周期  # TODO: 将魔法数字提取到配置中
             "min_wave_length": 5,  # 最小波浪长度  # TODO: 将魔法数字提取到配置中
             "fibonacci_ratios": [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618],  # 斐波那契比例  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             "wave_tolerance": 0.1  # 波浪识别容差
+        }
 
     def set_parameters_Wave(self, **kwargs):
         """
@@ -69,33 +70,27 @@ class ElliottWave(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
-            validator IndicatorParameterValidator()
+            validator = IndicatorParameterValidator()
 
             # 合并默认参数和用户参数
-            params self._default_parameters.copy()
+            params = self._default_parameters.copy()
             params.update(kwargs)
 
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('ELLIOTT_WAVE', params)
+            is_valid, errors = validator.validate_indicator_parameters('ELLIOTT_WAVE', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
-                # 使用默认参数
-                params self._default_parameters.copy()
-
-            # 设置参数
-            self.period params.get('period', 20)  # TODO: 将魔法数字提取到配置中
-            self.min_wave_length params.get('min_wave_length', 5)  # TODO: 将魔法数字提取到配置中
-            self.fibonacci_ratios params.get('fibonacci_ratios', [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            self.wave_tolerance params.get('wave_tolerance', 0.1)
-
-        except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
-            self.period 20  # TODO: 将魔法数字提取到配置中
-            self.min_wave_length 5  # TODO: 将魔法数字提取到配置中
-            self.fibonacci_ratios [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            self.wave_tolerance 0.1
+        except ImportError:
+            # 如果验证器不可用,静默处理
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+        
+        # 设置参数
+        self.period = params.get('period', 20)  # TODO: 将魔法数字提取到配置中
+        self.min_wave_length = params.get('min_wave_length', 5)  # TODO: 将魔法数字提取到配置中
+        self.fibonacci_ratios = params.get('fibonacci_ratios', [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        self.wave_tolerance = params.get('wave_tolerance', 0.1)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """设置基础指标参数"""
@@ -107,7 +102,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算指标置信度"""
-        result self._calculate_baseindicator(data)
+        result = self._calculate_baseindicator(data)
         # 计算波浪理论的置信度
         score self.calculate_raw_score_Wave(data)
         confidence score / 100.0  # 将评分转换为置信度
@@ -249,7 +244,7 @@ from db.sql_manager import SQLManager, QueryType
         return "strength_normalized.fillna(0.5)"  # TODO: 将魔法数字提取到配置中
     
     def _identify_impulse_waves(self, df: pd.DataFrame) -> pd.Series:
-        """识别推动浪（5浪结构）"""
+        """识别推动浪(5浪结构)"""
         impulse_signal pd.Series(0.0, index=df.index)
         
         pivot_high df['pivot_high']
@@ -269,7 +264,7 @@ from db.sql_manager import SQLManager, QueryType
             high_count window_highs.sum()
             low_count window_lows.sum()
             
-            # 推动浪特征：5个主要转折点，强势方向
+            # 推动浪特征:5个主要转折点,强势方向
             if high_count >= 2 and low_count >= 2:
                 avg_direction wave_direction.iloc[i:window_end].mean()
                 avg_strength wave_strength.iloc[i:window_end].mean()
@@ -285,7 +280,7 @@ from db.sql_manager import SQLManager, QueryType
         return "impulse_signal"
     
     def _identify_corrective_waves(self, df: pd.DataFrame) -> pd.Series:
-        """识别调整浪（3浪结构）"""
+        """识别调整浪(3浪结构)"""
         corrective_signal pd.Series(0.0, index=df.index)
         
         wave_direction df['wave_direction']
@@ -301,7 +296,7 @@ from db.sql_manager import SQLManager, QueryType
             window_strength wave_strength.iloc[i:window_end]
             window_close close.iloc[i:window_end]
             
-            # 调整浪特征：方向变化，强度适中，价格回撤
+            # 调整浪特征:方向变化,强度适中,价格回撤
             direction_changes (window_direction.diff().abs() > 0.5).sum()  # TODO: 将魔法数字提取到配置中
             avg_strength window_strength.mean()
             
@@ -374,10 +369,10 @@ from db.sql_manager import SQLManager, QueryType
         total_pivots (pivot_high | pivot_low).cumsum()
         
         # 计算波浪完成度
-        wave_position total_pivots % 8  # 8浪循环（5推动+3调整）  # TODO: 将魔法数字提取到配置中
+        wave_position total_pivots % 8  # 8浪循环(5推动+3调整)  # TODO: 将魔法数字提取到配置中
         
         # 在波浪循环的关键位置给予信号
-        key_positions [3, 5, 8]  # 第3浪、第5浪、调整浪结束  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        key_positions [3, 5, 8]  # 第3浪,第5浪,调整浪结束  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         for pos in key_positions:
             at_key_position wave_position == pos
@@ -389,12 +384,12 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算原始评分
         
-        基于艾略特波浪分析的综合评分：
-        - 推动浪信号（30%权重）  # TODO: 将魔法数字提取到配置中
-        - 调整浪信号（20%权重）  # TODO: 将魔法数字提取到配置中
-        - 斐波那契回撤（25%权重）  # TODO: 将魔法数字提取到配置中
-        - 斐波那契扩展（15%权重）  # TODO: 将魔法数字提取到配置中
-        - 波浪计数（10%权重）
+        基于艾略特波浪分析的综合评分:
+        - 推动浪信号(30%权重)  # TODO: 将魔法数字提取到配置中
+        - 调整浪信号(20%权重)  # TODO: 将魔法数字提取到配置中
+        - 斐波那契回撤(25%权重)  # TODO: 将魔法数字提取到配置中
+        - 斐波那契扩展(15%权重)  # TODO: 将魔法数字提取到配置中
+        - 波浪计数(10%权重)
         """
         if not self.has_result():
             self.calculate_Wave(data, **kwargs)
@@ -402,27 +397,27 @@ from db.sql_manager import SQLManager, QueryType
         result self._result
         score pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 推动浪信号评分（30%权重）  # TODO: 将魔法数字提取到配置中
+        # 1. 推动浪信号评分(30%权重)  # TODO: 将魔法数字提取到配置中
         impulse_wave result.get('impulse_wave', pd.Series(0.0, index=data.index))
         impulse_score np.clip(impulse_wave / 2, 0, 25)  # TODO: 将魔法数字提取到配置中
         score += impulse_score * 0.3  # TODO: 将魔法数字提取到配置中
         
-        # 2. 调整浪信号评分（20%权重）  # TODO: 将魔法数字提取到配置中
+        # 2. 调整浪信号评分(20%权重)  # TODO: 将魔法数字提取到配置中
         corrective_wave result.get('corrective_wave', pd.Series(0.0, index=data.index))
         corrective_score np.clip(corrective_wave / 1.5, 0, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += corrective_score * 0.2
         
-        # 3. 斐波那契回撤评分（25%权重）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 3. 斐波那契回撤评分(25%权重)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         fib_retracement result.get('fib_retracement', pd.Series(0.0, index=data.index))
         fib_ret_score np.clip(fib_retracement / 2, 0, 20)  # TODO: 将魔法数字提取到配置中
         score += fib_ret_score * 0.25  # TODO: 将魔法数字提取到配置中
         
-        # 4. 斐波那契扩展评分（15%权重）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 4. 斐波那契扩展评分(15%权重)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         fib_extension result.get('fib_extension', pd.Series(0.0, index=data.index))
         fib_ext_score np.clip(fib_extension / 2, 0, 15)  # TODO: 将魔法数字提取到配置中
         score += fib_ext_score * 0.15  # TODO: 将魔法数字提取到配置中
         
-        # 5. 波浪计数评分（10%权重）  # TODO: 将魔法数字提取到配置中
+        # 5. 波浪计数评分(10%权重)  # TODO: 将魔法数字提取到配置中
         wave_count result.get('wave_count', pd.Series(0.0, index=data.index))
         count_score np.clip(wave_count / 2, 0, 10)
         score += count_score * 0.1
@@ -435,7 +430,7 @@ from db.sql_manager import SQLManager, QueryType
         strong_up_wave (wave_direction > 0.5) & (wave_strength > 0.7)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score[strong_up_wave] += 8  # TODO: 将魔法数字提取到配置中
         
-        # 强势下降波浪适度加分（因为也是交易机会）
+        # 强势下降波浪适度加分(因为也是交易机会)
         strong_down_wave (wave_direction < -0.5) & (wave_strength > 0.7)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score[strong_down_wave] += 3  # TODO: 将魔法数字提取到配置中
         
@@ -453,10 +448,10 @@ from db.sql_manager import SQLManager, QueryType
         avg_score score.mean()
         score_std score.std()
         
-        # 评分越高，置信度越高
+        # 评分越高,置信度越高
         score_confidence min(avg_score / 100, 1.0)
         
-        # 评分稳定性越高，置信度越高
+        # 评分稳定性越高,置信度越高
         stability_confidence max(0.3, 1.0 - score_std / 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 波浪理论强调形态完整性
@@ -526,16 +521,16 @@ from db.sql_manager import SQLManager, QueryType
                 patterns.append("艾略特下降波浪")
             
             # 转折点形态
-            pivot_high last_row.get('pivot_high', False)
-            pivot_low last_row.get('pivot_low', False)
+            pivot_high = last_row.get('pivot_high', False)
+            pivot_low = last_row.get('pivot_low', False)
             
             if pivot_high:
                 patterns.append("艾略特波浪高点")
             if pivot_low:
                 patterns.append("艾略特波浪低点")
         
-        return pd.DataFrame({'patterns': [patterns], index=[data.index[-1]] if len(data) > 0 else [])
+        return pd.DataFrame({'patterns': [patterns]}, index=[data.index[-1]] if len(data) > 0 else [])
 
 
-# 为了向后兼容，创建别名
-elliott_wave ElliottWave
+# 为了向后兼容,创建别名
+elliott_wave = ElliottWave

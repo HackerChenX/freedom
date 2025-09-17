@@ -3,7 +3,7 @@ from utils.container import container
 """
 TRIX三重指数平滑移动平均线模块
 
-实现TRIX指标计算，用于过滤短期波动，捕捉中长期趋势
+实现TRIX指标计算,用于过滤短期波动,捕捉中长期趋势
 """
 
 from utils.logger import get_logger
@@ -25,8 +25,8 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
     """
     TRIX三重指数平滑移动平均线指标
 
-    trix = (TR - REF(TR, 1)) / REF(TR, 1) × 100，其中tr = EMA(EMA(EMA(Close, N), N), N)
-    过滤短期波动，捕捉中长期趋势变化
+    trix = (TR - REF(TR, 1)) / REF(TR, 1) * 100,其中tr = EMA(EMA(EMA(Close, N), N), N)
+    过滤短期波动,捕捉中长期趋势变化
     """
 
     def __init__(self, **kwargs):
@@ -37,7 +37,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         初始化TRIX指标
 
         Args:
-            **kwargs: 指标参数，支持period、signal_period等
+            **kwargs: 指标参数,支持period,signal_period等
         """
         super().__init__()
         self.name = "TRIX"
@@ -67,7 +67,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         设置指标参数
 
         Args:
-            **kwargs: 参数字典，支持以下参数：
+            **kwargs: 参数字典,支持以下参数:
                 - period: TRIX计算周期
                 - signal_period: 信号线周期
         """
@@ -87,11 +87,11 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters("TRIX", params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
 
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             pass
 
         # 设置参数
@@ -109,12 +109,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             pd.DataFrame: 包含TRIX和信号线的数据
         """
-        # 🔧 Ultra Think修复：添加缺失的calculate方法，确保100%兼容性
+        # 🔧 Ultra Think修复:添加缺失的calculate方法,确保100%兼容性
         return self._calculate_trix(data, **kwargs)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算TRIX指标 - Ultra Think修复：添加缺失的标准calculate方法
+        计算TRIX指标 - Ultra Think修复:添加缺失的标准calculate方法
 
         Args:
             data: 输入数据
@@ -122,12 +122,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             pd.DataFrame: 包含TRIX线和信号线的DataFrame
         """
-        # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
+        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
         return self._calculate_trix(data, **kwargs)
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        基础指标计算方法 - Ultra Think修复：实现必须的抽象方法
+        基础指标计算方法 - Ultra Think修复:实现必须的抽象方法
 
         Args:
             data: 价格数据
@@ -135,7 +135,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             pd.DataFrame: 计算结果
         """
-        # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
+        # 🔧 Ultra Think修复:实现必须的抽象方法,确保100%功能完整
         return self._calculate_trix(data, **kwargs)
 
     def _calculate_trix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -143,18 +143,18 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         计算TRIX指标
 
         Args:
-            data: 输入数据，包含收盘价
+            data: 输入数据,包含收盘价
             **kwargs: 其他参数
 
         Returns:
-            pd.DataFrame: 计算结果，包含TRIX和MATRIX
+            pd.DataFrame: 计算结果,包含TRIX和MATRIX
 
-        公式说明：
+        公式说明:
         TR:=EMA(EMA(EMA(CLOSE,12),12),12);  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         TRIX:(TR-REF(TR,1))/REF(TR,1)*100;
         MATRIX:MA(TRIX,9);  # TODO: 将魔法数字提取到配置中
         """
-        # 🔧 Ultra Think修复：获取参数，确保100%兼容性
+        # 🔧 Ultra Think修复:获取参数,确保100%兼容性
         n = kwargs.get("n", getattr(self, "n", 14))  # TODO: 将魔法数字提取到配置中
         m = kwargs.get("m", getattr(self, "m", 9))  # TODO: 将魔法数字提取到配置中
 
@@ -173,7 +173,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         ema2 = self._ema_Trix(ema1, n)
         tr = self._ema_Trix(ema2, n)
 
-        # 计算TRIX = (TR - REF(TR, 1)) / REF(TR, 1) × 100
+        # 计算TRIX = (TR - REF(TR, 1)) / REF(TR, 1) * 100
         trix = np.zeros_like(close)
         for i in range(1, len(tr)):
             if tr[i - 1] != 0:  # 防止除以零
@@ -369,7 +369,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 patterns_df["TRIX_STRONG"] = False
                 patterns_df["TRIX_WEAK"] = False
 
-            # 确保所有列都是布尔类型，填充NaN为False
+            # 确保所有列都是布尔类型,填充NaN为False
             for col in patterns_df.columns:
                 patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
@@ -386,7 +386,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_GOLDEN_CROSS",
             display_name="TRIX金叉",
-            description="TRIX上穿信号线，中长期趋势转好",
+            description="TRIX上穿信号线,中长期趋势转好",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -397,7 +397,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_DEATH_CROSS",
             display_name="TRIX死叉",
-            description="TRIX下穿信号线，中长期趋势转弱",
+            description="TRIX下穿信号线,中长期趋势转弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -408,7 +408,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_CROSS_UP_ZERO",
             display_name="TRIX上穿零轴",
-            description="TRIX上穿零轴，中长期趋势由负转正",
+            description="TRIX上穿零轴,中长期趋势由负转正",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -419,18 +419,18 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_CROSS_DOWN_ZERO",
             display_name="TRIX下穿零轴",
-            description="TRIX下穿零轴，中长期趋势由正转负",
+            description="TRIX下穿零轴,中长期趋势由正转负",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE",
         )
 
-        # 注册TRIX趋势状态形态（从centralized mapping迁移）
+        # 注册TRIX趋势状态形态(从centralized mapping迁移)
         self.register_pattern_to_registry(
             pattern_id="TRIX_ABOVE_ZERO",
             display_name="TRIX零轴上方",
-            description="TRIX位于零轴上方，表明长期趋势偏多",
+            description="TRIX位于零轴上方,表明长期趋势偏多",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -440,7 +440,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_BELOW_ZERO",
             display_name="TRIX零轴下方",
-            description="TRIX位于零轴下方，表明长期趋势偏空",
+            description="TRIX位于零轴下方,表明长期趋势偏空",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-10.0,
@@ -450,7 +450,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_RISING",
             display_name="TRIX上升趋势",
-            description="TRIX三重指数平滑移动平均线呈上升趋势，表明长期价格动量增强",
+            description="TRIX三重指数平滑移动平均线呈上升趋势,表明长期价格动量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -460,7 +460,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_FALLING",
             display_name="TRIX下降趋势",
-            description="TRIX三重指数平滑移动平均线呈下降趋势，表明长期价格动量减弱",
+            description="TRIX三重指数平滑移动平均线呈下降趋势,表明长期价格动量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -470,7 +470,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_ACCELERATION",
             display_name="TRIX加速上升",
-            description="TRIX指标加速上升，表明价格上涨动能不断增强",
+            description="TRIX指标加速上升,表明价格上涨动能不断增强",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -480,7 +480,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_DECELERATION",
             display_name="TRIX减速下降",
-            description="TRIX指标减速下降，表明下跌动能逐渐减弱",
+            description="TRIX指标减速下降,表明下跌动能逐渐减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-10.0,
@@ -490,7 +490,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_STRONG_BULLISH_CONSENSUS",
             display_name="TRIX强烈看涨共振",
-            description="TRIX多重信号共振，形成强烈看涨态势",
+            description="TRIX多重信号共振,形成强烈看涨态势",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=30.0,  # TODO: 将魔法数字提取到配置中
@@ -500,7 +500,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_STRONG_BEARISH_CONSENSUS",
             display_name="TRIX强烈看跌共振",
-            description="TRIX多重信号共振，形成强烈看跌态势",
+            description="TRIX多重信号共振,形成强烈看跌态势",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
@@ -511,7 +511,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_CONSECUTIVE_RISING",
             display_name="TRIX连续上升",
-            description="TRIX连续3个周期上升，趋势强劲",
+            description="TRIX连续3个周期上升,趋势强劲",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=18.0,  # TODO: 将魔法数字提取到配置中
@@ -522,7 +522,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_CONSECUTIVE_FALLING",
             display_name="TRIX连续下降",
-            description="TRIX连续3个周期下降，趋势疲弱",
+            description="TRIX连续3个周期下降,趋势疲弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-18.0,  # TODO: 将魔法数字提取到配置中
@@ -533,7 +533,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_STRONG",
             display_name="TRIX强势",
-            description="TRIX绝对值大于2%，趋势强劲但方向需结合其他信号判断",
+            description="TRIX绝对值大于2%,趋势强劲但方向需结合其他信号判断",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -544,7 +544,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.register_pattern_to_registry(
             pattern_id="TRIX_WEAK",
             display_name="TRIX弱势",
-            description="TRIX绝对值小于0.5%，趋势疲弱，可能进入盘整",  # TODO: 将魔法数字提取到配置中
+            description="TRIX绝对值小于0.5%,趋势疲弱,可能进入盘整",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -597,7 +597,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             **kwargs: 其他参数
 
         Returns:
-            pd.Series: 原始评分序列（0-100分）
+            pd.Series: 原始评分序列(0-100分)
         """
         # 确保已计算TRIX
         if not self.has_result():
@@ -645,14 +645,14 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             # 1. 计算原始评分序列
             raw_scores = self.calculate_raw_score_Trix(data, **kwargs)
 
-            # 如果数据不足，返回中性评分
+            # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
                 return {
                     "score": 50.0,
                     "confidence": 0.5,
                 }  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            # 取最近的评分作为最终评分，但考虑近期趋势
+            # 取最近的评分作为最终评分,但考虑近期趋势
             recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
@@ -766,13 +766,13 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         trix_values = self._result["TRIX"]
         matrix_values = self._result["MATRIX"]
 
-        # TRIX上穿MATRIX（金叉）+25分
+        # TRIX上穿MATRIX(金叉)+25分
         from utils.indicator_utils import crossover, crossunder
 
         golden_cross = crossover(trix_values, matrix_values)
         cross_score += golden_cross * 25  # TODO: 将魔法数字提取到配置中
 
-        # TRIX下穿MATRIX（死叉）-25分
+        # TRIX下穿MATRIX(死叉)-25分
         death_cross = crossunder(trix_values, matrix_values)
         cross_score -= death_cross * 25  # TODO: 将魔法数字提取到配置中
 
@@ -830,17 +830,17 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         trix_values = self._result["TRIX"]
 
-        # 检测背离（简化版本）
+        # 检测背离(简化版本)
         window = 10
         for i in range(window, len(close_price)):
-            # 价格创新高但TRIX未创新高（顶背离）
+            # 价格创新高但TRIX未创新高(顶背离)
             price_window = close_price.iloc[i - window : i + 1]
             trix_window = trix_values.iloc[i - window : i + 1]
 
             if price_window.iloc[-1] == price_window.max() and trix_window.iloc[-1] < trix_window.max():
                 divergence_score.iloc[i] -= 15  # 顶背离-15分  # TODO: 将魔法数字提取到配置中
 
-            # 价格创新低但TRIX未创新低（底背离）
+            # 价格创新低但TRIX未创新低(底背离)
             if price_window.iloc[-1] == price_window.min() and trix_window.iloc[-1] > trix_window.min():
                 divergence_score.iloc[i] += 15  # 底背离+15分  # TODO: 将魔法数字提取到配置中
 
@@ -864,15 +864,15 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         trix_abs = abs(trix_values)
 
         # 强度分级评分
-        # 强度很高（>2%）+10分
+        # 强度很高(>2%)+10分
         very_strong = trix_abs > 2
         strength_score += very_strong * 10
 
-        # 强度高（1-2%）+5分
+        # 强度高(1-2%)+5分
         strong = (trix_abs > 1) & (trix_abs <= 2)
         strength_score += strong * 5  # TODO: 将魔法数字提取到配置中
 
-        # 强度低（<0.5%）-5分  # TODO: 将魔法数字提取到配置中
+        # 强度低(<0.5%)-5分  # TODO: 将魔法数字提取到配置中
         weak = trix_abs < 0.5  # TODO: 将魔法数字提取到配置中
         strength_score -= weak * 5  # TODO: 将魔法数字提取到配置中
 
@@ -1004,12 +1004,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         trix_high_idx = trix_values.idxmax()
         trix_low_idx = trix_values.idxmin()
 
-        # 检测顶背离：价格创新高，但TRIX未创新高
+        # 检测顶背离:价格创新高,但TRIX未创新高
         bearish_divergence = (price_high_idx > trix_high_idx) and (
             prices.iloc[-1] > prices.iloc[-5]
         )  # TODO: 将魔法数字提取到配置中
 
-        # 检测底背离：价格创新低，但TRIX未创新低
+        # 检测底背离:价格创新低,但TRIX未创新低
         bullish_divergence = (price_low_idx > trix_low_idx) and (
             prices.iloc[-1] < prices.iloc[-5]
         )  # TODO: 将魔法数字提取到配置中
@@ -1057,7 +1057,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         slope_1 = trix.iloc[5] - trix.iloc[0]  # TODO: 将魔法数字提取到配置中
         slope_2 = trix.iloc[-1] - trix.iloc[-6]  # TODO: 将魔法数字提取到配置中
 
-        # 检测趋势变化（斜率从正变负或从负变正）
+        # 检测趋势变化(斜率从正变负或从负变正)
         trend_change = slope_1 * slope_2 < 0
 
         return trend_change
@@ -1079,7 +1079,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             trix.iloc[i + 5] - trix.iloc[i] for i in range(0, 10, 5)
         ]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 加速条件：变化率逐渐增大，且方向一致
+        # 加速条件:变化率逐渐增大,且方向一致
         acceleration = (changes[0] > 0 and changes[1] > changes[0] and changes[2] > changes[1]) or (
             changes[0] < 0 and changes[1] < changes[0] and changes[2] < changes[1]
         )
@@ -1122,12 +1122,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         生成TRIX指标标准化交易信号
 
         Args:
-            data: 输入数据，包含OHLCV数据
+            data: 输入数据,包含OHLCV数据
             *args: 位置参数
             **kwargs: 关键字参数
 
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 确保已计算TRIX指标
         if not self.has_result():
@@ -1160,102 +1160,102 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         trix = self._result["TRIX"]
         matrix = self._result["MATRIX"]
 
-        # 1. TRIX上穿信号线，买入信号
+        # 1. TRIX上穿信号线,买入信号
         trix_crossover_matrix = (trix > matrix) & (trix.shift(1) <= matrix.shift(1))
         signals.loc[trix_crossover_matrix, "buy_signal"] = True
         signals.loc[trix_crossover_matrix, "neutral_signal"] = False
         signals.loc[trix_crossover_matrix, "trend"] = 1
         signals.loc[trix_crossover_matrix, "signal_type"] = "TRIX金叉"
-        signals.loc[trix_crossover_matrix, "signal_desc"] = "TRIX上穿信号线，买入信号"
+        signals.loc[trix_crossover_matrix, "signal_desc"] = "TRIX上穿信号线,买入信号"
         signals.loc[trix_crossover_matrix, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossover_matrix, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossover_matrix, "risk_level"] = "中"
 
-        # 2. TRIX下穿信号线，卖出信号
+        # 2. TRIX下穿信号线,卖出信号
         trix_crossunder_matrix = (trix < matrix) & (trix.shift(1) >= matrix.shift(1))
         signals.loc[trix_crossunder_matrix, "sell_signal"] = True
         signals.loc[trix_crossunder_matrix, "neutral_signal"] = False
         signals.loc[trix_crossunder_matrix, "trend"] = -1
         signals.loc[trix_crossunder_matrix, "signal_type"] = "TRIX死叉"
-        signals.loc[trix_crossunder_matrix, "signal_desc"] = "TRIX下穿信号线，卖出信号"
+        signals.loc[trix_crossunder_matrix, "signal_desc"] = "TRIX下穿信号线,卖出信号"
         signals.loc[trix_crossunder_matrix, "confidence"] = 70.0  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossunder_matrix, "position_size"] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossunder_matrix, "risk_level"] = "中"
 
-        # 3. TRIX上穿零轴，买入信号  # TODO: 将魔法数字提取到配置中
+        # 3. TRIX上穿零轴,买入信号  # TODO: 将魔法数字提取到配置中
         trix_crossover_zero = (trix > 0) & (trix.shift(1) <= 0)
         signals.loc[trix_crossover_zero, "buy_signal"] = True
         signals.loc[trix_crossover_zero, "neutral_signal"] = False
         signals.loc[trix_crossover_zero, "trend"] = 1
         signals.loc[trix_crossover_zero, "signal_type"] = "TRIX零轴上穿"
-        signals.loc[trix_crossover_zero, "signal_desc"] = "TRIX上穿零轴，转为上升趋势"
+        signals.loc[trix_crossover_zero, "signal_desc"] = "TRIX上穿零轴,转为上升趋势"
         signals.loc[trix_crossover_zero, "confidence"] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossover_zero, "position_size"] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossover_zero, "risk_level"] = "中"
 
-        # 4. TRIX下穿零轴，卖出信号  # TODO: 将魔法数字提取到配置中
+        # 4. TRIX下穿零轴,卖出信号  # TODO: 将魔法数字提取到配置中
         trix_crossunder_zero = (trix < 0) & (trix.shift(1) >= 0)
         signals.loc[trix_crossunder_zero, "sell_signal"] = True
         signals.loc[trix_crossunder_zero, "neutral_signal"] = False
         signals.loc[trix_crossunder_zero, "trend"] = -1
         signals.loc[trix_crossunder_zero, "signal_type"] = "TRIX零轴下穿"
-        signals.loc[trix_crossunder_zero, "signal_desc"] = "TRIX下穿零轴，转为下降趋势"
+        signals.loc[trix_crossunder_zero, "signal_desc"] = "TRIX下穿零轴,转为下降趋势"
         signals.loc[trix_crossunder_zero, "confidence"] = 75.0  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossunder_zero, "position_size"] = 0.5  # TODO: 将魔法数字提取到配置中
         signals.loc[trix_crossunder_zero, "risk_level"] = "中"
 
-        # 5. TRIX持续上升且为正值，强势上涨信号  # TODO: 将魔法数字提取到配置中
+        # 5. TRIX持续上升且为正值,强势上涨信号  # TODO: 将魔法数字提取到配置中
         strong_uptrend = (trix > 0) & (trix > trix.shift(1)) & (trix.shift(1) > trix.shift(2))
         signals.loc[strong_uptrend, "buy_signal"] = True
         signals.loc[strong_uptrend, "neutral_signal"] = False
         signals.loc[strong_uptrend, "trend"] = 1
         signals.loc[strong_uptrend, "signal_type"] = "TRIX强势上涨"
-        signals.loc[strong_uptrend, "signal_desc"] = "TRIX持续上升且为正值，强势上涨信号"
+        signals.loc[strong_uptrend, "signal_desc"] = "TRIX持续上升且为正值,强势上涨信号"
         signals.loc[strong_uptrend, "confidence"] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, "position_size"] = 0.6  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_uptrend, "risk_level"] = "低"
 
-        # 6. TRIX持续下降且为负值，强势下跌信号  # TODO: 将魔法数字提取到配置中
+        # 6. TRIX持续下降且为负值,强势下跌信号  # TODO: 将魔法数字提取到配置中
         strong_downtrend = (trix < 0) & (trix < trix.shift(1)) & (trix.shift(1) < trix.shift(2))
         signals.loc[strong_downtrend, "sell_signal"] = True
         signals.loc[strong_downtrend, "neutral_signal"] = False
         signals.loc[strong_downtrend, "trend"] = -1
         signals.loc[strong_downtrend, "signal_type"] = "TRIX强势下跌"
-        signals.loc[strong_downtrend, "signal_desc"] = "TRIX持续下降且为负值，强势下跌信号"
+        signals.loc[strong_downtrend, "signal_desc"] = "TRIX持续下降且为负值,强势下跌信号"
         signals.loc[strong_downtrend, "confidence"] = 80.0  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, "position_size"] = 0.6  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_downtrend, "risk_level"] = "低"
 
-        # 7. TRIX高位死叉，顶部信号  # TODO: 将魔法数字提取到配置中
+        # 7. TRIX高位死叉,顶部信号  # TODO: 将魔法数字提取到配置中
         high_level_death_cross = trix_crossunder_matrix & (trix > 0.5)  # TODO: 将魔法数字提取到配置中
         signals.loc[high_level_death_cross, "sell_signal"] = True
         signals.loc[high_level_death_cross, "neutral_signal"] = False
         signals.loc[high_level_death_cross, "trend"] = -1
         signals.loc[high_level_death_cross, "signal_type"] = "TRIX高位死叉"
-        signals.loc[high_level_death_cross, "signal_desc"] = "TRIX在高位下穿信号线，顶部信号"
+        signals.loc[high_level_death_cross, "signal_desc"] = "TRIX在高位下穿信号线,顶部信号"
         signals.loc[high_level_death_cross, "confidence"] = 85.0  # TODO: 将魔法数字提取到配置中
         signals.loc[high_level_death_cross, "position_size"] = 0.7  # TODO: 将魔法数字提取到配置中
         signals.loc[high_level_death_cross, "risk_level"] = "低"
 
-        # 8. TRIX低位金叉，底部信号  # TODO: 将魔法数字提取到配置中
+        # 8. TRIX低位金叉,底部信号  # TODO: 将魔法数字提取到配置中
         low_level_golden_cross = trix_crossover_matrix & (trix < -0.5)  # TODO: 将魔法数字提取到配置中
         signals.loc[low_level_golden_cross, "buy_signal"] = True
         signals.loc[low_level_golden_cross, "neutral_signal"] = False
         signals.loc[low_level_golden_cross, "trend"] = 1
         signals.loc[low_level_golden_cross, "signal_type"] = "TRIX低位金叉"
-        signals.loc[low_level_golden_cross, "signal_desc"] = "TRIX在低位上穿信号线，底部信号"
+        signals.loc[low_level_golden_cross, "signal_desc"] = "TRIX在低位上穿信号线,底部信号"
         signals.loc[low_level_golden_cross, "confidence"] = 85.0  # TODO: 将魔法数字提取到配置中
         signals.loc[low_level_golden_cross, "position_size"] = 0.7  # TODO: 将魔法数字提取到配置中
         signals.loc[low_level_golden_cross, "risk_level"] = "低"
 
-        # 9. TRIX区间震荡，无明显趋势  # TODO: 将魔法数字提取到配置中
+        # 9. TRIX区间震荡,无明显趋势  # TODO: 将魔法数字提取到配置中
         sideways = (abs(trix) < 0.1) & (abs(trix - trix.shift(1)) < 0.05)  # TODO: 将魔法数字提取到配置中
         signals.loc[sideways, "neutral_signal"] = True
         signals.loc[sideways, "buy_signal"] = False
         signals.loc[sideways, "sell_signal"] = False
         signals.loc[sideways, "trend"] = 0
         signals.loc[sideways, "signal_type"] = "TRIX区间震荡"
-        signals.loc[sideways, "signal_desc"] = "TRIX在零轴附近小幅波动，无明显趋势"
+        signals.loc[sideways, "signal_desc"] = "TRIX在零轴附近小幅波动,无明显趋势"
         signals.loc[sideways, "confidence"] = 60.0  # TODO: 将魔法数字提取到配置中
         signals.loc[sideways, "position_size"] = 0.0
         signals.loc[sideways, "risk_level"] = "低"
@@ -1328,31 +1328,31 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 根据TRIX值判断市场环境
         signals["market_env"] = "sideways_market"  # 默认震荡市场
 
-        # TRIX > 0 且上升，牛市环境
+        # TRIX > 0 且上升,牛市环境
         bull_market = (trix > 0) & (trix > trix.shift(1))
         signals.loc[bull_market, "market_env"] = "bull_market"
 
-        # TRIX < 0 且下降，熊市环境
+        # TRIX < 0 且下降,熊市环境
         bear_market = (trix < 0) & (trix < trix.shift(1))
         signals.loc[bear_market, "market_env"] = "bear_market"
 
-        # TRIX接近0且波动小，震荡市场
+        # TRIX接近0且波动小,震荡市场
         sideways_market = (abs(trix) < 0.1) & (abs(trix - trix.shift(1)) < 0.05)  # TODO: 将魔法数字提取到配置中
         signals.loc[sideways_market, "market_env"] = "sideways_market"
 
         # 设置成交量确认
         if "volume" in data.columns:
-            # 如果有成交量数据，检查成交量是否支持当前信号
+            # 如果有成交量数据,检查成交量是否支持当前信号
             vol = data["volume"]
             vol_avg = vol.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
 
             # 成交量大于20日均量1.5倍为放量
             vol_increase = vol > vol_avg * 1.5  # TODO: 将魔法数字提取到配置中
 
-            # 买入信号且成交量放大，确认信号
+            # 买入信号且成交量放大,确认信号
             signals.loc[signals["buy_signal"] & vol_increase, "volume_confirmation"] = True
 
-            # 卖出信号且成交量放大，确认信号
+            # 卖出信号且成交量放大,确认信号
             signals.loc[signals["sell_signal"] & vol_increase, "volume_confirmation"] = True
 
         return signals
@@ -1372,7 +1372,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         registry.register(
             pattern_id="TRIX_ZERO_CROSS",
             display_name="TRIX零轴穿越",
-            description="TRIX线穿越零轴，指示可能的趋势转变",
+            description="TRIX线穿越零轴,指示可能的趋势转变",
             indicator_id="TRIX",
             pattern_type=Pattern_type.REVERSAL,
             default_strength=Pattern_strength.MEDIUM,
@@ -1384,7 +1384,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         registry.register(
             pattern_id="TRIX_DIVERGENCE",
             display_name="TRIX背离",
-            description="TRIX指标与价格走势形成背离，可能指示趋势反转",
+            description="TRIX指标与价格走势形成背离,可能指示趋势反转",
             indicator_id="TRIX",
             pattern_type=Pattern_type.REVERSAL,
             default_strength=Pattern_strength.STRONG,
@@ -1477,12 +1477,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         signals = pd.DataFrame(index=data.index)
 
-        # TRIX金叉MATRIX（上穿信号线）买入信号
+        # TRIX金叉MATRIX(上穿信号线)买入信号
         trix_above = trix_values > matrix_values
         trix_below_prev = trix_values.shift(1) <= matrix_values.shift(1)
         buy_signals = trix_above & trix_below_prev
 
-        # TRIX死叉MATRIX（下穿信号线）卖出信号
+        # TRIX死叉MATRIX(下穿信号线)卖出信号
         trix_below = trix_values < matrix_values
         trix_above_prev = trix_values.shift(1) >= matrix_values.shift(1)
         sell_signals = trix_below & trix_above_prev
@@ -1490,7 +1490,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         signals["buy_signal"] = buy_signals
         signals["sell_signal"] = sell_signals
 
-        # 计算信号强度（基于TRIX与MATRIX的差值）
+        # 计算信号强度(基于TRIX与MATRIX的差值)
         diff = abs(trix_values - matrix_values)
         max_diff = diff.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         signals["signal_strength"] = diff / (max_diff + 1e-10)
@@ -1539,20 +1539,20 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         patterns = pd.DataFrame(index=data.index)
 
-        # 金叉形态（TRIX上穿MATRIX）
+        # 金叉形态(TRIX上穿MATRIX)
         trix_above = trix_values > matrix_values
         trix_below_prev = trix_values.shift(1) <= matrix_values.shift(1)
         patterns["golden_cross"] = trix_above & trix_below_prev
 
-        # 死叉形态（TRIX下穿MATRIX）
+        # 死叉形态(TRIX下穿MATRIX)
         trix_below = trix_values < matrix_values
         trix_above_prev = trix_values.shift(1) >= matrix_values.shift(1)
         patterns["death_cross"] = trix_below & trix_above_prev
 
-        # 看涨趋势（TRIX持续在MATRIX上方）
+        # 看涨趋势(TRIX持续在MATRIX上方)
         patterns["bullish_trend"] = trix_values > matrix_values
 
-        # 看跌趋势（TRIX持续在MATRIX下方）
+        # 看跌趋势(TRIX持续在MATRIX下方)
         patterns["bearish_trend"] = trix_values < matrix_values
 
         return patterns
@@ -1627,7 +1627,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         TripleExponentialAverage指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑:使用默认值
 
         Returns:
             int: 最少需要的数据周期数

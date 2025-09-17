@@ -23,7 +23,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     MOMENTUM 指标
     
-    动量指标衡量价格变化的速度和幅度，用于识别趋势强度
+    动量指标衡量价格变化的速度和幅度,用于识别趋势强度
     """
     
     @property
@@ -43,7 +43,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         super().__init__()
         self.name = "MOMENTUM"
-        self.description = "动量指标，衡量价格变化的速度和幅度"
+        self.description = "动量指标,衡量价格变化的速度和幅度"
 
         # 初始化结果存储
         self._result = None
@@ -68,6 +68,9 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
@@ -78,7 +81,7 @@ from db.sql_manager import SQLManager, QueryType
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('MOMENTUM', params)
             if not is_valid:
-                # 静默处理验证失败，避免过多警告
+                # 静默处理验证失败,避免过多警告
                 pass
                 # 使用默认参数
                 params = self._default_parameters.copy()
@@ -87,7 +90,7 @@ from db.sql_manager import SQLManager, QueryType
             self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
-            # 如果验证失败，静默处理，保持向后兼容
+            # 如果验证失败,静默处理,保持向后兼容
             self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -130,20 +133,20 @@ from db.sql_manager import SQLManager, QueryType
         df['momentum'] = momentum
         df['MOMENTUM_VALUE'] = momentum  # 为了向后兼容
         
-        # 计算动量的移动平均（平滑处理）
+        # 计算动量的移动平均(平滑处理)
         df['momentum_ma'] = momentum.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
-        # 计算动量的标准差（波动性）
+        # 计算动量的标准差(波动性)
         df['momentum_std'] = momentum.rolling(window=10).std()
         
-        # 计算相对动量（动量/价格比率）
+        # 计算相对动量(动量/价格比率)
         df['momentum_ratio'] = momentum / close * 100
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
 
-        # 重写信号生成逻辑（MOMENTUM指标特定逻辑）
+        # 重写信号生成逻辑(MOMENTUM指标特定逻辑)
         df = self._apply_momentum_signal_logic(df)
 
         return df
@@ -156,15 +159,15 @@ from db.sql_manager import SQLManager, QueryType
         try:
             # 获取动量值
             if 'momentum' not in df.columns:
-                # 如果没有动量值，使用默认信号
+                # 如果没有动量值,使用默认信号
                 return df
 
             momentum = df['momentum']
             momentum_ma = df['momentum_ma']
 
-            # MOMENTUM信号生成逻辑：
-            # BUY: 动量为正且上升（加速上涨）
-            # SELL: 动量为负且下降（加速下跌）
+            # MOMENTUM信号生成逻辑:
+            # BUY: 动量为正且上升(加速上涨)
+            # SELL: 动量为负且下降(加速下跌)
             # HOLD: 动量接近零或趋势不明确
 
             # 基本条件
@@ -197,7 +200,7 @@ from db.sql_manager import SQLManager, QueryType
 
         except Exception as e:
             logger.warning(f"MOMENTUM信号生成失败: {e}")
-            # 如果出错，使用默认信号
+            # 如果出错,使用默认信号
             df.loc[:, 'buy_signal'] = False
             df.loc[:, 'sell_signal'] = False
             df.loc[:, 'hold_signal'] = True
@@ -208,7 +211,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         计算MOMENTUM原始评分
         
-        基于MOMENTUM指标的技术分析特点进行评分：
+        基于MOMENTUM指标的技术分析特点进行评分:
         1. 动量数值评分 (35%)  # TODO: 将魔法数字提取到配置中
         2. 动量趋势评分 (30%)  # TODO: 将魔法数字提取到配置中
         3. 动量强度评分 (25%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -237,7 +240,7 @@ from db.sql_manager import SQLManager, QueryType
         # 基于动量值的正负和相对强度
         value_score = pd.Series(0.0, index=data.index)
         
-        # 正动量加分，负动量减分
+        # 正动量加分,负动量减分
         value_score = np.where(momentum > 0, momentum_percentile * 20, value_score)  # TODO: 将魔法数字提取到配置中
         value_score = np.where(momentum < 0, (momentum_percentile - 1) * 20, value_score)  # TODO: 将魔法数字提取到配置中
         
@@ -255,9 +258,9 @@ from db.sql_manager import SQLManager, QueryType
         
         trend_score = pd.Series(0.0, index=data.index)
         
-        # 动量加速（连续上升）
+        # 动量加速(连续上升)
         trend_score = np.where((momentum_change > 0) & (momentum_change_2 > 0), 15, trend_score)  # TODO: 将魔法数字提取到配置中
-        # 动量减速（连续下降）
+        # 动量减速(连续下降)
         trend_score = np.where((momentum_change < 0) & (momentum_change_2 < 0), -15, trend_score)  # TODO: 将魔法数字提取到配置中
         # 单次上升
         trend_score = np.where((momentum_change > 0) & (momentum_change_2 <= 0), 8, trend_score)  # TODO: 将魔法数字提取到配置中
@@ -282,7 +285,7 @@ from db.sql_manager import SQLManager, QueryType
             strength_score = np.where((ratio_abs >= 1) & (ratio_abs < 3), 4, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             strength_score = np.where(ratio_abs < 0.5, -5, strength_score)  # 动量太弱减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 动量一致性（与移动平均的关系）
+        # 动量一致性(与移动平均的关系)
         if len(momentum_ma.dropna()) > 0:
             momentum_consistency = abs(momentum - momentum_ma) / (momentum_std + 1e-8)  # TODO: 将魔法数字提取到配置中
             strength_score += np.where(momentum_consistency < 0.5, 5, 0)  # 一致性高加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -300,7 +303,7 @@ from db.sql_manager import SQLManager, QueryType
             stability_score = np.where((volatility_percentile >= 0.3) & (volatility_percentile <= 0.7), 5, stability_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 波动性过高减分
             stability_score = np.where(volatility_percentile > 0.9, -5, stability_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            # 波动性过低减分（缺乏动量）
+            # 波动性过低减分(缺乏动量)
             stability_score = np.where(volatility_percentile < 0.1, -3, stability_score)  # TODO: 将魔法数字提取到配置中
         
         scores += stability_score * 0.1
@@ -334,7 +337,7 @@ from db.sql_manager import SQLManager, QueryType
         if len(momentum) >= 3:  # TODO: 将魔法数字提取到配置中
             recent_trend = momentum.iloc[-3:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
-                # 如果趋势方向一致，提高置信度
+                # 如果趋势方向一致,提高置信度
                 if all(recent_trend > 0) or all(recent_trend < 0):
                     trend_consistency = 0.2
         
@@ -394,65 +397,65 @@ from db.sql_manager import SQLManager, QueryType
     # ================== 抽象方法实现 ==================
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：调用MOMENTUM计算逻辑"""
+        """抽象方法实现:调用MOMENTUM计算逻辑"""
         return self.calculate_momentum(data, **kwargs)
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """抽象方法实现：计算MOMENTUM原始评分"""
+        """抽象方法实现:计算MOMENTUM原始评分"""
         return self.calculate_raw_score_momentum(data, **kwargs)
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """抽象方法实现：获取MOMENTUM形态"""
+        """抽象方法实现:获取MOMENTUM形态"""
         return self.get_patterns_momentum(data, **kwargs)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
-        """抽象方法实现：设置参数"""
+        """抽象方法实现:设置参数"""
         return self.set_parameters_momentum(**kwargs)
 
     def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
-        """抽象方法实现：计算置信度"""
+        """抽象方法实现:计算置信度"""
         return self.calculate_confidence_momentum(data, **kwargs)
 
     # ================== 兼容性方法 ==================
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算指标"""
+        """兼容性方法:计算指标"""
         return self.calculate_momentum(data, **kwargs)
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：获取形态"""
+        """兼容性方法:获取形态"""
         return self.get_patterns_momentum(data, **kwargs)
 
     def calculate_raw_score(self, data: pd.DataFrame, **kwargs) -> pd.Series:
-        """兼容性方法：计算原始评分"""
+        """兼容性方法:计算原始评分"""
         return self.calculate_raw_score_momentum(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """兼容性方法：生成信号"""
+        """兼容性方法:生成信号"""
         return self.generate_signals_momentum(data, **kwargs)
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> Dict[str, float]:
-        """兼容性方法：计算综合评分"""
+        """兼容性方法:计算综合评分"""
         return self.calculate_score_momentum(data, **kwargs)
 
     def calculate_confidence(self, data: pd.DataFrame, **kwargs) -> float:
-        """兼容性方法：计算置信度"""
+        """兼容性方法:计算置信度"""
         return self.calculate_confidence_momentum(data, **kwargs)
 
     def set_parameters(self, **kwargs):
-        """兼容性方法：设置参数"""
+        """兼容性方法:设置参数"""
         return self.set_parameters_momentum(**kwargs)
 
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算指标（compute别名）"""
+        """兼容性方法:计算指标(compute别名)"""
         return self.calculate_momentum(data, **kwargs)
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
-        """兼容性方法：生成交易信号"""
+        """兼容性方法:生成交易信号"""
         return self.generate_signals_momentum(data, **kwargs)
 
     def register_patterns(self, **kwargs):
-        """兼容性方法：注册形态（空实现）"""
+        """兼容性方法:注册形态(空实现)"""
         pass
 
     def has_result(self) -> bool:
@@ -463,7 +466,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算MOMENTUM指标（公共接口）
+        计算MOMENTUM指标(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -476,7 +479,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_raw_score_momentum(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
-        计算MOMENTUM原始评分（公共接口）
+        计算MOMENTUM原始评分(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -489,7 +492,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_score_momentum(self, data: pd.DataFrame, **kwargs) -> Dict[str, float]:
         """
-        计算MOMENTUM综合评分（公共接口）
+        计算MOMENTUM综合评分(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -502,7 +505,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def get_patterns_momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        获取MOMENTUM形态（公共接口）
+        获取MOMENTUM形态(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -515,7 +518,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def generate_signals_momentum(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
-        生成MOMENTUM信号（公共接口）
+        生成MOMENTUM信号(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -541,7 +544,7 @@ from db.sql_manager import SQLManager, QueryType
                 'momentum_sell_signal': sell_signal.fillna(False)
             }
         except (ValueError, KeyError, IndexError) as e:
-            # 如果信号生成失败，返回空信号
+            # 如果信号生成失败,返回空信号
             logger.warning(f"MOMENTUM信号生成失败: {e}, 返回空信号")
             return {
                 'momentum_buy_signal': pd.Series([False] * len(data), index=data.index),
@@ -550,7 +553,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def set_parameters_momentum(self, **kwargs):
         """
-        设置MOMENTUM参数（公共接口）
+        设置MOMENTUM参数(公共接口)
 
         Args:
             **kwargs: 参数字典
@@ -559,7 +562,7 @@ from db.sql_manager import SQLManager, QueryType
 
     def calculate_confidence_momentum(self, data: pd.DataFrame, **kwargs) -> float:
         """
-        计算MOMENTUM置信度（公共接口）
+        计算MOMENTUM置信度(公共接口)
 
         Args:
             data: 包含OHLCV数据的DataFrame

@@ -29,7 +29,7 @@ class PatternTypePatternRegistry(Enum):
     CONTINUATION = "持续形态"  # 持续形态
     VOLATILITY = "波动形态"  # 波动形态
     OTHER = "其他形态"  # 其他形态
-    # 新增类型，兼容现有代码中的字符串类型
+    # 新增类型,兼容现有代码中的字符串类型
     TREND = "趋势形态"  # 趋势形态
     MOMENTUM = "动量形态"  # 动量形态
     EXHAUSTION = "耗尽形态"  # 耗尽形态
@@ -47,9 +47,9 @@ class PatternTypePatternRegistry(Enum):
 class PatternPolarity(Enum):
     """模式极性枚举 - 用于买点分析过滤"""
 
-    POSITIVE = "POSITIVE"  # 正面/看涨信号，适合买点分析
-    NEGATIVE = "NEGATIVE"  # 负面/看跌信号，不适合买点分析
-    NEUTRAL = "NEUTRAL"  # 中性信号，信息性质
+    POSITIVE = "POSITIVE"  # 正面/看涨信号,适合买点分析
+    NEGATIVE = "NEGATIVE"  # 负面/看跌信号,不适合买点分析
+    NEUTRAL = "NEUTRAL"  # 中性信号,信息性质
 
 
 class PatternStrengthPatternRegistry(Enum):
@@ -89,7 +89,7 @@ class PatternInfo(BaseIndicator):
             default_strength: 默认形态强度
             score_impact: 形态对评分的影响 (-100 到 100)
             detection_function: 形态检测函数
-            polarity: 模式极性，用于买点分析过滤
+            polarity: 模式极性,用于买点分析过滤
         """
         self.pattern_id = pattern_id
         self.display_name = display_name
@@ -125,7 +125,7 @@ class PatternRegistry(BaseIndicator):
         PatternRegistry - L4核心服务层组件
 
     职责合理性说明:
-    - 作为L4层核心服务组件，承担多项相关职责
+    - 作为L4层核心服务组件,承担多项相关职责
     - 32个方法分为以下职责组:
       * 核心功能方法 (约10个)
       * 辅助工具方法 (约10个)
@@ -135,21 +135,21 @@ class PatternRegistry(BaseIndicator):
     """
 
     """
-    形态注册表，管理所有技术形态的唯一标识和相关信息
-    重构为单例模式，支持依赖注入
+    形态注册表,管理所有技术形态的唯一标识和相关信息
+    重构为单例模式,支持依赖注入
     """
 
     _instance = None
     _initialized = False
 
     def __new__(cls):
-        """单例模式：确保只有一个PatternRegistry实例"""
+        """单例模式:确保只有一个PatternRegistry实例"""
         if cls._instance is None:
             cls._instance = super(PatternRegistry, cls).__new__(cls)
         return cls._instance
 
     def __init__(self):
-        """初始化形态注册表（只初始化一次）"""
+        """初始化形态注册表(只初始化一次)"""
         if not PatternRegistry._initialized:
             self._patterns = {}
             self._patterns_by_indicator = {}  # 按指标名称组织的形态
@@ -157,7 +157,7 @@ class PatternRegistry(BaseIndicator):
             self._registered_patterns = set()  # 用于跟踪已注册的形态ID
             PatternRegistry._initialized = True
             logger.info("形态注册表初始化完成")
-        # 如果已经初始化过，不重复初始化但仍然记录日志
+        # 如果已经初始化过,不重复初始化但仍然记录日志
         elif not hasattr(self, "_patterns"):
             # 防止意外情况下实例存在但属性丢失
             self._patterns = {}
@@ -178,7 +178,7 @@ class PatternRegistry(BaseIndicator):
         Returns:
             str: 规范化后的形态ID
         """
-        # 如果形态ID已经包含指标前缀，则直接使用
+        # 如果形态ID已经包含指标前缀,则直接使用
         if pattern_id.startswith(f"{indicator_id}_"):
             return pattern_id.upper()
         # 否则添加指标前缀
@@ -198,7 +198,7 @@ class PatternRegistry(BaseIndicator):
         allow_override: bool = None,
     ) -> None:
         """
-        注册形态（统一入口）
+        注册形态(统一入口)
 
         Args:
             pattern_id: 形态ID
@@ -209,13 +209,13 @@ class PatternRegistry(BaseIndicator):
             description: 形态描述
             score_impact: 对评分的影响值
             detection_function: 形态检测函数
-            polarity: 模式极性，用于买点分析过滤
-            allow_override: 是否允许覆盖已注册的形态，默认使用类属性
+            polarity: 模式极性,用于买点分析过滤
+            allow_override: 是否允许覆盖已注册的形态,默认使用类属性
         """
         # 规范化形态ID
         normalized_pattern_id = self._normalize_pattern_id(pattern_id, indicator_id)
 
-        # 如果未指定是否允许覆盖，使用实例属性
+        # 如果未指定是否允许覆盖,使用实例属性
         if allow_override is None:
             allow_override = self._allow_override
 
@@ -223,9 +223,9 @@ class PatternRegistry(BaseIndicator):
         if normalized_pattern_id in self._registered_patterns and not allow_override:
             return
         elif normalized_pattern_id in self._registered_patterns:
-            logger.debug(f"形态 {normalized_pattern_id} 已存在，将被覆盖")
+            logger.debug(f"形态 {normalized_pattern_id} 已存在,将被覆盖")
 
-        # 自动推断极性（如果未指定）
+        # 自动推断极性(如果未指定)
         if polarity is None:
             polarity = self._infer_polarity(pattern_type, score_impact, display_name)
 
@@ -269,9 +269,9 @@ class PatternRegistry(BaseIndicator):
         allow_override: bool = None,
     ) -> None:
         """
-        注册形态（兼容性别名方法）
+        注册形态(兼容性别名方法)
 
-        这是register_pattern_registry的别名，提供向后兼容性
+        这是register_pattern_registry的别名,提供向后兼容性
         """
         return self.register_pattern_registry(
             pattern_id=pattern_id,
@@ -357,7 +357,7 @@ class PatternRegistry(BaseIndicator):
         signal_type: str = None,
     ) -> str:
         """
-        注册指标形态（兼容性方法）
+        注册指标形态(兼容性方法)
 
         Args:
             indicator_type: 指标类型
@@ -450,7 +450,7 @@ class PatternRegistry(BaseIndicator):
             pattern_id: 形态ID
 
         Returns:
-            Optional[Dict[str, Any]]: 形态信息字典，如果不存在返回None
+            Optional[Dict[str, Any]]: 形态信息字典,如果不存在返回None
         """
         return self._patterns.get(pattern_id.upper())
 
@@ -480,7 +480,7 @@ class PatternRegistry(BaseIndicator):
         return [self._patterns[pattern_id] for pattern_id in pattern_ids if pattern_id in self._patterns]
 
     def get_pattern_info_registry(self, pattern_id: str) -> Optional[Dict[str, Any]]:
-        """获取形态信息（兼容性方法）"""
+        """获取形态信息(兼容性方法)"""
         return self.get_pattern(pattern_id)
 
     def get_display_name(self, pattern_id: str) -> str:
@@ -499,7 +499,7 @@ class PatternRegistry(BaseIndicator):
         return pattern.get("score_impact", 0.0) if pattern else 0.0
 
     def get_signal_type(self, pattern_id: str) -> Optional[str]:
-        """获取信号类型（兼容性方法）"""
+        """获取信号类型(兼容性方法)"""
         pattern = self.get_pattern(pattern_id)
         if pattern:
             pattern_type = pattern.get("pattern_type")
@@ -612,13 +612,13 @@ class PatternRegistry(BaseIndicator):
 
     def import_patterns_from_indicator(self, indicator):
         """
-        从指标实例导入形态（已弃用，保留此方法仅用于兼容性）
+        从指标实例导入形态(已弃用,保留此方法仅用于兼容性)
 
         Args:
             indicator: 指标实例
         """
         logger.warning(
-            f"import_patterns_from_indicator 方法已弃用，指标 {indicator.name} 的形态现在直接注册到PatternRegistry"
+            f"import_patterns_from_indicator 方法已弃用,指标 {indicator.name} 的形态现在直接注册到PatternRegistry"
         )
         return
 
@@ -640,7 +640,7 @@ class PatternRegistry(BaseIndicator):
             for pattern_config in config.get("patterns", []):
                 pattern_id = pattern_config.get("id")
                 if not pattern_id:
-                    logger.warning(f"形态配置缺少ID，跳过注册: {pattern_config}")
+                    logger.warning(f"形态配置缺少ID,跳过注册: {pattern_config}")
                     continue
 
                 indicator_id = pattern_config.get("indicator", "")
@@ -682,12 +682,12 @@ class PatternRegistry(BaseIndicator):
 
         Args:
             indicator_type: 指标类型
-            patterns: 形态列表，每个形态为一个字典，包含id、name等信息
+            patterns: 形态列表,每个形态为一个字典,包含id,name等信息
         """
         for pattern_info in patterns:
             pattern_id = pattern_info.get("id")
             if not pattern_id:
-                logger.warning(f"形态信息缺少ID，跳过注册: {pattern_info}")
+                logger.warning(f"形态信息缺少ID,跳过注册: {pattern_info}")
                 continue
 
             # 构建完整的形态ID
@@ -728,7 +728,7 @@ class PatternRegistry(BaseIndicator):
 
 def get_pattern_registry() -> PatternRegistry:
     """
-    获取形态注册表实例（依赖注入方式）
+    获取形态注册表实例(依赖注入方式)
 
     Returns:
         PatternRegistry: 形态注册表实例
@@ -737,13 +737,13 @@ def get_pattern_registry() -> PatternRegistry:
         container = get_container()
         return container.resolve(PatternRegistry)
     except Exception as e:
-        logger.warning(f"从依赖注入容器获取PatternRegistry失败，创建新实例: {e}")
+        logger.warning(f"从依赖注入容器获取PatternRegistry失败,创建新实例: {e}")
         return PatternRegistry()
 
 
 def get_global_pattern_registry() -> PatternRegistry:
     """
-    获取全局形态注册表实例（向后兼容）
+    获取全局形态注册表实例(向后兼容)
 
     Returns:
         PatternRegistry: 全局形态注册表实例
@@ -764,7 +764,7 @@ except Exception as e:
 
 
 # ===== 兼容性别名 =====
-# 为了向后兼容，提供下划线命名的别名
+# 为了向后兼容,提供下划线命名的别名
 PATTERN_REGISTRY = PatternRegistry
 PATTERN_TYPE = PatternTypePatternRegistry
 PATTERN_STRENGTH = PatternStrengthPatternRegistry
@@ -774,4 +774,4 @@ PATTERN_INFO = PatternInfo
 if __name__ == "__main__":
     print("Pattern Registry Utility")
     print("使用方法: 在代码中导入并使用 PatternRegistry 类来管理技术形态")
-    print("现在支持依赖注入：使用 get_pattern_registry() 获取实例")
+    print("现在支持依赖注入:使用 get_pattern_registry() 获取实例")

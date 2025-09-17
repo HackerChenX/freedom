@@ -26,17 +26,17 @@ logger = get_logger(__name__)
 class DivergenceType(Enum):
     """背离类型枚举"""
     none = 0             # 无背离
-    positive = 1         # 正背离（底背离）：价格创新低，指标未创新低，看涨信号
-    negative = 2         # 负背离（顶背离）：价格创新高，指标未创新高，看跌信号
-    HIDDEN_POSITIVE = 3  # 隐藏正背离：价格未创新低，指标创新低，看涨信号  # TODO: 将魔法数字提取到配置中
-    HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号  # TODO: 将魔法数字提取到配置中
+    positive = 1         # 正背离(底背离):价格创新低,指标未创新低,看涨信号
+    negative = 2         # 负背离(顶背离):价格创新高,指标未创新高,看跌信号
+    HIDDEN_POSITIVE = 3  # 隐藏正背离:价格未创新低,指标创新低,看涨信号  # TODO: 将魔法数字提取到配置中
+    HIDDEN_NEGATIVE = 4  # 隐藏负背离:价格未创新高,指标创新高,看跌信号  # TODO: 将魔法数字提取到配置中
 
     @property
     def minimum_periods(self) -> int:
         """
         Divergence指标所需的最少数据周期数
         
-        计算逻辑：基于参数 lookback_period(20), confirm_period(5) 计算  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        计算逻辑:基于参数 lookback_period(20), confirm_period(5) 计算  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         Returns:
             int: 最少需要的数据周期数
@@ -49,7 +49,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     量价背离指标
     
-    用于识别价格与技术指标之间的背离，预示可能的趋势反转
+    用于识别价格与技术指标之间的背离,预示可能的趋势反转
     """
     
     @property
@@ -66,8 +66,8 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         初始化量价背离指标
 
         Args:
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
         """
         super().__init__()
         self.name = "DIVERGENCE"
@@ -80,7 +80,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算量价背离指标
 
         Args:
-            df: 输入数据，包含价格和成交量数据
+            df: 输入数据,包含价格和成交量数据
 
         Returns:
             包含量价背离指标的Data_frame
@@ -128,9 +128,9 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算价格与成交量的背离
         
         Args:
-            data: 输入数据，包含价格和成交量数据
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            data: 输入数据,包含价格和成交量数据
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
             
         Returns:
             pd.DataFrame: 计算结果
@@ -151,12 +151,12 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算价格与成交量背离
         for i in range(lookback_period, len(close)):
-            # 价格上涨但成交量下降，负背离
+            # 价格上涨但成交量下降,负背离
             if i >= 5 and close[i] > close[i-5] and volume[i] < volume[i-5]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_volume_divergence[i] = True
                 divergence_type[i] = "negative"
             
-            # 价格下跌但成交量上升，正背离
+            # 价格下跌但成交量上升,正背离
             elif i >= 5 and close[i] < close[i-5] and volume[i] > volume[i-5]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_volume_divergence[i] = True
                 divergence_type[i] = "positive"
@@ -174,15 +174,15 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算量价背离指标
         
         Args:
-            data: 输入数据，包含价格和技术指标数据
-            indicator_name: 用于对比的技术指标列名。如果为None，则默认计算价格与成交量的背离。
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            data: 输入数据,包含价格和技术指标数据
+            indicator_name: 用于对比的技术指标列名.如果为None,则默认计算价格与成交量的背离.
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
             
         Returns:
-            pd.DataFrame: 计算结果，包含各类背离信号
+            pd.DataFrame: 计算结果,包含各类背离信号
             
-        公式说明：
+        公式说明:
         PRICE_NEWLOW:=low=LLV(LOW,N);
         MACD_NO_NEWLOW:=MACD>LLV(MACD,N);
         POSITIVE_DIVERGENCE:=PRICE_NEWLOW AND MACD_NO_NEWLOW;
@@ -191,7 +191,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         MACD_NO_NEWHIGH:=MACD<HHV(MACD,N);
         NEGATIVE_DIVERGENCE:=PRICE_NEWHIGH AND MACD_NO_NEWHIGH;
         """
-        # 如果没有提供指标名称，则默认计算价格与成交量的背离
+        # 如果没有提供指标名称,则默认计算价格与成交量的背离
         if indicator_name is None:
             # 计算价格与成交量的背离
             result = self.price_volume_divergence(data, lookback_period, confirm_period)
@@ -221,52 +221,52 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         indicator_newhigh = np.zeros(len(close), dtype=bool)
         
         # 初始化各类背离
-        positive_divergence = np.zeros(len(close), dtype=bool)  # 正背离（底背离）
-        negative_divergence = np.zeros(len(close), dtype=bool)  # 负背离（顶背离）
+        positive_divergence = np.zeros(len(close), dtype=bool)  # 正背离(底背离)
+        negative_divergence = np.zeros(len(close), dtype=bool)  # 负背离(顶背离)
         hidden_positive_divergence = np.zeros(len(close), dtype=bool)  # 隐藏正背离
         hidden_negative_divergence = np.zeros(len(close), dtype=bool)  # 隐藏负背离
         
         # 计算各类背离
         for i in range(lookback_period, len(close)):
-            # 计算价格新低：当前低点是否是lookback_period周期内的最低点
+            # 计算价格新低:当前低点是否是lookback_period周期内的最低点
             price_newlow[i] = low[i] == np.min(low[i-lookback_period+1:i+1])
             
-            # 计算价格新高：当前高点是否是lookback_period周期内的最高点
+            # 计算价格新高:当前高点是否是lookback_period周期内的最高点
             price_newhigh[i] = high[i] == np.max(high[i-lookback_period+1:i+1])
             
-            # 计算指标新低：当前指标是否是lookback_period周期内的最低点
+            # 计算指标新低:当前指标是否是lookback_period周期内的最低点
             indicator_newlow[i] = indicator[i] == np.min(indicator[i-lookback_period+1:i+1])
             
-            # 计算指标新高：当前指标是否是lookback_period周期内的最高点
+            # 计算指标新高:当前指标是否是lookback_period周期内的最高点
             indicator_newhigh[i] = indicator[i] == np.max(indicator[i-lookback_period+1:i+1])
             
-            # 计算正背离（底背离）：价格创新低，但指标未创新低
+            # 计算正背离(底背离):价格创新低,但指标未创新低
             if price_newlow[i]:
-                # 检查指标是否背离（未创新低）
+                # 检查指标是否背离(未创新低)
                 indicator_value = indicator[i]
                 min_indicator = np.min(indicator[i-confirm_period:i])
                 if indicator_value > min_indicator:
                     positive_divergence[i] = True
             
-            # 计算负背离（顶背离）：价格创新高，但指标未创新高
+            # 计算负背离(顶背离):价格创新高,但指标未创新高
             if price_newhigh[i]:
-                # 检查指标是否背离（未创新高）
+                # 检查指标是否背离(未创新高)
                 indicator_value = indicator[i]
                 max_indicator = np.max(indicator[i-confirm_period:i])
                 if indicator_value < max_indicator:
                     negative_divergence[i] = True
             
-            # 计算隐藏正背离：价格未创新低，但指标创新低
+            # 计算隐藏正背离:价格未创新低,但指标创新低
             if not price_newlow[i] and indicator_newlow[i]:
-                # 检查价格是否在上升趋势中（近期低点高于前期低点）
+                # 检查价格是否在上升趋势中(近期低点高于前期低点)
                 current_low = low[i]
                 previous_low = np.min(low[i-confirm_period:i])
                 if current_low > previous_low:
                     hidden_positive_divergence[i] = True
             
-            # 计算隐藏负背离：价格未创新高，但指标创新高
+            # 计算隐藏负背离:价格未创新高,但指标创新高
             if not price_newhigh[i] and indicator_newhigh[i]:
-                # 检查价格是否在下降趋势中（近期高点低于前期高点）
+                # 检查价格是否在下降趋势中(近期高点低于前期高点)
                 current_high = high[i]
                 previous_high = np.max(high[i-confirm_period:i])
                 if current_high < previous_high:
@@ -299,7 +299,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             data: 输入数据
             **kwargs: 其他参数
-                indicator_name: 用于对比的技术指标列名，默认为'macd'
+                indicator_name: 用于对比的技术指标列名,默认为'macd'
 
         Returns:
             pd.DataFrame: 包含形态信息的Data_frame
@@ -325,7 +325,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df['ANY_NEGATIVE_DIVERGENCE'] = result.get('any_negative_divergence', False)
         patterns_df['ANY_DIVERGENCE'] = result.get('any_divergence', False)
 
-        # 价格与成交量背离（如果有）
+        # 价格与成交量背离(如果有)
         if 'price_volume_divergence' in result.columns:
             patterns_df['PRICE_VOLUME_DIVERGENCE'] = result['price_volume_divergence']
 
@@ -339,7 +339,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="POSITIVE_DIVERGENCE",
             display_name="正背离(底背离)",
-            description="价格创新低但指标未创新低，表明下跌动能减弱，看涨信号",
+            description="价格创新低但指标未创新低,表明下跌动能减弱,看涨信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
             score_impact=25.0,  # TODO: 将魔法数字提取到配置中
@@ -349,7 +349,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="NEGATIVE_DIVERGENCE",
             display_name="负背离(顶背离)",
-            description="价格创新高但指标未创新高，表明上涨动能减弱，看跌信号",
+            description="价格创新高但指标未创新高,表明上涨动能减弱,看跌信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
@@ -360,7 +360,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="HIDDEN_POSITIVE_DIVERGENCE",
             display_name="隐藏正背离",
-            description="价格未创新低但指标创新低，表明上升趋势中的调整，看涨信号",
+            description="价格未创新低但指标创新低,表明上升趋势中的调整,看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=15.0,  # TODO: 将魔法数字提取到配置中
@@ -370,7 +370,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="HIDDEN_NEGATIVE_DIVERGENCE",
             display_name="隐藏负背离",
-            description="价格未创新高但指标创新高，表明下降趋势中的反弹，看跌信号",
+            description="价格未创新高但指标创新高,表明下降趋势中的反弹,看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
@@ -381,7 +381,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="ANY_POSITIVE_DIVERGENCE",
             display_name="任意正背离",
-            description="出现任意类型的正背离，看涨信号",
+            description="出现任意类型的正背离,看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -391,7 +391,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="ANY_NEGATIVE_DIVERGENCE",
             display_name="任意负背离",
-            description="出现任意类型的负背离，看跌信号",
+            description="出现任意类型的负背离,看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
             score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
@@ -401,7 +401,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="ANY_DIVERGENCE",
             display_name="任意背离",
-            description="出现任意类型的背离，表明趋势可能发生变化",
+            description="出现任意类型的背离,表明趋势可能发生变化",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -412,7 +412,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="PRICE_VOLUME_DIVERGENCE",
             display_name="量价背离",
-            description="价格与成交量出现背离，需要谨慎观察",
+            description="价格与成交量出现背离,需要谨慎观察",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -424,14 +424,14 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算量价背离指标原始评分 (0-100分)
         
         Args:
-            data: 输入数据，包含价格和技术指标数据
+            data: 输入数据,包含价格和技术指标数据
             **kwargs: 额外参数
-                indicator_name: 用于对比的技术指标列名，默认为'macd'
-                lookback_period: 回溯周期，默认为20
-                confirm_period: 确认周期，默认为5
+                indicator_name: 用于对比的技术指标列名,默认为'macd'
+                lookback_period: 回溯周期,默认为20
+                confirm_period: 确认周期,默认为5
                 
         Returns:
-            pd.Series: 评分序列，取值范围0-100
+            pd.Series: 评分序列,取值范围0-100
         """
         # 获取参数
         indicator_name = kwargs.get('indicator_name', 'macd')
@@ -448,25 +448,25 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         else:
             result = self._result
         
-        # 初始化评分，默认为50分（中性）
+        # 初始化评分,默认为50分(中性)
         score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 检查结果是否有效
         if result.empty:
             return score
         
-        # 1. 基于正背离的评分 (看涨信号，加分)
+        # 1. 基于正背离的评分 (看涨信号,加分)
         if "positive_divergence" in result.columns:
-            # 正背离（底背离）加分较多
+            # 正背离(底背离)加分较多
             score[result["positive_divergence"]] += 25  # TODO: 将魔法数字提取到配置中
         
         if "hidden_positive_divergence" in result.columns:
             # 隐藏正背离加分较少
             score[result["hidden_positive_divergence"]] += 15  # TODO: 将魔法数字提取到配置中
         
-        # 2. 基于负背离的评分 (看跌信号，减分)
+        # 2. 基于负背离的评分 (看跌信号,减分)
         if "negative_divergence" in result.columns:
-            # 负背离（顶背离）减分较多
+            # 负背离(顶背离)减分较多
             score[result["negative_divergence"]] -= 25  # TODO: 将魔法数字提取到配置中
         
         if "hidden_negative_divergence" in result.columns:
@@ -498,10 +498,10 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     negative_count += recent_window["hidden_negative_divergence"].sum()
                 
                 # 根据背离持续性进行额外评分调整
-                if positive_count > 1:  # 多次正背离，强化看涨信号
+                if positive_count > 1:  # 多次正背离,强化看涨信号
                     score.iloc[i] += positive_count * 2
                 
-                if negative_count > 1:  # 多次负背离，强化看跌信号
+                if negative_count > 1:  # 多次负背离,强化看跌信号
                     score.iloc[i] -= negative_count * 2
         
         # 确保评分在0-100范围内
@@ -514,9 +514,9 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算MACD与价格的背离
         
         Args:
-            data: 输入数据，包含价格和MACD数据
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            data: 输入数据,包含价格和MACD数据
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
             
         Returns:
             pd.DataFrame: 计算结果
@@ -533,10 +533,10 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算RSI与价格的背离
         
         Args:
-            data: 输入数据，包含价格数据
-            period: RSI计算周期，默认为14
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            data: 输入数据,包含价格数据
+            period: RSI计算周期,默认为14
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
             
         Returns:
             pd.DataFrame: 计算结果
@@ -544,7 +544,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low"])
         
-        # 如果数据中没有RSI，计算RSI
+        # 如果数据中没有RSI,计算RSI
         if f"RSI_{period}" not in data.columns:
             # 计算RSI
             close = data["close"].values
@@ -589,9 +589,9 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算OBV与价格的背离
         
         Args:
-            data: 输入数据，包含价格和成交量数据
-            lookback_period: 回溯周期，默认为20
-            confirm_period: 确认周期，默认为5
+            data: 输入数据,包含价格和成交量数据
+            lookback_period: 回溯周期,默认为20
+            confirm_period: 确认周期,默认为5
             
         Returns:
             pd.DataFrame: 计算结果
@@ -599,7 +599,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 确保数据包含必需的列
         self.ensure_columns(data, ["close", "high", "low", "volume"])
         
-        # 如果数据中没有OBV，计算OBV
+        # 如果数据中没有OBV,计算OBV
         if "OBV" not in data.columns:
             # 计算OBV
             close = data["close"].values
@@ -648,13 +648,13 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         生成背离指标交易信号
         
         Args:
-            data: 输入数据，包含OHLCV数据
-            indicator_name: 用于对比的技术指标列名，默认为'macd'
+            data: 输入数据,包含OHLCV数据
+            indicator_name: 用于对比的技术指标列名,默认为'macd'
             *args: 位置参数
             **kwargs: 关键字参数
             
         Returns:
-            pd.DataFrame: 信号结果Data_frame，包含标准化信号
+            pd.DataFrame: 信号结果Data_frame,包含标准化信号
         """
         # 初始化信号DataFrame
         signals = pd.DataFrame(index=data.index)
@@ -680,18 +680,18 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if indicator_name == 'macd':
             # 使用MACD背离
             if 'macd' not in data.columns:
-                # 如果没有MACD列，则计算MACD背离
+                # 如果没有MACD列,则计算MACD背离
                 divergence_result = self.macd_divergence(data, lookback_period, confirm_period)
             else:
-                # 如果有MACD列，则直接使用MACD背离
+                # 如果有MACD列,则直接使用MACD背离
                 divergence_result = self.calculate(data, 'macd', lookback_period, confirm_period)
         elif indicator_name == 'rsi':
             # 使用RSI背离
             if 'rsi' not in data.columns:
-                # 如果没有RSI列，则计算RSI背离
+                # 如果没有RSI列,则计算RSI背离
                 divergence_result = self.rsi_divergence(data, 14, lookback_period, confirm_period)  # TODO: 将魔法数字提取到配置中
             else:
-                # 如果有RSI列，则直接使用RSI背离
+                # 如果有RSI列,则直接使用RSI背离
                 divergence_result = self.calculate(data, 'rsi', lookback_period, confirm_period)
         elif indicator_name == 'obv':
             # 使用OBV背离
@@ -724,13 +724,13 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         else:
             hidden_negative = pd.Series(False, index=data.index)
         
-        # 生成买入信号（正背离和隐藏正背离）
+        # 生成买入信号(正背离和隐藏正背离)
         buy_indices = positive_divergence | hidden_positive
         signals.loc[buy_indices, 'buy_signal'] = True
         signals.loc[buy_indices, 'neutral_signal'] = False
         signals.loc[buy_indices, 'trend'] = 1
         
-        # 生成卖出信号（负背离和隐藏负背离）
+        # 生成卖出信号(负背离和隐藏负背离)
         sell_indices = negative_divergence | hidden_negative
         signals.loc[sell_indices, 'sell_signal'] = True
         signals.loc[sell_indices, 'neutral_signal'] = False
@@ -740,28 +740,28 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         for i in range(len(signals)):
             if positive_divergence.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '正背离(底背离)'
-                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标正背离：价格创新低，指标未创新低，看涨信号'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标正背离:价格创新低,指标未创新低,看涨信号'
                 signals.loc[signals.index[i], 'confidence'] = 75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
                 signals.loc[signals.index[i], 'score'] = 75  # TODO: 将魔法数字提取到配置中
             
             elif negative_divergence.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '负背离(顶背离)'
-                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标负背离：价格创新高，指标未创新高，看跌信号'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标负背离:价格创新高,指标未创新高,看跌信号'
                 signals.loc[signals.index[i], 'confidence'] = 75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
                 signals.loc[signals.index[i], 'score'] = 25  # TODO: 将魔法数字提取到配置中
             
             elif hidden_positive.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '隐藏正背离'
-                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏正背离：价格未创新低，指标创新低，看涨信号'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏正背离:价格未创新低,指标创新低,看涨信号'
                 signals.loc[signals.index[i], 'confidence'] = 65  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
                 signals.loc[signals.index[i], 'score'] = 70  # TODO: 将魔法数字提取到配置中
             
             elif hidden_negative.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '隐藏负背离'
-                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏负背离：价格未创新高，指标创新高，看跌信号'
+                signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏负背离:价格未创新高,指标创新高,看跌信号'
                 signals.loc[signals.index[i], 'confidence'] = 65  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
                 signals.loc[signals.index[i], 'score'] = 30  # TODO: 将魔法数字提取到配置中
@@ -878,19 +878,22 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             is_valid, errors = validator.validate_indicator_parameters('DIVERGENCE', params)
             if not is_valid:
                 from utils.logger import get_logger
+        except Exception as e:
+            logger.error(f"错误: {e}")
+            return pd.DataFrame()
 from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"DIVERGENCE参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
             
-            # 设置参数（保持向后兼容）
+            # 设置参数(保持向后兼容)
             for key, value in params.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
                     
         except Exception:
-            # 如果验证失败，静默处理
+            # 如果验证失败,静默处理
             pass
 
     def calculate_confidence_Divergence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:

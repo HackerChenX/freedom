@@ -44,7 +44,7 @@ class BaseIndicator(abc.ABC):
     BaseIndicator - L4核心服务层技术指标基类
 
     职责合理性说明:
-    - 作为L4层核心服务组件，承担多项相关职责
+    - 作为L4层核心服务组件,承担多项相关职责
     - 方法分为以下职责组:
       * 核心抽象方法 (calculate, get_signal, get_patterns)
       * 数据处理方法 (validate_data, preprocess_data, postprocess_result)
@@ -55,7 +55,7 @@ class BaseIndicator(abc.ABC):
 
     技术指标基类
 
-    所有技术指标类应继承此类，并实现必要的抽象方法
+    所有技术指标类应继承此类,并实现必要的抽象方法
     """
 
     def __init__(self, name: str = "", period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
@@ -78,7 +78,7 @@ class BaseIndicator(abc.ABC):
             self.data_access = container.resolve("DataAccessInterface")
             self.cache_service = container.resolve("ICacheService")
         except Exception:
-            # 如果依赖注入失败，使用默认值
+            # 如果依赖注入失败,使用默认值
             self.data_access = None
             self.cache_service = None
 
@@ -108,7 +108,7 @@ class BaseIndicator(abc.ABC):
         计算指标值
 
         Args:
-            data: 输入数据，包含OHLCV等字段
+            data: 输入数据,包含OHLCV等字段
 
         Returns:
             pd.DataFrame: 包含指标计算结果的数据框
