@@ -16,6 +16,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 import re
 from functools import wraps
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

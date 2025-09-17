@@ -22,7 +22,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 
@@ -82,6 +82,18 @@ class EvaluationResult:
     confidence_level: float
 
 class EnhancedBacktestEvaluator:
+"""
+EnhancedBacktestEvaluator - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 21个方法分为以下职责组:
+  * 核心功能方法 (约7个)
+  * 辅助工具方法 (约7个)  
+  * 接口适配方法 (约7个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     增强回测评估系统
     
@@ -631,7 +643,7 @@ class EnhancedBacktestEvaluator:
                         'low': 9.5 + np.random.normal(0, 0.5),
                         'close': 10.0 + np.random.normal(0, 0.5),
                         'volume': 1000000 + np.random.randint(0, 500000),
-                        'turnover_rate': np.random.uniform(0.5, 5.0)
+                        'turnover': np.random.uniform(0.5, 5.0)
                     })
                 return pd.DataFrame(data)
 

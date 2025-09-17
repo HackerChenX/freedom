@@ -18,7 +18,7 @@ from xml.etree import ElementTree as ET
 
 from utils.path_utils import get_result_dir
 from utils.logger import get_logger, setup_logger
-from config.config import get_config
+from config.unified_config_manager import get_config
 
 logger = get_logger(__name__)
 

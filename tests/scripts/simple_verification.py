@@ -17,6 +17,7 @@ def test_basic_imports():
     try:
         from utils.dependency_injection import get_service
         from strategy.unified_base_strategy import UnifiedBaseStrategy
+from db.sql_manager import SQLManager, QueryType
         print("✅ 基本导入成功")
         return True
     except ImportError as e:
@@ -42,6 +43,7 @@ def test_unified_base_strategy():
     
     try:
         from strategy.unified_base_strategy import UnifiedBaseStrategy
+from db.sql_manager import SQLManager, QueryType
         
         class TestStrategy(UnifiedBaseStrategy):
             def select_stocks(self, universe, start_date, end_date, **kwargs):

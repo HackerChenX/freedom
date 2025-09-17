@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Optional, Union, Tuple
 from scipy.signal import find_peaks as scipy_find_peaks
+from db.sql_manager import SQLManager, QueryType
 
 def find_peaks(series: Union[pd.Series, np.ndarray],
                height: Optional[Union[float, np.ndarray]] = None,

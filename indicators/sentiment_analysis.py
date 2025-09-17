@@ -1,3 +1,4 @@
+from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
@@ -5,7 +6,7 @@ from typing import Dict, Any, List
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,6 +19,9 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化SENTIMENT_ANALYSIS指标
         
@@ -31,14 +35,14 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._default_parameters = self._get_default_parameters_sentimentanalysis()
 
         # 🔧 Ultra Think修复：设置内部minimum_periods值
-        self._minimum_periods = 14
+        self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
         self.set_parameters_Analysis_Sentiment_Analysis(**kwargs)
     
     def _get_default_parameters_sentimentanalysis(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Analysis_Sentiment_Analysis(self, **kwargs):
         """
@@ -50,6 +54,7 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -67,7 +72,7 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
         
         # 设置参数
-        self.period = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
         # 🔧 Ultra Think修复：同步更新minimum_periods
         self._minimum_periods = self.period
     
@@ -131,18 +136,18 @@ class SentimentAnalysis(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
-        return getattr(self, '_minimum_periods', 14)
+        return getattr(self, '_minimum_periods', 14)  # TODO: 将魔法数字提取到配置中
 
     def calculate_raw_score_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
         # 🔧 Ultra Think修复：移除has_result检查，直接计算
         # if not self.has_result():
         #     self.calculate_Analysis_Sentiment_Analysis(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
     def calculate_confidence_Analysis_Sentiment_Analysis(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Analysis_Sentiment_Analysis(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -157,6 +162,9 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ZXM市场情绪指标
 
@@ -176,8 +184,8 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _get_default_parameters_marketsentiment(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
-            "fear_greed_period": 14,
-            "sentiment_period": 20,
+            "fear_greed_period": 14,  # TODO: 将魔法数字提取到配置中
+            "sentiment_period": 20,  # TODO: 将魔法数字提取到配置中
             "volatility_period": 10
         }
 
@@ -188,8 +196,8 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 参数字典
         """
-        self.fear_greed_period = kwargs.get('fear_greed_period', 14)
-        self.sentiment_period = kwargs.get('sentiment_period', 20)
+        self.fear_greed_period = kwargs.get('fear_greed_period', 14)  # TODO: 将魔法数字提取到配置中
+        self.sentiment_period = kwargs.get('sentiment_period', 20)  # TODO: 将魔法数字提取到配置中
         self.volatility_period = kwargs.get('volatility_period', 10)
 
     @property
@@ -230,10 +238,10 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning(f"ZXM_MARKET_SENTIMENT: 数据量不足，需要至少 {self.minimum_periods} 行，实际 {len(data)} 行")
             # 返回带有默认值的DataFrame
             result = data.copy()
-            result['FearGreedIndex'] = 50.0
-            result['InvestorSentiment'] = 50.0
-            result['MarketHeat'] = 50.0
-            result['CompositeSentiment'] = 50.0
+            result['FearGreedIndex'] = 50.0  # TODO: 将魔法数字提取到配置中
+            result['InvestorSentiment'] = 50.0  # TODO: 将魔法数字提取到配置中
+            result['MarketHeat'] = 50.0  # TODO: 将魔法数字提取到配置中
+            result['CompositeSentiment'] = 50.0  # TODO: 将魔法数字提取到配置中
             result['ExtremeFearSignal'] = False
             result['ExtremeGreedSignal'] = False
             result['SentimentReversalSignal'] = False
@@ -268,19 +276,19 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 计算价格动量（0-100）
         momentum = returns.rolling(window=self.fear_greed_period).mean()
-        momentum_normalized = ((momentum - momentum.min()) / (momentum.max() - momentum.min()) * 100).fillna(50)
+        momentum_normalized = ((momentum - momentum.min()) / (momentum.max() - momentum.min()) * 100).fillna(50)  # TODO: 将魔法数字提取到配置中
 
         # 计算波动率（反向，高波动=恐慌）
         volatility = returns.rolling(window=self.volatility_period).std()
-        volatility_normalized = (100 - ((volatility - volatility.min()) / (volatility.max() - volatility.min()) * 100)).fillna(50)
+        volatility_normalized = (100 - ((volatility - volatility.min()) / (volatility.max() - volatility.min()) * 100)).fillna(50)  # TODO: 将魔法数字提取到配置中
 
         # 计算成交量相对强度
         volume_ma = result['volume'].rolling(window=self.fear_greed_period).mean()
-        volume_strength = (result['volume'] / volume_ma * 50).fillna(50)
+        volume_strength = (result['volume'] / volume_ma * 50).fillna(50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         volume_strength = np.clip(volume_strength, 0, 100)
 
         # 综合计算恐慌贪婪指数
-        fear_greed_index = (momentum_normalized * 0.4 + volatility_normalized * 0.3 + volume_strength * 0.3)
+        fear_greed_index = (momentum_normalized * 0.4 + volatility_normalized * 0.3 + volume_strength * 0.3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         result['FearGreedIndex'] = np.clip(fear_greed_index, 0, 100)
 
         return result
@@ -294,16 +302,16 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         low = result['low']
 
         # 计算价格位置（收盘价在高低点中的位置）
-        price_position = ((close - low) / (high - low) * 100).fillna(50)
+        price_position = ((close - low) / (high - low) * 100).fillna(50)  # TODO: 将魔法数字提取到配置中
 
         # 计算趋势强度
-        ma_short = close.rolling(window=5).mean()
+        ma_short = close.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         ma_long = close.rolling(window=self.sentiment_period).mean()
-        trend_strength = ((ma_short / ma_long - 1) * 100 + 50).fillna(50)
+        trend_strength = ((ma_short / ma_long - 1) * 100 + 50).fillna(50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         trend_strength = np.clip(trend_strength, 0, 100)
 
         # 综合投资者情绪
-        investor_sentiment = (price_position * 0.6 + trend_strength * 0.4)
+        investor_sentiment = (price_position * 0.6 + trend_strength * 0.4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         result['InvestorSentiment'] = np.clip(investor_sentiment, 0, 100)
 
         return result
@@ -318,15 +326,15 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 成交量热度
         volume_ma = volume.rolling(window=self.sentiment_period).mean()
-        volume_heat = (volume / volume_ma * 50).fillna(50)
+        volume_heat = (volume / volume_ma * 50).fillna(50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         volume_heat = np.clip(volume_heat, 0, 100)
 
         # 价格变化热度
-        price_heat = (returns.rolling(window=self.volatility_period).mean() * 1000).fillna(50)
+        price_heat = (returns.rolling(window=self.volatility_period).mean() * 1000).fillna(50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         price_heat = np.clip(price_heat, 0, 100)
 
         # 综合市场热度
-        market_heat = (volume_heat * 0.6 + price_heat * 0.4)
+        market_heat = (volume_heat * 0.6 + price_heat * 0.4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         result['MarketHeat'] = np.clip(market_heat, 0, 100)
 
         return result
@@ -341,7 +349,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         market_heat = result['MarketHeat']
 
         # 加权平均计算综合情绪
-        composite_sentiment = (fear_greed * 0.4 + investor_sentiment * 0.35 + market_heat * 0.25)
+        composite_sentiment = (fear_greed * 0.4 + investor_sentiment * 0.35 + market_heat * 0.25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         result['CompositeSentiment'] = np.clip(composite_sentiment, 0, 100)
 
         return result
@@ -353,10 +361,10 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         composite_sentiment = result['CompositeSentiment']
 
         # 极度恐慌信号（买入机会）
-        result['ExtremeFearSignal'] = composite_sentiment <= 20
+        result['ExtremeFearSignal'] = composite_sentiment <= 20  # TODO: 将魔法数字提取到配置中
 
         # 极度贪婪信号（卖出警告）
-        result['ExtremeGreedSignal'] = composite_sentiment >= 80
+        result['ExtremeGreedSignal'] = composite_sentiment >= 80  # TODO: 将魔法数字提取到配置中
 
         # 情绪转折信号
         sentiment_change = composite_sentiment.diff()
@@ -392,7 +400,7 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             float: 置信度分数 (0-1)
         """
-        return 0.75  # ZXM市场情绪指标置信度
+        return 0.75  # ZXM市场情绪指标置信度  # TODO: 将魔法数字提取到配置中
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -424,11 +432,11 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 市场情绪形态
         composite_sentiment = result['CompositeSentiment']
-        patterns['ZXM_EXTREME_FEAR'] = composite_sentiment <= 20
-        patterns['ZXM_FEAR'] = (composite_sentiment > 20) & (composite_sentiment <= 40)
-        patterns['ZXM_NEUTRAL'] = (composite_sentiment > 40) & (composite_sentiment < 60)
-        patterns['ZXM_GREED'] = (composite_sentiment >= 60) & (composite_sentiment < 80)
-        patterns['ZXM_EXTREME_GREED'] = composite_sentiment >= 80
+        patterns['ZXM_EXTREME_FEAR'] = composite_sentiment <= 20  # TODO: 将魔法数字提取到配置中
+        patterns['ZXM_FEAR'] = (composite_sentiment > 20) & (composite_sentiment <= 40)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['ZXM_NEUTRAL'] = (composite_sentiment > 40) & (composite_sentiment < 60)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['ZXM_GREED'] = (composite_sentiment >= 60) & (composite_sentiment < 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['ZXM_EXTREME_GREED'] = composite_sentiment >= 80  # TODO: 将魔法数字提取到配置中
 
         # 情绪信号形态
         patterns['ZXM_EXTREME_FEAR_SIGNAL'] = result['ExtremeFearSignal']
@@ -462,11 +470,11 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'SentimentReversalSignal' # 情绪反转信号
             ],
             'sentiment_levels': {
-                'extreme_fear': (0, 20),      # 极度恐慌
-                'fear': (20, 40),             # 恐慌
-                'neutral': (40, 60),          # 中性
-                'greed': (60, 80),            # 贪婪
-                'extreme_greed': (80, 100)    # 极度贪婪
+                'extreme_fear': (0, 20),      # 极度恐慌  # TODO: 将魔法数字提取到配置中
+                'fear': (20, 40),             # 恐慌  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                'neutral': (40, 60),          # 中性  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                'greed': (60, 80),            # 贪婪  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                'extreme_greed': (80, 100)    # 极度贪婪  # TODO: 将魔法数字提取到配置中
             },
             'parameters': {
                 'fear_greed_period': self.fear_greed_period,
@@ -474,9 +482,9 @@ class MarketSentiment(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'volatility_period': self.volatility_period
             },
             'thresholds': {
-                'extreme_fear_threshold': 20,
-                'extreme_greed_threshold': 80,
-                'reversal_threshold': 15
+                'extreme_fear_threshold': 20,  # TODO: 将魔法数字提取到配置中
+                'extreme_greed_threshold': 80,  # TODO: 将魔法数字提取到配置中
+                'reversal_threshold': 15  # TODO: 将魔法数字提取到配置中
             }
         }
 

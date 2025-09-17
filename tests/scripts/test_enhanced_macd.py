@@ -17,6 +17,7 @@ sys.path.insert(0, root_dir)
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.trend.enhanced_macd import Enhanced_mACD
+from db.sql_manager import SQLManager, QueryType
 
 def test_enhanced_macd():
     """测试Enhanced MACD指标"""
@@ -50,7 +51,7 @@ def test_enhanced_macd():
                 low,
                 close,
                 volume
-            FROM stock_info WHERE 1=1
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE code = '{code}' 
             AND date >= '2025-03-01' 
             AND date <= '2025-07-31'

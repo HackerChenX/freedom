@@ -894,7 +894,7 @@ def calculate_rsi_Utils(data: pd.Series, period: int = 14) -> pd.Series:
     """
     import numpy as np
     from decimal import Decimal, getcontext
-    from utils.dependency_injection import get_logger
+    from utils.logger import get_logger
 
     logger = get_logger(__name__)
 

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Set
 from dataclasses import dataclass
 from datetime import datetime
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到路径
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -45,7 +46,7 @@ class ComprehensiveIndicatorAnalyzer:
             'P2': ['STOCHRSI', 'PSY', 'WR', 'BIAS', 'VOL', 'OBV', 'MFI', 'EMV', 'CCI', 'MOMENTUM', 'VOSC', 'VR', 'PVT'],  # 常用指标
             'P3': ['ATR', 'KC', 'VORTEX', 'AROON', 'ICHIMOKU', 'WMA', 'AD', 'CHAIKIN', 'VIX', 'VOLUME_RATIO'],  # 专业指标
             'P4': [  # ZXM系列指标
-                'ZXM_DAILY_MACD', 'ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
+                'ZXM_DAILY_MACD', 'ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
                 'ZXM_BS_ABSORB', 'ZXM_AMPLITUDE_ELASTICITY', 'ZXM_RISE_ELASTICITY', 'ZXM_ELASTICITY',
                 'ZXM_BOUNCE_DETECTOR', 'ZXM_ELASTICITY_SCORE', 'ZXM_BUYPOINT_SCORE', 'ZXM_STOCK_SCORE',
                 'ZXM_DAILY_TREND_UP', 'ZXM_WEEKLY_TREND_UP', 'ZXM_MONTHLY_KDJ_TREND_UP',

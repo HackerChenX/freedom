@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 """
 通用策略生成器 - 符合六层架构的生产级实现
@@ -16,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.logger import get_logger
 from utils.unified_container import container
 from analysis.universal_buypoint_analyzer import UniversalBuyPointAnalyzer
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -28,6 +31,9 @@ class UniversalStrategyGenerator:
     """
     
     def __init__(self, config_dir: str = "config/strategies"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化策略生成器"""
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)

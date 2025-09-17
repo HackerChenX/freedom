@@ -24,7 +24,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from indicators.complete_indicator_registry import get_indicator_registry
 from indicators.base_indicator import BaseIndicator
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

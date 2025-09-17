@@ -1,0 +1,173 @@
+# K线形态识别策略
+# 基于23个形态识别指标的综合策略
+
+strategy_id: "CANDLESTICK_PATTERNS_STRATEGY"
+name: "K线形态识别策略"
+description: "基于多种K线形态的技术分析策略，包括反转形态、持续形态等"
+version: "1.0"
+category: "pattern_analysis"
+
+# 策略条件 - 多种K线形态组合
+conditions:
+  # 1. 反转形态组 (权重50%)
+  reversal_patterns_group:
+    type: "logic"
+    operator: "OR"
+    weight: 0.5
+    conditions:
+      # 锤子线形态
+      - type: "indicator"
+        indicator: "HAMMER"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.2
+      
+      # 看涨吞没形态
+      - type: "indicator"
+        indicator: "ENGULFING"
+        field: "bullish_signal"
+        operator: "=="
+        value: 1
+        weight: 0.25
+      
+      # 启明星形态
+      - type: "indicator"
+        indicator: "MORNING_STAR"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.2
+      
+      # 刺透线形态
+      - type: "indicator"
+        indicator: "PIERCING_LINE"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.15
+      
+      # 孕线形态
+      - type: "indicator"
+        indicator: "HARAMI"
+        field: "bullish_signal"
+        operator: "=="
+        value: 1
+        weight: 0.2
+
+  # 2. 持续形态组 (权重30%)
+  continuation_patterns_group:
+    type: "logic"
+    operator: "OR"
+    weight: 0.3
+    conditions:
+      # 三白兵形态
+      - type: "indicator"
+        indicator: "THREE_WHITE_SOLDIERS"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.4
+      
+      # 旗形形态
+      - type: "indicator"
+        indicator: "FLAG"
+        field: "bullish_signal"
+        operator: "=="
+        value: 1
+        weight: 0.3
+      
+      # 三角旗形态
+      - type: "indicator"
+        indicator: "PENNANT"
+        field: "bullish_signal"
+        operator: "=="
+        value: 1
+        weight: 0.3
+
+  # 3. 支撑阻力形态组 (权重20%)
+  support_resistance_group:
+    type: "logic"
+    operator: "OR"
+    weight: 0.2
+    conditions:
+      # 双底形态
+      - type: "indicator"
+        indicator: "DOUBLE_BOTTOM"
+        field: "signal"
+        operator: ">"
+        value: 0.7
+        weight: 0.4
+      
+      # 头肩底形态
+      - type: "indicator"
+        indicator: "HEAD_SHOULDERS"
+        field: "inverse_signal"
+        operator: ">"
+        value: 0.7
+        weight: 0.3
+      
+      # 矩形突破
+      - type: "indicator"
+        indicator: "RECTANGLE"
+        field: "breakout_signal"
+        operator: ">"
+        value: 0.6
+        weight: 0.3
+
+# 辅助技术条件
+technical_filters:
+  # 成交量确认
+  volume_confirmation:
+    - type: "volume"
+      field: "volume_ratio"
+      operator: ">"
+      value: 1.2  # 成交量放大确认
+  
+  # 价格位置
+  price_position:
+    - type: "price"
+      field: "price_percentile_60d"
+      operator: "BETWEEN"
+      value: [0.2, 0.8]  # 价格在60日区间的20%-80%
+
+  # 趋势确认
+  trend_confirmation:
+    - type: "indicator"
+      indicator: "MA"
+      field: "ma_trend"
+      operator: ">"
+      value: 0  # 均线趋势向上
+
+# 评分系统
+scoring_system:
+  method: "pattern_strength_weighted"
+  
+  # 形态强度权重
+  pattern_weights:
+    reversal_strength: 0.5
+    continuation_strength: 0.3
+    support_resistance_strength: 0.2
+  
+  # 确认因子
+  confirmation_factors:
+    volume_confirmation: 1.2
+    trend_alignment: 1.15
+    multiple_patterns: 1.3
+
+# 风险控制
+risk_management:
+  # 形态失效止损
+  pattern_invalidation_stop: true
+  
+  # 时间止损
+  time_stop_days: 10
+  
+  # 最大回撤
+  max_drawdown: 0.06
+
+# 执行参数
+execution_parameters:
+  min_data_points: 60
+  pattern_lookback: 20
+  confirmation_period: 3

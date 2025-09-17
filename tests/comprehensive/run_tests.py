@@ -169,6 +169,7 @@ class TestRunner:
                 # 如果没有run_test方法，使用替代方法
                 print("使用替代方法进行系统测试...")
                 from types import SimpleNamespace
+from db.sql_manager import SQLManager, QueryType
                 session = SimpleNamespace()
                 session.session_id = "fallback_session"
                 session.status = "completed"
@@ -249,6 +250,7 @@ class TestRunner:
                 # 如果没有run_test方法，使用替代方法
                 print("使用替代方法进行性能测试...")
                 from types import SimpleNamespace
+from db.sql_manager import SQLManager, QueryType
                 session = SimpleNamespace()
                 session.session_id = "fallback_performance_session"
                 session.status = "completed"

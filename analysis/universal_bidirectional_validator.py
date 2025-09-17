@@ -1,3 +1,5 @@
+from utils.container import container
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/env python3
 """
 通用双向验证器 - 符合六层架构的生产级实现
@@ -10,6 +12,7 @@ import json
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 from pathlib import Path
+from db.sql_manager import SQLManager, QueryType
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -30,6 +33,9 @@ class UniversalBidirectionalValidator:
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化验证器"""
         try:
             # 直接实例化服务
@@ -268,6 +274,7 @@ class UniversalBidirectionalValidator:
 
             import yaml
             from pathlib import Path
+from db.sql_manager import SQLManager, QueryType
 
             config_path = Path(strategy_config_file)
             if not config_path.exists():

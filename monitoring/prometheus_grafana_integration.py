@@ -311,6 +311,7 @@ class PrometheusMetricsExporter:
 
             # 获取智能告警系统统计
             from monitoring.intelligent_alert_system import get_intelligent_alert_system
+from db.sql_manager import SQLManager, QueryType
             alert_system = get_intelligent_alert_system()
             alert_stats = alert_system.get_system_statistics()
 

@@ -1,6 +1,9 @@
+from utils.container import container
+
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 指数移动平均线(EMA_Ema)
@@ -16,7 +19,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -24,15 +27,18 @@ logger = get_logger(__name__)
 class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     指数移动平均线(EMA_Ema)
-    
+
     分类：趋势类指标
     描述：对近期价格赋予更高权重
     """
-    
+
     # EMA指标只需要close列
-    REQUIRED_COLUMNS = ['close']
+    REQUIRED_COLUMNS = ["close"]
 
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化指数移动平均线(EMA_Ema)指标
         Args:
@@ -48,7 +54,7 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 应用用户参数
         self.set_parameters_Ema(**kwargs)
 
-        self.ma_cols = [f'{self.ma_type}{self.period}']
+        self.ma_cols = [f"{self.ma_type}{self.period}"]
         self.register_patterns_Ema()
 
     @property
@@ -60,12 +66,12 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             int: 最少需要的数据周期数
         """
         # EMA需要的最小周期数是period + 一些预热期
-        return getattr(self, 'period', 12) + 5
+        return getattr(self, "period", 12) + 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def _get_default_parameters_ema(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 12, "price_field": "close", "alpha": None}
-        
+        return {"period": 12, "price_field": "close", "alpha": None}  # TODO: 将魔法数字提取到配置中
+
     def set_parameters_Ema(self, **kwargs):
         """
         设置指标参数
@@ -77,38 +83,38 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 - alpha: 平滑因子
         """
         # 验证参数
-        from utils.indicator_parameter_validator import IndicatorParameterValidator
-        validator = IndicatorParameterValidator()
-
-        # 合并默认参数和用户参数
-        params = self._default_parameters.copy()
-        params.update(kwargs)        # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+            from db.sql_manager import SQLManager, QueryType
+
             validator = IndicatorParameterValidator()
-            
+
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('EMA_Ema', params)
+            is_valid, errors = validator.validate_indicator_parameters("EMA_Ema", params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
-                
+
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
             pass
 
         # 设置参数
-        self.period = params.get('period', 12)
-        self.price_field = params.get('price_field', 'close')
-        self.alpha = params.get('alpha', None)
+        self.period = params.get("period", 12)  # TODO: 将魔法数字提取到配置中
+        self.price_field = params.get("price_field", "close")
+        self.alpha = params.get("alpha", None)
 
         # 保持向后兼容性
         self.periods = [self.period]  # 为了兼容现有代码
-        self.ma_type = 'EMA_Ema'
+        self.ma_type = "EMA_Ema"
 
-        if hasattr(self, 'ma_cols'):
-            self.ma_cols = [f'{self.ma_type}{self.period}']
-        
+        if hasattr(self, "ma_cols"):
+            self.ma_cols = [f"{self.ma_type}{self.period}"]
+
     def _calculate_ema(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         计算指数移动平均线(EMA_Ema)指标
@@ -118,7 +124,7 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning("EMA计算: 输入数据为空")
             return pd.DataFrame()
 
-        if 'close' not in df.columns:
+        if "close" not in df.columns:
             logger.error("EMA计算: 缺少必需的'close'列")
             raise ValueError("EMA计算需要'close'列数据")
 
@@ -128,15 +134,15 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 返回空结果而不是抛出异常
             result_df = df.copy()
             for p in self.periods:
-                result_df[f'{self.ma_type}{p}'] = np.nan
+                result_df[f"{self.ma_type}{p}"] = np.nan
             return result_df
 
         # 复制数据以避免修改原始数据
         df = df.copy()
 
         for p in self.periods:
-            df[f'{self.ma_type}{p}'] = df['close'].ewm(span=p, adjust=True).mean()
-        
+            df[f"{self.ma_type}{p}"] = df["close"].ewm(span=p, adjust=True).mean()
+
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
         df = self.add_signal_generation(df)
@@ -153,11 +159,11 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取收盘价
-            close_price = df['close']
+            close_price = df["close"]
 
             # 获取最短周期的EMA线
             shortest_period = min(self.periods)
-            ema_col = f'{self.ma_type}{shortest_period}'
+            ema_col = f"{self.ma_type}{shortest_period}"
 
             if ema_col not in df.columns:
                 # 如果没有EMA线，使用默认信号
@@ -178,21 +184,21 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             ema_falling = ema_line < ema_line.shift(1)
 
             # 生成信号
-            df.loc[:, 'buy_signal'] = price_above_ema & ema_rising
-            df.loc[:, 'sell_signal'] = price_below_ema & ema_falling
-            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
+            df.loc[:, "buy_signal"] = price_above_ema & ema_rising
+            df.loc[:, "sell_signal"] = price_below_ema & ema_falling
+            df.loc[:, "hold_signal"] = ~(df["buy_signal"] | df["sell_signal"])
 
             # 确保信号类型为布尔值
-            df['buy_signal'] = df['buy_signal'].astype(bool)
-            df['sell_signal'] = df['sell_signal'].astype(bool)
-            df['hold_signal'] = df['hold_signal'].astype(bool)
+            df["buy_signal"] = df["buy_signal"].astype(bool)
+            df["sell_signal"] = df["sell_signal"].astype(bool)
+            df["hold_signal"] = df["hold_signal"].astype(bool)
 
         except Exception as e:
             logger.warning(f"EMA信号生成失败: {e}")
             # 如果出错，使用默认信号
-            df.loc[:, 'buy_signal'] = False
-            df.loc[:, 'sell_signal'] = False
-            df.loc[:, 'hold_signal'] = True
+            df.loc[:, "buy_signal"] = False
+            df.loc[:, "sell_signal"] = False
+            df.loc[:, "hold_signal"] = True
 
         return df
 
@@ -200,40 +206,44 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算EMA原始评分。
         评分标准:
-        1.  多头/空头排列: +40 (多头) / -40 (空头)
-        2.  短期趋势: 向上+15, 向下-15
-        3.  价格与短周期均线关系: 价格在均线上方+10, 下方-10
-        4.  金叉/死叉: 最近2天内发生金叉+20, 死叉-20
+        1.  多头/空头排列: +40 (多头) / -40 (空头)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        2.  短期趋势: 向上+15, 向下-15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        3.  价格与短周期均线关系: 价格在均线上方+10, 下方-10  # TODO: 将魔法数字提取到配置中
+        4.  金叉/死叉: 最近2天内发生金叉+20, 死叉-20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         if not self.ma_cols or not all(c in df.columns for c in self.ma_cols):
-            return pd.Series(50, index=df.index)
+            return pd.Series(50, index=df.index)  # TODO: 将魔法数字提取到配置中
 
-        score = pd.Series(50.0, index=df.index)
-        
-        sorted_mas = [df[f'{self.ma_type}{p}'] for p in sorted(self.periods)]
-        
+        score = pd.Series(50.0, index=df.index)  # TODO: 将魔法数字提取到配置中
+
+        sorted_mas = [df[f"{self.ma_type}{p}"] for p in sorted(self.periods)]
+
         if len(sorted_mas) > 1:
-            is_bullish_arrangement = (sorted_mas[0] > sorted_mas[-1])
-            is_bearish_arrangement = (sorted_mas[0] < sorted_mas[-1])
-            score[is_bullish_arrangement] += 25
-            score[is_bearish_arrangement] -= 25
+            is_bullish_arrangement = sorted_mas[0] > sorted_mas[-1]
+            is_bearish_arrangement = sorted_mas[0] < sorted_mas[-1]
+            score[is_bullish_arrangement] += 25  # TODO: 将魔法数字提取到配置中
+            score[is_bearish_arrangement] -= 25  # TODO: 将魔法数字提取到配置中
 
         short_ma = sorted_mas[0]
         trend = np.sign(short_ma.diff(2)).fillna(0)
-        score[trend == 1] += 15
-        score[trend == -1] -= 15
+        score[trend == 1] += 15  # TODO: 将魔法数字提取到配置中
+        score[trend == -1] -= 15  # TODO: 将魔法数字提取到配置中
 
-        close_price = df['close']
+        close_price = df["close"]
         score[close_price > short_ma] += 10
         score[close_price < short_ma] -= 10
-        
+
         if len(sorted_mas) >= 2:
             short_ema = sorted_mas[0]
             medium_ema = sorted_mas[1]
             golden_cross = crossover(short_ema, medium_ema)
             death_cross = crossunder(short_ema, medium_ema)
-            score[golden_cross.rolling(window=2, min_periods=1).max().fillna(0).astype(bool)] += 20
-            score[death_cross.rolling(window=2, min_periods=1).max().fillna(0).astype(bool)] -= 20
+            score[
+                golden_cross.rolling(window=2, min_periods=1).max().fillna(0).astype(bool)
+            ] += 20  # TODO: 将魔法数字提取到配置中
+            score[
+                death_cross.rolling(window=2, min_periods=1).max().fillna(0).astype(bool)
+            ] -= 20  # TODO: 将魔法数字提取到配置中
 
         return score.clip(0, 100)
 
@@ -241,7 +251,7 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算置信度。
         """
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Ema(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -252,8 +262,8 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return pd.DataFrame(patterns)
 
         p_short, p_long = sorted(self.periods)[:2]
-        short_ema = df[f'{self.ma_type}{p_short}']
-        long_ema = df[f'{self.ma_type}{p_long}']
+        short_ema = df[f"{self.ma_type}{p_short}"]
+        long_ema = df[f"{self.ma_type}{p_long}"]
 
         golden_cross_key = f"EMA_{p_short}_{p_long}_GOLDEN_CROSS"
         patterns[golden_cross_key] = crossover(short_ema, long_ema)
@@ -266,7 +276,7 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         bearish_arrangement_key = "EMA_BEARISH_ARRANGEMENT"
         patterns[bearish_arrangement_key] = short_ema < long_ema
-        
+
         return pd.DataFrame(patterns)
 
     def register_patterns_Ema(self):
@@ -275,22 +285,22 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         if len(self.periods) < 2:
             return
-            
+
         p_short, p_long = sorted(self.periods)[:2]
-        
+
         self.register_pattern_to_registry(
             pattern_id=f"EMA_{p_short}_{p_long}_GOLDEN_CROSS",
             display_name=f"EMA_Ema({p_short},{p_long})金叉",
             description=f"当短期EMA({p_short})上穿长期EMA({p_long})时，被视为看涨信号。",
             pattern_type="BULLISH",
-            polarity="POSITIVE"
+            polarity="POSITIVE",
         )
         self.register_pattern_to_registry(
             pattern_id=f"EMA_{p_short}_{p_long}_DEATH_CROSS",
             display_name=f"EMA_Ema({p_short},{p_long})死叉",
             description=f"当短期EMA({p_short})下穿长期EMA({p_long})时，被视为看跌信号。",
             pattern_type="BEARISH",
-            polarity="NEGATIVE"
+            polarity="NEGATIVE",
         )
 
         # 注册EMA排列形态（从centralized mapping迁移）
@@ -300,8 +310,8 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="指数移动平均线呈多头排列，趋势向上",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
-            polarity="POSITIVE"
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
+            polarity="POSITIVE",
         )
         self.register_pattern_to_registry(
             pattern_id="EMA_BULLISH_ARRANGEMENT",
@@ -309,8 +319,8 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description=f"短期EMA在长期EMA之上，表明市场处于上升趋势。",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
-            polarity="POSITIVE"
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
+            polarity="POSITIVE",
         )
         self.register_pattern_to_registry(
             pattern_id="EMA_BEARISH_ARRANGEMENT",
@@ -318,16 +328,17 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description=f"短期EMA在长期EMA之下，表明市场处于下降趋势。",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
-            polarity="NEGATIVE"
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
+            polarity="NEGATIVE",
         )
+
     def get_pattern_info_Ema(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
-        
+
         Args:
             pattern_id: 形态ID
-            
+
         Returns:
             dict: 形态详细信息
         """
@@ -338,9 +349,9 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "description": f"{pattern_id}形态",
             "type": "NEUTRAL",
             "strength": "MEDIUM",
-            "score_impact": 0.0
+            "score_impact": 0.0,
         }
-        
+
         # EMA指标特定的形态信息映射
         pattern_info_map = {
             # 基础形态
@@ -350,40 +361,40 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "指标进入超买区域，可能面临回调压力",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
-                "score_impact": -10.0
+                "score_impact": -10.0,
             },
             "超卖区域": {
-                "id": "超卖区域", 
+                "id": "超卖区域",
                 "name": "超卖区域",
                 "description": "指标进入超卖区域，可能出现反弹机会",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
-                "score_impact": 10.0
+                "score_impact": 10.0,
             },
             "中性区域": {
                 "id": "中性区域",
-                "name": "中性区域", 
+                "name": "中性区域",
                 "description": "指标处于中性区域，趋势不明确",
                 "type": "NEUTRAL",
                 "strength": "WEAK",
-                "score_impact": 0.0
+                "score_impact": 0.0,
             },
             # 趋势形态
             "上升趋势": {
                 "id": "上升趋势",
                 "name": "上升趋势",
                 "description": "指标显示上升趋势，看涨信号",
-                "type": "BULLISH", 
+                "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 15.0
+                "score_impact": 15.0,  # TODO: 将魔法数字提取到配置中
             },
             "下降趋势": {
                 "id": "下降趋势",
                 "name": "下降趋势",
                 "description": "指标显示下降趋势，看跌信号",
                 "type": "BEARISH",
-                "strength": "STRONG", 
-                "score_impact": -15.0
+                "strength": "STRONG",
+                "score_impact": -15.0,  # TODO: 将魔法数字提取到配置中
             },
             # 信号形态
             "买入信号": {
@@ -392,18 +403,18 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "指标产生买入信号，建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 20.0
+                "score_impact": 20.0,  # TODO: 将魔法数字提取到配置中
             },
             "卖出信号": {
-                "id": "卖出信号", 
+                "id": "卖出信号",
                 "name": "卖出信号",
                 "description": "指标产生卖出信号，建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -20.0
-            }
+                "score_impact": -20.0,  # TODO: 将魔法数字提取到配置中
+            },
         }
-        
+
         return pattern_info_map.get(pattern_id, default_pattern)
 
     # ==================== 抽象方法实现 ====================
@@ -424,7 +435,9 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的参数设置方法"""
         return self.set_parameters_Ema(**kwargs)
 
-    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
+    def calculate_confidence_Indicator_Base_Indicator(
+        self, score: pd.Series, patterns: pd.DataFrame, signals: dict
+    ) -> float:
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Ema(score, patterns, signals)
 
@@ -446,44 +459,52 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 获取EMA数据和价格数据
-        ema_col = f'EMA{self.period}'
+        ema_col = f"EMA{self.period}"
         if ema_col in ema_data.columns:
             ema_values = ema_data[ema_col]
-            close_prices = data['close']
+            close_prices = data["close"]
 
             # 1. 价格突破EMA形态
-            patterns_df['EMA_PRICE_ABOVE'] = close_prices > ema_values
-            patterns_df['EMA_PRICE_BELOW'] = close_prices < ema_values
+            patterns_df["EMA_PRICE_ABOVE"] = close_prices > ema_values
+            patterns_df["EMA_PRICE_BELOW"] = close_prices < ema_values
 
             # 2. 价格穿越EMA形态
-            patterns_df['EMA_PRICE_CROSS_UP'] = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
-            patterns_df['EMA_PRICE_CROSS_DOWN'] = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
-
-            # 3. EMA趋势形态
-            patterns_df['EMA_RISING'] = ema_values > ema_values.shift(1)
-            patterns_df['EMA_FALLING'] = ema_values < ema_values.shift(1)
-
-            # 4. EMA强势趋势形态（连续上升/下降）
-            patterns_df['EMA_STRONG_RISING'] = (
-                (ema_values > ema_values.shift(1)) &
-                (ema_values.shift(1) > ema_values.shift(2)) &
-                (ema_values.shift(2) > ema_values.shift(3))
+            patterns_df["EMA_PRICE_CROSS_UP"] = (close_prices > ema_values) & (
+                close_prices.shift(1) <= ema_values.shift(1)
             )
-            patterns_df['EMA_STRONG_FALLING'] = (
-                (ema_values < ema_values.shift(1)) &
-                (ema_values.shift(1) < ema_values.shift(2)) &
-                (ema_values.shift(2) < ema_values.shift(3))
+            patterns_df["EMA_PRICE_CROSS_DOWN"] = (close_prices < ema_values) & (
+                close_prices.shift(1) >= ema_values.shift(1)
             )
 
-            # 5. 价格与EMA距离形态
+            # 3. EMA趋势形态  # TODO: 将魔法数字提取到配置中
+            patterns_df["EMA_RISING"] = ema_values > ema_values.shift(1)
+            patterns_df["EMA_FALLING"] = ema_values < ema_values.shift(1)
+
+            # 4. EMA强势趋势形态（连续上升/下降）  # TODO: 将魔法数字提取到配置中
+            patterns_df["EMA_STRONG_RISING"] = (
+                (ema_values > ema_values.shift(1))
+                & (ema_values.shift(1) > ema_values.shift(2))
+                & (
+                    ema_values.shift(2) > ema_values.shift(3)
+                )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            )
+            patterns_df["EMA_STRONG_FALLING"] = (
+                (ema_values < ema_values.shift(1))
+                & (ema_values.shift(1) < ema_values.shift(2))
+                & (
+                    ema_values.shift(2) < ema_values.shift(3)
+                )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            )
+
+            # 5. 价格与EMA距离形态  # TODO: 将魔法数字提取到配置中
             price_distance = (close_prices - ema_values) / ema_values * 100
-            patterns_df['EMA_PRICE_FAR_ABOVE'] = price_distance > 5  # 价格远高于EMA
-            patterns_df['EMA_PRICE_FAR_BELOW'] = price_distance < -5  # 价格远低于EMA
-            patterns_df['EMA_PRICE_NEAR'] = np.abs(price_distance) < 1  # 价格接近EMA
+            patterns_df["EMA_PRICE_FAR_ABOVE"] = price_distance > 5  # 价格远高于EMA  # TODO: 将魔法数字提取到配置中
+            patterns_df["EMA_PRICE_FAR_BELOW"] = price_distance < -5  # 价格远低于EMA  # TODO: 将魔法数字提取到配置中
+            patterns_df["EMA_PRICE_NEAR"] = np.abs(price_distance) < 1  # 价格接近EMA
 
-            # 6. EMA支撑阻力形态
-            patterns_df['EMA_SUPPORT'] = (close_prices > ema_values) & (data['low'] <= ema_values)
-            patterns_df['EMA_RESISTANCE'] = (close_prices < ema_values) & (data['high'] >= ema_values)
+            # 6. EMA支撑阻力形态  # TODO: 将魔法数字提取到配置中
+            patterns_df["EMA_SUPPORT"] = (close_prices > ema_values) & (data["low"] <= ema_values)
+            patterns_df["EMA_RESISTANCE"] = (close_prices < ema_values) & (data["high"] >= ema_values)
 
         return patterns_df
 
@@ -496,13 +517,13 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ema_data = self._calculate_ema(data)
 
         # 初始化评分
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
 
         # 获取EMA数据和价格数据
-        ema_col = f'EMA{self.period}'
+        ema_col = f"EMA{self.period}"
         if ema_col in ema_data.columns:
             ema_values = ema_data[ema_col]
-            close_prices = data['close']
+            close_prices = data["close"]
 
             # 1. 基于价格与EMA位置的评分
             # 价格在EMA上方加分
@@ -516,56 +537,59 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 2. 基于价格穿越EMA的评分
             # 价格上穿EMA加分
             price_cross_up = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
-            score += price_cross_up * 15
+            score += price_cross_up * 15  # TODO: 将魔法数字提取到配置中
 
             # 价格下穿EMA减分
             price_cross_down = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
-            score -= price_cross_down * 15
+            score -= price_cross_down * 15  # TODO: 将魔法数字提取到配置中
 
-            # 3. 基于EMA趋势的评分
+            # 3. 基于EMA趋势的评分  # TODO: 将魔法数字提取到配置中
             # EMA上升趋势加分
             ema_rising = ema_values > ema_values.shift(1)
-            score += ema_rising * 8
+            score += ema_rising * 8  # TODO: 将魔法数字提取到配置中
 
             # EMA下降趋势减分
             ema_falling = ema_values < ema_values.shift(1)
-            score -= ema_falling * 8
+            score -= ema_falling * 8  # TODO: 将魔法数字提取到配置中
 
-            # 4. 基于强势趋势的评分
+            # 4. 基于强势趋势的评分  # TODO: 将魔法数字提取到配置中
             # EMA强势上升额外加分
             ema_strong_rising = (
-                (ema_values > ema_values.shift(1)) &
-                (ema_values.shift(1) > ema_values.shift(2)) &
-                (ema_values.shift(2) > ema_values.shift(3))
+                (ema_values > ema_values.shift(1))
+                & (ema_values.shift(1) > ema_values.shift(2))
+                & (
+                    ema_values.shift(2) > ema_values.shift(3)
+                )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             )
-            score += ema_strong_rising * 12
+            score += ema_strong_rising * 12  # TODO: 将魔法数字提取到配置中
 
             # EMA强势下降额外减分
             ema_strong_falling = (
-                (ema_values < ema_values.shift(1)) &
-                (ema_values.shift(1) < ema_values.shift(2)) &
-                (ema_values.shift(2) < ema_values.shift(3))
+                (ema_values < ema_values.shift(1))
+                & (ema_values.shift(1) < ema_values.shift(2))
+                & (
+                    ema_values.shift(2) < ema_values.shift(3)
+                )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             )
-            score -= ema_strong_falling * 12
+            score -= ema_strong_falling * 12  # TODO: 将魔法数字提取到配置中
 
-            # 5. 基于价格与EMA距离的评分
+            # 5. 基于价格与EMA距离的评分  # TODO: 将魔法数字提取到配置中
             price_distance = (close_prices - ema_values) / ema_values * 100
 
             # 价格远高于EMA（可能超买）
-            far_above = price_distance > 5
-            score -= far_above * 8
+            far_above = price_distance > 5  # TODO: 将魔法数字提取到配置中
+            score -= far_above * 8  # TODO: 将魔法数字提取到配置中
 
             # 价格远低于EMA（可能超卖）
-            far_below = price_distance < -5
-            score += far_below * 8
+            far_below = price_distance < -5  # TODO: 将魔法数字提取到配置中
+            score += far_below * 8  # TODO: 将魔法数字提取到配置中
 
             # 价格接近EMA（趋势可能转换）
             near_ema = np.abs(price_distance) < 1
-            score += near_ema * 3
+            score += near_ema * 3  # TODO: 将魔法数字提取到配置中
 
         # 限制评分在0-100之间
         return score.clip(0, 100)
-
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """真实实现：生成EMA交易信号"""
@@ -581,51 +605,51 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             result_df[col] = ema_data[col]
 
         # 初始化信号列
-        result_df['ema_signal'] = 0
-        result_df['ema_strength'] = 0.0
-        result_df['ema_confidence'] = 0.0
+        result_df["ema_signal"] = 0
+        result_df["ema_strength"] = 0.0
+        result_df["ema_confidence"] = 0.0
 
         # 获取EMA数据和价格数据
-        ema_col = f'EMA{self.period}'
+        ema_col = f"EMA{self.period}"
         if ema_col in ema_data.columns:
             ema_values = ema_data[ema_col]
-            close_prices = data['close']
+            close_prices = data["close"]
 
             # 1. 价格上穿EMA买入信号
             price_cross_up = (close_prices > ema_values) & (close_prices.shift(1) <= ema_values.shift(1))
             ema_rising = ema_values > ema_values.shift(1)
             strong_buy = price_cross_up & ema_rising
 
-            result_df.loc[strong_buy, 'ema_signal'] = 1
-            result_df.loc[strong_buy, 'ema_strength'] = 0.8
-            result_df.loc[strong_buy, 'ema_confidence'] = 0.9
+            result_df.loc[strong_buy, "ema_signal"] = 1
+            result_df.loc[strong_buy, "ema_strength"] = 0.8  # TODO: 将魔法数字提取到配置中
+            result_df.loc[strong_buy, "ema_confidence"] = 0.9  # TODO: 将魔法数字提取到配置中
 
             # 2. 价格下穿EMA卖出信号
             price_cross_down = (close_prices < ema_values) & (close_prices.shift(1) >= ema_values.shift(1))
             ema_falling = ema_values < ema_values.shift(1)
             strong_sell = price_cross_down & ema_falling
 
-            result_df.loc[strong_sell, 'ema_signal'] = -1
-            result_df.loc[strong_sell, 'ema_strength'] = 0.8
-            result_df.loc[strong_sell, 'ema_confidence'] = 0.9
+            result_df.loc[strong_sell, "ema_signal"] = -1
+            result_df.loc[strong_sell, "ema_strength"] = 0.8  # TODO: 将魔法数字提取到配置中
+            result_df.loc[strong_sell, "ema_confidence"] = 0.9  # TODO: 将魔法数字提取到配置中
 
-            # 3. 强势趋势确认信号
+            # 3. 强势趋势确认信号  # TODO: 将魔法数字提取到配置中
             strong_uptrend = (close_prices > ema_values) & ema_rising
-            result_df.loc[strong_uptrend, 'ema_signal'] = 1
-            result_df.loc[strong_uptrend, 'ema_strength'] = 0.6
-            result_df.loc[strong_uptrend, 'ema_confidence'] = 0.7
+            result_df.loc[strong_uptrend, "ema_signal"] = 1
+            result_df.loc[strong_uptrend, "ema_strength"] = 0.6  # TODO: 将魔法数字提取到配置中
+            result_df.loc[strong_uptrend, "ema_confidence"] = 0.7  # TODO: 将魔法数字提取到配置中
 
             strong_downtrend = (close_prices < ema_values) & ema_falling
-            result_df.loc[strong_downtrend, 'ema_signal'] = -1
-            result_df.loc[strong_downtrend, 'ema_strength'] = 0.6
-            result_df.loc[strong_downtrend, 'ema_confidence'] = 0.7
+            result_df.loc[strong_downtrend, "ema_signal"] = -1
+            result_df.loc[strong_downtrend, "ema_strength"] = 0.6  # TODO: 将魔法数字提取到配置中
+            result_df.loc[strong_downtrend, "ema_confidence"] = 0.7  # TODO: 将魔法数字提取到配置中
 
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
         """真实实现：计算EMA综合评分"""
         if data.empty:
-            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+            return {"score": 50.0, "confidence": 0.0, "signals": {}}  # TODO: 将魔法数字提取到配置中
 
         # 计算原始评分
         raw_score = self.calculate_raw_score(data, **kwargs)
@@ -634,52 +658,54 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = self.get_patterns(data, **kwargs)
 
         # 计算最终评分
-        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0  # TODO: 将魔法数字提取到配置中
 
         # 基于形态调整评分
         if not patterns.empty:
             latest_patterns = patterns.iloc[-1]
 
             # 正面形态加分
-            if latest_patterns.get('EMA_PRICE_CROSS_UP', False):
-                final_score += 15
-            if latest_patterns.get('EMA_STRONG_RISING', False):
-                final_score += 12
-            if latest_patterns.get('EMA_PRICE_ABOVE', False):
-                final_score += 8
-            if latest_patterns.get('EMA_SUPPORT', False):
+            if latest_patterns.get("EMA_PRICE_CROSS_UP", False):
+                final_score += 15  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_STRONG_RISING", False):
+                final_score += 12  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_PRICE_ABOVE", False):
+                final_score += 8  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_SUPPORT", False):
                 final_score += 10
 
             # 负面形态减分
-            if latest_patterns.get('EMA_PRICE_CROSS_DOWN', False):
-                final_score -= 15
-            if latest_patterns.get('EMA_STRONG_FALLING', False):
-                final_score -= 12
-            if latest_patterns.get('EMA_PRICE_BELOW', False):
-                final_score -= 8
-            if latest_patterns.get('EMA_RESISTANCE', False):
+            if latest_patterns.get("EMA_PRICE_CROSS_DOWN", False):
+                final_score -= 15  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_STRONG_FALLING", False):
+                final_score -= 12  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_PRICE_BELOW", False):
+                final_score -= 8  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_RESISTANCE", False):
                 final_score -= 10
 
         # 计算置信度
         ema_data = self._calculate_ema(data)
-        ema_col = f'EMA{self.period}'
+        ema_col = f"EMA{self.period}"
 
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if ema_col in ema_data.columns:
             ema_values = ema_data[ema_col]
-            close_prices = data['close']
+            close_prices = data["close"]
 
             # 基于价格与EMA的关系计算置信度
             price_distance = abs((close_prices.iloc[-1] - ema_values.iloc[-1]) / ema_values.iloc[-1] * 100)
 
-            if price_distance > 5:
+            if price_distance > 5:  # TODO: 将魔法数字提取到配置中
                 confidence += 0.2  # 价格远离EMA，信号更可靠
             elif price_distance > 2:
                 confidence += 0.1
 
             # 基于EMA趋势强度调整置信度
-            ema_trend_strength = abs(ema_values.iloc[-1] - ema_values.iloc[-5]) / ema_values.iloc[-5] * 100
-            if ema_trend_strength > 3:
+            ema_trend_strength = (
+                abs(ema_values.iloc[-1] - ema_values.iloc[-5]) / ema_values.iloc[-5] * 100
+            )  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            if ema_trend_strength > 3:  # TODO: 将魔法数字提取到配置中
                 confidence += 0.2
             elif ema_trend_strength > 1:
                 confidence += 0.1
@@ -689,37 +715,41 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         confidence = max(0.0, min(1.0, confidence))
 
         return {
-            'score': final_score,
-            'confidence': confidence,
-            'signals': {
-                'ema_value': ema_data.get(ema_col, pd.Series([0])).iloc[-1] if ema_col in ema_data.columns else 0,
-                'price': data['close'].iloc[-1],
-                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
-            }
+            "score": final_score,
+            "confidence": confidence,
+            "signals": {
+                "ema_value": ema_data.get(ema_col, pd.Series([0])).iloc[-1] if ema_col in ema_data.columns else 0,
+                "price": data["close"].iloc[-1],
+                "trend": (
+                    "up" if final_score > 60 else "down" if final_score < 40 else "neutral"
+                ),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            },
         }
 
     def set_parameters(self, **kwargs):
         """真实实现：设置EMA参数"""
         # 验证并设置period参数
-        if 'period' in kwargs:
-            period = kwargs['period']
-            if isinstance(period, int) and 1 <= period <= 200:
+        if "period" in kwargs:
+            period = kwargs["period"]
+            if isinstance(period, int) and 1 <= period <= 200:  # TODO: 将魔法数字提取到配置中
                 self.period = period
                 self.periods = [period]  # 重置为单个周期
                 # 更新列名
-                self.ma_cols = [f'{self.ma_type}{period}']
+                self.ma_cols = [f"{self.ma_type}{period}"]
                 # 重新注册形态
                 self.register_patterns_Ema()
             else:
                 logger.warning(f"无效的period参数: {period}, 保持原值")
 
         # 验证并设置periods参数
-        if 'periods' in kwargs:
-            periods = kwargs['periods']
-            if isinstance(periods, list) and all(isinstance(p, int) and 1 <= p <= 200 for p in periods):
+        if "periods" in kwargs:
+            periods = kwargs["periods"]
+            if isinstance(periods, list) and all(
+                isinstance(p, int) and 1 <= p <= 200 for p in periods
+            ):  # TODO: 将魔法数字提取到配置中
                 self.periods = periods
                 # 更新列名
-                self.ma_cols = [f'{self.ma_type}{p}' for p in periods]
+                self.ma_cols = [f"{self.ma_type}{p}" for p in periods]
             else:
                 logger.warning(f"无效的periods参数: {periods}, 保持原值")
 
@@ -734,9 +764,9 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 默认参数字典
         """
         return {
-            'period': 12,
-            'periods': [12],
-            'ma_type': 'EMA'
+            "period": 12,  # TODO: 将魔法数字提取到配置中
+            "periods": [12],  # TODO: 将魔法数字提取到配置中
+            "ma_type": "EMA",
         }
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -750,20 +780,20 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Ema(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """真实实现：计算EMA置信度"""
         if score.empty:
-            return 0.3
+            return 0.3  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 基于评分的置信度调整
-        latest_score = score.iloc[-1] if not score.empty else 50.0
+        latest_score = score.iloc[-1] if not score.empty else 50.0  # TODO: 将魔法数字提取到配置中
 
         # 极端评分提高置信度
-        if latest_score > 80 or latest_score < 20:
-            confidence += 0.3
-        elif latest_score > 70 or latest_score < 30:
+        if latest_score > 80 or latest_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.3  # TODO: 将魔法数字提取到配置中
+        elif latest_score > 70 or latest_score < 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.2
-        elif latest_score > 60 or latest_score < 40:
+        elif latest_score > 60 or latest_score < 40:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
 
         # 基于形态的置信度调整
@@ -771,18 +801,18 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             latest_patterns = patterns.iloc[-1]
 
             # 强势形态提高置信度
-            if latest_patterns.get('EMA_PRICE_CROSS_UP', False):
+            if latest_patterns.get("EMA_PRICE_CROSS_UP", False):
                 confidence += 0.2
-            if latest_patterns.get('EMA_PRICE_CROSS_DOWN', False):
+            if latest_patterns.get("EMA_PRICE_CROSS_DOWN", False):
                 confidence += 0.2
-            if latest_patterns.get('EMA_STRONG_RISING', False):
-                confidence += 0.15
-            if latest_patterns.get('EMA_STRONG_FALLING', False):
-                confidence += 0.15
+            if latest_patterns.get("EMA_STRONG_RISING", False):
+                confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            if latest_patterns.get("EMA_STRONG_FALLING", False):
+                confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 基于信号的置信度调整
         if signals:
-            signal_strength = signals.get('strength', 0)
+            signal_strength = signals.get("strength", 0)
             confidence += signal_strength * 0.1
 
         # 限制置信度在0-1范围内

@@ -347,8 +347,7 @@ class ProductionIntegrationTestSuite:
             # 测试基本查询
             test_query = """
             SELECT COUNT(*) as total_records 
-            FROM stock_info 
-            WHERE date >= '2024-01-01' 
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2024-01-01' 
             LIMIT 1
             """
             
@@ -390,6 +389,7 @@ class ProductionIntegrationTestSuite:
         
         try:
             from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from db.sql_manager import SQLManager, QueryType
             
             registry = CompleteIndicatorRegistry()
             all_indicators = registry.get_all_indicators()

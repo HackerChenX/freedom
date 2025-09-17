@@ -33,6 +33,7 @@ project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

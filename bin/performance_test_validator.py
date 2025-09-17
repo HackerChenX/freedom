@@ -25,7 +25,7 @@ from dataclasses import dataclass, asdict
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.unified_container import get_container
 from analysis.buypoints.high_performance_backtest_engine import (
     HighPerformanceBacktestEngine, PerformanceTarget, OptimizationConfig
@@ -33,8 +33,9 @@ from analysis.buypoints.high_performance_backtest_engine import (
 from analysis.buypoints.parallel_processing_optimizer import (
     ParallelProcessingOptimizer, ProcessorConfig
 )
-from analysis.buypoints.memory_optimizer import MemoryOptimizer, MemoryTarget
+from analysis.buypoints.memory_optimizer import MemoryOptimizationService, MemoryTarget
 from analysis.buypoints.intelligent_cache_system import IntelligentCacheSystem, CacheConfig
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -145,8 +146,7 @@ class PerformanceValidator:
         # 获取活跃股票列表
         stock_query = """
         SELECT DISTINCT code
-        FROM stock_info
-        WHERE level = '日线'
+        FROM stock_info WHERE code = %(code)s AND level = '日线'
         AND date >= today() - INTERVAL 1 YEAR
         GROUP BY code
         HAVING count(*) >= 200
@@ -322,7 +322,7 @@ class PerformanceValidator:
                 critical_threshold=3.8
             )
 
-            memory_optimizer = MemoryOptimizer(memory_target)
+            memory_optimizer = MemoryOptimizationService(memory_target)
 
             # 模拟大数据处理
             start_time = time.time()

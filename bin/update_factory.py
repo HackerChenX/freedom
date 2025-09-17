@@ -19,6 +19,7 @@ sys.path.append(root_dir)
 from utils.logger import get_logger
 from utils.path_utils import get_indicators_dir
 from enums.indicator_types import Indicator_type
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

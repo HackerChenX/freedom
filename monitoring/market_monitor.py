@@ -110,6 +110,7 @@ class RealTimeDataMonitor:
         self.container = get_container()
         try:
             from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
             self.data_access = self.container.resolve(DataAccessInterface)
         except Exception as e:
             logger.warning(f"无法获取数据访问接口: {e}")
@@ -321,8 +322,7 @@ class RealTimeDataMonitor:
             # 查询股票数据
             query = f"""
             SELECT code, name, date, open, high, low, close, volume, turnover_rate
-            FROM stock_info
-            WHERE code = '{stock_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             ORDER BY date DESC

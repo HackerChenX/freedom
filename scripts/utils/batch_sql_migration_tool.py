@@ -163,6 +163,7 @@ class BatchSQLMigrator:
                 existing_imports.add('from db.query_executor import get_query_executor')
             if 'from db.sql_manager import' in line:
                 existing_imports.add('from db.sql_manager import QueryType')
+from db.sql_manager import SQLManager, QueryType
         
         new_imports = imports - existing_imports
         

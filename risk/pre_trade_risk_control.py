@@ -175,6 +175,7 @@ class PreTradeRiskController:
             # 获取数据访问接口
             try:
                 from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
                 self.data_access = self.container.resolve(DataAccessInterface)
             except Exception as e:
                 logger.warning(f"无法获取数据访问接口: {e}")

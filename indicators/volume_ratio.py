@@ -1,6 +1,7 @@
+from utils.container import container
 #!/usr/bin/python
-from utils.dependency_injection import get_logger
-# -*- coding: UTF-8 -*-
+from utils.logger import get_logger
+# -*- coding: UTF-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 量比指标(VOLUME_RATIO)
@@ -14,7 +15,7 @@ from typing import Dict, Any, List, Union, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,9 +27,9 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     生产级核心特点:
     1. 真实数学计算：当前成交量 / 前N个周期平均成交量
     2. 完整功能架构：计算+评分+形态识别+信号生成  
-    3. 架构完美兼容：遵循六层架构分层+核心原则
-    4. 性能优化考虑：缓存+异常处理+边界条件+监控
-    5. 企业级质量：代码规范+文档完整+可维护性+扩展性
+    3. 架构完美兼容：遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中
+    4. 性能优化考虑：缓存+异常处理+边界条件+监控  # TODO: 将魔法数字提取到配置中
+    5. 企业级质量：代码规范+文档完整+可维护性+扩展性  # TODO: 将魔法数字提取到配置中
     
     技术指标含义:
     - 量比>1: 当前成交量高于参考期平均值，市场相对活跃
@@ -40,6 +41,9 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化VOLUME_RATIO指标 - 最高生产级标准
         
@@ -138,8 +142,8 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     down_volume[i] = volume.iloc[i]
                 # 价格不变的成交量平均分配
                 else:
-                    up_volume[i] = volume.iloc[i] * 0.5
-                    down_volume[i] = volume.iloc[i] * 0.5
+                    up_volume[i] = volume.iloc[i] * 0.5  # TODO: 将魔法数字提取到配置中
+                    down_volume[i] = volume.iloc[i] * 0.5  # TODO: 将魔法数字提取到配置中
             
             # 计算N日上涨、下跌成交量之和
             up_volume_sum = pd.Series(up_volume).rolling(window=self.period).sum()
@@ -158,7 +162,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     
                     if down_sum == 0:
                         # 如果没有下跌成交量，设为较大值
-                        volume_ratio.iloc[i] = 5.0 if up_sum > 0 else 1.0
+                        volume_ratio.iloc[i] = 5.0 if up_sum > 0 else 1.0  # TODO: 将魔法数字提取到配置中
                     else:
                         ratio = up_sum / down_sum
                         # 限制在合理范围内 (0.1 - 10.0)
@@ -167,7 +171,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             df['VOLUME_RATIO_VALUE'] = volume_ratio
             
             # 计算VOLUME_RATIO的移动平均线用于生成信号
-            df['VOLUME_RATIO_MA'] = df['VOLUME_RATIO_VALUE'].rolling(window=6).mean()
+            df['VOLUME_RATIO_MA'] = df['VOLUME_RATIO_VALUE'].rolling(window=6).mean()  # TODO: 将魔法数字提取到配置中
             
             # 计算VOLUME_RATIO变化率
             df['VOLUME_RATIO_CHANGE'] = df['VOLUME_RATIO_VALUE'].pct_change() * 100
@@ -211,8 +215,8 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             vr_trend = df['VOLUME_RATIO_TREND']
             
             # VOLUME_RATIO信号生成逻辑：
-            # BUY: VR上穿MA且趋势向上，或VR>1.5（多头成交量优势）
-            # SELL: VR下穿MA且趋势向下，或VR<0.5（空头成交量优势）
+            # BUY: VR上穿MA且趋势向上，或VR>1.5（多头成交量优势）  # TODO: 将魔法数字提取到配置中
+            # SELL: VR下穿MA且趋势向下，或VR<0.5（空头成交量优势）  # TODO: 将魔法数字提取到配置中
             # HOLD: 信号不明确
             
             # 计算交叉信号
@@ -220,8 +224,8 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             vr_cross_down = (vr < vr_ma) & (vr.shift(1) >= vr_ma.shift(1))
             
             # 强势信号
-            strong_bullish = vr > 1.5
-            strong_bearish = vr < 0.5
+            strong_bullish = vr > 1.5  # TODO: 将魔法数字提取到配置中
+            strong_bearish = vr < 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 趋势确认
             uptrend_confirmed = (vr_trend == 1) & (vr_trend.shift(1) != 1)
@@ -255,16 +259,16 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         最高生产级VOLUME_RATIO原始评分计算
         
         基于VOLUME_RATIO指标的技术分析特点进行评分：
-        1. 多空力量对比评分 (40%)
-        2. 成交量趋势评分 (25%)
-        3. 量价关系评分 (20%)
-        4. 成交量稳定性评分 (15%)
+        1. 多空力量对比评分 (40%)  # TODO: 将魔法数字提取到配置中
+        2. 成交量趋势评分 (25%)  # TODO: 将魔法数字提取到配置中
+        3. 量价关系评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        4. 成交量稳定性评分 (15%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 获取VOLUME_RATIO数据
         vr = self._result['VOLUME_RATIO_VALUE']
@@ -273,89 +277,89 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vr_strength = self._result['VOLUME_RATIO_STRENGTH']
         
         # 初始化评分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 多空力量对比评分 (40%)
+        # 1. 多空力量对比评分 (40%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         force_score = pd.Series(0.0, index=data.index)
         
         # 强烈多头优势
         strong_bullish = vr > 2.0
-        force_score = np.where(strong_bullish, 20, force_score)
+        force_score = np.where(strong_bullish, 20, force_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等多头优势
         moderate_bullish = (vr > 1.2) & (vr <= 2.0)
         force_score = np.where(moderate_bullish, 10, force_score)
         
         # 强烈空头优势
-        strong_bearish = vr < 0.5
-        force_score = np.where(strong_bearish, -20, force_score)
+        strong_bearish = vr < 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        force_score = np.where(strong_bearish, -20, force_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等空头优势
-        moderate_bearish = (vr >= 0.5) & (vr < 0.8)
+        moderate_bearish = (vr >= 0.5) & (vr < 0.8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         force_score = np.where(moderate_bearish, -10, force_score)
         
-        scores += force_score * 0.4
+        scores += force_score * 0.4  # TODO: 将魔法数字提取到配置中
         
-        # 2. 成交量趋势评分 (25%)
+        # 2. 成交量趋势评分 (25%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         trend_score = pd.Series(0.0, index=data.index)
         
         # 强势上升趋势
-        strong_uptrend = (vr > vr_ma) & (vr_trend == 1) & (vr > vr.shift(5))
-        trend_score = np.where(strong_uptrend, 15, trend_score)
+        strong_uptrend = (vr > vr_ma) & (vr_trend == 1) & (vr > vr.shift(5))  # TODO: 将魔法数字提取到配置中
+        trend_score = np.where(strong_uptrend, 15, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等上升趋势
         moderate_uptrend = (vr > vr_ma) & (vr_trend == 1)
-        trend_score = np.where(moderate_uptrend & ~strong_uptrend, 8, trend_score)
+        trend_score = np.where(moderate_uptrend & ~strong_uptrend, 8, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 强势下降趋势
-        strong_downtrend = (vr < vr_ma) & (vr_trend == -1) & (vr < vr.shift(5))
-        trend_score = np.where(strong_downtrend, -15, trend_score)
+        strong_downtrend = (vr < vr_ma) & (vr_trend == -1) & (vr < vr.shift(5))  # TODO: 将魔法数字提取到配置中
+        trend_score = np.where(strong_downtrend, -15, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等下降趋势
         moderate_downtrend = (vr < vr_ma) & (vr_trend == -1)
-        trend_score = np.where(moderate_downtrend & ~strong_downtrend, -8, trend_score)
+        trend_score = np.where(moderate_downtrend & ~strong_downtrend, -8, trend_score)  # TODO: 将魔法数字提取到配置中
         
-        scores += trend_score * 0.25
+        scores += trend_score * 0.25  # TODO: 将魔法数字提取到配置中
         
-        # 3. 量价关系评分 (20%)
+        # 3. 量价关系评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         volume_price_score = pd.Series(0.0, index=data.index)
         
-        if len(data) >= 5:
-            price_change = data['close'].pct_change()
+        if len(data) >= 5:  # TODO: 将魔法数字提取到配置中
+            = data['close'].pct_change()
             
             # 放量上涨（量价齐升）
-            volume_up_price_up = (vr > 1.2) & (price_change > 0.01)
+            volume_up_price_up = (vr > 1.2) & (> 0.01)
             volume_price_score = np.where(volume_up_price_up, 10, volume_price_score)
             
             # 放量下跌（量价背离）
-            volume_up_price_down = (vr > 1.2) & (price_change < -0.01)
+            volume_up_price_down = (vr > 1.2) & (< -0.01)
             volume_price_score = np.where(volume_up_price_down, -10, volume_price_score)
             
             # 缩量上涨（可能缺乏持续性）
-            volume_down_price_up = (vr < 0.8) & (price_change > 0.01)
-            volume_price_score = np.where(volume_down_price_up, -5, volume_price_score)
+            volume_down_price_up = (vr < 0.8) & (> 0.01)  # TODO: 将魔法数字提取到配置中
+            volume_price_score = np.where(volume_down_price_up, -5, volume_price_score)  # TODO: 将魔法数字提取到配置中
         
         scores += volume_price_score * 0.2
         
-        # 4. 成交量稳定性评分 (15%)
+        # 4. 成交量稳定性评分 (15%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         stability_score = pd.Series(0.0, index=data.index)
         
         if len(vr_strength.dropna()) > 0:
             strength_mean = vr_strength.rolling(window=10).mean()
             
             # 低波动稳定
-            low_volatility = vr_strength < strength_mean * 0.5
-            stability_score = np.where(low_volatility, 8, stability_score)
+            low_volatility = vr_strength < strength_mean * 0.5  # TODO: 将魔法数字提取到配置中
+            stability_score = np.where(low_volatility, 8, stability_score)  # TODO: 将魔法数字提取到配置中
             
             # 中等波动
-            medium_volatility = (vr_strength >= strength_mean * 0.5) & (vr_strength <= strength_mean * 1.5)
-            stability_score = np.where(medium_volatility, 4, stability_score)
+            medium_volatility = (vr_strength >= strength_mean * 0.5) & (vr_strength <= strength_mean * 1.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            stability_score = np.where(medium_volatility, 4, stability_score)  # TODO: 将魔法数字提取到配置中
             
             # 高波动
             high_volatility = vr_strength > strength_mean * 2.0
-            stability_score = np.where(high_volatility, -5, stability_score)
+            stability_score = np.where(high_volatility, -5, stability_score)  # TODO: 将魔法数字提取到配置中
         
-        scores += stability_score * 0.15
+        scores += stability_score * 0.15  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在合理范围内
         scores = np.clip(scores, 0, 100)
@@ -365,14 +369,14 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """实现抽象方法"""
         if self._result is None:
-            return 0.6
+            return 0.6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 基于VOLUME_RATIO指标的可靠性计算置信度
         vr = self._result['VOLUME_RATIO_VALUE'].dropna()
         vr_trend = self._result['VOLUME_RATIO_TREND'].dropna()
         
         if len(vr) == 0:
-            return 0.6
+            return 0.6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算VR趋势的一致性
         recent_vr = vr.iloc[-10:] if len(vr) >= 10 else vr
@@ -383,20 +387,20 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(recent_trend) > 0:
             trend_changes = len(recent_trend[recent_trend != recent_trend.shift(1)].dropna())
             if trend_changes <= 2:  # 趋势稳定
-                trend_consistency = 0.3
-            elif trend_changes <= 4:  # 趋势一般
+                trend_consistency = 0.3  # TODO: 将魔法数字提取到配置中
+            elif trend_changes <= 4:  # 趋势一般  # TODO: 将魔法数字提取到配置中
                 trend_consistency = 0.2
             else:  # 趋势不稳定
                 trend_consistency = 0.1
         
         # VR值的合理性
         reasonableness = 0
-        if len(recent_vr) >= 5:
-            vr_in_range = len(recent_vr[(recent_vr >= 0.3) & (recent_vr <= 3.0)]) / len(recent_vr)
+        if len(recent_vr) >= 5:  # TODO: 将魔法数字提取到配置中
+            vr_in_range = len(recent_vr[(recent_vr >= 0.3) & (recent_vr <= 3.0)]) / len(recent_vr)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             reasonableness = vr_in_range * 0.2
         
-        base_confidence = 0.4 + trend_consistency + reasonableness
-        return min(max(base_confidence, 0.3), 0.9)
+        base_confidence = 0.4 + trend_consistency + reasonableness  # TODO: 将魔法数字提取到配置中
+        return min(max(base_confidence, 0.3), 0.9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
         """实现抽象方法"""
@@ -428,19 +432,19 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 多空力量形态
         patterns['VR_STRONG_BULLISH'] = vr > 2.0
         patterns['VR_MODERATE_BULLISH'] = (vr > 1.2) & (vr <= 2.0)
-        patterns['VR_BALANCED'] = (vr >= 0.8) & (vr <= 1.2)
-        patterns['VR_MODERATE_BEARISH'] = (vr >= 0.5) & (vr < 0.8)
-        patterns['VR_STRONG_BEARISH'] = vr < 0.5
+        patterns['VR_BALANCED'] = (vr >= 0.8) & (vr <= 1.2)  # TODO: 将魔法数字提取到配置中
+        patterns['VR_MODERATE_BEARISH'] = (vr >= 0.5) & (vr < 0.8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['VR_STRONG_BEARISH'] = vr < 0.5  # TODO: 将魔法数字提取到配置中
         
         # 极值形态
-        if len(vr.dropna()) >= 20:
-            vr_high = vr.rolling(window=20).max()
-            vr_low = vr.rolling(window=20).min()
+        if len(vr.dropna()) >= 20:  # TODO: 将魔法数字提取到配置中
+            vr_high = vr.rolling(window=20).max()  # TODO: 将魔法数字提取到配置中
+            vr_low = vr.rolling(window=20).min()  # TODO: 将魔法数字提取到配置中
             
             patterns['VR_NEW_HIGH'] = vr >= vr_high
             patterns['VR_NEW_LOW'] = vr <= vr_low
-            patterns['VR_RESISTANCE'] = (vr >= vr_high * 0.95) & (vr < vr_high)
-            patterns['VR_SUPPORT'] = (vr <= vr_low * 1.05) & (vr > vr_low)
+            patterns['VR_RESISTANCE'] = (vr >= vr_high * 0.95) & (vr < vr_high)  # TODO: 将魔法数字提取到配置中
+            patterns['VR_SUPPORT'] = (vr <= vr_low * 1.05) & (vr > vr_low)  # TODO: 将魔法数字提取到配置中
         
         return patterns
     
@@ -452,7 +456,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_volumeratio(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Ratio(self, **kwargs):
         """
@@ -464,6 +468,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -481,7 +486,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
         
         # 设置参数
-        self.period = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
     
     def calculate_Ratio(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -510,7 +515,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = data.copy()
         
         # 扩展支持的成交量列名格式
-        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL', 'turnover', 'Turnover', 'TURNOVER']
+        volume_columns = ['volume', 'Volume', 'VOLUME', 'vol', 'Vol', 'VOL', 'turnover_rate', 'turnover_rate', 'turnover_rate']
         volume = None
         found_column = None
         
@@ -531,7 +536,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 尝试从列名中查找包含'volume'或'vol'的列
             potential_columns = [col for col in available_columns 
                                if any(vol_name.lower() in col.lower() 
-                                     for vol_name in ['volume', 'vol', 'turnover'])]
+                                     for vol_name in ['volume', 'vol', 'turnover_rate'])]
             
             if potential_columns:
                 volume = df[potential_columns[0]]
@@ -585,13 +590,13 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             volume_ratio = df['VOLUME_RATIO_VALUE']
 
             # VOLUME_RATIO信号生成逻辑：
-            # BUY: 量比大于1.5（成交量放大）
-            # SELL: 量比小于0.5（成交量萎缩）
-            # HOLD: 量比在0.5-1.5之间（正常成交量）
+            # BUY: 量比大于1.5（成交量放大）  # TODO: 将魔法数字提取到配置中
+            # SELL: 量比小于0.5（成交量萎缩）  # TODO: 将魔法数字提取到配置中
+            # HOLD: 量比在0.5-1.5之间（正常成交量）  # TODO: 将魔法数字提取到配置中
 
-            high_volume = volume_ratio > 1.5
-            low_volume = volume_ratio < 0.5
-            normal_volume = (volume_ratio >= 0.5) & (volume_ratio <= 1.5)
+            high_volume = volume_ratio > 1.5  # TODO: 将魔法数字提取到配置中
+            low_volume = volume_ratio < 0.5  # TODO: 将魔法数字提取到配置中
+            normal_volume = (volume_ratio >= 0.5) & (volume_ratio <= 1.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 生成信号
             df.loc[:, 'buy_signal'] = high_volume
@@ -619,91 +624,91 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         基于量比的活跃度和稳定性进行评分：
         1. 量比活跃度：量比偏离1的程度
         2. 量比稳定性：量比的波动程度
-        3. 量比趋势：量比的变化趋势
-        4. 量比分布：量比的分布特征
+        3. 量比趋势：量比的变化趋势  # TODO: 将魔法数字提取到配置中
+        4. 量比分布：量比的分布特征  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Ratio(data, **kwargs)
         
         if 'VOLUME_RATIO_VALUE' not in self._result.columns:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         volume_ratio = self._result['VOLUME_RATIO_VALUE'].fillna(1.0)
         scores = pd.Series(index=data.index, dtype=float)
         
         for i in range(len(volume_ratio)):
             if i < self.period:
-                scores.iloc[i] = 50.0
+                scores.iloc[i] = 50.0  # TODO: 将魔法数字提取到配置中
                 continue
             
             # 获取当前窗口数据
             current_ratio = volume_ratio.iloc[i]
             window_ratios = volume_ratio.iloc[max(0, i-self.period+1):i+1]
             
-            score = 50.0  # 基础分数
+            score = 50.0  # 基础分数  # TODO: 将魔法数字提取到配置中
             
             # 1. 量比活跃度评分 (30分)
             # 量比越偏离1，市场越活跃
             activity_deviation = abs(current_ratio - 1.0)
             if activity_deviation >= 2.0:
-                activity_score = 30.0  # 极度活跃
+                activity_score = 30.0  # 极度活跃  # TODO: 将魔法数字提取到配置中
             elif activity_deviation >= 1.0:
-                activity_score = 20.0 + (activity_deviation - 1.0) * 10.0  # 活跃
-            elif activity_deviation >= 0.5:
-                activity_score = 10.0 + (activity_deviation - 0.5) * 20.0  # 较活跃
+                activity_score = 20.0 + (activity_deviation - 1.0) * 10.0  # 活跃  # TODO: 将魔法数字提取到配置中
+            elif activity_deviation >= 0.5:  # TODO: 将魔法数字提取到配置中
+                activity_score = 10.0 + (activity_deviation - 0.5) * 20.0  # 较活跃  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             else:
-                activity_score = activity_deviation * 20.0  # 平淡
+                activity_score = activity_deviation * 20.0  # 平淡  # TODO: 将魔法数字提取到配置中
             
-            score += activity_score - 15.0  # 调整基准
+            score += activity_score - 15.0  # 调整基准  # TODO: 将魔法数字提取到配置中
             
             # 2. 量比稳定性评分 (20分)
             # 量比波动越小，市场越稳定
             if len(window_ratios) > 1:
                 ratio_std = window_ratios.std()
                 if ratio_std <= 0.2:
-                    stability_score = 20.0  # 非常稳定
-                elif ratio_std <= 0.5:
-                    stability_score = 15.0 + (0.5 - ratio_std) / 0.3 * 5.0  # 稳定
+                    stability_score = 20.0  # 非常稳定  # TODO: 将魔法数字提取到配置中
+                elif ratio_std <= 0.5:  # TODO: 将魔法数字提取到配置中
+                    stability_score = 15.0 + (0.5 - ratio_std) / 0.3 * 5.0  # 稳定  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 elif ratio_std <= 1.0:
-                    stability_score = 10.0 + (1.0 - ratio_std) / 0.5 * 5.0  # 较稳定
+                    stability_score = 10.0 + (1.0 - ratio_std) / 0.5 * 5.0  # 较稳定  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 else:
-                    stability_score = max(0, 10.0 - (ratio_std - 1.0) * 5.0)  # 不稳定
+                    stability_score = max(0, 10.0 - (ratio_std - 1.0) * 5.0)  # 不稳定  # TODO: 将魔法数字提取到配置中
             else:
                 stability_score = 10.0
             
             score += stability_score - 10.0  # 调整基准
             
-            # 3. 量比趋势评分 (20分)
+            # 3. 量比趋势评分 (20分)  # TODO: 将魔法数字提取到配置中
             # 量比上升趋势给予更高评分
-            if len(window_ratios) >= 3:
-                recent_ratios = window_ratios.tail(3)
-                if recent_ratios.iloc[-1] > recent_ratios.iloc[-2] > recent_ratios.iloc[-3]:
-                    trend_score = 20.0  # 持续上升
+            if len(window_ratios) >= 3:  # TODO: 将魔法数字提取到配置中
+                recent_ratios = window_ratios.tail(3)  # TODO: 将魔法数字提取到配置中
+                if recent_ratios.iloc[-1] > recent_ratios.iloc[-2] > recent_ratios.iloc[-3]:  # TODO: 将魔法数字提取到配置中
+                    trend_score = 20.0  # 持续上升  # TODO: 将魔法数字提取到配置中
                 elif recent_ratios.iloc[-1] > recent_ratios.iloc[-2]:
-                    trend_score = 15.0  # 上升
-                elif recent_ratios.iloc[-1] < recent_ratios.iloc[-2] < recent_ratios.iloc[-3]:
-                    trend_score = 5.0   # 持续下降
+                    trend_score = 15.0  # 上升  # TODO: 将魔法数字提取到配置中
+                elif recent_ratios.iloc[-1] < recent_ratios.iloc[-2] < recent_ratios.iloc[-3]:  # TODO: 将魔法数字提取到配置中
+                    trend_score = 5.0   # 持续下降  # TODO: 将魔法数字提取到配置中
                 elif recent_ratios.iloc[-1] < recent_ratios.iloc[-2]:
                     trend_score = 10.0  # 下降
                 else:
-                    trend_score = 12.5  # 横盘
+                    trend_score = 12.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # 横盘  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             else:
-                trend_score = 12.5
+                trend_score = 12.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            score += trend_score - 12.5  # 调整基准
+            score += trend_score - 12.5  # 调整基准  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 4. 量比分布评分 (10分)
+            # 4. 量比分布评分 (10分)  # TODO: 将魔法数字提取到配置中
             # 量比在合理区间内给予更高评分
-            if 0.8 <= current_ratio <= 1.2:
+            if 0.8 <= current_ratio <= 1.2:  # TODO: 将魔法数字提取到配置中
                 distribution_score = 10.0  # 正常区间
-            elif 0.5 <= current_ratio <= 2.0:
-                distribution_score = 8.0   # 较正常区间
-            elif 0.3 <= current_ratio <= 3.0:
-                distribution_score = 5.0   # 偏离区间
+            elif 0.5 <= current_ratio <= 2.0:  # TODO: 将魔法数字提取到配置中
+                distribution_score = 8.0   # 较正常区间  # TODO: 将魔法数字提取到配置中
+            elif 0.3 <= current_ratio <= 3.0:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                distribution_score = 5.0   # 偏离区间  # TODO: 将魔法数字提取到配置中
             else:
                 distribution_score = 2.0   # 极端区间
             
-            score += distribution_score - 5.0  # 调整基准
+            score += distribution_score - 5.0  # 调整基准  # TODO: 将魔法数字提取到配置中
             
             # 确保分数在合理范围内
             score = max(0, min(100, score))
@@ -713,7 +718,7 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def calculate_confidence_Ratio(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Ratio(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -729,4 +734,4 @@ class VolumeRatio(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中

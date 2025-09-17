@@ -25,6 +25,7 @@ sys.path.insert(0, '/Users/hacker/PycharmProjects/freedom')
 
 from db.enhanced_connection_pool import get_connection_pool
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 import pandas as pd
 import numpy as np
 
@@ -124,7 +125,7 @@ class MemoryPerformanceTester:
             
             # 测试用例2：查询中等数据集
             print("  📊 测试用例2: 中等数据集查询")
-            query2 = "SELECT code, name, date, close, volume FROM stock_info WHERE level = '日线' AND date >= '2024-01-01' ORDER BY date DESC LIMIT 1000"
+            query2 = "SELECT code, name, date, close, volume FROM stock_info WHERE code = %(code)s AND level = '日线' AND date >= '2024-01-01' ORDER BY date DESC LIMIT 1000"
             
             start_time = time.time()
             df2 = self.pool.query_dataframe_optimized(query2)
@@ -145,7 +146,7 @@ class MemoryPerformanceTester:
             
             # 测试用例3：聚合查询
             print("  📊 测试用例3: 聚合查询")
-            query3 = "SELECT industry, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE level = '日线' GROUP BY industry LIMIT 50"
+            query3 = "SELECT industry, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE code = %(code)s AND level = '日线' GROUP BY industry LIMIT 50"
             
             start_time = time.time()
             df3 = self.pool.query_dataframe_optimized(query3)
@@ -297,7 +298,7 @@ class MemoryPerformanceTester:
             # 验证系统稳定性
             try:
                 # 执行一个简单查询验证系统仍然正常
-                test_query = "SELECT COUNT(*) as count FROM stock_info WHERE level = '日线' LIMIT 1"
+                test_query = "SELECT COUNT(*) as count FROM stock_info WHERE code = %(code)s AND level = '日线' LIMIT 1"
                 with self.pool.get_connection() as conn:
                     result = conn.query_dataframe(test_query)
                     if len(result) > 0:

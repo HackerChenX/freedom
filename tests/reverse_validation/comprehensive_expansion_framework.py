@@ -14,6 +14,7 @@ from datetime import datetime
 import json
 from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
+from db.sql_manager import SQLManager, QueryType
 import pandas as pd
 
 # 添加项目根目录到路径
@@ -82,7 +83,7 @@ class Comprehensive_expansion_framework:
             'P4': {  # ZXM系列指标
                 'name': 'ZXM系列指标',
                 'indicators': [
-                    'ZXM_DAILY_MACD', 'ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
+                    'ZXM_DAILY_MACD', 'ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
                     'ZXM_BS_ABSORB', 'ZXM_AMPLITUDE_ELASTICITY', 'ZXM_RISE_ELASTICITY', 
                     'ZXM_ELASTICITY', 'ZXM_BOUNCE_DETECTOR', 'ZXM_ELASTICITY_SCORE',
                     'ZXM_BUYPOINT_SCORE', 'ZXM_STOCK_SCORE', 'ZXM_DAILY_TREND_UP',

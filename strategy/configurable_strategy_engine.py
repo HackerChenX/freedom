@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 """
 可配置策略引擎
@@ -16,6 +18,7 @@ from strategy.strategy_parser import StrategyParser
 from strategy.enhanced_strategy_config_engine import EnhancedStrategyConfigEngine
 from strategy.strategy_executor import StrategyExecutor
 from indicators.complete_indicator_registry import CompleteIndicatorRegistry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -23,6 +26,9 @@ class ConfigurableStrategyEngine:
     """可配置策略引擎"""
     
     def __init__(self, config_dir: str = "config/strategies"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化可配置策略引擎
         
@@ -147,6 +153,9 @@ class DynamicStrategy:
     """动态策略类，基于配置文件创建"""
     
     def __init__(self, config: Dict[str, Any], indicator_registry: CompleteIndicatorRegistry):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.indicator_registry = indicator_registry
         self.strategy_info = config.get('strategy', {})
@@ -242,6 +251,9 @@ class CombinationStrategy:
     """组合策略类"""
     
     def __init__(self, combination_config: Dict[str, Any], engine: ConfigurableStrategyEngine):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = combination_config
         self.engine = engine
         self.name = combination_config.get('name', 'Unknown Combination')

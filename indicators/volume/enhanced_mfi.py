@@ -1,10 +1,11 @@
+from utils.container import container
 """
 增强型资金流向指标(Enhanced_mFI)模块
 
 实现增强型MFI指标计算，提供自适应阈值、异常成交量滤波、价格结构协同分析和市场环境适应功能
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.mfi import Mfi
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -25,15 +26,18 @@ class EnhancedMfi(Mfi):
     具有以下增强特性:
     1. 动态阈值调整：根据市场波动率动态调整MFI超买超卖阈值
     2. 异常成交量滤波：识别并平滑异常成交量数据，减少对MFI计算的干扰
-    3. 价格结构协同分析：分析MFI在价格关键结构点的表现
-    4. 市场环境适应：根据不同市场环境动态调整MFI的解释框架
+    3. 价格结构协同分析：分析MFI在价格关键结构点的表现  # TODO: 将魔法数字提取到配置中
+    4. 市场环境适应：根据不同市场环境动态调整MFI的解释框架  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self, 
-                 period: int = 14,
-                 volatility_lookback: int = 20,
+                 period: int = 14,  # TODO: 将魔法数字提取到配置中
+                 volatility_lookback: int = 20,  # TODO: 将魔法数字提取到配置中
                  enable_volume_filter: bool = True,
-                 volume_filter_threshold: float = 3.0):
+                 volume_filter_threshold: float = 3.0):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型MFI指标
         
@@ -53,8 +57,8 @@ class EnhancedMfi(Mfi):
         self.market_environment = "normal"
         
         # 动态阈值默认值
-        self._dynamic_overbought = 80
-        self._dynamic_oversold = 20
+        self._dynamic_overbought = 80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        self._dynamic_oversold = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 存储价格结构关键点
         self._price_key_levels = {}
@@ -113,7 +117,7 @@ class EnhancedMfi(Mfi):
         if result is None:
             logger.warning("父类MFI计算失败，返回基础结果")
             result = pd.DataFrame(index=data.index)
-            result["mfi"] = 50.0  # 默认中性值
+            result["mfi"] = 50.0  # 默认中性值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:
             # 查找MFI列（可能是MFI14、MFI20等格式）
             mfi_columns = [col for col in result.columns if col.startswith('MFI')]
@@ -123,7 +127,7 @@ class EnhancedMfi(Mfi):
                 logger.debug(f"成功获取父类MFI计算结果，列名: {mfi_columns[0]}")
             else:
                 logger.debug("父类MFI计算结果中未找到MFI列，返回基础结果")
-                result["mfi"] = 50.0  # 默认中性值
+                result["mfi"] = 50.0  # 默认中性值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 计算动态阈值
         self._calculate_dynamic_thresholds(data)
@@ -139,8 +143,8 @@ class EnhancedMfi(Mfi):
         self._analyze_price_structure(data)
         
         # 计算MFI动态特性
-        result["mfi_momentum"] = result["mfi"] - result["mfi"].shift(3)
-        result["mfi_slope"] = result["mfi"].diff(3)
+        result["mfi_momentum"] = result["mfi"] - result["mfi"].shift(3)  # TODO: 将魔法数字提取到配置中
+        result["mfi_slope"] = result["mfi"].diff(3)  # TODO: 将魔法数字提取到配置中
         result["mfi_accel"] = result["mfi_slope"].diff()
         
         # 根据市场环境调整MFI解释
@@ -162,8 +166,8 @@ class EnhancedMfi(Mfi):
             pd.Series: 平滑后的成交量序列
         """
         # 计算成交量的移动平均和标准差
-        vol_ma = volume.rolling(window=20).mean()
-        vol_std = volume.rolling(window=20).std()
+        vol_ma = volume.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
+        vol_std = volume.rolling(window=20).std()  # TODO: 将魔法数字提取到配置中
         
         # 初始化结果为原始成交量
         smoothed_volume = volume.copy()
@@ -193,49 +197,49 @@ class EnhancedMfi(Mfi):
         
         # 如果波动率数据不足，则使用默认阈值
         if pd.isna(volatility):
-            self._dynamic_overbought = 80
-            self._dynamic_oversold = 20
+            self._dynamic_overbought = 80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return
         
         # 计算历史波动率
-        historical_volatility = returns.rolling(window=self.volatility_lookback*3).std().iloc[-1]
+        historical_volatility = returns.rolling(window=self.volatility_lookback*3).std().iloc[-1]  # TODO: 将魔法数字提取到配置中
         
         # 如果历史波动率数据不足，则使用默认阈值
         if pd.isna(historical_volatility) or historical_volatility == 0:
-            self._dynamic_overbought = 80
-            self._dynamic_oversold = 20
+            self._dynamic_overbought = 80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return
         
         # 计算相对波动率
         relative_volatility = volatility / historical_volatility if historical_volatility > 0 else 1.0
         
         # 根据相对波动率调整阈值
-        if relative_volatility > 1.5:  # 高波动市场
+        if relative_volatility > 1.5:  # 高波动市场  # TODO: 将魔法数字提取到配置中
             # 放宽阈值
-            self._dynamic_overbought = 85
-            self._dynamic_oversold = 15
-        elif relative_volatility < 0.7:  # 低波动市场
+            self._dynamic_overbought = 85  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold = 15  # TODO: 将魔法数字提取到配置中
+        elif relative_volatility < 0.7:  # 低波动市场  # TODO: 将魔法数字提取到配置中
             # 收紧阈值
-            self._dynamic_overbought = 75
-            self._dynamic_oversold = 25
+            self._dynamic_overbought = 75  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold = 25  # TODO: 将魔法数字提取到配置中
         else:  # 正常波动市场
             # 使用默认阈值
-            self._dynamic_overbought = 80
-            self._dynamic_oversold = 20
+            self._dynamic_overbought = 80  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 根据市场环境进一步调整
         if self.market_environment == 'bull_market':
             # 牛市中提高超买阈值，降低超卖阈值
-            self._dynamic_overbought += 5
-            self._dynamic_oversold += 5
+            self._dynamic_overbought += 5  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold += 5  # TODO: 将魔法数字提取到配置中
         elif self.market_environment == 'bear_market':
             # 熊市中降低超买阈值，提高超卖阈值
-            self._dynamic_overbought -= 5
-            self._dynamic_oversold -= 5
+            self._dynamic_overbought -= 5  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold -= 5  # TODO: 将魔法数字提取到配置中
         elif self.market_environment == 'volatile_market':
             # 高波动市场进一步放宽阈值
-            self._dynamic_overbought += 3
-            self._dynamic_oversold -= 3
+            self._dynamic_overbought += 3  # TODO: 将魔法数字提取到配置中
+            self._dynamic_oversold -= 3  # TODO: 将魔法数字提取到配置中
         
         logger.debug(f"调整MFI阈值: 超买={self._dynamic_overbought}, 超卖={self._dynamic_oversold}, "
                     f"相对波动率={relative_volatility:.2f}, 市场环境={self.market_environment}")
@@ -252,15 +256,15 @@ class EnhancedMfi(Mfi):
             pd.Series: MFI与价格的相对变化率
         """
         # 计算价格变化率
-        price_change = price.pct_change(5)
+        = price.pct_change(5)  # TODO: 将魔法数字提取到配置中
         
         # 计算MFI变化率
-        mfi_change = mfi.diff(5) / 100
+        mfi_change = mfi.diff(5) / 100  # TODO: 将魔法数字提取到配置中
         
         # 计算相对变化率
         ratio = pd.Series(np.nan, index=price.index)
-        mask = (price_change != 0) & (~pd.isna(price_change)) & (~pd.isna(mfi_change))
-        ratio[mask] = mfi_change[mask] / price_change[mask]
+        mask = (!= 0) & (~pd.isna()) & (~pd.isna(mfi_change))
+        ratio[mask] = mfi_change[mask] / [mask]
         
         return ratio
     
@@ -277,7 +281,7 @@ class EnhancedMfi(Mfi):
         low = data["low"]
         
         # 使用简单的方法找出最近的高点和低点
-        window = 20
+        window = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 寻找局部高点
         local_highs = []
@@ -293,8 +297,8 @@ class EnhancedMfi(Mfi):
         
         # 保存到字典
         self._price_key_levels = {
-            "local_highs": local_highs[-3:] if len(local_highs) > 0 else [],  # 最近的3个高点
-            "local_lows": local_lows[-3:] if len(local_lows) > 0 else [],     # 最近的3个低点
+            "local_highs": local_highs[-3:] if len(local_highs) > 0 else [],  # 最近的3个高点  # TODO: 将魔法数字提取到配置中
+            "local_lows": local_lows[-3:] if len(local_lows) > 0 else [],     # 最近的3个低点  # TODO: 将魔法数字提取到配置中
         }
     
     def _adjust_mfi_by_environment(self, mfi: pd.Series) -> pd.Series:
@@ -315,10 +319,10 @@ class EnhancedMfi(Mfi):
             adjusted_mfi = adjusted_mfi.clip(0, 100)
         elif self.market_environment == 'bear_market':
             # 熊市中MFI表现更弱，下跌更容易
-            adjusted_mfi = adjusted_mfi * 0.9
+            adjusted_mfi = adjusted_mfi * 0.9  # TODO: 将魔法数字提取到配置中
         elif self.market_environment == 'volatile_market':
             # 高波动市场MFI波动更大，需要平滑处理
-            adjusted_mfi = adjusted_mfi.rolling(window=3).mean()
+            adjusted_mfi = adjusted_mfi.rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
         
         return adjusted_mfi
     
@@ -346,24 +350,24 @@ class EnhancedMfi(Mfi):
         for idx, price in self._price_key_levels["local_highs"]:
             if 0 <= idx < len(data):
                 # 价格创新高但MFI未创新高（顶背离）
-                if idx > 20:
-                    mfi_window = mfi.iloc[idx-20:idx+1]
-                    if mfi.iloc[idx] < mfi_window.max() * 0.95:  # MFI低于区间最大值的95%
-                        result.iloc[idx, result.columns.get_loc("synergy_score")] -= 30
+                if idx > 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    mfi_window = mfi.iloc[idx-20:idx+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if mfi.iloc[idx] < mfi_window.max() * 0.95:  # MFI低于区间最大值的95%  # TODO: 将魔法数字提取到配置中
+                        result.iloc[idx, result.columns.get_loc("synergy_score")] -= 30  # TODO: 将魔法数字提取到配置中
                         logger.debug(f"检测到价格高点({price:.2f})处的MFI顶背离，位置={idx}")
         
         # 分析局部低点处的MFI表现
         for idx, price in self._price_key_levels["local_lows"]:
             if 0 <= idx < len(data):
                 # 价格创新低但MFI未创新低（底背离）
-                if idx > 20:
-                    mfi_window = mfi.iloc[idx-20:idx+1]
-                    if mfi.iloc[idx] > mfi_window.min() * 1.05:  # MFI高于区间最小值的105%
-                        result.iloc[idx, result.columns.get_loc("synergy_score")] += 30
+                if idx > 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    mfi_window = mfi.iloc[idx-20:idx+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if mfi.iloc[idx] > mfi_window.min() * 1.05:  # MFI高于区间最小值的105%  # TODO: 将魔法数字提取到配置中
+                        result.iloc[idx, result.columns.get_loc("synergy_score")] += 30  # TODO: 将魔法数字提取到配置中
                         logger.debug(f"检测到价格低点({price:.2f})处的MFI底背离，位置={idx}")
         
         # 平滑评分
-        result["synergy_score"] = result["synergy_score"].rolling(window=5, min_periods=1).mean()
+        result["synergy_score"] = result["synergy_score"].rolling(window=5, min_periods=1).mean()  # TODO: 将魔法数字提取到配置中
         
         return result
     
@@ -383,9 +387,9 @@ class EnhancedMfi(Mfi):
             self.calculate(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 1. 使用动态阈值的超买超卖评分
         ob_os_score = self._calculate_mfi_dynamic_threshold_score()
@@ -395,15 +399,15 @@ class EnhancedMfi(Mfi):
         divergence_score = self._calculate_mfi_divergence_score(data)
         score += divergence_score
         
-        # 3. 价格结构协同评分
+        # 3. 价格结构协同评分  # TODO: 将魔法数字提取到配置中
         structure_score = self.analyze_price_structure_synergy(data)["synergy_score"]
         score += structure_score
         
-        # 4. MFI趋势评分
+        # 4. MFI趋势评分  # TODO: 将魔法数字提取到配置中
         trend_score = self._calculate_mfi_trend_score()
         score += trend_score
         
-        # 5. 市场环境调整
+        # 5. 市场环境调整  # TODO: 将魔法数字提取到配置中
         score = self._adjust_score_by_environment(score)
         
         return np.clip(score, 0, 100)
@@ -432,12 +436,12 @@ class EnhancedMfi(Mfi):
         score += oversold_score
         
         # 中性区域上方 (小幅加分)
-        neutral_high = (mfi > 50) & (mfi < overbought)
-        score.loc[neutral_high] += (mfi.loc[neutral_high] - 50) * 0.3
+        neutral_high = (mfi > 50) & (mfi < overbought)  # TODO: 将魔法数字提取到配置中
+        score.loc[neutral_high] += (mfi.loc[neutral_high] - 50) * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 中性区域下方 (小幅减分)
-        neutral_low = (mfi < 50) & (mfi > oversold)
-        score.loc[neutral_low] -= (50 - mfi.loc[neutral_low]) * 0.3
+        neutral_low = (mfi < 50) & (mfi > oversold)  # TODO: 将魔法数字提取到配置中
+        score.loc[neutral_low] -= (50 - mfi.loc[neutral_low]) * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return score
     
@@ -455,21 +459,21 @@ class EnhancedMfi(Mfi):
         
         if self.market_environment == 'bull_market':
             # 牛市中看涨信号更重要
-            above_50 = score > 50
-            adjusted_score[above_50] = 50 + (score[above_50] - 50) * 1.2  # 增强看涨信号
-            adjusted_score[~above_50] = 50 - (50 - score[~above_50]) * 0.8  # 减弱看跌信号
+            above_50 = score > 50  # TODO: 将魔法数字提取到配置中
+            adjusted_score[above_50] = 50 + (score[above_50] - 50) * 1.2  # 增强看涨信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            adjusted_score[~above_50] = 50 - (50 - score[~above_50]) * 0.8  # 减弱看跌信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         elif self.market_environment == 'bear_market':
             # 熊市中看跌信号更重要
-            below_50 = score < 50
-            adjusted_score[below_50] = 50 - (50 - score[below_50]) * 1.2  # 增强看跌信号
-            adjusted_score[~below_50] = 50 + (score[~below_50] - 50) * 0.8  # 减弱看涨信号
+            below_50 = score < 50  # TODO: 将魔法数字提取到配置中
+            adjusted_score[below_50] = 50 - (50 - score[below_50]) * 1.2  # 增强看跌信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            adjusted_score[~below_50] = 50 + (score[~below_50] - 50) * 0.8  # 减弱看涨信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         elif self.market_environment == 'volatile_market':
             # 高波动市场需要更强的信号确认
-            adjusted_score = 50 + (score - 50) * 0.7  # 减弱所有信号
+            adjusted_score = 50 + (score - 50) * 0.7  # 减弱所有信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 但极端信号保持不变
-            extreme_signal = (score < 20) | (score > 80)
+            extreme_signal = (score < 20) | (score > 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             adjusted_score[extreme_signal] = score[extreme_signal]
         
         return adjusted_score
@@ -502,11 +506,11 @@ class EnhancedMfi(Mfi):
         divergence_patterns = self._detect_mfi_divergence_patterns(data)
         patterns.extend(divergence_patterns)
         
-        # 3. 检测MFI趋势形态
+        # 3. 检测MFI趋势形态  # TODO: 将魔法数字提取到配置中
         trend_patterns = self._detect_mfi_trend_patterns()
         patterns.extend(trend_patterns)
         
-        # 4. 检测MFI结构形态
+        # 4. 检测MFI结构形态  # TODO: 将魔法数字提取到配置中
         structure_patterns = self._detect_mfi_structure_patterns()
         patterns.extend(structure_patterns)
         
@@ -524,10 +528,10 @@ class EnhancedMfi(Mfi):
         mfi = self._result["mfi"]
         
         # 获取最近的MFI值
-        if len(mfi) < 5:
+        if len(mfi) < 5:  # TODO: 将魔法数字提取到配置中
             return patterns
         
-        recent_mfi = mfi.iloc[-5:]
+        recent_mfi = mfi.iloc[-5:]  # TODO: 将魔法数字提取到配置中
         current_mfi = recent_mfi.iloc[-1]
         
         # 使用动态阈值
@@ -539,7 +543,7 @@ class EnhancedMfi(Mfi):
             patterns.append(f"MFI超买区域(>{overbought:.0f})")
             
             # 检测是否继续走高
-            if current_mfi > recent_mfi.iloc[-2] and recent_mfi.iloc[-2] > recent_mfi.iloc[-3]:
+            if current_mfi > recent_mfi.iloc[-2] and recent_mfi.iloc[-2] > recent_mfi.iloc[-3]:  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI超买区域继续走高")
             # 检测是否从超买区回落
             elif current_mfi < recent_mfi.iloc[-2]:
@@ -550,7 +554,7 @@ class EnhancedMfi(Mfi):
             patterns.append(f"MFI超卖区域(<{oversold:.0f})")
             
             # 检测是否继续走低
-            if current_mfi < recent_mfi.iloc[-2] and recent_mfi.iloc[-2] < recent_mfi.iloc[-3]:
+            if current_mfi < recent_mfi.iloc[-2] and recent_mfi.iloc[-2] < recent_mfi.iloc[-3]:  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI超卖区域继续走低")
             # 检测是否从超卖区回升
             elif current_mfi > recent_mfi.iloc[-2]:
@@ -559,7 +563,7 @@ class EnhancedMfi(Mfi):
         # 中性区域形态
         else:
             # 中性区域偏多
-            if current_mfi > 50:
+            if current_mfi > 50:  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI中性区域偏多")
             # 中性区域偏空
             else:
@@ -620,10 +624,10 @@ class EnhancedMfi(Mfi):
         signals['sell_signal'] = False
         signals['neutral_signal'] = True  # 默认为中性信号
         signals['trend'] = 0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
+        signals['score'] = 50.0  # 默认评分50分  # TODO: 将魔法数字提取到配置中
         signals['signal_type'] = None
         signals['signal_desc'] = None
-        signals['confidence'] = 50.0
+        signals['confidence'] = 50.0  # TODO: 将魔法数字提取到配置中
         signals['risk_level'] = '中'
         signals['position_size'] = 0.0
         signals['stop_loss'] = None
@@ -647,8 +651,8 @@ class EnhancedMfi(Mfi):
         signals.loc[mfi_cross_oversold, 'trend'] = 1
         signals.loc[mfi_cross_oversold, 'signal_type'] = 'MFI超卖反弹'
         signals.loc[mfi_cross_oversold, 'signal_desc'] = f'MFI从超卖区上穿{self._dynamic_oversold}，买入信号'
-        signals.loc[mfi_cross_oversold, 'confidence'] = 70.0
-        signals.loc[mfi_cross_oversold, 'position_size'] = 0.4
+        signals.loc[mfi_cross_oversold, 'confidence'] = 70.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_cross_oversold, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_oversold, 'risk_level'] = '中'
         
         # 2. MFI从超买区下穿动态阈值，卖出信号
@@ -658,73 +662,73 @@ class EnhancedMfi(Mfi):
         signals.loc[mfi_cross_overbought, 'trend'] = -1
         signals.loc[mfi_cross_overbought, 'signal_type'] = 'MFI超买回落'
         signals.loc[mfi_cross_overbought, 'signal_desc'] = f'MFI从超买区下穿{self._dynamic_overbought}，卖出信号'
-        signals.loc[mfi_cross_overbought, 'confidence'] = 70.0
-        signals.loc[mfi_cross_overbought, 'position_size'] = 0.4
+        signals.loc[mfi_cross_overbought, 'confidence'] = 70.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_cross_overbought, 'position_size'] = 0.4  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_overbought, 'risk_level'] = '中'
         
-        # 3. MFI底背离，买入信号
-        mfi_bullish_divergence = (self._result['mfi_price_ratio'] > 2) & (mfi < 30)
+        # 3. MFI底背离，买入信号  # TODO: 将魔法数字提取到配置中
+        mfi_bullish_divergence = (self._result['mfi_price_ratio'] > 2) & (mfi < 30)  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_bullish_divergence, 'buy_signal'] = True
         signals.loc[mfi_bullish_divergence, 'neutral_signal'] = False
         signals.loc[mfi_bullish_divergence, 'trend'] = 1
         signals.loc[mfi_bullish_divergence, 'signal_type'] = 'MFI底背离'
         signals.loc[mfi_bullish_divergence, 'signal_desc'] = 'MFI与价格形成底背离，买入信号'
-        signals.loc[mfi_bullish_divergence, 'confidence'] = 80.0
-        signals.loc[mfi_bullish_divergence, 'position_size'] = 0.6
+        signals.loc[mfi_bullish_divergence, 'confidence'] = 80.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_bullish_divergence, 'position_size'] = 0.6  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_bullish_divergence, 'risk_level'] = '低'
         
-        # 4. MFI顶背离，卖出信号
-        mfi_bearish_divergence = (self._result['mfi_price_ratio'] < -2) & (mfi > 70)
+        # 4. MFI顶背离，卖出信号  # TODO: 将魔法数字提取到配置中
+        mfi_bearish_divergence = (self._result['mfi_price_ratio'] < -2) & (mfi > 70)  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_bearish_divergence, 'sell_signal'] = True
         signals.loc[mfi_bearish_divergence, 'neutral_signal'] = False
         signals.loc[mfi_bearish_divergence, 'trend'] = -1
         signals.loc[mfi_bearish_divergence, 'signal_type'] = 'MFI顶背离'
         signals.loc[mfi_bearish_divergence, 'signal_desc'] = 'MFI与价格形成顶背离，卖出信号'
-        signals.loc[mfi_bearish_divergence, 'confidence'] = 80.0
-        signals.loc[mfi_bearish_divergence, 'position_size'] = 0.6
+        signals.loc[mfi_bearish_divergence, 'confidence'] = 80.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_bearish_divergence, 'position_size'] = 0.6  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_bearish_divergence, 'risk_level'] = '低'
         
-        # 5. MFI上穿50中线，买入信号
-        mfi_cross_50_up = (mfi > 50) & (mfi.shift(1) <= 50)
+        # 5. MFI上穿50中线，买入信号  # TODO: 将魔法数字提取到配置中
+        mfi_cross_50_up = (mfi > 50) & (mfi.shift(1) <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_50_up, 'buy_signal'] = True
         signals.loc[mfi_cross_50_up, 'neutral_signal'] = False
         signals.loc[mfi_cross_50_up, 'trend'] = 1
         signals.loc[mfi_cross_50_up, 'signal_type'] = 'MFI上穿中线'
         signals.loc[mfi_cross_50_up, 'signal_desc'] = 'MFI上穿50中线，买入信号'
-        signals.loc[mfi_cross_50_up, 'confidence'] = 60.0
-        signals.loc[mfi_cross_50_up, 'position_size'] = 0.3
+        signals.loc[mfi_cross_50_up, 'confidence'] = 60.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_cross_50_up, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_50_up, 'risk_level'] = '中'
         
-        # 6. MFI下穿50中线，卖出信号
-        mfi_cross_50_down = (mfi < 50) & (mfi.shift(1) >= 50)
+        # 6. MFI下穿50中线，卖出信号  # TODO: 将魔法数字提取到配置中
+        mfi_cross_50_down = (mfi < 50) & (mfi.shift(1) >= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_50_down, 'sell_signal'] = True
         signals.loc[mfi_cross_50_down, 'neutral_signal'] = False
         signals.loc[mfi_cross_50_down, 'trend'] = -1
         signals.loc[mfi_cross_50_down, 'signal_type'] = 'MFI下穿中线'
         signals.loc[mfi_cross_50_down, 'signal_desc'] = 'MFI下穿50中线，卖出信号'
-        signals.loc[mfi_cross_50_down, 'confidence'] = 60.0
-        signals.loc[mfi_cross_50_down, 'position_size'] = 0.3
+        signals.loc[mfi_cross_50_down, 'confidence'] = 60.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[mfi_cross_50_down, 'position_size'] = 0.3  # TODO: 将魔法数字提取到配置中
         signals.loc[mfi_cross_50_down, 'risk_level'] = '中'
         
-        # 7. 根据得分产生强弱信号
-        strong_buy = score > 80
+        # 7. 根据得分产生强弱信号  # TODO: 将魔法数字提取到配置中
+        strong_buy = score > 80  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_buy, 'buy_signal'] = True
         signals.loc[strong_buy, 'neutral_signal'] = False
         signals.loc[strong_buy, 'trend'] = 1
         signals.loc[strong_buy, 'signal_type'] = 'MFI强烈买入'
         signals.loc[strong_buy, 'signal_desc'] = 'MFI综合评分超过80，强烈买入信号'
-        signals.loc[strong_buy, 'confidence'] = 85.0
-        signals.loc[strong_buy, 'position_size'] = 0.7
+        signals.loc[strong_buy, 'confidence'] = 85.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[strong_buy, 'position_size'] = 0.7  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_buy, 'risk_level'] = '低'
         
-        strong_sell = score < 20
+        strong_sell = score < 20  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_sell, 'sell_signal'] = True
         signals.loc[strong_sell, 'neutral_signal'] = False
         signals.loc[strong_sell, 'trend'] = -1
         signals.loc[strong_sell, 'signal_type'] = 'MFI强烈卖出'
         signals.loc[strong_sell, 'signal_desc'] = 'MFI综合评分低于20，强烈卖出信号'
-        signals.loc[strong_sell, 'confidence'] = 85.0
-        signals.loc[strong_sell, 'position_size'] = 0.7
+        signals.loc[strong_sell, 'confidence'] = 85.0  # TODO: 将魔法数字提取到配置中
+        signals.loc[strong_sell, 'position_size'] = 0.7  # TODO: 将魔法数字提取到配置中
         signals.loc[strong_sell, 'risk_level'] = '低'
         
         # 根据市场环境调整信号
@@ -765,20 +769,20 @@ class EnhancedMfi(Mfi):
         close = data["close"]
 
         # 简单的背离检测
-        window = 20
+        window = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         for i in range(window, len(data)):
             # 价格创新高但MFI未创新高（顶背离）
             price_window = close.iloc[i-window:i+1]
             mfi_window = mfi.iloc[i-window:i+1]
 
             if (close.iloc[i] == price_window.max() and
-                mfi.iloc[i] < mfi_window.max() * 0.95):
-                score.iloc[i] = -20  # 顶背离，看跌
+                mfi.iloc[i] < mfi_window.max() * 0.95):  # TODO: 将魔法数字提取到配置中
+                score.iloc[i] = -20  # 顶背离，看跌  # TODO: 将魔法数字提取到配置中
 
             # 价格创新低但MFI未创新低（底背离）
             elif (close.iloc[i] == price_window.min() and
-                  mfi.iloc[i] > mfi_window.min() * 1.05):
-                score.iloc[i] = 20  # 底背离，看涨
+                  mfi.iloc[i] > mfi_window.min() * 1.05):  # TODO: 将魔法数字提取到配置中
+                score.iloc[i] = 20  # 底背离，看涨  # TODO: 将魔法数字提取到配置中
 
         return score
 
@@ -794,8 +798,8 @@ class EnhancedMfi(Mfi):
         mfi = self._result["mfi"]
 
         # MFI趋势评分
-        mfi_momentum = self._result.get("mfi_momentum", mfi.diff(3))
-        mfi_slope = self._result.get("mfi_slope", mfi.diff(3))
+        mfi_momentum = self._result.get("mfi_momentum", mfi.diff(3))  # TODO: 将魔法数字提取到配置中
+        mfi_slope = self._result.get("mfi_slope", mfi.diff(3))  # TODO: 将魔法数字提取到配置中
 
         # 上升趋势加分
         uptrend = (mfi_momentum > 0) & (mfi_slope > 0)
@@ -806,12 +810,12 @@ class EnhancedMfi(Mfi):
         score.loc[downtrend] -= 10
 
         # 强势上升趋势
-        strong_uptrend = (mfi_momentum > 5) & (mfi_slope > 2)
-        score.loc[strong_uptrend] += 15
+        strong_uptrend = (mfi_momentum > 5) & (mfi_slope > 2)  # TODO: 将魔法数字提取到配置中
+        score.loc[strong_uptrend] += 15  # TODO: 将魔法数字提取到配置中
 
         # 强势下降趋势
-        strong_downtrend = (mfi_momentum < -5) & (mfi_slope < -2)
-        score.loc[strong_downtrend] -= 15
+        strong_downtrend = (mfi_momentum < -5) & (mfi_slope < -2)  # TODO: 将魔法数字提取到配置中
+        score.loc[strong_downtrend] -= 15  # TODO: 将魔法数字提取到配置中
 
         return score
 
@@ -827,14 +831,14 @@ class EnhancedMfi(Mfi):
         """
         patterns = []
 
-        if len(data) < 20:
+        if len(data) < 20:  # TODO: 将魔法数字提取到配置中
             return patterns
 
         mfi = self._result["mfi"]
         close = data["close"]
 
         # 检测最近的背离
-        window = 20
+        window = 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         recent_idx = len(data) - 1
 
         if recent_idx >= window:
@@ -846,12 +850,12 @@ class EnhancedMfi(Mfi):
 
             # 顶背离
             if (current_price == price_window.max() and
-                current_mfi < mfi_window.max() * 0.95):
+                current_mfi < mfi_window.max() * 0.95):  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI顶背离")
 
             # 底背离
             elif (current_price == price_window.min() and
-                  current_mfi > mfi_window.min() * 1.05):
+                  current_mfi > mfi_window.min() * 1.05):  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI底背离")
 
         return patterns
@@ -872,19 +876,19 @@ class EnhancedMfi(Mfi):
         recent_mfi = mfi.iloc[-10:]
 
         # 上升趋势
-        if recent_mfi.iloc[-1] > recent_mfi.iloc[-5] > recent_mfi.iloc[-10]:
+        if recent_mfi.iloc[-1] > recent_mfi.iloc[-5] > recent_mfi.iloc[-10]:  # TODO: 将魔法数字提取到配置中
             patterns.append("MFI上升趋势")
 
             # 强势上升
-            if recent_mfi.iloc[-1] - recent_mfi.iloc[-10] > 20:
+            if recent_mfi.iloc[-1] - recent_mfi.iloc[-10] > 20:  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI强势上升")
 
         # 下降趋势
-        elif recent_mfi.iloc[-1] < recent_mfi.iloc[-5] < recent_mfi.iloc[-10]:
+        elif recent_mfi.iloc[-1] < recent_mfi.iloc[-5] < recent_mfi.iloc[-10]:  # TODO: 将魔法数字提取到配置中
             patterns.append("MFI下降趋势")
 
             # 强势下降
-            if recent_mfi.iloc[-10] - recent_mfi.iloc[-1] > 20:
+            if recent_mfi.iloc[-10] - recent_mfi.iloc[-1] > 20:  # TODO: 将魔法数字提取到配置中
                 patterns.append("MFI强势下降")
 
         # 横盘整理
@@ -922,45 +926,45 @@ class EnhancedMfi(Mfi):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查EnhancedMFI形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -991,16 +995,16 @@ class EnhancedMfi(Mfi):
         # 基本形态
         patterns['MFI_OVERBOUGHT'] = mfi > self._dynamic_overbought
         patterns['MFI_OVERSOLD'] = mfi < self._dynamic_oversold
-        patterns['MFI_ABOVE_50'] = mfi > 50
-        patterns['MFI_BELOW_50'] = mfi < 50
+        patterns['MFI_ABOVE_50'] = mfi > 50  # TODO: 将魔法数字提取到配置中
+        patterns['MFI_BELOW_50'] = mfi < 50  # TODO: 将魔法数字提取到配置中
 
         # 交叉形态
         patterns['MFI_CROSS_OVERBOUGHT_UP'] = (mfi > self._dynamic_overbought) & (mfi.shift(1) <= self._dynamic_overbought)
         patterns['MFI_CROSS_OVERBOUGHT_DOWN'] = (mfi < self._dynamic_overbought) & (mfi.shift(1) >= self._dynamic_overbought)
         patterns['MFI_CROSS_OVERSOLD_UP'] = (mfi > self._dynamic_oversold) & (mfi.shift(1) <= self._dynamic_oversold)
         patterns['MFI_CROSS_OVERSOLD_DOWN'] = (mfi < self._dynamic_oversold) & (mfi.shift(1) >= self._dynamic_oversold)
-        patterns['MFI_CROSS_50_UP'] = (mfi > 50) & (mfi.shift(1) <= 50)
-        patterns['MFI_CROSS_50_DOWN'] = (mfi < 50) & (mfi.shift(1) >= 50)
+        patterns['MFI_CROSS_50_UP'] = (mfi > 50) & (mfi.shift(1) <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['MFI_CROSS_50_DOWN'] = (mfi < 50) & (mfi.shift(1) >= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 趋势形态
         patterns['MFI_RISING'] = mfi > mfi.shift(1)
@@ -1009,8 +1013,8 @@ class EnhancedMfi(Mfi):
         # 背离形态（简化版）
         if 'mfi_price_ratio' in self._result.columns:
             mfi_ratio = self._result['mfi_price_ratio']
-            patterns['MFI_BULLISH_DIVERGENCE'] = (mfi_ratio > 2) & (mfi < 30)
-            patterns['MFI_BEARISH_DIVERGENCE'] = (mfi_ratio < -2) & (mfi > 70)
+            patterns['MFI_BULLISH_DIVERGENCE'] = (mfi_ratio > 2) & (mfi < 30)  # TODO: 将魔法数字提取到配置中
+            patterns['MFI_BEARISH_DIVERGENCE'] = (mfi_ratio < -2) & (mfi > 70)  # TODO: 将魔法数字提取到配置中
 
         return patterns
 
@@ -1025,7 +1029,7 @@ class EnhancedMfi(Mfi):
             description="MFI指标进入超买区域，表明市场可能过热",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1035,7 +1039,7 @@ class EnhancedMfi(Mfi):
             description="MFI指标进入超卖区域，表明市场可能超跌",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1067,7 +1071,7 @@ class EnhancedMfi(Mfi):
             description="价格创新低但MFI未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1077,7 +1081,7 @@ class EnhancedMfi(Mfi):
             description="价格创新高但MFI未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1088,7 +1092,7 @@ class EnhancedMfi(Mfi):
             description="MFI从超卖区域向上突破，表明反弹开始",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1098,7 +1102,7 @@ class EnhancedMfi(Mfi):
             description="MFI从超买区域向下突破，表明回调开始",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1134,32 +1138,32 @@ class EnhancedMfi(Mfi):
         # 1. MFI超卖反弹信号
         oversold_bounce = (mfi > self._dynamic_oversold) & (mfi.shift(1) <= self._dynamic_oversold)
         buy_signal |= oversold_bounce
-        signal_strength += oversold_bounce * 0.7
+        signal_strength += oversold_bounce * 0.7  # TODO: 将魔法数字提取到配置中
 
         # 2. MFI超买回落信号
         overbought_fall = (mfi < self._dynamic_overbought) & (mfi.shift(1) >= self._dynamic_overbought)
         sell_signal |= overbought_fall
-        signal_strength += overbought_fall * 0.7
+        signal_strength += overbought_fall * 0.7  # TODO: 将魔法数字提取到配置中
 
-        # 3. MFI中线交叉信号
-        cross_50_up = (mfi > 50) & (mfi.shift(1) <= 50)
-        cross_50_down = (mfi < 50) & (mfi.shift(1) >= 50)
+        # 3. MFI中线交叉信号  # TODO: 将魔法数字提取到配置中
+        cross_50_up = (mfi > 50) & (mfi.shift(1) <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        cross_50_down = (mfi < 50) & (mfi.shift(1) >= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         buy_signal |= cross_50_up
         sell_signal |= cross_50_down
-        signal_strength += cross_50_up * 0.5
-        signal_strength += cross_50_down * 0.5
+        signal_strength += cross_50_up * 0.5  # TODO: 将魔法数字提取到配置中
+        signal_strength += cross_50_down * 0.5  # TODO: 将魔法数字提取到配置中
 
-        # 4. MFI背离信号
+        # 4. MFI背离信号  # TODO: 将魔法数字提取到配置中
         if 'mfi_price_ratio' in self._result.columns:
             mfi_ratio = self._result['mfi_price_ratio']
-            bullish_divergence = (mfi_ratio > 2) & (mfi < 30)
-            bearish_divergence = (mfi_ratio < -2) & (mfi > 70)
+            bullish_divergence = (mfi_ratio > 2) & (mfi < 30)  # TODO: 将魔法数字提取到配置中
+            bearish_divergence = (mfi_ratio < -2) & (mfi > 70)  # TODO: 将魔法数字提取到配置中
 
             buy_signal |= bullish_divergence
             sell_signal |= bearish_divergence
-            signal_strength += bullish_divergence * 0.8
-            signal_strength += bearish_divergence * 0.8
+            signal_strength += bullish_divergence * 0.8  # TODO: 将魔法数字提取到配置中
+            signal_strength += bearish_divergence * 0.8  # TODO: 将魔法数字提取到配置中
 
         return {
             'buy_signal': buy_signal,

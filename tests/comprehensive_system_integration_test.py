@@ -834,6 +834,7 @@ class ComprehensiveSystemIntegrationTest(unittest.TestCase):
         try:
             # 测试策略生成器接口
             from strategy.historical_buypoint_strategy_generator import HistoricalBuyPointStrategyGenerator
+from db.sql_manager import SQLManager, QueryType
 
             generator = HistoricalBuyPointStrategyGenerator()
 

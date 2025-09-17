@@ -8,6 +8,7 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_chip_distribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
@@ -221,10 +222,10 @@ class Test_chip_distribution(unittest.TestCase, IndicatorTestMixin, LogCaptureMi
     def test_chip_distribution_with_turnover_rate(self):
         """测试ChipDistribution带换手率数据的计算"""
         # 添加换手率数据
-        data_with_turnover = self.data.copy()
-        data_with_turnover['turnover_rate'] = np.random.uniform(0.5, 5.0, len(self.data))
+        data_with_turnover_rate = self.data.copy()
+        data_with_turnover_rate['turnover_rate'] = np.random.uniform(0.5, 5.0, len(self.data))
         
-        result = self.indicator.calculate(data_with_turnover)
+        result = self.indicator.calculate(data_with_turnover_rate)
         
         # 验证计算结果
         self.assert_is_instance(result, pd.DataFrame)

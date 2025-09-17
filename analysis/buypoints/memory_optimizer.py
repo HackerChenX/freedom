@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -27,7 +28,8 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -62,6 +64,9 @@ class MemoryMonitor:
     """内存监控器"""
 
     def __init__(self, target: MemoryTarget):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.target = target
         self.stats = MemoryStats()
         self.monitoring_active = False
@@ -153,6 +158,9 @@ class DataChunker:
     """智能数据分块器"""
 
     def __init__(self, config: ChunkConfig, memory_monitor: MemoryMonitor):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.memory_monitor = memory_monitor
         self.current_chunk_size = config.base_chunk_size
@@ -224,6 +232,9 @@ class MemoryPool:
     """内存池管理器"""
 
     def __init__(self, max_size_gb: float = 2.0):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.max_size_gb = max_size_gb
         self.pools = {
             'dataframes': OrderedDict(),
@@ -406,7 +417,7 @@ def memory_optimized(cleanup_vars: List[str] = None):
         return wrapper
     return decorator
 
-class MemoryOptimizer:
+class MemoryOptimizationService:
     """
     内存管理优化器
 
@@ -416,6 +427,9 @@ class MemoryOptimizer:
     def __init__(self,
                  target: Optional[MemoryTarget] = None,
                  chunk_config: Optional[ChunkConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化内存优化器"""
         self.target = target or MemoryTarget()
         self.chunk_config = chunk_config or ChunkConfig()

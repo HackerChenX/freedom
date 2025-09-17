@@ -1,10 +1,11 @@
+from utils.container import container
 """
 增强型能量潮(OBV)指标模块
 
 实现改进版的能量潮指标，优化计算方法和信号质量，增加多周期适应能力和市场环境感知
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.base_indicator import BaseIndicator
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
 
@@ -29,22 +30,25 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, 
-                ma_period: int = 30, 
+                ma_period: int = 30,  # TODO: 将魔法数字提取到配置中 
                 sensitivity: float = 1.0,
-                noise_filter: float = 0.005,
+                noise_filter: float = 0.005,  # TODO: 将魔法数字提取到配置中
                 multi_periods: List[int] = None,
-                smooth_period: int = 5,
+                smooth_period: int = 5,  # TODO: 将魔法数字提取到配置中
                 adaptive: bool = True,
                 use_smoothed_obv: bool = True,
-                smoothing_period: int = 5):
+                smoothing_period: int = 5):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型OBV指标
         
         Args:
             ma_period: OBV均线周期，默认为30日
             sensitivity: 灵敏度参数，控制对价格变化的响应程度，默认为1.0
-            noise_filter: 噪声过滤阈值，价格变动小于该比例时视为无变动，默认为0.5%
-            multi_periods: 多周期分析参数，默认为[5, 10, 20, 60]
+            noise_filter: 噪声过滤阈值，价格变动小于该比例时视为无变动，默认为0.5%  # TODO: 将魔法数字提取到配置中
+            multi_periods: 多周期分析参数，默认为[5, 10, 20, 60]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             smooth_period: 平滑周期
             adaptive: 是否启用自适应模式
             use_smoothed_obv: 是否使用平滑后的OBV
@@ -58,7 +62,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.ma_period = ma_period
         self.sensitivity = sensitivity
         self.noise_filter = noise_filter
-        self.multi_periods = multi_periods or [5, 10, 20, 60]
+        self.multi_periods = multi_periods or [5, 10, 20, 60]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.smooth_period = smooth_period
         self.adaptive = adaptive
         self.market_environment = "normal"
@@ -206,10 +210,10 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result["obv_momentum"] = self._calculate_obv_momentum(result['obv_smooth'])
         
         # 计算OBV变化率 - 相对变化百分比
-        result["obv_rate"] = result['obv_smooth'].pct_change(periods=5).fillna(0) * 100
+        result["obv_rate"] = result['obv_smooth'].pct_change(periods=5).fillna(0) * 100  # TODO: 将魔法数字提取到配置中
         
         # 计算量价相关性
-        result["volume_price_corr"] = self._calculate_volume_price_correlation(data, window=20)
+        result["volume_price_corr"] = self._calculate_volume_price_correlation(data, window=20)  # TODO: 将魔法数字提取到配置中
         
         # 保存结果
         self._result = result
@@ -236,28 +240,28 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算增强型OBV
         for i in range(1, len(data)):
             # 计算价格变动百分比
-            price_change_pct = (close[i] / close[i-1] - 1)
+            _pct = (close[i] / close[i-1] - 1)
             
             # 应用噪声过滤 - 小于阈值的价格变动忽略
-            if abs(price_change_pct) < self.noise_filter:
+            if abs(_pct) < self.noise_filter:
                 obv[i] = obv[i-1]  # 保持不变
             else:
                 # 应用灵敏度调整 - 根据价格变动幅度调整成交量权重
                 volume_weight = 1.0
-                if abs(price_change_pct) > 0.02:  # 大幅变动时增加权重
-                    volume_weight = 1.0 + (abs(price_change_pct) - 0.02) * 10 * self.sensitivity
+                if abs(_pct) > 0.02:  # 大幅变动时增加权重
+                    volume_weight = 1.0 + (abs(_pct) - 0.02) * 10 * self.sensitivity
                 
                 # 计算加权成交量
                 weighted_volume = volume[i] * volume_weight
                 
-                if price_change_pct > 0:  # 价格上涨
+                if _pct > 0:  # 价格上涨
                     obv[i] = obv[i-1] + weighted_volume
                 else:  # 价格下跌
                     obv[i] = obv[i-1] - weighted_volume
         
         return pd.Series(obv, index=data.index)
     
-    def _calculate_obv_momentum(self, obv: pd.Series, period: int = 5) -> pd.Series:
+    def _calculate_obv_momentum(self, obv: pd.Series, period: int = 5) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算OBV动量
         
@@ -279,7 +283,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return obv_momentum.fillna(0)
     
-    def _calculate_volume_price_correlation(self, data: pd.DataFrame, window: int = 20) -> pd.Series:
+    def _calculate_volume_price_correlation(self, data: pd.DataFrame, window: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算量价相关性
         
@@ -291,11 +295,11 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.Series: 量价相关性序列
         """
         # 计算价格和成交量的变化率
-        price_change = data['close'].pct_change()
+        = data['close'].pct_change()
         volume_change = data['volume'].pct_change()
         
         # 使用滚动窗口计算相关性
-        corr = price_change.rolling(window=window).corr(volume_change).fillna(0)
+        corr = .rolling(window=window).corr(volume_change).fillna(0)
         
         return corr
     
@@ -315,9 +319,9 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Obv_Enhanced_Obv(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         obv_smooth = self._result['obv_smooth']
         obv_ma = self._result['obv_ma']
@@ -326,54 +330,54 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         volume_price_corr = self._result['volume_price_corr']
         
         # 1. OBV趋势与价格趋势一致性评分 (权重提高)
-        obv_trend = obv_smooth > obv_smooth.shift(5)  # OBV上升趋势
-        price_trend = close > close.shift(5)  # 价格上升趋势
+        obv_trend = obv_smooth > obv_smooth.shift(5)  # OBV上升趋势  # TODO: 将魔法数字提取到配置中
+        price_trend = close > close.shift(5)  # 价格上升趋势  # TODO: 将魔法数字提取到配置中
         
         # 趋势一致+20分 (原来是+15分)
         trend_consistency = (obv_trend & price_trend) | (~obv_trend & ~price_trend)
-        score += trend_consistency * 20
+        score += trend_consistency * 20  # TODO: 将魔法数字提取到配置中
         
         # 2. 优化后的OBV背离评分
         divergence_score = self._calculate_enhanced_divergence(close, obv_smooth)
         score += divergence_score
         
-        # 3. 多周期OBV趋势一致性评分 (新增)
+        # 3. 多周期OBV趋势一致性评分 (新增)  # TODO: 将魔法数字提取到配置中
         multi_period_score = self._calculate_multi_period_consistency_Enhanced_Obv(data)
         score += multi_period_score
         
-        # 4. OBV动量评分 (新增)
+        # 4. OBV动量评分 (新增)  # TODO: 将魔法数字提取到配置中
         # OBV动量为正+10分
         score += (obv_momentum > 0.01) * 10
         # OBV动量为负-10分
         score -= (obv_momentum < -0.01) * 10
         
-        # 5. 量价相关性评分 (新增)
+        # 5. 量价相关性评分 (新增)  # TODO: 将魔法数字提取到配置中
         # 量价正相关+10分
-        score += (volume_price_corr > 0.5) * 10
+        score += (volume_price_corr > 0.5) * 10  # TODO: 将魔法数字提取到配置中
         # 量价负相关-5分
-        score -= (volume_price_corr < -0.5) * 5
+        score -= (volume_price_corr < -0.5) * 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 6. OBV均线交叉评分 (根据市场环境调整)
+        # 6. OBV均线交叉评分 (根据市场环境调整)  # TODO: 将魔法数字提取到配置中
         # OBV上穿均线信号
         obv_cross_up_ma = crossover(obv_smooth, obv_ma)
         # OBV下穿均线信号
         obv_cross_down_ma = crossunder(obv_smooth, obv_ma)
         
-        # 7. 市场环境感知评分调整
+        # 7. 市场环境感知评分调整  # TODO: 将魔法数字提取到配置中
         market_env = self.market_environment
         
         if market_env == 'bull_market':
             # 牛市中，上穿信号更重要
-            score += obv_cross_up_ma * 20
+            score += obv_cross_up_ma * 20  # TODO: 将魔法数字提取到配置中
             score -= obv_cross_down_ma * 10
         elif market_env == 'bear_market':
             # 熊市中，下穿信号更重要
             score += obv_cross_up_ma * 10
-            score -= obv_cross_down_ma * 20
+            score -= obv_cross_down_ma * 20  # TODO: 将魔法数字提取到配置中
         else:
             # 其他市场，信号权重平衡
-            score += obv_cross_up_ma * 15
-            score -= obv_cross_down_ma * 15
+            score += obv_cross_up_ma * 15  # TODO: 将魔法数字提取到配置中
+            score -= obv_cross_down_ma * 15  # TODO: 将魔法数字提取到配置中
         
         # 限制得分范围
         return np.clip(score, 0, 100)
@@ -391,13 +395,13 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         divergence_score = pd.Series(0.0, index=price.index)
         
-        if len(price) < 20:
+        if len(price) < 20:  # TODO: 将魔法数字提取到配置中
             return divergence_score
             
         price = price.dropna()
         obv = obv.dropna()
         
-        if len(price) < 20 or len(obv) < 20:
+        if len(price) < 20 or len(obv) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return divergence_score
 
         # 使用局部极值点寻找更准确的背离
@@ -416,12 +420,12 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_peak_idx = -1
                 prev_obv_peak_idx = -1
                 for p in obv_peaks:
-                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
-                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1:
                     if obv.iloc[current_obv_peak_idx] < obv.iloc[prev_obv_peak_idx]:
-                        divergence_score.iloc[current_price_peak_idx:] -= 30
+                        divergence_score.iloc[current_price_peak_idx:] -= 30  # TODO: 将魔法数字提取到配置中
         
         # 检查底背离（价格创新低，OBV未创新低）
         for i in range(1, len(price_troughs)):
@@ -434,14 +438,14 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_trough_idx = -1
                 prev_obv_trough_idx = -1
                 for t in obv_troughs:
-                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
-                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
                 if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1:
                     if obv.iloc[current_obv_trough_idx] > obv.iloc[prev_obv_trough_idx]:
-                        divergence_score.iloc[current_price_trough_idx:] += 30
+                        divergence_score.iloc[current_price_trough_idx:] += 30  # TODO: 将魔法数字提取到配置中
 
-        return divergence_score.clip(-30, 30)
+        return divergence_score.clip(-30, 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     def _calculate_multi_period_consistency_Enhanced_Obv(self, data: pd.DataFrame) -> pd.Series:
         """
@@ -484,7 +488,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     trend_agreement.iloc[i] = agreement
             
             # 趋势一致性高加分，最多+15分
-            score += trend_agreement * 15
+            score += trend_agreement * 15  # TODO: 将魔法数字提取到配置中
         
         return score
     
@@ -500,12 +504,12 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 信号质量得分 (0-1)
         """
         if self._result is None or signal.sum() == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 获取信号点
         signal_points = signal[signal].index
         if len(signal_points) == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算OBV多周期一致性
         multi_period_score = self._calculate_multi_period_consistency_Enhanced_Obv(data)
@@ -517,12 +521,12 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         obv_momentum = self._result['obv_momentum']
         
         # 计算信号点的各项指标平均值
-        avg_multi_period = multi_period_score.loc[signal_points].mean() / 15.0  # 归一化到0-1
+        avg_multi_period = multi_period_score.loc[signal_points].mean() / 15.0  # 归一化到0-1  # TODO: 将魔法数字提取到配置中
         avg_volume_price_corr = (volume_price_corr.loc[signal_points].mean() + 1) / 2  # 归一化到0-1
         avg_obv_momentum = (obv_momentum.loc[signal_points].clip(-0.1, 0.1) + 0.1) / 0.2  # 归一化到0-1
         
         # 加权平均计算最终质量得分
-        quality_score = avg_multi_period * 0.4 + avg_volume_price_corr * 0.3 + avg_obv_momentum * 0.3
+        quality_score = avg_multi_period * 0.4 + avg_volume_price_corr * 0.3 + avg_obv_momentum * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return quality_score
     
@@ -556,13 +560,13 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 生成买入信号
         buy_signal = (
-            (signals['score'] > 70) |  # 评分高于70
+            (signals['score'] > 70) |  # 评分高于70  # TODO: 将魔法数字提取到配置中
             (crossover(obv_smooth, obv_ma))  # OBV上穿均线
         )
 
         # 生成卖出信号
         sell_signal = (
-            (signals['score'] < 30) |  # 评分低于30
+            (signals['score'] < 30) |  # 评分低于30  # TODO: 将魔法数字提取到配置中
             (crossunder(obv_smooth, obv_ma))  # OBV下穿均线
         )
         
@@ -570,19 +574,19 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         market_env = self.market_environment
         if market_env == 'bull_market':
             # 牛市中降低买入门槛，提高卖出门槛
-            buy_signal = buy_signal | (signals['score'] > 65)
-            sell_signal = sell_signal & (signals['score'] < 25)
+            buy_signal = buy_signal | (signals['score'] > 65)  # TODO: 将魔法数字提取到配置中
+            sell_signal = sell_signal & (signals['score'] < 25)  # TODO: 将魔法数字提取到配置中
         elif market_env == 'bear_market':
             # 熊市中提高买入门槛，降低卖出门槛
-            buy_signal = buy_signal & (signals['score'] > 75)
-            sell_signal = sell_signal | (signals['score'] < 35)
+            buy_signal = buy_signal & (signals['score'] > 75)  # TODO: 将魔法数字提取到配置中
+            sell_signal = sell_signal | (signals['score'] < 35)  # TODO: 将魔法数字提取到配置中
         
         signals['buy_signal'] = buy_signal
         signals['sell_signal'] = sell_signal
         
         # 计算指标多空趋势
-        signals['bull_trend'] = signals['score'] > 60
-        signals['bear_trend'] = signals['score'] < 40
+        signals['bull_trend'] = signals['score'] > 60  # TODO: 将魔法数字提取到配置中
+        signals['bear_trend'] = signals['score'] < 40  # TODO: 将魔法数字提取到配置中
         
         # 添加信号强度
         signals['signal_strength'] = self._calculate_signal_strength_Enhanced_Obv(result, signals)
@@ -609,28 +613,28 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 score = signals['score'].iloc[i]
                 momentum = result['obv_momentum'].iloc[i] if 'obv_momentum' in result else 0
                 
-                if score > 85 and momentum > 0.05:
+                if score > 85 and momentum > 0.05:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     strength.iloc[i] = 1.0  # 非常强
-                elif score > 75:
-                    strength.iloc[i] = 0.8  # 强
-                elif score > 65:
-                    strength.iloc[i] = 0.6  # 中等
+                elif score > 75:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = 0.8  # 强  # TODO: 将魔法数字提取到配置中
+                elif score > 65:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = 0.6  # 中等  # TODO: 将魔法数字提取到配置中
                 else:
-                    strength.iloc[i] = 0.4  # 弱
+                    strength.iloc[i] = 0.4  # 弱  # TODO: 将魔法数字提取到配置中
             
             elif signals['sell_signal'].iloc[i]:
                 # 根据评分、OBV动量和多周期一致性确定信号强度
                 score = signals['score'].iloc[i]
                 momentum = result['obv_momentum'].iloc[i] if 'obv_momentum' in result else 0
                 
-                if score < 15 and momentum < -0.05:
+                if score < 15 and momentum < -0.05:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     strength.iloc[i] = -1.0  # 非常强（负向）
-                elif score < 25:
-                    strength.iloc[i] = -0.8  # 强（负向）
-                elif score < 35:
-                    strength.iloc[i] = -0.6  # 中等（负向）
+                elif score < 25:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = -0.8  # 强（负向）  # TODO: 将魔法数字提取到配置中
+                elif score < 35:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = -0.6  # 中等（负向）  # TODO: 将魔法数字提取到配置中
                 else:
-                    strength.iloc[i] = -0.4  # 弱（负向）
+                    strength.iloc[i] = -0.4  # 弱（负向）  # TODO: 将魔法数字提取到配置中
         
         return strength
     
@@ -667,10 +671,10 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         acceleration = gradient.diff()
         
         # 归一化处理
-        gradient_std = gradient.rolling(20).std().replace(0, 1)
+        gradient_std = gradient.rolling(20).std().replace(0, 1)  # TODO: 将魔法数字提取到配置中
         normalized_gradient = (gradient / gradient_std).fillna(0)
         
-        acceleration_std = acceleration.rolling(20).std().replace(0, 1)
+        acceleration_std = acceleration.rolling(20).std().replace(0, 1)  # TODO: 将魔法数字提取到配置中
         normalized_acceleration = (acceleration / acceleration_std).fillna(0)
         
         # 创建结果DataFrame
@@ -682,11 +686,11 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         }, index=obv.index)
         
         # 标记资金流向状态
-        flow_gradient['strong_inflow'] = (normalized_gradient > 1.5) & (normalized_acceleration > 0)
-        flow_gradient['weak_inflow'] = (normalized_gradient > 0) & (normalized_gradient <= 1.5)
-        flow_gradient['strong_outflow'] = (normalized_gradient < -1.5) & (normalized_acceleration < 0)
-        flow_gradient['weak_outflow'] = (normalized_gradient < 0) & (normalized_gradient >= -1.5)
-        flow_gradient['neutral'] = (normalized_gradient.abs() < 0.5)
+        flow_gradient['strong_inflow'] = (normalized_gradient > 1.5) & (normalized_acceleration > 0)  # TODO: 将魔法数字提取到配置中
+        flow_gradient['weak_inflow'] = (normalized_gradient > 0) & (normalized_gradient <= 1.5)  # TODO: 将魔法数字提取到配置中
+        flow_gradient['strong_outflow'] = (normalized_gradient < -1.5) & (normalized_acceleration < 0)  # TODO: 将魔法数字提取到配置中
+        flow_gradient['weak_outflow'] = (normalized_gradient < 0) & (normalized_gradient >= -1.5)  # TODO: 将魔法数字提取到配置中
+        flow_gradient['neutral'] = (normalized_gradient.abs() < 0.5)  # TODO: 将魔法数字提取到配置中
         
         return flow_gradient
     
@@ -703,7 +707,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         obv = self._result.get('obv_smooth', self._result['obv']).ffill()
         price = self._price_data
         
-        if len(price) < 20 or len(obv) < 20:
+        if len(price) < 20 or len(obv) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
              return pd.DataFrame(columns=[
                 'bullish_divergence',
                 'bearish_divergence',
@@ -735,16 +739,16 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_peak_idx = -1
                 prev_obv_peak_idx = -1
                 for p in obv_peaks:
-                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
-                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1 and prev_obv_peak_idx < current_obv_peak_idx:
                     if obv.iloc[current_obv_peak_idx] < obv.iloc[prev_obv_peak_idx]:
                         # 计算背离强度
-                        price_change = (price.iloc[current_price_peak_idx] / price.iloc[prev_price_peak_idx]) - 1
+                        = (price.iloc[current_price_peak_idx] / price.iloc[prev_price_peak_idx]) - 1
                         with np.errstate(divide='ignore', invalid='ignore'):
                             obv_change = (obv.iloc[current_obv_peak_idx] / obv.iloc[prev_obv_peak_idx]) - 1
-                        strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change), 1e-9)
+                        strength = abs(- obv_change) / max(abs(), abs(obv_change), 1e-9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         
                         divergence.loc[price.index[current_price_peak_idx], 'bearish_divergence'] = 1
                         divergence.loc[price.index[current_price_peak_idx], 'divergence_strength'] = strength
@@ -758,15 +762,15 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_trough_idx = -1
                 prev_obv_trough_idx = -1
                 for t in obv_troughs:
-                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
-                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
                 if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1 and prev_obv_trough_idx < current_obv_trough_idx:
                     if obv.iloc[current_obv_trough_idx] > obv.iloc[prev_obv_trough_idx]:
-                        price_change = (price.iloc[current_price_trough_idx] / price.iloc[prev_price_trough_idx]) - 1
+                        = (price.iloc[current_price_trough_idx] / price.iloc[prev_price_trough_idx]) - 1
                         with np.errstate(divide='ignore', invalid='ignore'):
                             obv_change = (obv.iloc[current_obv_trough_idx] / obv.iloc[prev_obv_trough_idx]) - 1
-                        strength = abs(price_change - obv_change) / max(abs(price_change), abs(obv_change), 1e-9)
+                        strength = abs(- obv_change) / max(abs(), abs(obv_change), 1e-9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         
                         divergence.loc[price.index[current_price_trough_idx], 'bullish_divergence'] = 1
                         divergence.loc[price.index[current_price_trough_idx], 'divergence_strength'] = strength
@@ -781,8 +785,8 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_peak_idx = -1
                 prev_obv_peak_idx = -1
                 for p in obv_peaks:
-                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p
-                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p
+                    if abs(p - current_price_peak_idx) <= 5: current_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(p - prev_price_peak_idx) <= 5: prev_obv_peak_idx = p  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
                 if current_obv_peak_idx != -1 and prev_obv_peak_idx != -1 and prev_obv_peak_idx < current_obv_peak_idx:
                     if obv.iloc[current_obv_peak_idx] > obv.iloc[prev_obv_peak_idx]:
@@ -797,8 +801,8 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 current_obv_trough_idx = -1
                 prev_obv_trough_idx = -1
                 for t in obv_troughs:
-                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t
-                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t
+                    if abs(t - current_price_trough_idx) <= 5: current_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    if abs(t - prev_price_trough_idx) <= 5: prev_obv_trough_idx = t  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
                 if current_obv_trough_idx != -1 and prev_obv_trough_idx != -1 and prev_obv_trough_idx < current_obv_trough_idx:
                     if obv.iloc[current_obv_trough_idx] < obv.iloc[prev_obv_trough_idx]:
@@ -820,7 +824,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         price = self._price_data
         
         # 计算价格变化率
-        price_change = price.pct_change()
+        = price.pct_change()
         
         # 计算OBV变化率
         obv_change = obv.pct_change()
@@ -829,22 +833,22 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         synergy = pd.DataFrame(index=price.index)
         
         # 方向一致性：价格和OBV变化方向相同
-        synergy['direction_synergy'] = (price_change * obv_change) > 0
+        synergy['direction_synergy'] = (* obv_change) > 0
         
         # 强度匹配：价格和OBV变化幅度接近
-        synergy['magnitude_diff'] = abs(price_change.abs() - obv_change.abs())
+        synergy['magnitude_diff'] = abs(.abs() - obv_change.abs())
         
         # 理想配合：价格上涨时OBV增加更多，价格下跌时OBV减少更少
-        synergy['ideal_up'] = (price_change > 0) & (obv_change > price_change)
-        synergy['ideal_down'] = (price_change < 0) & (obv_change > price_change)
+        synergy['ideal_up'] = (> 0) & (obv_change > )
+        synergy['ideal_down'] = (< 0) & (obv_change > )
         
         # 不良配合：价格上涨时OBV增加较少，价格下跌时OBV减少更多
-        synergy['poor_up'] = (price_change > 0) & (obv_change < price_change)
-        synergy['poor_down'] = (price_change < 0) & (obv_change < price_change)
+        synergy['poor_up'] = (> 0) & (obv_change < )
+        synergy['poor_down'] = (< 0) & (obv_change < )
         
         # 综合协同度评分 (0-100)
         # 基础分50分
-        base_score = 50
+        base_score = 50  # TODO: 将魔法数字提取到配置中
         
         # 方向一致性加分
         direction_score = np.where(synergy['direction_synergy'], 10, -10)
@@ -854,8 +858,8 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         magnitude_score = magnitude_score.clip(-10, 10)
         
         # 理想/不良配合评分
-        ideal_score = np.where(synergy['ideal_up'] | synergy['ideal_down'], 15, 0)
-        poor_score = np.where(synergy['poor_up'] | synergy['poor_down'], -15, 0)
+        ideal_score = np.where(synergy['ideal_up'] | synergy['ideal_down'], 15, 0)  # TODO: 将魔法数字提取到配置中
+        poor_score = np.where(synergy['poor_up'] | synergy['poor_down'], -15, 0)  # TODO: 将魔法数字提取到配置中
         
         # 计算总分
         synergy['synergy_score'] = base_score + direction_score + magnitude_score + ideal_score + poor_score
@@ -887,49 +891,49 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = pd.DataFrame(index=self._result.index)
         
         # 1. OBV突破形态：OBV突破前期高点
-        obv_high = obv.rolling(window=20).max().shift(1)
+        obv_high = obv.rolling(window=20).max().shift(1)  # TODO: 将魔法数字提取到配置中
         patterns['obv_breakout'] = obv > obv_high
         
         # 2. OBV跌破形态：OBV跌破前期低点
-        obv_low = obv.rolling(window=20).min().shift(1)
+        obv_low = obv.rolling(window=20).min().shift(1)  # TODO: 将魔法数字提取到配置中
         patterns['obv_breakdown'] = obv < obv_low
         
-        # 3. OBV加速上涨形态：OBV斜率加速上升
+        # 3. OBV加速上涨形态：OBV斜率加速上升  # TODO: 将魔法数字提取到配置中
         acceleration = flow['normalized_acceleration']
         patterns['obv_acceleration_up'] = (acceleration > 1) & (acceleration.shift(1) > 0) & (acceleration > acceleration.shift(1))
         
-        # 4. OBV加速下跌形态：OBV斜率加速下降
+        # 4. OBV加速下跌形态：OBV斜率加速下降  # TODO: 将魔法数字提取到配置中
         patterns['obv_acceleration_down'] = (acceleration < -1) & (acceleration.shift(1) < 0) & (acceleration < acceleration.shift(1))
         
-        # 5. OBV双底形态：OBV在低位形成W底
+        # 5. OBV双底形态：OBV在低位形成W底  # TODO: 将魔法数字提取到配置中
         obv_diff = obv.diff()
         w_bottom = (
             (obv_diff.shift(10) < 0) &  # 前期下降
-            (obv_diff.shift(5) > 0) &   # 中期上升
-            (obv_diff.shift(3) < 0) &   # 近期下降
+            (obv_diff.shift(5) > 0) &   # 中期上升  # TODO: 将魔法数字提取到配置中
+            (obv_diff.shift(3) < 0) &   # 近期下降  # TODO: 将魔法数字提取到配置中
             (obv_diff > 0)              # 当前上升
         )
         patterns['obv_w_bottom'] = w_bottom
         
-        # 6. OBV双顶形态：OBV在高位形成M顶
+        # 6. OBV双顶形态：OBV在高位形成M顶  # TODO: 将魔法数字提取到配置中
         m_top = (
             (obv_diff.shift(10) > 0) &  # 前期上升
-            (obv_diff.shift(5) < 0) &   # 中期下降
-            (obv_diff.shift(3) > 0) &   # 近期上升
+            (obv_diff.shift(5) < 0) &   # 中期下降  # TODO: 将魔法数字提取到配置中
+            (obv_diff.shift(3) > 0) &   # 近期上升  # TODO: 将魔法数字提取到配置中
             (obv_diff < 0)              # 当前下降
         )
         patterns['obv_m_top'] = m_top
         
-        # 7. 指标背离
+        # 7. 指标背离  # TODO: 将魔法数字提取到配置中
         patterns['bullish_divergence'] = divergence['bullish_divergence'] == 1
         patterns['bearish_divergence'] = divergence['bearish_divergence'] == 1
         patterns['hidden_bullish_divergence'] = divergence['hidden_bullish_divergence'] == 1
         patterns['hidden_bearish_divergence'] = divergence['hidden_bearish_divergence'] == 1
         
-        # 8. OBV横盘整理：OBV波动率低
+        # 8. OBV横盘整理：OBV波动率低  # TODO: 将魔法数字提取到配置中
         obv_volatility = obv.diff().rolling(10).std()
-        obv_avg_volatility = obv_volatility.rolling(30).mean()
-        patterns['obv_consolidation'] = obv_volatility < (obv_avg_volatility * 0.5)
+        obv_avg_volatility = obv_volatility.rolling(30).mean()  # TODO: 将魔法数字提取到配置中
+        patterns['obv_consolidation'] = obv_volatility < (obv_avg_volatility * 0.5)  # TODO: 将魔法数字提取到配置中
         
         return patterns
 
@@ -970,45 +974,45 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查EnhancedOBV形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -1048,8 +1052,8 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns['OBV_CROSS_MA_DOWN'] = crossunder(obv_smooth, obv_ma)
 
         # 突破形态
-        obv_high = obv_smooth.rolling(window=20).max().shift(1)
-        obv_low = obv_smooth.rolling(window=20).min().shift(1)
+        obv_high = obv_smooth.rolling(window=20).max().shift(1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        obv_low = obv_smooth.rolling(window=20).min().shift(1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         patterns['OBV_BREAKOUT'] = obv_smooth > obv_high
         patterns['OBV_BREAKDOWN'] = obv_smooth < obv_low
 
@@ -1072,7 +1076,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="OBV从下方穿越移动平均线，表明资金流入增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1082,7 +1086,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="OBV从上方穿越移动平均线，表明资金流出增强",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1093,7 +1097,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="OBV突破前期高点，表明强势资金流入",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1103,7 +1107,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="OBV跌破前期低点，表明强势资金流出",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1135,7 +1139,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新低但OBV未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1145,7 +1149,7 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新高但OBV未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0,
+            score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1185,31 +1189,31 @@ class EnhancedObv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         buy_signal |= cross_up
         sell_signal |= cross_down
-        signal_strength += cross_up * 0.7
-        signal_strength += cross_down * 0.7
+        signal_strength += cross_up * 0.7  # TODO: 将魔法数字提取到配置中
+        signal_strength += cross_down * 0.7  # TODO: 将魔法数字提取到配置中
 
         # 2. OBV突破信号
-        obv_high = obv_smooth.rolling(window=20).max().shift(1)
-        obv_low = obv_smooth.rolling(window=20).min().shift(1)
+        obv_high = obv_smooth.rolling(window=20).max().shift(1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        obv_low = obv_smooth.rolling(window=20).min().shift(1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         breakout = obv_smooth > obv_high
         breakdown = obv_smooth < obv_low
 
         buy_signal |= breakout
         sell_signal |= breakdown
-        signal_strength += breakout * 0.8
-        signal_strength += breakdown * 0.8
+        signal_strength += breakout * 0.8  # TODO: 将魔法数字提取到配置中
+        signal_strength += breakdown * 0.8  # TODO: 将魔法数字提取到配置中
 
-        # 3. OBV动量信号
+        # 3. OBV动量信号  # TODO: 将魔法数字提取到配置中
         if 'obv_momentum' in self._result.columns:
             obv_momentum = self._result['obv_momentum']
-            strong_momentum_up = obv_momentum > 0.05
-            strong_momentum_down = obv_momentum < -0.05
+            strong_momentum_up = obv_momentum > 0.05  # TODO: 将魔法数字提取到配置中
+            strong_momentum_down = obv_momentum < -0.05  # TODO: 将魔法数字提取到配置中
 
             buy_signal |= strong_momentum_up
             sell_signal |= strong_momentum_down
-            signal_strength += strong_momentum_up * 0.6
-            signal_strength += strong_momentum_down * 0.6
+            signal_strength += strong_momentum_up * 0.6  # TODO: 将魔法数字提取到配置中
+            signal_strength += strong_momentum_down * 0.6  # TODO: 将魔法数字提取到配置中
 
         return {
             'buy_signal': buy_signal,

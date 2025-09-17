@@ -1,3 +1,4 @@
+from utils.container import container
 """
 性能优化和稳定性提升主控制器
 统一管理性能优化和稳定性增强功能
@@ -65,6 +66,9 @@ class PerformanceStabilityController:
     def __init__(self, 
                  performance_config: Optional[PerformanceOptimizationConfig] = None,
                  stability_config: Optional[StabilityConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.performance_config = performance_config or PerformanceOptimizationConfig()
         self.stability_config = stability_config or StabilityConfig()
         

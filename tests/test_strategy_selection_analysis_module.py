@@ -16,7 +16,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from strategy.enhanced_strategy_config_engine import (
     EnhancedStrategyConfigEngine, StrategyConfig, OperatorType
@@ -24,6 +24,7 @@ from strategy.enhanced_strategy_config_engine import (
 from strategy.enhanced_stock_selection_engine import EnhancedStockSelectionEngine
 from strategy.enhanced_strategy_evaluation_system import EnhancedStrategyEvaluationSystem
 from strategy.strategy_selection_analysis_controller import StrategySelectionAnalysisController
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

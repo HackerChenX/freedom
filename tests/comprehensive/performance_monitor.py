@@ -20,6 +20,7 @@ import logging
 
 from utils.logger import getLogger
 from .monitoring import MetricsCollector, AlertManager, Alert, get_test_monitoring_system
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -406,7 +407,7 @@ class PerformanceMonitor:
         logger.info(f"性能报告已导出到: {file_path}")
 
 
-class PerformanceOptimizer:
+class PerformanceOptimizationService:
     """性能优化器"""
     
     def __init__(self, performance_monitor: PerformanceMonitor):
@@ -522,7 +523,7 @@ def main():
     monitor = PerformanceMonitor(config)
     
     # 创建性能优化器
-    optimizer = PerformanceOptimizer(monitor)
+    optimizer = PerformanceOptimizationService(monitor)
     
     # 开始监控
     monitor.start_monitoring(1000)

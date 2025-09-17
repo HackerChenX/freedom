@@ -229,6 +229,7 @@ except Exception as e:
             
             # 检查是否已经迁移
             if 'from db.query_executor import get_query_executor' in content:
+from db.sql_manager import SQLManager, QueryType
                 return True, f"文件已迁移: {file_path}"
             
             # 确定文件类型和模板

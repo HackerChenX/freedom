@@ -9,6 +9,7 @@
 import os
 import re
 from typing import Dict, List, Set, Tuple
+from db.sql_manager import SQLManager, QueryType
 
 class SimpleSQLScanner:
     """简化SQL扫描器"""

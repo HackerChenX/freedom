@@ -8,6 +8,7 @@
 from typing import Dict, List, Any, Optional
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

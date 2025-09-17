@@ -14,6 +14,7 @@ import random
 import numpy as np
 import pandas as pd
 from typing import List, Dict, Any, Optional, Union, Tuple
+from db.sql_manager import SQLManager, QueryType
 
 # 设置随机种子，确保测试数据可重现
 np.random.seed(42)
@@ -180,7 +181,7 @@ class Test_data_factory:
                 "close": round(close_price, 2),
                 "volume": volume,
                 "amount": round(amount, 2),
-                "turnover": round(random.uniform(1, 8), 2)  # 换手率
+                "turnover_rate": round(random.uniform(1, 8), 2)  # 换手率
             })
         
         return pd.DataFrame(kline_data)

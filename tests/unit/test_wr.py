@@ -9,6 +9,7 @@ from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from indicators.wr import WR
 from tests.helper.log_capture import LogCaptureMixin
+from db.sql_manager import SQLManager, QueryType
 
 
 class Testwr_wr(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):

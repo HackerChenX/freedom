@@ -19,7 +19,7 @@ sys.path.insert(0, root_dir)
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.period_manager import PeriodManager
 from enums.kline_period import Kline_period
 
@@ -178,11 +178,8 @@ class PeriodDataProcessor:
             '最高': 'high',
             '最低': 'low',
             '成交量': 'volume',
-            '换手率': 'turnover_rate',
-            '涨跌幅': 'price_change',
-            '振幅': 'price_range',
-            '行业': 'industry',
-            '时间': 'datetime',
+            '换手率': 'turnover',
+            '涨跌幅': '振幅': '行业': '时间': 'datetime',
             '序号': 'seq'
         }
 

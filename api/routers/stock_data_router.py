@@ -119,8 +119,7 @@ def get_stock_data(
         # 构建查询SQL
         query = f"""
         SELECT code, name, date, open, high, low, close, volume, turnover_rate
-        FROM stock_info 
-        WHERE code = '{stock_code}'
+        FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
         AND level = '{level}'
         AND date >= '{start_date}' AND date <= '{end_date}'
         ORDER BY date ASC
@@ -264,8 +263,7 @@ def get_latest_stock_data(
         # 构建查询SQL
         query = f"""
         SELECT code, name, date, open, high, low, close, volume, turnover_rate
-        FROM stock_info 
-        WHERE code = '{stock_code}'
+        FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
         AND level = '日线'
         ORDER BY date DESC
         LIMIT 1
@@ -300,6 +298,7 @@ def _generate_mock_stock_data(stock_code: str, start_date: str, end_date: str) -
     """生成模拟股票数据"""
     import numpy as np
     from datetime import datetime, timedelta
+from db.sql_manager import SQLManager, QueryType
     
     start = datetime.strptime(start_date, '%Y-%m-%d')
     end = datetime.strptime(end_date, '%Y-%m-%d')

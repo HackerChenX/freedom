@@ -39,6 +39,7 @@ class RSIProductionTester:
         # 导入RSI指标
         try:
             from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
             self.rsi = RsiRsi()
             logger.info("✅ RSI指标导入成功")
         except Exception as e:

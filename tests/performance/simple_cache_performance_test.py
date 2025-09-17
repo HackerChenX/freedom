@@ -20,6 +20,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

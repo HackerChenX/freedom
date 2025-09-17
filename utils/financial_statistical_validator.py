@@ -23,7 +23,8 @@ from statsmodels.stats.power import ttest_power, chisquare_power
 from statsmodels.stats.contingency_tables import mcnemar
 from statsmodels.stats.multitest import multipletests
 import warnings
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

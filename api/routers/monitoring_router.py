@@ -302,6 +302,7 @@ def configure_alert_rule(request: AlertConfigRequest):
         # 尝试使用真实的预警配置系统
         try:
             from monitoring.alert_config_manager import AlertConfigManager
+from db.sql_manager import SQLManager, QueryType
             config_manager = AlertConfigManager()
             
             # 创建预警规则
@@ -357,6 +358,7 @@ def get_alert_rules():
         # 尝试使用真实的预警配置系统
         try:
             from monitoring.alert_config_manager import AlertConfigManager
+from db.sql_manager import SQLManager, QueryType
             config_manager = AlertConfigManager()
             
             # 获取所有规则

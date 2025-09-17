@@ -1,3 +1,5 @@
+from typing import Dict, Any
+from utils.container import container
 """
 ZXM体系买点和吸筹识别模块
 
@@ -14,12 +16,16 @@ from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import ma, ema, macd, kdj, ref, highest, lowest, cross, crossover, crossunder
 from enums.indicator_types import Indicator_type
 from enums.pattern_types import Buy_point_type, Absorption_pattern_type, Volume_pattern
+from db.sql_manager import SQLManager, QueryType
 
 
 class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """ZXM体系买点和吸筹形态识别指标"""
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM体系模式识别指标"""
         super().__init__()
@@ -35,12 +41,12 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
     def _get_default_parameters_zxmpatterns(self) -> dict:
         """获取默认参数"""
         return {
-            "ma_periods": [5, 10, 20, 30, 60],  # 均线周期
-            "macd_fast": 12,     # MACD快线周期
-            "macd_slow": 26,     # MACD慢线周期
-            "macd_signal": 9,    # MACD信号线周期
-            "kdj_period": 9,     # KDJ周期
-            "volume_ma_periods": [5, 10]  # 成交量均线周期
+            "ma_periods": [5, 10, 20, 30, 60],  # 均线周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            "macd_fast": 12,     # MACD快线周期  # TODO: 将魔法数字提取到配置中
+            "macd_slow": 26,     # MACD慢线周期  # TODO: 将魔法数字提取到配置中
+            "macd_signal": 9,    # MACD信号线周期  # TODO: 将魔法数字提取到配置中
+            "kdj_period": 9,     # KDJ周期  # TODO: 将魔法数字提取到配置中
+            "volume_ma_periods": [5, 10]  # 成交量均线周期  # TODO: 将魔法数字提取到配置中
         }
 
     def set_parameters_Patterns_Zxm_Patterns(self, **kwargs):
@@ -126,14 +132,14 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         volumes = data["volume"].values
 
         # 计算基础指标
-        ma5 = ma(close_prices, 5)
+        ma5 = ma(close_prices, 5)  # TODO: 将魔法数字提取到配置中
         ma10 = ma(close_prices, 10)
-        ma20 = ma(close_prices, 20)
-        ma30 = ma(close_prices, 30)
-        ma60 = ma(close_prices, 60)
+        ma20 = ma(close_prices, 20)  # TODO: 将魔法数字提取到配置中
+        ma30 = ma(close_prices, 30)  # TODO: 将魔法数字提取到配置中
+        ma60 = ma(close_prices, 60)  # TODO: 将魔法数字提取到配置中
 
-        ema12 = ema(close_prices, 12)
-        ema26 = ema(close_prices, 26)
+        ema12 = ema(close_prices, 12)  # TODO: 将魔法数字提取到配置中
+        ema26 = ema(close_prices, 26)  # TODO: 将魔法数字提取到配置中
 
         # 计算MACD
         dif, dea, macd_hist = macd(close_prices)
@@ -142,7 +148,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         k, d, j = kdj(close_prices, high_prices, low_prices)
 
         # 成交量相关指标
-        vol_ma5 = ma(volumes, 5)
+        vol_ma5 = ma(volumes, 5)  # TODO: 将魔法数字提取到配置中
         vol_ma10 = ma(volumes, 10)
 
         # 定义结果字典
@@ -202,17 +208,17 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         length = len(close_prices)
         
         # Pre-calculate highest and lowest values to avoid recalculation in loop
-        highest_20_close = highest(close_prices, 20)
-        highest_20_high = highest(high_prices, 20)
-        lowest_60_low = lowest(low_prices, 60)
+        highest_20_close = highest(close_prices, 20)  # TODO: 将魔法数字提取到配置中
+        highest_20_high = highest(high_prices, 20)  # TODO: 将魔法数字提取到配置中
+        lowest_60_low = lowest(low_prices, 60)  # TODO: 将魔法数字提取到配置中
 
         # 一类买点：主升浪启动
         class_one_buy = np.zeros(length, dtype=bool)
         for i in range(10, length):
             # 前期横盘整理
-            is_sideways = np.std(close_prices[i-10:i-1]) / np.mean(close_prices[i-10:i-1]) < 0.03
+            is_sideways = np.std(close_prices[i-10:i-1]) / np.mean(close_prices[i-10:i-1]) < 0.03  # TODO: 将魔法数字提取到配置中
             # 放量突破
-            volume_breakout = volumes[i] > vol_ma5[i] * 1.5
+            volume_breakout = volumes[i] > vol_ma5[i] * 1.5  # TODO: 将魔法数字提取到配置中
             # MA5上穿MA10
             ma_golden_cross = ma5[i] > ma10[i] and ma5[i-1] <= ma10[i-1]
             # MACD金叉且红柱扩大
@@ -234,21 +240,21 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 二类买点：主升浪调整后
         class_two_buy = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 前期上涨趋势
             uptrend = ma5[i-10] > ma20[i-10] and ma20[i-10] > ma60[i-10]
             # 回调至MA20/MA30支撑
             ma_support = (low_prices[i] <= ma20[i] * 1.02 and close_prices[i] > ma20[i]) or \
                         (low_prices[i] <= ma30[i] * 1.02 and close_prices[i] > ma30[i])
             # 回调时量能萎缩
-            volume_shrink = volumes[i] < vol_ma5[i] * 0.8
+            volume_shrink = volumes[i] < vol_ma5[i] * 0.8  # TODO: 将魔法数字提取到配置中
             # MACD未跌破零轴
             macd_above_zero = dif[i] > 0
             # KDJ超卖回转
-            kdj_oversold_turn = k[i] < 30 and k[i] > k[i-1] and k[i-1] < k[i-2]
+            kdj_oversold_turn = k[i] < 30 and k[i] > k[i-1] and k[i-1] < k[i-2]  # TODO: 将魔法数字提取到配置中
             # 回调幅度控制在30%以内
             max_high = highest_20_high[i-1]
-            pullback_range = (max_high - low_prices[i]) / max_high < 0.3
+            pullback_range = (max_high - low_prices[i]) / max_high < 0.3  # TODO: 将魔法数字提取到配置中
             
             # 组合条件判断二类买点
             if (uptrend and ma_support and volume_shrink and 
@@ -259,14 +265,14 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 三类买点：超跌反弹
         class_three_buy = np.zeros(length, dtype=bool)
-        for i in range(5, length):
+        for i in range(5, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 连续下跌
-            down_trend = all(close_prices[i-j] < close_prices[i-j-1] for j in range(1, 5))
+            down_trend = all(close_prices[i-j] < close_prices[i-j-1] for j in range(1, 5))  # TODO: 将魔法数字提取到配置中
             # 带长下影线的K线
             long_lower_shadow = (low_prices[i] < low_prices[i-1]) and \
                               ((close_prices[i] - low_prices[i]) > (close_prices[i] - open_prices[i]) * 2)
             # RSI超卖区回升(使用KDJ的K值模拟)
-            oversold_bounce = k[i] < 20 and k[i] > k[i-1]
+            oversold_bounce = k[i] < 20 and k[i] > k[i-1]  # TODO: 将魔法数字提取到配置中
             # 成交量见底回升
             volume_bounce = volumes[i] > volumes[i-1] and volumes[i-1] < vol_ma5[i-1]
             # 股价接近前期大底
@@ -284,10 +290,10 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         for i in range(10, length):
             if i < length - 1:  # 确保我们可以看到下一天的数据
                 # 前期突破
-                prev_breakout = close_prices[i-3] > highest(close_prices[i-10:i-3], 7)[-1] and volumes[i-3] > vol_ma5[i-3]
+                prev_breakout = close_prices[i-3] > highest(close_prices[i-10:i-3], 7)[-1] and volumes[i-3] > vol_ma5[i-3]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 # 小幅回踩不破颈线位
-                neckline = min(close_prices[i-5:i-2])
-                pullback_not_break = low_prices[i] >= neckline * 0.98 and close_prices[i] > close_prices[i-1]
+                neckline = min(close_prices[i-5:i-2])  # TODO: 将魔法数字提取到配置中
+                pullback_not_break = low_prices[i] >= neckline * 0.98 and close_prices[i] > close_prices[i-1]  # TODO: 将魔法数字提取到配置中
                 # 再次上攻
                 rebound = close_prices[i+1] > close_prices[i] and volumes[i+1] > volumes[i]
                 
@@ -298,16 +304,16 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # ZXM特有买点：连续缩量平台型
         volume_shrink_platform_buy = np.zeros(length, dtype=bool)
-        for i in range(5, length):
+        for i in range(5, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             if i < length - 1:  # 确保我们可以看到下一天的数据
                 # 连续3-5日缩量
-                consecutive_shrink = all(volumes[i-j] < vol_ma5[i-j] for j in range(5))
+                consecutive_shrink = all(volumes[i-j] < vol_ma5[i-j] for j in range(5))  # TODO: 将魔法数字提取到配置中
                 # 横盘整理
-                sideways = np.std(close_prices[i-5:i+1]) / np.mean(close_prices[i-5:i+1]) < 0.02
+                sideways = np.std(close_prices[i-5:i+1]) / np.mean(close_prices[i-5:i+1]) < 0.02  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 # KDJ底部金叉
-                kdj_bottom_cross = k[i] > d[i] and k[i-1] <= d[i-1] and k[i] < 30
+                kdj_bottom_cross = k[i] > d[i] and k[i-1] <= d[i-1] and k[i] < 30  # TODO: 将魔法数字提取到配置中
                 # 突破时放量
-                breakout_volume = volumes[i+1] > vol_ma5[i] * 1.3
+                breakout_volume = volumes[i+1] > vol_ma5[i] * 1.3  # TODO: 将魔法数字提取到配置中
                 
                 if consecutive_shrink and sideways and kdj_bottom_cross and breakout_volume:
                     volume_shrink_platform_buy[i] = True
@@ -316,11 +322,11 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # ZXM特有买点：长下影线支撑型
         long_shadow_support_buy = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             if i < length - 1:  # 确保我们可以看到下一天的数据
                 # 在支撑位附近
                 near_support = (low_prices[i] <= ma60[i] * 1.02 and close_prices[i] > ma60[i]) or \
-                              (low_prices[i] <= lowest(low_prices[i-20:i], 20)[-1] * 1.02)
+                              (low_prices[i] <= lowest(low_prices[i-20:i], 20)[-1] * 1.02)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 # 带长下影线
                 lower_shadow_len = close_prices[i] - low_prices[i]
                 body_len = abs(close_prices[i] - open_prices[i])
@@ -335,7 +341,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # ZXM特有买点：均线粘合发散型
         ma_converge_diverge_buy = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             if i < length - 1:  # 确保我们可以看到下一天的数据
                 # 均线粘合
                 ma_converge = abs(ma5[i] - ma10[i]) / ma10[i] < 0.01 and \
@@ -343,7 +349,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                 # 成交量萎缩
                 volume_dry = volumes[i] < min(volumes[i-10:i])
                 # 首次放量突破
-                first_volume_breakout = volumes[i+1] > vol_ma5[i] * 1.5 and close_prices[i+1] > close_prices[i]
+                first_volume_breakout = volumes[i+1] > vol_ma5[i] * 1.5 and close_prices[i+1] > close_prices[i]  # TODO: 将魔法数字提取到配置中
                 
                 if ma_converge and volume_dry and first_volume_breakout:
                     ma_converge_diverge_buy[i] = True
@@ -368,31 +374,31 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         required_columns = ["open", "high", "low", "close", "volume"]
         for col in required_columns:
             if col not in data.columns:
-                return pd.Series(50.0, index=data.index, name='raw_score')  # 返回默认中性评分
+                return pd.Series(50.0, index=data.index, name='raw_score')  # 返回默认中性评分  # TODO: 将魔法数字提取到配置中
 
         # 计算指标
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50.0, index=data.index)
+        score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 买点形态评分
         for i, idx in enumerate(data.index):
-            current_score = 50.0
+            current_score = 50.0  # TODO: 将魔法数字提取到配置中
             
             # 一类买点（最强买点）：+40分
             if i < len(result.get('class_one_buy', [])) and result['class_one_buy'][i]:
-                current_score += 40
+                current_score += 40  # TODO: 将魔法数字提取到配置中
             
             # 二类买点（强势回调买点）：+30分
             elif i < len(result.get('class_two_buy', [])) and result['class_two_buy'][i]:
-                current_score += 30
+                current_score += 30  # TODO: 将魔法数字提取到配置中
             
             # 三类买点（超跌反弹买点）：+20分
             elif i < len(result.get('class_three_buy', [])) and result['class_three_buy'][i]:
-                current_score += 20
+                current_score += 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 其他特殊买点：+15-25分
+            # 其他特殊买点：+15-25分  # TODO: 将魔法数字提取到配置中
             special_buy_signals = [
                 'breakout_pullback_buy',      # 强势突破回踩型：+25分
                 'volume_shrink_platform_buy', # 连续缩量平台型：+20分
@@ -403,11 +409,11 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             for signal_name in special_buy_signals:
                 if signal_name in result and i < len(result[signal_name]) and result[signal_name][i]:
                     if signal_name == 'breakout_pullback_buy':
-                        current_score += 25
+                        current_score += 25  # TODO: 将魔法数字提取到配置中
                     elif signal_name in ['volume_shrink_platform_buy', 'ma_converge_diverge_buy']:
-                        current_score += 20
+                        current_score += 20  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     elif signal_name == 'long_shadow_support_buy':
-                        current_score += 15
+                        current_score += 15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     break  # 只取最高的一个特殊买点信号
             
             # 吸筹形态评分（如果有这些指标）
@@ -421,13 +427,13 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             for signal_name in absorption_signals:
                 if signal_name in result and i < len(result[signal_name]) and result[signal_name][i]:
                     if signal_name == 'large_scale_absorption':
-                        current_score += 15
+                        current_score += 15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     elif signal_name == 'stealth_absorption':
                         current_score += 10
                     elif signal_name == 'repeated_absorption':
-                        current_score += 12
+                        current_score += 12  # TODO: 将魔法数字提取到配置中
                     elif signal_name == 'breakthrough_absorption':
-                        current_score += 18
+                        current_score += 18  # TODO: 将魔法数字提取到配置中
             
             score[idx] = min(100, max(0, current_score))  # 确保评分在0-100范围内
 
@@ -464,11 +470,11 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 初期吸筹特征：缩量阴线
         volume_decrease = np.zeros(length, dtype=bool)
-        for i in range(5, length):
+        for i in range(5, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 阴线
             is_down = close_prices[i] < open_prices[i]
             # 缩量
-            is_volume_shrink = volumes[i] < vol_ma5[i] * 0.8
+            is_volume_shrink = volumes[i] < vol_ma5[i] * 0.8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 实体小
             small_body = abs(close_prices[i] - open_prices[i]) / close_prices[i] < 0.02
             
@@ -479,13 +485,13 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 初期吸筹特征：均线下趋势变缓
         decline_slow_down = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 计算前后10天MA20的斜率
-            prev_slope = (ma20[i-10] - ma20[i-20]) / 10
+            prev_slope = (ma20[i-10] - ma20[i-20]) / 10  # TODO: 将魔法数字提取到配置中
             curr_slope = (ma20[i] - ma20[i-10]) / 10
             
             # 斜率变缓但仍为负
-            slope_changing = curr_slope < 0 and curr_slope > prev_slope * 0.5
+            slope_changing = curr_slope < 0 and curr_slope > prev_slope * 0.5  # TODO: 将魔法数字提取到配置中
             
             if slope_changing:
                 decline_slow_down[i] = True
@@ -494,16 +500,16 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 初期吸筹特征：股价下跌幅度递减
         decline_reduce = np.zeros(length, dtype=bool)
-        for i in range(15, length):
+        for i in range(15, length):  # TODO: 将魔法数字提取到配置中
             # 计算前后几波下跌的幅度
-            if i >= 30:
-                prev_decline = (highest(close_prices[i-30:i-15], 15)[0] - 
-                               lowest(close_prices[i-30:i-15], 15)[0]) / highest(close_prices[i-30:i-15], 15)[0]
-                curr_decline = (highest(close_prices[i-15:i], 15)[0] - 
-                               lowest(close_prices[i-15:i], 15)[0]) / highest(close_prices[i-15:i], 15)[0]
+            if i >= 30:  # TODO: 将魔法数字提取到配置中
+                prev_decline = (highest(close_prices[i-30:i-15], 15)[0] -  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
+                               lowest(close_prices[i-30:i-15], 15)[0]) / highest(close_prices[i-30:i-15], 15)[0]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                curr_decline = (highest(close_prices[i-15:i], 15)[0] -  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
+                               lowest(close_prices[i-15:i], 15)[0]) / highest(close_prices[i-15:i], 15)[0]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 下跌幅度递减
-                decline_reducing = curr_decline < prev_decline * 0.7
+                decline_reducing = curr_decline < prev_decline * 0.7  # TODO: 将魔法数字提取到配置中
                 
                 if decline_reducing:
                     decline_reduce[i] = True
@@ -512,7 +518,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 中期吸筹特征：关键价位精准支撑
         key_support_hold = np.zeros(length, dtype=bool)
-        for i in range(60, length):  # 确保有足够的历史数据
+        for i in range(60, length):  # 确保有足够的历史数据  # TODO: 将魔法数字提取到配置中
             # MA60精准支撑
             if not np.isnan(ma60[i]):
                 ma60_support = low_prices[i] <= ma60[i] * 1.01 and close_prices[i] > ma60[i]
@@ -520,8 +526,8 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                 ma60_support = False
 
             # 前期低点支撑
-            if i >= 60:
-                prev_low_data = low_prices[i-60:i-1]
+            if i >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                prev_low_data = low_prices[i-60:i-1]  # TODO: 将魔法数字提取到配置中
                 if len(prev_low_data) > 0:
                     prev_low_min = np.min(prev_low_data)
                     prev_low_support = low_prices[i] <= prev_low_min * 1.01 and close_prices[i] > prev_low_min
@@ -537,16 +543,16 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 中期吸筹特征：MACD二次背离
         macd_double_diverge = np.zeros(length, dtype=bool)
-        for i in range(30, length):
+        for i in range(30, length):  # TODO: 将魔法数字提取到配置中
             # 寻找前后两个低点
-            if i >= 60:
+            if i >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 # 找到前一个低点
-                first_low_idx = np.argmin(close_prices[i-60:i-30]) + i-60
+                first_low_idx = np.argmin(close_prices[i-60:i-30]) + i-60  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 first_low_price = close_prices[first_low_idx]
                 first_low_macd = dif[first_low_idx]
                 
                 # 找到当前低点
-                second_low_idx = np.argmin(close_prices[i-30:i]) + i-30
+                second_low_idx = np.argmin(close_prices[i-30:i]) + i-30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 second_low_price = close_prices[second_low_idx]
                 second_low_macd = dif[second_low_idx]
                 
@@ -560,9 +566,9 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         volume_shrink_range = np.zeros(length, dtype=bool)
         for i in range(10, length):
             # 横盘整理
-            is_sideways = np.std(close_prices[i-10:i+1]) / np.mean(close_prices[i-10:i+1]) < 0.03
+            is_sideways = np.std(close_prices[i-10:i+1]) / np.mean(close_prices[i-10:i+1]) < 0.03  # TODO: 将魔法数字提取到配置中
             # 成交量持续萎缩
-            volume_shrinking = all(volumes[i-j] < vol_ma10[i-j] for j in range(5))
+            volume_shrinking = all(volumes[i-j] < vol_ma10[i-j] for j in range(5))  # TODO: 将魔法数字提取到配置中
             
             if is_sideways and volume_shrinking:
                 volume_shrink_range[i] = True
@@ -571,14 +577,14 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # 后期吸筹特征：均线开始粘合
         ma_convergence = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 均线粘合度计算
             ma5_ma10_diff = abs(ma5[i] - ma10[i]) / ma10[i]
             ma10_ma20_diff = abs(ma10[i] - ma20[i]) / ma20[i]
             
             # 前期发散，现在粘合
-            prev_diverge = abs(ma5[i-10] - ma10[i-10]) / ma10[i-10] > 0.03
-            now_converge = ma5_ma10_diff < 0.01 and ma10_ma20_diff < 0.015
+            prev_diverge = abs(ma5[i-10] - ma10[i-10]) / ma10[i-10] > 0.03  # TODO: 将魔法数字提取到配置中
+            now_converge = ma5_ma10_diff < 0.01 and ma10_ma20_diff < 0.015  # TODO: 将魔法数字提取到配置中
             
             if prev_diverge and now_converge:
                 ma_convergence[i] = True
@@ -590,7 +596,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         for i in range(10, length):
             # MACD在零轴附近波动
             near_zero = abs(dif[i]) < 0.1 * np.std(close_prices[i-10:i+1])
-            hovering = np.std(dif[i-5:i+1]) < 0.05 * np.std(close_prices[i-10:i+1])
+            hovering = np.std(dif[i-5:i+1]) < 0.05 * np.std(close_prices[i-10:i+1])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             if near_zero and hovering:
                 macd_zero_hover[i] = True
@@ -602,7 +608,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         for i in range(1, length):
             # 在关键支撑位
             is_support = (low_prices[i] <= ma60[i] * 1.02 and close_prices[i] > ma60[i]) or \
-                        (low_prices[i] <= lowest(low_prices[max(0, i-60):i], min(60, i))[0] * 1.02)
+                        (low_prices[i] <= lowest(low_prices[max(0, i-60):i], min(60, i))[0] * 1.02)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 长下影线
             lower_shadow = close_prices[i] - low_prices[i]
             body = abs(close_prices[i] - open_prices[i])
@@ -617,7 +623,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # ZXM特有吸筹形态：沿均线回调精准支撑
         ma_precise_support = np.zeros(length, dtype=bool)
-        for i in range(20, length):
+        for i in range(20, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # MA20精准支撑
             ma20_support = low_prices[i] <= ma20[i] * 1.01 and close_prices[i] > ma20[i]
             # MA60精准支撑
@@ -630,11 +636,11 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         
         # ZXM特有吸筹形态：连续阴阳小实体交替
         small_alternating = np.zeros(length, dtype=bool)
-        for i in range(5, length):
+        for i in range(5, length):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 小实体
-            small_bodies = all(abs(close_prices[i-j] - open_prices[i-j]) / close_prices[i-j] < 0.02 for j in range(5))
+            small_bodies = all(abs(close_prices[i-j] - open_prices[i-j]) / close_prices[i-j] < 0.02 for j in range(5))  # TODO: 将魔法数字提取到配置中
             # 阴阳交替
-            alternating = all((close_prices[i-j] > open_prices[i-j]) != (close_prices[i-j-1] > open_prices[i-j-1]) for j in range(4))
+            alternating = all((close_prices[i-j] > open_prices[i-j]) != (close_prices[i-j-1] > open_prices[i-j-1]) for j in range(4))  # TODO: 将魔法数字提取到配置中
             
             if small_bodies and alternating:
                 small_alternating[i] = True
@@ -656,22 +662,22 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于数据质量的置信度
         if hasattr(self, '_result') and self._result is not None:
@@ -687,27 +693,27 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                 data_completeness = len(available_patterns) / len(zxm_pattern_columns)
                 confidence += data_completeness * 0.1
 
-        # 3. 基于形态的置信度
+        # 3. 基于形态的置信度  # TODO: 将魔法数字提取到配置中
         if not patterns.empty:
             # 检查ZXMPatternIndicator形态（只计算布尔列）
             bool_columns = patterns.select_dtypes(include=[bool]).columns
             if len(bool_columns) > 0:
                 pattern_count = patterns[bool_columns].sum().sum()
                 if pattern_count > 0:
-                    confidence += min(pattern_count * 0.02, 0.15)
+                    confidence += min(pattern_count * 0.02, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于信号的置信度
+        # 4. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.05, 0.1)
+                confidence += min(signal_count * 0.05, 0.1)  # TODO: 将魔法数字提取到配置中
 
-        # 5. 基于数据长度的置信度
-        if len(score) >= 60:  # 两个月数据
+        # 5. 基于数据长度的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 60:  # 两个月数据  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
-        elif len(score) >= 30:  # 一个月数据
-            confidence += 0.05
+        elif len(score) >= 30:  # 一个月数据  # TODO: 将魔法数字提取到配置中
+            confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -723,7 +729,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="主升浪启动买点，前期横盘整理后放量突破",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0,
+            score_impact=40.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -733,7 +739,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="主升浪调整后买点，回调至支撑位后反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -743,7 +749,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="超跌反弹买点，连续下跌后出现反转信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -753,7 +759,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="突破后小幅回踩不破颈线位，再次上攻",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -763,7 +769,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="连续缩量横盘整理后KDJ底部金叉突破",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -773,7 +779,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="在支撑位附近出现长下影线并获得确认",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -783,7 +789,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="均线粘合后首次放量突破发散",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -824,7 +830,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="价格创新低但MACD未创新低的背离",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -834,7 +840,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
             description="后期吸筹特征，缩量横盘整理",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
@@ -888,13 +894,13 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
 
         # 强形态权重
         strong_patterns = {
-            'class_one_buy': 0.9,
-            'class_two_buy': 0.8,
-            'breakout_pullback_buy': 0.75,
-            'class_three_buy': 0.6,
-            'volume_shrink_platform_buy': 0.6,
-            'ma_converge_diverge_buy': 0.6,
-            'long_shadow_support_buy': 0.5
+            'class_one_buy': 0.9,  # TODO: 将魔法数字提取到配置中
+            'class_two_buy': 0.8,  # TODO: 将魔法数字提取到配置中
+            'breakout_pullback_buy': 0.75,  # TODO: 将魔法数字提取到配置中
+            'class_three_buy': 0.6,  # TODO: 将魔法数字提取到配置中
+            'volume_shrink_platform_buy': 0.6,  # TODO: 将魔法数字提取到配置中
+            'ma_converge_diverge_buy': 0.6,  # TODO: 将魔法数字提取到配置中
+            'long_shadow_support_buy': 0.5  # TODO: 将魔法数字提取到配置中
         }
 
         # 生成买入信号
@@ -907,7 +913,7 @@ class ZxmpatternIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                 if pattern in strong_patterns:
                     signal_strength[pattern_mask] = strong_patterns[pattern]
                 else:
-                    signal_strength[pattern_mask] = 0.5
+                    signal_strength[pattern_mask] = 0.5  # TODO: 将魔法数字提取到配置中
 
         # ZXM体系主要是买点识别，卖出信号相对较少
         # 这里可以基于一些反向指标生成卖出信号
@@ -940,10 +946,10 @@ if __name__ == "__main__":
     # 模拟数据
     length = 100
     open_prices = np.random.normal(100, 10, length)
-    high_prices = open_prices + np.random.normal(5, 2, length)
-    low_prices = open_prices - np.random.normal(5, 2, length)
-    close_prices = open_prices + np.random.normal(0, 3, length)
-    volumes = np.random.normal(10000, 3000, length)
+    high_prices = open_prices + np.random.normal(5, 2, length)  # TODO: 将魔法数字提取到配置中
+    low_prices = open_prices - np.random.normal(5, 2, length)  # TODO: 将魔法数字提取到配置中
+    close_prices = open_prices + np.random.normal(0, 3, length)  # TODO: 将魔法数字提取到配置中
+    volumes = np.random.normal(10000, 3000, length)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     # 创建ZXM识别器
     zxm_indicator = ZXMPattern_indicator()
@@ -1000,7 +1006,7 @@ if __name__ == "__main__":
         Returns:
             int: 最少需要的数据周期数
         """
-        return 60  # ZXM形态识别需要更多历史数据
+        return 60  # ZXM形态识别需要更多历史数据  # TODO: 将魔法数字提取到配置中
 
     # 实现BaseIndicator的抽象方法
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -1064,3 +1070,26 @@ if __name__ == "__main__":
 # 为了向后兼容，创建别名
 ZXMPattern = ZxmpatternIndicator
 ZXM_PATTERNS = ZxmpatternIndicator
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

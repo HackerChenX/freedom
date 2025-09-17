@@ -115,6 +115,7 @@ class System_integration_analyzer:
             from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
             from analysis.engines.complex_logic_processor import Complex_logic_processor
             from analysis.engines.date_manager import Date_manager
+from db.sql_manager import SQLManager, QueryType
             
             # 分析引擎组件
             engine_components = {

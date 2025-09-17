@@ -1,6 +1,8 @@
+from utils.container import container
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 均线多空指标(BIAS_Bias)
@@ -16,7 +18,8 @@ from typing import List
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -30,23 +33,26 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
-                 period: int = 14, periods: List[int] = None, **kwargs):
+                 period: int = 14, periods: List[int] = None, **kwargs):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化均线多空指标(BIAS_Bias)指标
         """
         super().__init__()
         self.name = name
         self.description = description
-        self.periods = periods if periods is not None else [6, 12, 24]  # BIAS常用周期
+        self.periods = periods if periods is not None else [6, 12, 24]  # BIAS常用周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.indicator_type = "BIAS"
         self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
     @property
     def minimum_periods(self) -> int:
         """返回计算指标所需的最小周期数"""
-        return max(self.periods) if self.periods else 6
+        return max(self.periods) if self.periods else 6  # TODO: 将魔法数字提取到配置中
 
-    def set_parameters_Bias_Bias_Bias_bias(self, period: int = 14, **kwargs):
+    def set_parameters_Bias_Bias_Bias_bias(self, period: int = 14, **kwargs):  # TODO: 将魔法数字提取到配置中
         """
         设置BIAS指标的参数
         """
@@ -162,22 +168,22 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df = pd.DataFrame(index=data.index)
 
         # 1. BIAS极值形态
-        patterns_df['BIAS_EXTREME_HIGH'] = bias_values > 15.0
-        patterns_df['BIAS_EXTREME_LOW'] = bias_values < -15.0
+        patterns_df['BIAS_EXTREME_HIGH'] = bias_values > 15.0  # TODO: 将魔法数字提取到配置中
+        patterns_df['BIAS_EXTREME_LOW'] = bias_values < -15.0  # TODO: 将魔法数字提取到配置中
 
         # 2. BIAS中度偏离形态
-        patterns_df['BIAS_MODERATE_HIGH'] = (bias_values > 5.0) & (bias_values <= 15.0)
-        patterns_df['BIAS_MODERATE_LOW'] = (bias_values < -5.0) & (bias_values >= -15.0)
+        patterns_df['BIAS_MODERATE_HIGH'] = (bias_values > 5.0) & (bias_values <= 15.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df['BIAS_MODERATE_LOW'] = (bias_values < -5.0) & (bias_values >= -15.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. BIAS中性形态
-        patterns_df['BIAS_NEUTRAL'] = (bias_values >= -5.0) & (bias_values <= 5.0)
+        # 3. BIAS中性形态  # TODO: 将魔法数字提取到配置中
+        patterns_df['BIAS_NEUTRAL'] = (bias_values >= -5.0) & (bias_values <= 5.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 4. BIAS背离形态（简化版本）
+        # 4. BIAS背离形态（简化版本）  # TODO: 将魔法数字提取到配置中
         if len(bias_values) >= 10:
             # 计算价格和BIAS的相关性来检测背离
             # 使用原始数据中的close列
-            price_trend = data['close'].diff(5)  # 5日价格变化
-            bias_trend = bias_values.diff(5)  # 5日BIAS变化
+            price_trend = data['close'].diff(5)  # 5日价格变化  # TODO: 将魔法数字提取到配置中
+            bias_trend = bias_values.diff(5)  # 5日BIAS变化  # TODO: 将魔法数字提取到配置中
 
             # 背离：价格上涨但BIAS下降，或价格下跌但BIAS上升
             bullish_divergence = (price_trend < 0) & (bias_trend > 0)
@@ -210,7 +216,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         calculated_data = self._calculate_bias(data)
 
         if 'BIAS_Bias' not in calculated_data.columns:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
         bias_values = calculated_data['BIAS_Bias']
 
@@ -218,7 +224,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # BIAS在-10到+10之间为正常范围，对应40-60分
         # BIAS超过+10为超买，对应60-100分
         # BIAS低于-10为超卖，对应0-40分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
         # 处理有效值
         valid_mask = bias_values.notna()
@@ -228,7 +234,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 标准化BIAS值到评分
             # 使用sigmoid函数进行平滑转换
             normalized_bias = valid_bias / 10.0  # 将BIAS值标准化
-            sigmoid_scores = 50 + 40 * (2 / (1 + pd.Series(np.exp(-normalized_bias), index=valid_bias.index)) - 1)
+            sigmoid_scores = 50 + 40 * (2 / (1 + pd.Series(np.exp(-normalized_bias), index=valid_bias.index)) - 1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             scores[valid_mask] = sigmoid_scores.clip(0, 100)
 
         return scores
@@ -246,22 +252,22 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分（超买/超卖）置信度较高
-        if last_score > 70 or last_score < 30:
+        if last_score > 70 or last_score < 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.2
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if isinstance(patterns, (list, pd.DataFrame)):
@@ -271,7 +277,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # 只统计数值列的形态
                     numeric_cols = patterns.select_dtypes(include=[np.number]).columns
                     if len(numeric_cols) > 0:
-                        recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]
+                        recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         recent_patterns = recent_data.sum().sum()
                     else:
                         recent_patterns = 0
@@ -281,12 +287,12 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 recent_patterns = len(patterns)
 
             if recent_patterns > 0:
-                confidence += min(recent_patterns * 0.05, 0.2)
+                confidence += min(recent_patterns * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于评分稳定性的置信度
-        if len(score) >= 5:
-            recent_scores = score.iloc[-5:]
-            score_stability = 1.0 - (recent_scores.std() / 50.0)  # 标准差越小，稳定性越高
+        # 3. 基于评分稳定性的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 5:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-5:]  # TODO: 将魔法数字提取到配置中
+            score_stability = 1.0 - (recent_scores.std() / 50.0)  # 标准差越小，稳定性越高  # TODO: 将魔法数字提取到配置中
             confidence += score_stability * 0.1
 
         return min(confidence, 1.0)
@@ -299,20 +305,20 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BIAS_EXTREME_HIGH",
             display_name="BIAS极高值",
-            description="BIAS值超过+15%，表示严重超买",
+            description="BIAS值超过+15%，表示严重超买",  # TODO: 将魔法数字提取到配置中
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="BIAS_EXTREME_LOW",
             display_name="BIAS极低值",
-            description="BIAS值低于-15%，表示严重超卖",
+            description="BIAS值低于-15%，表示严重超卖",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -320,7 +326,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BIAS_MODERATE_HIGH",
             display_name="BIAS中度偏高",
-            description="BIAS值在+5%到+15%之间，表示轻度超买",
+            description="BIAS值在+5%到+15%之间，表示轻度超买",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             pattern_type="BEARISH",
             default_strength="MEDIUM",
             score_impact=-10.0,
@@ -330,7 +336,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BIAS_MODERATE_LOW",
             display_name="BIAS中度偏低",
-            description="BIAS值在-15%到-5%之间，表示轻度超卖",
+            description="BIAS值在-15%到-5%之间，表示轻度超卖",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -344,7 +350,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新低但BIAS未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -354,7 +360,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新高但BIAS未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -362,7 +368,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="BIAS_NEUTRAL",
             display_name="BIAS中性",
-            description="BIAS值在-5%到+5%之间，表示价格相对均衡",
+            description="BIAS值在-5%到+5%之间，表示价格相对均衡",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -382,13 +388,13 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         pattern_info_map = {
             'BIAS_EXTREME_HIGH': {
                 'name': 'BIAS极高值',
-                'description': 'BIAS值超过+15%，表示严重超买',
+                'description': 'BIAS值超过+15%，表示严重超买',  # TODO: 将魔法数字提取到配置中
                 'strength': 'strong',
                 'type': 'bearish'
             },
             'BIAS_EXTREME_LOW': {
                 'name': 'BIAS极低值',
-                'description': 'BIAS值低于-15%，表示严重超卖',
+                'description': 'BIAS值低于-15%，表示严重超卖',  # TODO: 将魔法数字提取到配置中
                 'strength': 'strong',
                 'type': 'bullish'
             },
@@ -400,19 +406,19 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             },
             'BIAS_MODERATE_HIGH': {
                 'name': 'BIAS中度偏高',
-                'description': 'BIAS值在+5%到+15%之间，表示轻度超买',
+                'description': 'BIAS值在+5%到+15%之间，表示轻度超买',  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 'strength': 'medium',
                 'type': 'bearish'
             },
             'BIAS_MODERATE_LOW': {
                 'name': 'BIAS中度偏低',
-                'description': 'BIAS值在-15%到-5%之间，表示轻度超卖',
+                'description': 'BIAS值在-15%到-5%之间，表示轻度超卖',  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 'strength': 'medium',
                 'type': 'bullish'
             },
             'BIAS_NEUTRAL': {
                 'name': 'BIAS中性',
-                'description': 'BIAS值在-5%到+5%之间，表示价格相对均衡',
+                'description': 'BIAS值在-5%到+5%之间，表示价格相对均衡',  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 'strength': 'weak',
                 'type': 'neutral'
             }
@@ -427,7 +433,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _get_default_parameters_bias(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {'periods': [6, 12, 24]}
+        return {'periods': [6, 12, 24]}  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Bias_Bias_Bias_bias_duplicate(self, **kwargs):
         """
@@ -448,7 +454,8 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('BIAS_Bias', params)
             if not is_valid:
-                from utils.dependency_injection import get_logger
+                from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"BIAS参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
@@ -508,31 +515,31 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if bias_col in bias_data.columns:
                 bias_values = bias_data[bias_col]
 
-                # 1. 正偏离形态 (BIAS > 3%)
-                patterns_df[f'BIAS{period}_POSITIVE'] = bias_values > 3
+                # 1. 正偏离形态 (BIAS > 3%)  # TODO: 将魔法数字提取到配置中
+                patterns_df[f'BIAS{period}_POSITIVE'] = bias_values > 3  # TODO: 将魔法数字提取到配置中
 
-                # 2. 负偏离形态 (BIAS < -3%)
-                patterns_df[f'BIAS{period}_NEGATIVE'] = bias_values < -3
+                # 2. 负偏离形态 (BIAS < -3%)  # TODO: 将魔法数字提取到配置中
+                patterns_df[f'BIAS{period}_NEGATIVE'] = bias_values < -3  # TODO: 将魔法数字提取到配置中
 
-                # 3. 强正偏离形态 (BIAS > 6%)
-                patterns_df[f'BIAS{period}_STRONG_POSITIVE'] = bias_values > 6
+                # 3. 强正偏离形态 (BIAS > 6%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                patterns_df[f'BIAS{period}_STRONG_POSITIVE'] = bias_values > 6  # TODO: 将魔法数字提取到配置中
 
-                # 4. 强负偏离形态 (BIAS < -6%)
-                patterns_df[f'BIAS{period}_STRONG_NEGATIVE'] = bias_values < -6
+                # 4. 强负偏离形态 (BIAS < -6%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                patterns_df[f'BIAS{period}_STRONG_NEGATIVE'] = bias_values < -6  # TODO: 将魔法数字提取到配置中
 
-                # 5. 零轴上穿形态
+                # 5. 零轴上穿形态  # TODO: 将魔法数字提取到配置中
                 patterns_df[f'BIAS{period}_ZERO_CROSS_UP'] = (bias_values > 0) & (bias_values.shift(1) <= 0)
 
-                # 6. 零轴下穿形态
+                # 6. 零轴下穿形态  # TODO: 将魔法数字提取到配置中
                 patterns_df[f'BIAS{period}_ZERO_CROSS_DOWN'] = (bias_values < 0) & (bias_values.shift(1) >= 0)
 
-                # 7. 收敛形态（BIAS接近0）
+                # 7. 收敛形态（BIAS接近0）  # TODO: 将魔法数字提取到配置中
                 patterns_df[f'BIAS{period}_CONVERGENCE'] = np.abs(bias_values) < 1
 
-                # 8. 发散形态（BIAS远离0）
-                patterns_df[f'BIAS{period}_DIVERGENCE'] = np.abs(bias_values) > 5
+                # 8. 发散形态（BIAS远离0）  # TODO: 将魔法数字提取到配置中
+                patterns_df[f'BIAS{period}_DIVERGENCE'] = np.abs(bias_values) > 5  # TODO: 将魔法数字提取到配置中
 
-        # 9. 多周期共振形态
+        # 9. 多周期共振形态  # TODO: 将魔法数字提取到配置中
         if len(self.periods) >= 2:
             # 所有周期都为正
             all_positive = True
@@ -557,7 +564,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         bias_data = self._calculate_bias(data)
 
         # 初始化评分
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
 
         # 为每个周期计算评分
         for period in self.periods:
@@ -567,41 +574,41 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
                 # 1. 基于BIAS位置的评分
                 # 负偏离加分（超卖）
-                negative_condition = bias_values < -3
+                negative_condition = bias_values < -3  # TODO: 将魔法数字提取到配置中
                 score += negative_condition * (10 / len(self.periods))
 
                 # 强负偏离加分
-                strong_negative_condition = bias_values < -6
-                score += strong_negative_condition * (15 / len(self.periods))
+                strong_negative_condition = bias_values < -6  # TODO: 将魔法数字提取到配置中
+                score += strong_negative_condition * (15 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
                 # 正偏离减分（超买）
-                positive_condition = bias_values > 3
+                positive_condition = bias_values > 3  # TODO: 将魔法数字提取到配置中
                 score -= positive_condition * (10 / len(self.periods))
 
                 # 强正偏离减分
-                strong_positive_condition = bias_values > 6
-                score -= strong_positive_condition * (15 / len(self.periods))
+                strong_positive_condition = bias_values > 6  # TODO: 将魔法数字提取到配置中
+                score -= strong_positive_condition * (15 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
                 # 2. 基于零轴交叉的评分
                 zero_cross_up = (bias_values > 0) & (bias_values.shift(1) <= 0)
                 zero_cross_down = (bias_values < 0) & (bias_values.shift(1) >= 0)
 
                 # 零轴上穿加分
-                score += zero_cross_up * (8 / len(self.periods))
+                score += zero_cross_up * (8 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
                 # 零轴下穿减分
-                score -= zero_cross_down * (8 / len(self.periods))
+                score -= zero_cross_down * (8 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
-                # 3. 基于BIAS趋势的评分
+                # 3. 基于BIAS趋势的评分  # TODO: 将魔法数字提取到配置中
                 # BIAS上升趋势加分
                 bias_rising = bias_values > bias_values.shift(1)
-                score += bias_rising * (3 / len(self.periods))
+                score += bias_rising * (3 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
                 # BIAS下降趋势减分
                 bias_falling = bias_values < bias_values.shift(1)
-                score -= bias_falling * (3 / len(self.periods))
+                score -= bias_falling * (3 / len(self.periods))  # TODO: 将魔法数字提取到配置中
 
-        # 4. 多周期共振奖励
+        # 4. 多周期共振奖励  # TODO: 将魔法数字提取到配置中
         if len(self.periods) >= 2:
             all_negative = True
             all_positive = True
@@ -612,10 +619,10 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     all_positive &= (bias_data[bias_col] > 0)
 
             # 所有周期负偏离（强烈超卖）
-            score += all_negative * 20
+            score += all_negative * 20  # TODO: 将魔法数字提取到配置中
 
             # 所有周期正偏离（强烈超买）
-            score -= all_positive * 20
+            score -= all_positive * 20  # TODO: 将魔法数字提取到配置中
 
         # 限制评分在0-100之间
         return score.clip(0, 100)
@@ -645,45 +652,45 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 bias_values = bias_data[bias_col]
 
                 # 1. 负偏离反弹买入信号
-                negative_bounce = (bias_values > -3) & (bias_values.shift(1) <= -3)
+                negative_bounce = (bias_values > -3) & (bias_values.shift(1) <= -3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 result_df.loc[negative_bounce, 'bias_signal'] = 1
-                result_df.loc[negative_bounce, 'bias_strength'] = 0.7
-                result_df.loc[negative_bounce, 'bias_confidence'] = 0.8
+                result_df.loc[negative_bounce, 'bias_strength'] = 0.7  # TODO: 将魔法数字提取到配置中
+                result_df.loc[negative_bounce, 'bias_confidence'] = 0.8  # TODO: 将魔法数字提取到配置中
 
                 # 2. 正偏离回落卖出信号
-                positive_fall = (bias_values < 3) & (bias_values.shift(1) >= 3)
+                positive_fall = (bias_values < 3) & (bias_values.shift(1) >= 3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 result_df.loc[positive_fall, 'bias_signal'] = -1
-                result_df.loc[positive_fall, 'bias_strength'] = 0.7
-                result_df.loc[positive_fall, 'bias_confidence'] = 0.8
+                result_df.loc[positive_fall, 'bias_strength'] = 0.7  # TODO: 将魔法数字提取到配置中
+                result_df.loc[positive_fall, 'bias_confidence'] = 0.8  # TODO: 将魔法数字提取到配置中
 
-                # 3. 零轴突破信号
+                # 3. 零轴突破信号  # TODO: 将魔法数字提取到配置中
                 zero_cross_up = (bias_values > 0) & (bias_values.shift(1) <= 0)
                 result_df.loc[zero_cross_up, 'bias_signal'] = 1
-                result_df.loc[zero_cross_up, 'bias_strength'] = 0.5
-                result_df.loc[zero_cross_up, 'bias_confidence'] = 0.6
+                result_df.loc[zero_cross_up, 'bias_strength'] = 0.5  # TODO: 将魔法数字提取到配置中
+                result_df.loc[zero_cross_up, 'bias_confidence'] = 0.6  # TODO: 将魔法数字提取到配置中
 
                 zero_cross_down = (bias_values < 0) & (bias_values.shift(1) >= 0)
                 result_df.loc[zero_cross_down, 'bias_signal'] = -1
-                result_df.loc[zero_cross_down, 'bias_strength'] = 0.5
-                result_df.loc[zero_cross_down, 'bias_confidence'] = 0.6
+                result_df.loc[zero_cross_down, 'bias_strength'] = 0.5  # TODO: 将魔法数字提取到配置中
+                result_df.loc[zero_cross_down, 'bias_confidence'] = 0.6  # TODO: 将魔法数字提取到配置中
 
-                # 4. 强偏离信号
-                strong_negative = bias_values < -6
+                # 4. 强偏离信号  # TODO: 将魔法数字提取到配置中
+                strong_negative = bias_values < -6  # TODO: 将魔法数字提取到配置中
                 result_df.loc[strong_negative, 'bias_signal'] = 1
-                result_df.loc[strong_negative, 'bias_strength'] = 0.9
-                result_df.loc[strong_negative, 'bias_confidence'] = 0.9
+                result_df.loc[strong_negative, 'bias_strength'] = 0.9  # TODO: 将魔法数字提取到配置中
+                result_df.loc[strong_negative, 'bias_confidence'] = 0.9  # TODO: 将魔法数字提取到配置中
 
-                strong_positive = bias_values > 6
+                strong_positive = bias_values > 6  # TODO: 将魔法数字提取到配置中
                 result_df.loc[strong_positive, 'bias_signal'] = -1
-                result_df.loc[strong_positive, 'bias_strength'] = 0.9
-                result_df.loc[strong_positive, 'bias_confidence'] = 0.9
+                result_df.loc[strong_positive, 'bias_strength'] = 0.9  # TODO: 将魔法数字提取到配置中
+                result_df.loc[strong_positive, 'bias_confidence'] = 0.9  # TODO: 将魔法数字提取到配置中
 
         return result_df
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
         """真实实现：计算BIAS综合评分"""
         if data.empty:
-            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}
+            return {'score': 50.0, 'confidence': 0.0, 'signals': {}}  # TODO: 将魔法数字提取到配置中
 
         # 计算原始评分
         raw_score = self.calculate_raw_score(data, **kwargs)
@@ -692,7 +699,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = self.get_patterns(data, **kwargs)
 
         # 计算最终评分
-        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0
+        final_score = raw_score.iloc[-1] if not raw_score.empty else 50.0  # TODO: 将魔法数字提取到配置中
 
         # 基于形态调整评分
         if not patterns.empty:
@@ -703,38 +710,38 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 if latest_patterns.get(f'BIAS{period}_NEGATIVE', False):
                     final_score += 10
                 if latest_patterns.get(f'BIAS{period}_STRONG_NEGATIVE', False):
-                    final_score += 15
+                    final_score += 15  # TODO: 将魔法数字提取到配置中
                 if latest_patterns.get(f'BIAS{period}_ZERO_CROSS_UP', False):
-                    final_score += 8
+                    final_score += 8  # TODO: 将魔法数字提取到配置中
 
                 # 负面形态减分
                 if latest_patterns.get(f'BIAS{period}_POSITIVE', False):
                     final_score -= 10
                 if latest_patterns.get(f'BIAS{period}_STRONG_POSITIVE', False):
-                    final_score -= 15
+                    final_score -= 15  # TODO: 将魔法数字提取到配置中
                 if latest_patterns.get(f'BIAS{period}_ZERO_CROSS_DOWN', False):
-                    final_score -= 8
+                    final_score -= 8  # TODO: 将魔法数字提取到配置中
 
             # 多周期共振
             if latest_patterns.get('BIAS_ALL_NEGATIVE', False):
-                final_score += 20
+                final_score += 20  # TODO: 将魔法数字提取到配置中
             if latest_patterns.get('BIAS_ALL_POSITIVE', False):
-                final_score -= 20
+                final_score -= 20  # TODO: 将魔法数字提取到配置中
 
         # 计算置信度
         bias_data = self._calculate_bias(data)
 
         # 基于BIAS值的分布计算置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         for period in self.periods:
             bias_col = f'BIAS{period}'
             if bias_col in bias_data.columns:
                 bias_value = bias_data[bias_col].iloc[-1] if len(bias_data[bias_col]) > 0 else 0
                 bias_abs = abs(bias_value)
 
-                if bias_abs > 6:
-                    confidence += 0.3 / len(self.periods)
-                elif bias_abs > 3:
+                if bias_abs > 6:  # TODO: 将魔法数字提取到配置中
+                    confidence += 0.3  # TODO: 将魔法数字提取到配置中 / len(self.periods)  # TODO: 将魔法数字提取到配置中
+                elif bias_abs > 3:  # TODO: 将魔法数字提取到配置中
                     confidence += 0.2 / len(self.periods)
                 elif bias_abs > 1:
                     confidence += 0.1 / len(self.periods)
@@ -749,7 +756,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'signals': {
                 'bias_values': {f'BIAS{period}': bias_data.get(f'BIAS{period}', pd.Series([0])).iloc[-1]
                                if f'BIAS{period}' in bias_data.columns else 0 for period in self.periods},
-                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'
+                'trend': 'up' if final_score > 60 else 'down' if final_score < 40 else 'neutral'  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             }
         }
 
@@ -786,20 +793,20 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Bias(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """真实实现：计算BIAS置信度"""
         if score.empty:
-            return 0.3
+            return 0.3  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 基于评分的置信度调整
-        latest_score = score.iloc[-1] if not score.empty else 50.0
+        latest_score = score.iloc[-1] if not score.empty else 50.0  # TODO: 将魔法数字提取到配置中
 
         # 极端评分提高置信度
-        if latest_score > 80 or latest_score < 20:
-            confidence += 0.3
-        elif latest_score > 70 or latest_score < 30:
+        if latest_score > 80 or latest_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.3  # TODO: 将魔法数字提取到配置中
+        elif latest_score > 70 or latest_score < 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.2
-        elif latest_score > 60 or latest_score < 40:
+        elif latest_score > 60 or latest_score < 40:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
 
         # 基于形态的置信度调整
@@ -809,9 +816,9 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 强势形态提高置信度
             for period in self.periods:
                 if latest_patterns.get(f'BIAS{period}_STRONG_NEGATIVE', False):
-                    confidence += 0.15 / len(self.periods)
+                    confidence += 0.15  # TODO: 将魔法数字提取到配置中 / len(self.periods)
                 if latest_patterns.get(f'BIAS{period}_STRONG_POSITIVE', False):
-                    confidence += 0.15 / len(self.periods)
+                    confidence += 0.15  # TODO: 将魔法数字提取到配置中 / len(self.periods)
 
             # 多周期共振提高置信度
             if latest_patterns.get('BIAS_ALL_NEGATIVE', False):

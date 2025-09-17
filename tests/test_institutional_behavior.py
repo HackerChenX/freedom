@@ -17,6 +17,7 @@ sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from strategy.institutional_strategy import Institutional_strategy
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_institutional_behavior(unittest.TestCase):

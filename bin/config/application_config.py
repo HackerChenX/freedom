@@ -1,5 +1,5 @@
 """
-from config import get_config
+from config.unified_config_manager import get_config
 应用级配置器
 
 负责按照分层架构原则配置所有服务

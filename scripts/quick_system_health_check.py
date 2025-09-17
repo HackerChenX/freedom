@@ -99,7 +99,7 @@ class QuickSystemHealthChecker:
     def check_data_access_layer(self) -> bool:
         """检查数据访问层"""
         try:
-            from db.unified_data_manager import get_production_data_access_layer
+            from db.managers.data_access_manager import get_production_data_access_layer
             
             # 获取生产级数据访问层
             data_layer = get_production_data_access_layer()

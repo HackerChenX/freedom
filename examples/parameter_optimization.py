@@ -29,6 +29,7 @@ from indicators.v_shaped_reversal import VShaped_reversal
 from indicators.island_reversal import Island_reversal
 from utils.dependency_injection import get_service
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

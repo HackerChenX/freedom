@@ -26,6 +26,7 @@ from .monitoring import get_test_monitoring_system
 from .monitoring_dashboard import get_monitoring_dashboard, get_alert_notifier, start_monitoring_services, stop_monitoring_services
 from .test_orchestrator import TestOrchestrator, create_orchestrator
 from .system_integration import get_system_integrator
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

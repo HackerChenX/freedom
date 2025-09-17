@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

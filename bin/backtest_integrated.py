@@ -25,9 +25,10 @@ from strategy.strategy_parser import Strategy_parser
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from enums.period import Period
 from indicators.indicator_registry import indicator_registry, Indicator_enum
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -161,7 +162,7 @@ def run_backtest_Integrated(stock_list_file, start_date, end_date, indicator_lis
             for indicator_id in indicator_list:
                 # 获取默认参数
                 default_params = {
-                    IndicatorEnum.ZXM_TURNOVER: {"threshold": 1.0},
+                    IndicatorEnum.ZXM_turnover_rate: {"threshold": 1.0},
                     IndicatorEnum.ZXM_DAILY_MACD: {"threshold": 0.0},
                     IndicatorEnum.ZXM_MA_CALLBACK: {"periods": [20, 30, 60, 120]},
                     IndicatorEnum.ZXM_RISE_ELASTICITY: {"rise_threshold": 1.02},
@@ -186,7 +187,7 @@ def run_backtest_Integrated(stock_list_file, start_date, end_date, indicator_lis
             # 否则使用默认的指标列表
             indicator_configs = [
                 # ZXM系列指标
-                {"indicator_id": IndicatorEnum.ZXM_TURNOVER, "parameters": {"threshold": 1.0}},
+                {"indicator_id": IndicatorEnum.ZXM_turnover_rate, "parameters": {"threshold": 1.0}},
                 {"indicator_id": IndicatorEnum.ZXM_DAILY_MACD, "parameters": {"threshold": 0.0}},
                 {"indicator_id": IndicatorEnum.ZXM_MA_CALLBACK, "parameters": {"periods": [20, 30, 60, 120]}},
                 {"indicator_id": IndicatorEnum.ZXM_RISE_ELASTICITY, "parameters": {"rise_threshold": 1.02}},
@@ -378,7 +379,7 @@ def generate_strategy_from_backtest(backtest_result, output_file=None):
         # 如果仍然没有指标，使用默认的ZXM指标
         if not selected_indicators:
             selected_indicators = [
-                Indicator_enum.ZXM_TURNOVER,
+                Indicator_enum.ZXM_turnover_rate,
                 Indicator_enum.ZXM_DAILY_MACD,
                 Indicator_enum.ZXM_BUYPOINT_SCORE
             ]
@@ -390,7 +391,7 @@ def generate_strategy_from_backtest(backtest_result, output_file=None):
         for idx, indicator_id in enumerate(selected_indicators):
             # 获取指标默认参数
             params = {
-                IndicatorEnum.ZXM_TURNOVER: {"threshold": 1.0},
+                IndicatorEnum.ZXM_turnover_rate: {"threshold": 1.0},
                 IndicatorEnum.ZXM_DAILY_MACD: {"threshold": 0.0},
                 IndicatorEnum.ZXM_MA_CALLBACK: {"periods": [20, 30, 60, 120]},
                 IndicatorEnum.ZXM_RISE_ELASTICITY: {"rise_threshold": 1.02},

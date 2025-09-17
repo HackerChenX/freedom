@@ -2,9 +2,34 @@
 
 ## 📊 Module Overview
 
-The Buypoint Analysis Module is the core functionality of the stock analysis system, based on the **ZXM System** and **86 technical indicators**, providing precise buypoint identification and scoring services. This module has undergone deep performance optimization, achieving **99.9% performance improvement**, with processing speed reaching **0.05 seconds/stock**, supporting large-scale parallel analysis.
+The Buypoint Analysis Module is the core functionality of the stock analysis system, providing precise buypoint identification and scoring services. This module now includes **two complementary analysis engines**:
+
+1. **Legacy Single-Period Analyzer**: Based on the **ZXM System** and **128 technical indicators**, optimized for single timeframe analysis
+2. **🆕 Multi-Period Analyzer**: Advanced multi-timeframe analysis supporting 15-minute to monthly periods with cross-period signal validation
+
+> **⚠️ IMPORTANT**: As of 2025-09-15, the **Multi-Period Buypoint Analyzer** is the **recommended solution** for all new implementations. It addresses critical architectural issues and provides superior multi-timeframe technical analysis capabilities.
 
 > **Note**: This documentation provides both English and Chinese content. The original Chinese documentation has been preserved and enhanced with practical usage information.
+
+## 🆕 **Multi-Period Buypoint Analyzer (Recommended)**
+
+### 🎯 核心特性
+
+- **多周期分析**: 支持15分钟、30分钟、60分钟、日线、周线、月线
+- **架构合规**: 严格遵循六层架构，无SQL注入风险
+- **智能数据量**: 自动计算所需数据量，支持复杂指标计算
+- **跨周期验证**: 15分钟KDJ金叉 ≠ 日线KDJ金叉，正确区分
+- **信号聚合**: 多周期信号智能聚合，提供综合买点评分
+- **金叉死叉检测**: 专业的技术形态识别和交叉信号检测
+
+### 🏗️ 多周期架构优势
+
+1. **周期绑定**: 指标与时间周期正确绑定，避免信号混淆
+2. **架构清晰**: 遵循六层架构分层规则，代码质量高
+3. **数据充足**: 智能计算数据需求，确保指标计算准确性
+4. **扩展性强**: 易于添加新周期和新指标
+
+## 📊 **Legacy Single-Period Analyzer**
 
 ### 🎯 核心特性
 
@@ -21,9 +46,36 @@ The Buypoint Analysis Module is the core functionality of the stock analysis sys
 2. **向量化计算**: NumPy向量化操作，大幅提升计算效率
 3. **智能缓存**: LRU缓存机制，避免重复计算
 
+### ⚠️ 已知限制
+
+- **单周期限制**: 仅支持日线数据分析
+- **架构违规**: 存在直接SQL查询，违反六层架构
+- **数据量限制**: 硬编码200条数据，可能不足以支持复杂指标
+- **周期混淆**: 无法区分不同时间周期的技术信号
+
 ---
 
 ## 🚀 Getting Started
+
+### 🆕 **Recommended: Multi-Period Buypoint Analyzer**
+
+For new implementations, use the **Multi-Period Buypoint Analyzer** which provides superior multi-timeframe analysis:
+
+```bash
+# Multi-period analysis with daily and weekly timeframes
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods daily weekly \
+    --output results/multi_period_analysis.json
+
+# Full multi-timeframe analysis
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods 15min 30min 60min daily weekly monthly \
+    --output results/comprehensive_analysis.json
+```
 
 ### Prerequisites
 
@@ -59,15 +111,42 @@ Before using the buypoint analysis module, ensure you have the following:
 
 ### Quick Start
 
-Here's a simple example to get you started:
+#### 🆕 **Multi-Period Analysis (Recommended)**
+
+```python
+from bin.multi_period_buypoint_analyzer import MultiPeriodBuypointAnalyzer
+from db.services.multi_period_data_service import Period
+
+# Initialize the multi-period analyzer
+analyzer = MultiPeriodBuypointAnalyzer()
+
+# Analyze with multiple timeframes
+result = analyzer.analyze_multi_period_buypoint(
+    stock_code='300005',
+    target_date='2025-05-09',
+    periods=[Period.DAILY, Period.WEEKLY],
+    focus_indicators=['KDJ', 'MACD', 'RSI', 'MA']
+)
+
+print(f"Stock: {result['stock_code']}")
+print(f"Overall Score: {result['overall_score']:.2f}/100")
+print(f"Action: {result['recommendations']['action']}")
+print(f"Confidence: {result['recommendations']['confidence']}")
+
+# Check period-specific signals
+for period, data in result['multi_period_indicators']['periods'].items():
+    print(f"{period}: {data['data_points']} data points")
+```
+
+#### 📊 **Legacy Single-Period Analysis**
 
 ```python
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 
-# Initialize the analyzer
+# Initialize the legacy analyzer
 analyzer = BuyPointAnalyzer()
 
-# Analyze a single buypoint
+# Analyze a single buypoint (daily data only)
 result = analyzer.analyze_stock('000001', '20250101', '平安银行')
 
 if result:
@@ -358,7 +437,68 @@ results/my_analysis/
     └── analysis_details.json
 ```
 
-### 2. ZXM Analysis Tool
+### 🆕 **2. Multi-Period Buypoint Analyzer (Recommended)**
+
+**Script**: `bin/multi_period_buypoint_analyzer.py`
+
+**Purpose**: Advanced multi-timeframe buypoint analysis with cross-period signal validation and intelligent signal aggregation.
+
+**Key Features**:
+- Supports 6 timeframes: 15min, 30min, 60min, daily, weekly, monthly
+- Correctly distinguishes 15-minute KDJ golden cross from daily KDJ golden cross
+- Intelligent data volume calculation for each timeframe
+- Cross-period signal consistency analysis
+- Comprehensive buypoint scoring and recommendations
+- Strict adherence to six-layer architecture (no direct SQL queries)
+
+**Usage**:
+```bash
+# Basic multi-period analysis
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods daily weekly \
+    --output results/analysis.json
+
+# Comprehensive multi-timeframe analysis
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods 15min 30min 60min daily weekly monthly \
+    --output results/comprehensive.json
+```
+
+**Parameters**:
+- `--stock-code`: Stock code (required, e.g., 300005)
+- `--date`: Analysis date in YYYY-MM-DD format (required)
+- `--periods`: Timeframes to analyze (choices: 15min, 30min, 60min, daily, weekly, monthly)
+- `--output`: Output JSON file path (optional)
+
+**Output Structure**:
+```json
+{
+  "stock_code": "300005",
+  "analysis_date": "2025-05-09",
+  "overall_score": 45.78,
+  "recommendations": {
+    "action": "HOLD",
+    "confidence": "MEDIUM",
+    "reasons": ["强买入信号指标: KDJ, MACD"],
+    "risk_warnings": ["强卖出信号指标: MA"]
+  },
+  "multi_period_indicators": {
+    "periods": {
+      "日线": {"data_points": 232, "indicators": {...}},
+      "周线": {"data_points": 103, "indicators": {...}}
+    },
+    "aggregated_signals": {...},
+    "cross_period_analysis": {...}
+  },
+  "period_comparison": {...}
+}
+```
+
+### 3. ZXM Analysis Tool
 
 **Script**: `bin/zxm_analysis.py`
 
@@ -418,6 +558,37 @@ python analysis/buypoints/analyze_buypoints.py
 **Output Files**:
 - `formula/企稳反弹买点总结.md`: Analysis summary
 - `formula/企稳反弹买点公式_改进版.txt`: Improved formula
+
+---
+
+## 📊 **Analyzer Comparison**
+
+| Feature | Multi-Period Analyzer (🆕 Recommended) | Legacy Batch Analyzer |
+|---------|----------------------------------------|------------------------|
+| **Timeframes** | 15min, 30min, 60min, daily, weekly, monthly | Daily only |
+| **Architecture** | ✅ Six-layer compliant | ❌ Direct SQL queries |
+| **Data Volume** | ✅ Intelligent calculation | ❌ Hard-coded 200 records |
+| **Signal Accuracy** | ✅ Period-specific signals | ❌ Period confusion |
+| **Cross-Period Analysis** | ✅ Signal consistency validation | ❌ Not supported |
+| **Golden Cross Detection** | ✅ 15min KDJ ≠ Daily KDJ | ❌ Mixed signals |
+| **Performance** | ✅ Optimized for accuracy | ✅ Optimized for speed |
+| **Use Case** | Professional multi-timeframe analysis | Legacy single-period analysis |
+| **Maintenance Status** | 🆕 Active development | 📊 Legacy support |
+
+### 🎯 **When to Use Which Analyzer**
+
+**Use Multi-Period Analyzer when**:
+- You need professional multi-timeframe technical analysis
+- You want to distinguish between different period signals (15min vs daily KDJ)
+- You require cross-period signal validation
+- You need architectural compliance and code quality
+- You're building new features or systems
+
+**Use Legacy Analyzer when**:
+- You need maximum processing speed for large batches
+- You only need daily timeframe analysis
+- You're maintaining existing systems
+- You have specific performance requirements
 
 ---
 

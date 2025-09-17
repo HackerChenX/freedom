@@ -939,6 +939,7 @@ class AdvancedBacktester(Pattern_backtester):
                 
                 # 检查是否满足策略条件
                 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from db.sql_manager import SQLManager, QueryType
                 evaluator = StrategyConditionEvaluator()
                 
                 # 获取主时间周期的数据用于条件评估

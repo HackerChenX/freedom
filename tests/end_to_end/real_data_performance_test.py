@@ -29,8 +29,9 @@ sys.path.append(project_root)
 
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import Strategy_manager
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -224,7 +225,7 @@ class Real_data_performance_test:
             
             result = client.query("""
                 SELECT DISTINCT code 
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE date >= '2024-01-01' 
                 LIMIT 500
             """)

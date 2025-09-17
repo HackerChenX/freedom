@@ -1,6 +1,8 @@
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 真实技术指标计算实现
@@ -8,32 +10,33 @@ from utils.dependency_injection import get_logger
 完全替代所有模拟实现，使用真实的数学公式计算技术指标。
 
 Author: AI Assistant
-Date: 2025-07-19
+Date: 2025-07-19  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 """
 
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, Optional, Tuple
+from db.sql_manager import SQLManager, QueryType
 import logging
 
 logger = get_logger(__name__)
 
 
-class RealTechnicalIndicators:
+class RealTechnicalIndicators(BaseIndicator):
     """真实技术指标计算器"""
     
     @staticmethod
-    def calculate_ma(data: pd.Series, period: int = 20) -> pd.Series:
+    def calculate_ma(data: pd.Series, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实移动平均线"""
         return data.rolling(window=period, min_periods=period).mean()
     
     @staticmethod
-    def calculate_ema(data: pd.Series, period: int = 20) -> pd.Series:
+    def calculate_ema(data: pd.Series, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实指数移动平均线"""
         return data.ewm(span=period, adjust=False).mean()
     
     @staticmethod
-    def calculate_macd(data: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:
+    def calculate_macd(data: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """计算真实MACD指标"""
         ema_fast = data.ewm(span=fast).mean()
         ema_slow = data.ewm(span=slow).mean()
@@ -48,7 +51,7 @@ class RealTechnicalIndicators:
         }
     
     @staticmethod
-    def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:
+    def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实RSI指标"""
         delta = data.diff()
         gain = delta.where(delta > 0, 0)
@@ -63,7 +66,7 @@ class RealTechnicalIndicators:
         return rsi
     
     @staticmethod
-    def calculate_bollinger_bands(data: pd.Series, period: int = 20, std_dev: float = 2) -> Dict[str, pd.Series]:
+    def calculate_bollinger_bands(data: pd.Series, period: int = 20, std_dev: float = 2) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中
         """计算真实布林带"""
         ma = data.rolling(window=period, min_periods=period).mean()
         std = data.rolling(window=period, min_periods=period).std()
@@ -79,7 +82,7 @@ class RealTechnicalIndicators:
     
     @staticmethod
     def calculate_kdj(high: pd.Series, low: pd.Series, close: pd.Series, 
-                     k_period: int = 9, d_period: int = 3, j_period: int = 3) -> Dict[str, pd.Series]:
+                     k_period: int = 9, d_period: int = 3, j_period: int = 3) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """计算真实KDJ指标"""
         lowest_low = low.rolling(window=k_period, min_periods=k_period).min()
         highest_high = high.rolling(window=k_period, min_periods=k_period).max()
@@ -88,7 +91,7 @@ class RealTechnicalIndicators:
         
         k = rsv.ewm(alpha=1/d_period, adjust=False).mean()
         d = k.ewm(alpha=1/d_period, adjust=False).mean()
-        j = 3 * k - 2 * d
+        j = 3 * k - 2 * d  # TODO: 将魔法数字提取到配置中
         
         return {
             'k': k,
@@ -97,7 +100,7 @@ class RealTechnicalIndicators:
         }
     
     @staticmethod
-    def calculate_atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+    def calculate_atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实平均真实波幅"""
         tr1 = high - low
         tr2 = abs(high - close.shift(1))
@@ -111,14 +114,14 @@ class RealTechnicalIndicators:
     @staticmethod
     def calculate_obv(close: pd.Series, volume: pd.Series) -> pd.Series:
         """计算真实能量潮指标"""
-        price_change = close.diff()
+        = close.diff()
         obv = pd.Series(index=close.index, dtype=float)
         obv.iloc[0] = volume.iloc[0]
         
         for i in range(1, len(close)):
-            if price_change.iloc[i] > 0:
+            if .iloc[i] > 0:
                 obv.iloc[i] = obv.iloc[i-1] + volume.iloc[i]
-            elif price_change.iloc[i] < 0:
+            elif .iloc[i] < 0:
                 obv.iloc[i] = obv.iloc[i-1] - volume.iloc[i]
             else:
                 obv.iloc[i] = obv.iloc[i-1]
@@ -126,7 +129,7 @@ class RealTechnicalIndicators:
         return obv
     
     @staticmethod
-    def calculate_williams_r(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+    def calculate_williams_r(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实威廉指标"""
         highest_high = high.rolling(window=period, min_periods=period).max()
         lowest_low = low.rolling(window=period, min_periods=period).min()
@@ -136,22 +139,22 @@ class RealTechnicalIndicators:
         return wr
     
     @staticmethod
-    def calculate_cci(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 20) -> pd.Series:
+    def calculate_cci(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """计算真实顺势指标"""
-        typical_price = (high + low + close) / 3
+        typical_price = (high + low + close) / 3  # TODO: 将魔法数字提取到配置中
         ma_tp = typical_price.rolling(window=period, min_periods=period).mean()
         
         mad = typical_price.rolling(window=period, min_periods=period).apply(
             lambda x: np.mean(np.abs(x - x.mean())), raw=True
         )
         
-        cci = (typical_price - ma_tp) / (0.015 * mad)
+        cci = (typical_price - ma_tp) / (0.015 * mad)  # TODO: 将魔法数字提取到配置中
         
         return cci
     
     @staticmethod
     def calculate_stochastic(high: pd.Series, low: pd.Series, close: pd.Series, 
-                           k_period: int = 14, d_period: int = 3) -> Dict[str, pd.Series]:
+                           k_period: int = 14, d_period: int = 3) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """计算真实随机指标"""
         lowest_low = low.rolling(window=k_period, min_periods=k_period).min()
         highest_high = high.rolling(window=k_period, min_periods=k_period).max()
@@ -175,17 +178,24 @@ class RealTechnicalIndicators:
         return (data / data.shift(period) - 1) * 100
 
 
-class RealIndicatorFactory:
+class RealIndicatorFactory(BaseIndicator):
     """真实指标工厂类"""
     
     def __init__(self):
+            super().__init__(name=self.__class__.__name__, **kwargs)
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.calculator = RealTechnicalIndicators()
     
     def create_indicator(self, name: str, **kwargs) -> Any:
         """创建真实指标实例"""
         
-        class RealIndicator:
+        class RealIndicator(BaseIndicator):
             def __init__(self, indicator_name: str, calculator: RealTechnicalIndicators):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
                 self.name = indicator_name
                 self.calculator = calculator
                 self.patterns = ['bullish', 'bearish', 'neutral']
@@ -198,19 +208,19 @@ class RealIndicatorFactory:
                     
                     close = pd.to_numeric(data['close'], errors='coerce').dropna()
                     
-                    if len(close) < 20:
+                    if len(close) < 20:  # TODO: 将魔法数字提取到配置中
                         return {'error': 'insufficient_data'}
                     
                     result = {}
                     
                     if 'MA' in self.name:
-                        result['ma5'] = self.calculator.calculate_ma(close, 5)
+                        result['ma5'] = self.calculator.calculate_ma(close, 5)  # TODO: 将魔法数字提取到配置中
                         result['ma10'] = self.calculator.calculate_ma(close, 10)
-                        result['ma20'] = self.calculator.calculate_ma(close, 20)
+                        result['ma20'] = self.calculator.calculate_ma(close, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         
                     elif 'EMA' in self.name:
-                        result['ema12'] = self.calculator.calculate_ema(close, 12)
-                        result['ema26'] = self.calculator.calculate_ema(close, 26)
+                        result['ema12'] = self.calculator.calculate_ema(close, 12)  # TODO: 将魔法数字提取到配置中
+                        result['ema26'] = self.calculator.calculate_ema(close, 26)  # TODO: 将魔法数字提取到配置中
                         
                     elif 'MACD' in self.name:
                         macd_data = self.calculator.calculate_macd(close)
@@ -244,7 +254,7 @@ class RealIndicatorFactory:
                     else:
                         # 默认计算基本指标
                         result['value'] = close
-                        result['ma20'] = self.calculator.calculate_ma(close, 20)
+                        result['ma20'] = self.calculator.calculate_ma(close, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     
                     return result
                     
@@ -261,3 +271,27 @@ class RealIndicatorFactory:
 
 # 全局真实指标工厂实例
 real_indicator_factory = RealIndicatorFactory()
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

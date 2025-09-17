@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -17,6 +18,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.complete_indicator_registry import get_indicator_registry
 from utils.performance_monitor import performance_monitor
 from utils.exception_handler import exception_handler
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

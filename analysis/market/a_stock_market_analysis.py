@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/env python3
 """
 A股市场分析模块
@@ -22,14 +23,15 @@ sys.path.insert(0, root_dir)
 from utils.dependency_injection import get_service, get_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import exception_handler, performance_monitor
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.date_utils import get_trading_day
 from analysis.engines.date_manager import DateManager
 from analysis.engines.complex_logic_processor import ComplexLogicProcessor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
-class AstockMarketAnalyzer:
+class AstockMarketAnalyzer(BaseAnalyzer):
     """A股市场分析器"""
     
     def __init__(self, date=None, data_source=None, data_access=None):
@@ -67,7 +69,7 @@ class AstockMarketAnalyzer:
             stock_statistics = self._get_stock_statistics(date)
             
             # 获取行业分析
-            industry_analysis = self._get_industry_analysis(date)
+            _analysis = self._get__analysis(date)
             
             # 获取资金流向
             capital_flow = self._get_capital_flow_analysis(date)
@@ -79,11 +81,11 @@ class AstockMarketAnalyzer:
                 'analysis_date': date,
                 'market_indices': market_indices,
                 'stock_statistics': stock_statistics,
-                'industry_analysis': industry_analysis,
+                _analysis': _analysis,
                 'capital_flow': capital_flow,
                 'market_sentiment': market_sentiment,
                 'summary': self._generate_market_summary(
-                    market_indices, stock_statistics, industry_analysis
+                    market_indices, stock_statistics, _analysis
                 )
             }
             
@@ -131,7 +133,7 @@ class AstockMarketAnalyzer:
                             'change': latest['close'] - prev['close'],
                             'change_pct': ((latest['close'] - prev['close']) / prev['close']) * 100,
                             'volume': latest['volume'],
-                            'turnover': latest.get('turnover', 0)
+                            'turnover_rate': latest.get('turnover_rate', 0)
                         }
                         
                 except Exception as e:
@@ -182,7 +184,7 @@ class AstockMarketAnalyzer:
             
             # 成交量统计
             total_volume = all_stocks_data['volume'].sum()
-            total_turnover = all_stocks_data['turnover'].sum() if 'turnover' in all_stocks_data.columns else 0
+            total_turnover_rate = all_stocks_data['turnover_rate'].sum() if 'turnover_rate' in all_stocks_data.columns else 0
             
             # 平均涨跌幅
             avg_change_pct = all_stocks_data['change_pct'].mean()
@@ -197,7 +199,7 @@ class AstockMarketAnalyzer:
                 'limit_up': limit_up,
                 'limit_down': limit_down,
                 'total_volume': total_volume,
-                'total_turnover': total_turnover,
+                'total_turnover_rate': total_turnover_rate,
                 'avg_change_pct': avg_change_pct,
                 'market_breadth': (rising_stocks - falling_stocks) / total_stocks * 100
             }
@@ -210,46 +212,46 @@ class AstockMarketAnalyzer:
     
     @exception_handler(reraise=True)
     @performance_monitor(threshold=10.0)
-    def _get_industry_analysis(self, date: str) -> Dict[str, Any]:
+    def _get__analysis(self, date: str) -> Dict[str, Any]:
         """获取行业分析数据"""
         try:
             # 获取行业数据
-            industry_data = self.data_access.get_industry_data(
+            _data = self.data_access.get__data(
                 date=datetime.strptime(date, '%Y%m%d').strftime('%Y-%m-%d')
             )
             
-            if industry_data.empty:
+            if _data.empty:
                 return {}
             
             # 按行业分组统计
-            industry_stats = industry_data.groupby('industry').agg({
+            _stats = _data.groupby().agg({
                 'change_pct': ['mean', 'count'],
                 'volume': 'sum',
-                'turnover': 'sum'
+                'turnover_rate': 'sum'
             }).round(2)
             
             # 整理数据结构
-            industry_analysis = {}
-            for industry in industry_stats.index:
-                industry_analysis[industry] = {
-                    'avg_change_pct': industry_stats.loc[industry, ('change_pct', 'mean')],
-                    'stock_count': industry_stats.loc[industry, ('change_pct', 'count')],
-                    'total_volume': industry_stats.loc[industry, ('volume', 'sum')],
-                    'total_turnover': industry_stats.loc[industry, ('turnover', 'sum')]
+            _analysis = {}
+            for in _stats.index:
+                _analysis[] = {
+                    'avg_change_pct': _stats.loc[('change_pct', 'mean')],
+                    'stock_count': _stats.loc[('change_pct', 'count')],
+                    'total_volume': _stats.loc[('volume', 'sum')],
+                    'total_turnover_rate': _stats.loc[('turnover_rate', 'sum')]
                 }
             
             # 排序获取涨幅最大和最小的行业
             sorted_industries = sorted(
-                industry_analysis.items(),
+                _analysis.items(),
                 key=lambda x: x[1]['avg_change_pct'],
                 reverse=True
             )
             
             return {
-                'industry_performance': industry_analysis,
+                _performance': _analysis,
                 'top_industries': sorted_industries[:10],
                 'bottom_industries': sorted_industries[-10:],
-                'total_industries': len(industry_analysis)
+                'total_industries': len(_analysis)
             }
             
         except Exception as e:
@@ -403,7 +405,7 @@ class AstockMarketAnalyzer:
     
     def _generate_market_summary(self, market_indices: Dict[str, Any],
                                stock_statistics: Dict[str, Any],
-                               industry_analysis: Dict[str, Any]) -> Dict[str, str]:
+                               _analysis: Dict[str, Any]) -> Dict[str, str]:
         """生成市场总结"""
         try:
             summary = {}
@@ -435,9 +437,9 @@ class AstockMarketAnalyzer:
                     summary['stock_performance'] = "个股普跌，市场情绪悲观"
             
             # 行业表现总结
-            if industry_analysis and industry_analysis.get('top_industries'):
-                top_industry = industry_analysis['top_industries'][0]
-                summary['industry_performance'] = f"行业表现分化，{top_industry[0]}领涨"
+            if _analysis and _analysis.get('top_industries'):
+                top_= _analysis['top_industries'][0]
+                summary[_performance'] = f"行业表现分化，{top_[0]}领涨"
             
             return summary
             

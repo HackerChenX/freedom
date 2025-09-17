@@ -1,10 +1,11 @@
+from utils.container import container
 """
 增强型TRIX三重指数平滑移动平均线模块
 
 实现增强型TRIX指标计算，提供自适应参数、多周期协同分析、形态识别等功能
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.trix import TripleExponentialAverage as TRIX
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
 
@@ -28,20 +29,23 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     具有以下增强特性:
     1. 自适应周期调整：根据市场波动率动态调整TRIX参数
     2. 零轴交叉质量评估：评估TRIX与零轴交叉的可靠性
-    3. 背离检测系统：检测TRIX与价格之间的背离关系
-    4. 多周期TRIX协同分析：结合不同周期的TRIX指标提高信号可靠性
-    5. 市场环境自适应：根据市场环境动态调整评分标准
+    3. 背离检测系统：检测TRIX与价格之间的背离关系  # TODO: 将魔法数字提取到配置中
+    4. 多周期TRIX协同分析：结合不同周期的TRIX指标提高信号可靠性  # TODO: 将魔法数字提取到配置中
+    5. 市场环境自适应：根据市场环境动态调整评分标准  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self, 
-                 n: int = 12, 
-                 m: int = 9,
-                 secondary_n: int = 24,
+                 n: int = 12,  # TODO: 将魔法数字提取到配置中 
+                 m: int = 9,  # TODO: 将魔法数字提取到配置中
+                 secondary_n: int = 24,  # TODO: 将魔法数字提取到配置中
                  multi_periods: List[int] = None,
                  adaptive_period: bool = True,
-                 volatility_lookback: int = 20,
+                 volatility_lookback: int = 20,  # TODO: 将魔法数字提取到配置中
                  use_smoothed_trix: bool = True,
-                 smoothing_period: int = 3):
+                 smoothing_period: int = 3):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型TRIX指标
         
@@ -49,7 +53,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             n: 主要周期，默认为12
             m: 信号线周期，默认为9
             secondary_n: 次要周期，默认为24
-            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]
+            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             adaptive_period: 是否启用自适应周期，默认为True
             volatility_lookback: 波动率计算回溯期，默认为20
             use_smoothed_trix: 是否使用平滑后的TRIX
@@ -62,7 +66,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.description = "增强型TRIX三重指数平滑移动平均线，优化参数自适应性，增加多周期协同分析和市场环境感知"
         self.indicator_type = "ENHANCEDTRIX"
         self.secondary_n = secondary_n
-        self.multi_periods = multi_periods or [6, 12, 24, 48]
+        self.multi_periods = multi_periods or [6, 12, 24, 48]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.adaptive_period = adaptive_period
         self.volatility_lookback = volatility_lookback
         self.market_environment = "normal"
@@ -160,8 +164,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     self._multi_period_trix[period] = result[f'trix_{period}']
 
         # 计算TRIX动态特性
-        result['trix_momentum'] = result['TRIX'] - result['TRIX'].shift(3)
-        result['trix_slope'] = self._calculate_slope_Enhanced_Trix(result['TRIX'], 5)
+        result['trix_momentum'] = result['TRIX'] - result['TRIX'].shift(3)  # TODO: 将魔法数字提取到配置中
+        result['trix_slope'] = self._calculate_slope_Enhanced_Trix(result['TRIX'], 5)  # TODO: 将魔法数字提取到配置中
         result['trix_accel'] = result['trix_slope'] - result['trix_slope'].shift(1)
 
         # 计算TRIX波动率
@@ -196,7 +200,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ema3 = ema2.ewm(span=self.n).mean()
 
         # 计算TRIX
-        trix = (ema3 / ema3.shift(1) - 1) * 10000
+        trix = (ema3 / ema3.shift(1) - 1) * 10000  # TODO: 将魔法数字提取到配置中
 
         # 计算MATRIX（TRIX的移动平均）
         matrix = trix.ewm(span=self.m).mean()
@@ -228,7 +232,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return
         
         # 计算历史波动率
-        historical_volatility = returns.rolling(window=self.volatility_lookback*5).std().iloc[-1]
+        historical_volatility = returns.rolling(window=self.volatility_lookback*5).std().iloc[-1]  # TODO: 将魔法数字提取到配置中
         
         # 如果历史波动率数据不足，则使用默认周期
         if pd.isna(historical_volatility) or historical_volatility == 0:
@@ -239,12 +243,12 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         relative_volatility = volatility / historical_volatility if historical_volatility > 0 else 1.0
         
         # 根据相对波动率调整周期
-        if relative_volatility > 1.5:  # 高波动市场
+        if relative_volatility > 1.5:  # 高波动市场  # TODO: 将魔法数字提取到配置中
             # 增加周期以过滤噪声
-            self._adaptive_n = int(self.n * 1.5)
-        elif relative_volatility < 0.7:  # 低波动市场
+            self._adaptive_n = int(self.n * 1.5)  # TODO: 将魔法数字提取到配置中
+        elif relative_volatility < 0.7:  # 低波动市场  # TODO: 将魔法数字提取到配置中
             # 减少周期以提高敏感度
-            self._adaptive_n = max(int(self.n * 0.7), 6)  # 确保最小周期为6
+            self._adaptive_n = max(int(self.n * 0.7), 6)  # 确保最小周期为6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:  # 正常波动市场
             # 使用默认周期
             self._adaptive_n = self.n
@@ -252,7 +256,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 根据市场环境进一步调整
         if self.market_environment == 'bull_market':
             # 牛市中略微减少周期，更敏感地捕捉上涨趋势
-            self._adaptive_n = max(int(self._adaptive_n * 0.9), 6)
+            self._adaptive_n = max(int(self._adaptive_n * 0.9), 6)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif self.market_environment == 'bear_market':
             # 熊市中略微增加周期，过滤更多噪声
             self._adaptive_n = int(self._adaptive_n * 1.1)
@@ -263,7 +267,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         logger.debug(f"调整TRIX周期: 原始={self.n}, 调整后={self._adaptive_n}, "
                     f"相对波动率={relative_volatility:.2f}, 市场环境={self.market_environment}")
     
-    def _calculate_slope_Enhanced_Trix(self, series: pd.Series, period: int = 5) -> pd.Series:
+    def _calculate_slope_Enhanced_Trix(self, series: pd.Series, period: int = 5) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算序列的斜率
         
@@ -313,9 +317,9 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         trix_peaks, trix_troughs = find_peaks_and_troughs(trix.values, window=10)
         
         # 最小背离长度(防止检测到太短的背离)
-        min_divergence_length = 5
+        min_divergence_length = 5  # TODO: 将魔法数字提取到配置中
         # 最大背离长度(防止检测到太长的背离)
-        max_divergence_length = 30
+        max_divergence_length = 30  # TODO: 将魔法数字提取到配置中
         
         # 常规看涨背离：价格创新低但TRIX未创新低
         for i in range(1, len(price_troughs)):
@@ -338,9 +342,9 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 在价格低点附近查找TRIX低点
                 for tt in trix_troughs:
-                    if abs(tt - current_trough_idx) <= 3:
+                    if abs(tt - current_trough_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         current_trix_trough = tt
-                    if abs(tt - prev_trough_idx) <= 3:
+                    if abs(tt - prev_trough_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         prev_trix_trough = tt
                 
                 # 如果找到了对应的TRIX低点
@@ -348,17 +352,17 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX未创新低
                     if trix.iloc[current_trix_trough] > trix.iloc[prev_trix_trough]:
                         # 计算背离强度
-                        price_change = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
+                        = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
                         trix_change = (trix.iloc[current_trix_trough] / trix.iloc[prev_trix_trough]) - 1
                         # 防止除以零
-                        if max(abs(price_change), abs(trix_change)) > 0:
-                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
+                        if max(abs(), abs(trix_change)) > 0:
+                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
                         else:
                             strength = 0
                         
                         # 记录背离
-                        divergence.iloc[current_trough_idx:current_trough_idx+5, 0] = True  # bullish_divergence
-                        divergence.iloc[current_trough_idx:current_trough_idx+5, 4] = strength  # divergence_strength
+                        divergence.iloc[current_trough_idx:current_trough_idx+5, 0] = True  # bullish_divergence  # TODO: 将魔法数字提取到配置中
+                        divergence.iloc[current_trough_idx:current_trough_idx+5, 4] = strength  # divergence_strength  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 常规看跌背离：价格创新高但TRIX未创新高
         for i in range(1, len(price_peaks)):
@@ -381,9 +385,9 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 在价格高点附近查找TRIX高点
                 for tp in trix_peaks:
-                    if abs(tp - current_peak_idx) <= 3:
+                    if abs(tp - current_peak_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         current_trix_peak = tp
-                    if abs(tp - prev_peak_idx) <= 3:
+                    if abs(tp - prev_peak_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         prev_trix_peak = tp
                 
                 # 如果找到了对应的TRIX高点
@@ -391,17 +395,17 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX未创新高
                     if trix.iloc[current_trix_peak] < trix.iloc[prev_trix_peak]:
                         # 计算背离强度
-                        price_change = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
+                        = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
                         trix_change = (trix.iloc[current_trix_peak] / trix.iloc[prev_trix_peak]) - 1
                         # 防止除以零
-                        if max(abs(price_change), abs(trix_change)) > 0:
-                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
+                        if max(abs(), abs(trix_change)) > 0:
+                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
                         else:
                             strength = 0
                         
                         # 记录背离
-                        divergence.iloc[current_peak_idx:current_peak_idx+5, 1] = True  # bearish_divergence
-                        divergence.iloc[current_peak_idx:current_peak_idx+5, 4] = strength  # divergence_strength
+                        divergence.iloc[current_peak_idx:current_peak_idx+5, 1] = True  # bearish_divergence  # TODO: 将魔法数字提取到配置中
+                        divergence.iloc[current_peak_idx:current_peak_idx+5, 4] = strength  # divergence_strength  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 隐藏看涨背离：价格更高的低点但TRIX更低的低点
         for i in range(1, len(price_troughs)):
@@ -424,9 +428,9 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 在价格低点附近查找TRIX低点
                 for tt in trix_troughs:
-                    if abs(tt - current_trough_idx) <= 3:
+                    if abs(tt - current_trough_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         current_trix_trough = tt
-                    if abs(tt - prev_trough_idx) <= 3:
+                    if abs(tt - prev_trough_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         prev_trix_trough = tt
                 
                 # 如果找到了对应的TRIX低点
@@ -434,17 +438,17 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX更低的低点
                     if trix.iloc[current_trix_trough] < trix.iloc[prev_trix_trough]:
                         # 计算背离强度
-                        price_change = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
+                        = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
                         trix_change = (trix.iloc[current_trix_trough] / trix.iloc[prev_trix_trough]) - 1
                         # 防止除以零
-                        if max(abs(price_change), abs(trix_change)) > 0:
-                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
+                        if max(abs(), abs(trix_change)) > 0:
+                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
                         else:
                             strength = 0
                         
                         # 记录背离
-                        divergence.iloc[current_trough_idx:current_trough_idx+5, 2] = True  # hidden_bullish_divergence
-                        divergence.iloc[current_trough_idx:current_trough_idx+5, 4] = strength  # divergence_strength
+                        divergence.iloc[current_trough_idx:current_trough_idx+5, 2] = True  # hidden_bullish_divergence  # TODO: 将魔法数字提取到配置中
+                        divergence.iloc[current_trough_idx:current_trough_idx+5, 4] = strength  # divergence_strength  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 隐藏看跌背离：价格更低的高点但TRIX更高的高点
         for i in range(1, len(price_peaks)):
@@ -467,9 +471,9 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 在价格高点附近查找TRIX高点
                 for tp in trix_peaks:
-                    if abs(tp - current_peak_idx) <= 3:
+                    if abs(tp - current_peak_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         current_trix_peak = tp
-                    if abs(tp - prev_peak_idx) <= 3:
+                    if abs(tp - prev_peak_idx) <= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         prev_trix_peak = tp
                 
                 # 如果找到了对应的TRIX高点
@@ -477,17 +481,17 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX更高的高点
                     if trix.iloc[current_trix_peak] > trix.iloc[prev_trix_peak]:
                         # 计算背离强度
-                        price_change = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
+                        = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
                         trix_change = (trix.iloc[current_trix_peak] / trix.iloc[prev_trix_peak]) - 1
                         # 防止除以零
-                        if max(abs(price_change), abs(trix_change)) > 0:
-                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
+                        if max(abs(), abs(trix_change)) > 0:
+                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
                         else:
                             strength = 0
                         
                         # 记录背离
-                        divergence.iloc[current_peak_idx:current_peak_idx+5, 3] = True  # hidden_bearish_divergence
-                        divergence.iloc[current_peak_idx:current_peak_idx+5, 4] = strength  # divergence_strength
+                        divergence.iloc[current_peak_idx:current_peak_idx+5, 3] = True  # hidden_bearish_divergence  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                        divergence.iloc[current_peak_idx:current_peak_idx+5, 4] = strength  # divergence_strength  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return divergence
     
@@ -544,14 +548,14 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             bearish_count += period_below_zero.astype(int) + period_falling.astype(int)
         
         # 计算总检查数（正面+负面特征的总数）
-        total_checks = len(self._multi_period_trix) * 2 + 4  # 每个周期有2个检查（零轴位置和方向），加上主要和次要周期的4个检查
+        total_checks = len(self._multi_period_trix) * 2 + 4  # 每个周期有2个检查（零轴位置和方向），加上主要和次要周期的4个检查  # TODO: 将魔法数字提取到配置中
         
         # 计算看涨和看跌比例
         synergy['bullish_ratio'] = bullish_count / total_checks
         synergy['bearish_ratio'] = bearish_count / total_checks
         
         # 计算一致性得分（0-100）
-        synergy['consensus_score'] = 50 + (synergy['bullish_ratio'] - synergy['bearish_ratio']) * 50
+        synergy['consensus_score'] = 50 + (synergy['bullish_ratio'] - synergy['bearish_ratio']) * 50  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 多周期交叉信号
         synergy['multi_period_bullish_signal'] = False
@@ -576,13 +580,13 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 # 在主周期信号后10个周期内，长周期也发出相同信号
                 for i in range(len(bullish_signal)):
                     if i >= 10 and bullish_signal.iloc[i-10]:
-                        for j in range(1, 11):
+                        for j in range(1, 11):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                             if i+j < len(period_cross_up_zero) and period_cross_up_zero.iloc[i+j]:
                                 bullish_signal.iloc[i+j] = True
                 
                 for i in range(len(bearish_signal)):
                     if i >= 10 and bearish_signal.iloc[i-10]:
-                        for j in range(1, 11):
+                        for j in range(1, 11):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                             if i+j < len(period_cross_down_zero) and period_cross_down_zero.iloc[i+j]:
                                 bearish_signal.iloc[i+j] = True
         
@@ -617,47 +621,47 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 评估交叉角度
         quality['cross_angle'] = 0.0
         
-        for i in range(5, len(trix)):
+        for i in range(5, len(trix)):  # TODO: 将魔法数字提取到配置中
             if cross_up_zero.iloc[i] or cross_down_zero.iloc[i]:
                 # 计算交叉前后5个周期的斜率
-                pre_slope = (trix.iloc[i] - trix.iloc[i-5]) / 5
+                pre_slope = (trix.iloc[i] - trix.iloc[i-5]) / 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 quality.iloc[i, 2] = abs(pre_slope)  # cross_angle
         
         # 评估交叉后的加速度
         quality['post_cross_acceleration'] = 0.0
         
-        for i in range(5, len(trix)-5):
+        for i in range(5, len(trix)-5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             if cross_up_zero.iloc[i] or cross_down_zero.iloc[i]:
-                if i+5 < len(trix):
+                if i+5 < len(trix):  # TODO: 将魔法数字提取到配置中
                     # 计算交叉后5个周期的加速度
                     slope1 = (trix.iloc[i+1] - trix.iloc[i]) / 1
-                    slope5 = (trix.iloc[i+5] - trix.iloc[i]) / 5
+                    slope5 = (trix.iloc[i+5] - trix.iloc[i]) / 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     accel = slope5 - slope1
                     
                     if (cross_up_zero.iloc[i] and accel > 0) or (cross_down_zero.iloc[i] and accel < 0):
-                        quality.iloc[i, 3] = abs(accel)  # post_cross_acceleration
+                        quality.iloc[i, 3] = abs(accel)  # post_cross_acceleration  # TODO: 将魔法数字提取到配置中
         
         # 评估交叉持续性
         quality['cross_persistence'] = 0.0
         
-        for i in range(5, len(trix)-10):
+        for i in range(5, len(trix)-10):  # TODO: 将魔法数字提取到配置中
             if cross_up_zero.iloc[i]:
                 # 检查交叉后10个周期内是否保持方向
                 persistence = 0
-                for j in range(1, 11):
+                for j in range(1, 11):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     if i+j < len(trix) and trix.iloc[i+j] > 0:
                         persistence += 1
                 
-                quality.iloc[i, 4] = persistence / 10  # cross_persistence
+                quality.iloc[i, 4] = persistence / 10  # cross_persistence  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             elif cross_down_zero.iloc[i]:
                 # 检查交叉后10个周期内是否保持方向
                 persistence = 0
-                for j in range(1, 11):
+                for j in range(1, 11):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     if i+j < len(trix) and trix.iloc[i+j] < 0:
                         persistence += 1
                 
-                quality.iloc[i, 4] = persistence / 10  # cross_persistence
+                quality.iloc[i, 4] = persistence / 10  # cross_persistence  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 综合评分（0-100）
         quality['cross_quality_score'] = 0.0
@@ -665,11 +669,11 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         for i in range(len(trix)):
             if cross_up_zero.iloc[i] or cross_down_zero.iloc[i]:
                 # 综合考虑角度、加速度和持续性
-                angle_score = min(40, quality.iloc[i, 2] * 80)
-                accel_score = min(30, quality.iloc[i, 3] * 60)
-                persistence_score = quality.iloc[i, 4] * 30
+                angle_score = min(40, quality.iloc[i, 2] * 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                accel_score = min(30, quality.iloc[i, 3] * 60)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                persistence_score = quality.iloc[i, 4] * 30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
-                quality.iloc[i, 5] = angle_score + accel_score + persistence_score  # cross_quality_score
+                quality.iloc[i, 5] = angle_score + accel_score + persistence_score  # cross_quality_score  # TODO: 将魔法数字提取到配置中
         
         return quality
     
@@ -705,7 +709,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 高质量零轴交叉
         zero_cross_quality = self.evaluate_zero_cross_quality()
         if 'cross_quality_score' in zero_cross_quality.columns:
-            high_quality_threshold = 70
+            high_quality_threshold = 70  # TODO: 将魔法数字提取到配置中
             patterns['high_quality_cross_up_zero'] = (patterns['cross_up_zero'] & 
                                                     (zero_cross_quality['cross_quality_score'] > high_quality_threshold))
             patterns['high_quality_cross_down_zero'] = (patterns['cross_down_zero'] & 
@@ -724,8 +728,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if not synergy.empty:
             patterns['multi_period_bullish_signal'] = synergy['multi_period_bullish_signal']
             patterns['multi_period_bearish_signal'] = synergy['multi_period_bearish_signal']
-            patterns['strong_bullish_consensus'] = synergy['consensus_score'] > 70
-            patterns['strong_bearish_consensus'] = synergy['consensus_score'] < 30
+            patterns['strong_bullish_consensus'] = synergy['consensus_score'] > 70  # TODO: 将魔法数字提取到配置中
+            patterns['strong_bearish_consensus'] = synergy['consensus_score'] < 30  # TODO: 将魔法数字提取到配置中
         
         # 趋势加速/减速
         if 'trix_accel' in self._result.columns:
@@ -733,7 +737,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             patterns['deceleration'] = self._result['trix_accel'] < 0
         
         # 钝化形态（TRIX在零轴附近徘徊）
-        patterns['stagnation_near_zero'] = self._detect_stagnation_Enhanced_Trix(trix, threshold=0.1, periods=5)
+        patterns['stagnation_near_zero'] = self._detect_stagnation_Enhanced_Trix(trix, threshold=0.1, periods=5)  # TODO: 将魔法数字提取到配置中
         
         return patterns
     
@@ -804,74 +808,74 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         synergy = self.analyze_multi_period_synergy_Trix()
         
         # 基础分数为50（中性）
-        score = pd.Series(50, index=self._result.index)
+        score = pd.Series(50, index=self._result.index)  # TODO: 将魔法数字提取到配置中
         
         # 1. TRIX基础评分 (±20分)
         # TRIX > 0 看涨，TRIX < 0 看跌
-        score += np.where(trix > 0, np.minimum(trix * 200, 20), np.maximum(trix * 200, -20))
+        score += np.where(trix > 0, np.minimum(trix * 200, 20), np.maximum(trix * 200, -20))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 2. TRIX与信号线关系评分 (±15分)
         # TRIX > MATRIX 看涨，TRIX < MATRIX 看跌
         trix_vs_matrix = trix - matrix
-        normalized_diff = trix_vs_matrix / trix.rolling(window=20).std().replace(0, 0.001)
+        normalized_diff = trix_vs_matrix / trix.rolling(window=20).std().replace(0, 0.001)  # TODO: 将魔法数字提取到配置中
         score += np.where(trix_vs_matrix > 0, 
-                        np.minimum(normalized_diff * 5, 15), 
-                        np.maximum(normalized_diff * 5, -15))
+                        np.minimum(normalized_diff * 5, 15),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
+                        np.maximum(normalized_diff * 5, -15))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 3. TRIX动量评分 (±10分)
+        # 3. TRIX动量评分 (±10分)  # TODO: 将魔法数字提取到配置中
         # 动量为正看涨，动量为负看跌
-        normalized_momentum = trix_momentum / trix_momentum.rolling(window=20).std().replace(0, 0.001)
+        normalized_momentum = trix_momentum / trix_momentum.rolling(window=20).std().replace(0, 0.001)  # TODO: 将魔法数字提取到配置中
         score += np.where(trix_momentum > 0, 
-                        np.minimum(normalized_momentum * 3, 10), 
-                        np.maximum(normalized_momentum * 3, -10))
+                        np.minimum(normalized_momentum * 3, 10),  # TODO: 将魔法数字提取到配置中 
+                        np.maximum(normalized_momentum * 3, -10))  # TODO: 将魔法数字提取到配置中
         
-        # 4. TRIX斜率评分 (±10分)
+        # 4. TRIX斜率评分 (±10分)  # TODO: 将魔法数字提取到配置中
         # 斜率为正看涨，斜率为负看跌
         score += np.where(trix_slope > 0, 
-                        np.minimum(trix_slope * 50, 10), 
-                        np.maximum(trix_slope * 50, -10))
+                        np.minimum(trix_slope * 50, 10),  # TODO: 将魔法数字提取到配置中 
+                        np.maximum(trix_slope * 50, -10))  # TODO: 将魔法数字提取到配置中
         
-        # 5. 零轴交叉评分 (±15分)
+        # 5. 零轴交叉评分 (±15分)  # TODO: 将魔法数字提取到配置中
         if not zero_cross.empty:
             # 向上交叉零轴
             upward_cross = zero_cross.get('zero_cross_up', pd.Series(False, index=score.index))
             if isinstance(upward_cross, pd.Series) and not upward_cross.empty:
-                cross_quality_up = zero_cross.get('cross_quality', pd.Series(50, index=score.index))
-                score.loc[upward_cross] += np.minimum((cross_quality_up.loc[upward_cross] - 50) / 10 * 15, 15)
+                cross_quality_up = zero_cross.get('cross_quality', pd.Series(50, index=score.index))  # TODO: 将魔法数字提取到配置中
+                score.loc[upward_cross] += np.minimum((cross_quality_up.loc[upward_cross] - 50) / 10 * 15, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 向下交叉零轴
             downward_cross = zero_cross.get('zero_cross_down', pd.Series(False, index=score.index))
             if isinstance(downward_cross, pd.Series) and not downward_cross.empty:
-                cross_quality_down = zero_cross.get('cross_quality', pd.Series(50, index=score.index))
-                score.loc[downward_cross] -= np.minimum((cross_quality_down.loc[downward_cross] - 50) / 10 * 15, 15)
+                cross_quality_down = zero_cross.get('cross_quality', pd.Series(50, index=score.index))  # TODO: 将魔法数字提取到配置中
+                score.loc[downward_cross] -= np.minimum((cross_quality_down.loc[downward_cross] - 50) / 10 * 15, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 6. 背离评分 (±15分)
+        # 6. 背离评分 (±15分)  # TODO: 将魔法数字提取到配置中
         if not divergence.empty:
             # 牛市背离
             bullish_div = divergence.get('bullish_divergence', pd.Series(False, index=score.index))
             if isinstance(bullish_div, pd.Series) and not bullish_div.empty:
-                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
-                score.loc[bullish_div] += np.minimum(div_strength.loc[bullish_div] * 30, 15)
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                score.loc[bullish_div] += np.minimum(div_strength.loc[bullish_div] * 30, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 熊市背离
             bearish_div = divergence.get('bearish_divergence', pd.Series(False, index=score.index))
             if isinstance(bearish_div, pd.Series) and not bearish_div.empty:
-                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))
-                score.loc[bearish_div] -= np.minimum(div_strength.loc[bearish_div] * 30, 15)
+                div_strength = divergence.get('divergence_strength', pd.Series(0.5, index=score.index))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                score.loc[bearish_div] -= np.minimum(div_strength.loc[bearish_div] * 30, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 7. 多周期协同评分 (±15分)
+        # 7. 多周期协同评分 (±15分)  # TODO: 将魔法数字提取到配置中
         if not synergy.empty:
             bull_synergy = synergy.get('bullish_agreement', pd.Series(False, index=score.index))
             if isinstance(bull_synergy, pd.Series) and not bull_synergy.empty:
-                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
-                score.loc[bull_synergy] += np.minimum(synergy_strength.loc[bull_synergy] * 30, 15)
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                score.loc[bull_synergy] += np.minimum(synergy_strength.loc[bull_synergy] * 30, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             bear_synergy = synergy.get('bearish_agreement', pd.Series(False, index=score.index))
             if isinstance(bear_synergy, pd.Series) and not bear_synergy.empty:
-                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))
-                score.loc[bear_synergy] -= np.minimum(synergy_strength.loc[bear_synergy] * 30, 15)
+                synergy_strength = synergy.get('synergy_strength', pd.Series(0.5, index=score.index))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                score.loc[bear_synergy] -= np.minimum(synergy_strength.loc[bear_synergy] * 30, 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 8. 特殊形态评分 (±10分)
+        # 8. 特殊形态评分 (±10分)  # TODO: 将魔法数字提取到配置中
         if not patterns.empty:
             # 看涨形态
             for pattern in ['hook_bottom', 'bottom_reversal', 'breakout_up']:
@@ -887,19 +891,19 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     if isinstance(pattern_signal, pd.Series) and not pattern_signal.empty:
                         score.loc[pattern_signal] -= 10
         
-        # 9. 市场环境调整
+        # 9. 市场环境调整  # TODO: 将魔法数字提取到配置中
         if self.market_environment == "bull_market":
             # 牛市中增强多头信号，弱化空头信号
-            bull_adjustment = np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1)
+            bull_adjustment = np.where(score > 50, (score - 50) * 0.2, (score - 50) * 0.1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             score += bull_adjustment
         elif self.market_environment == "bear_market":
             # 熊市中增强空头信号，弱化多头信号
-            bear_adjustment = np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1)
+            bear_adjustment = np.where(score < 50, (50 - score) * 0.2, (50 - score) * 0.1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             score -= bear_adjustment
         elif self.market_environment == "volatile_market":
             # 高波动市场需要更强的信号
-            vol_adjustment = (score - 50).abs() * 0.3
-            score = np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment)
+            vol_adjustment = (score - 50).abs() * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            score = np.where(score > 50, 50 + vol_adjustment, 50 - vol_adjustment)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 限制分数范围在0-100之间
         score = score.clip(0, 100)
@@ -961,7 +965,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 买入信号条件
         buy_conditions = [
-            (score > 70),  # 评分高于70
+            (score > 70),  # 评分高于70  # TODO: 将魔法数字提取到配置中
             patterns.get('cross_up_zero', pd.Series(False, index=self._result.index)),  # 零轴上穿
             patterns.get('golden_cross', pd.Series(False, index=self._result.index)) & (trix > 0),  # 金叉且在零轴上方
             patterns.get('bullish_divergence', pd.Series(False, index=self._result.index)),  # 正背离
@@ -970,7 +974,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 卖出信号条件
         sell_conditions = [
-            (score < 30),  # 评分低于30
+            (score < 30),  # 评分低于30  # TODO: 将魔法数字提取到配置中
             patterns.get('cross_down_zero', pd.Series(False, index=self._result.index)),  # 零轴下穿
             patterns.get('death_cross', pd.Series(False, index=self._result.index)) & (trix < 0),  # 死叉且在零轴下方
             patterns.get('bearish_divergence', pd.Series(False, index=self._result.index)),  # 负背离
@@ -989,8 +993,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         conflict = signals['buy_signal'] & signals['sell_signal']
         if conflict.any():
             # 使用评分解决冲突
-            signals.loc[conflict & (score >= 50), 'sell_signal'] = False
-            signals.loc[conflict & (score < 50), 'buy_signal'] = False
+            signals.loc[conflict & (score >= 50), 'sell_signal'] = False  # TODO: 将魔法数字提取到配置中
+            signals.loc[conflict & (score < 50), 'buy_signal'] = False  # TODO: 将魔法数字提取到配置中
         
         # 更新中性信号
         signals['neutral_signal'] = ~(signals['buy_signal'] | signals['sell_signal'])
@@ -1056,25 +1060,25 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 信号置信度 (0-100)
         """
-        confidence = pd.Series(50, index=signals.index)
+        confidence = pd.Series(50, index=signals.index)  # TODO: 将魔法数字提取到配置中
         
         # 根据评分计算基础置信度
         score = signals['score']
         
         # 高评分对应高置信度
-        confidence_from_score = np.where(score > 50, 50 + (score - 50) * 0.8, 50 - (50 - score) * 0.8)
+        confidence_from_score = np.where(score > 50, 50 + (score - 50) * 0.8, 50 - (50 - score) * 0.8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         confidence = confidence_from_score
         
         # 增强型形态提高置信度
         for pattern, boost in [
-            ('bullish_divergence', 15),
-            ('bearish_divergence', 15),
+            ('bullish_divergence', 15),  # TODO: 将魔法数字提取到配置中
+            ('bearish_divergence', 15),  # TODO: 将魔法数字提取到配置中
             ('hidden_bullish_divergence', 10),
             ('hidden_bearish_divergence', 10),
-            ('high_quality_cross_up_zero', 20),
-            ('high_quality_cross_down_zero', 20),
-            ('multi_period_bullish_signal', 15),
-            ('multi_period_bearish_signal', 15),
+            ('high_quality_cross_up_zero', 20),  # TODO: 将魔法数字提取到配置中
+            ('high_quality_cross_down_zero', 20),  # TODO: 将魔法数字提取到配置中
+            ('multi_period_bullish_signal', 15),  # TODO: 将魔法数字提取到配置中
+            ('multi_period_bearish_signal', 15),  # TODO: 将魔法数字提取到配置中
             ('strong_bullish_consensus', 10),
             ('strong_bearish_consensus', 10)
         ]:
@@ -1085,8 +1089,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         trix_values = self._result['TRIX']
         
         # TRIX远离零轴时信号更可靠
-        confidence += np.where(abs(trix_values) > 0.5, 5, 0)
-        confidence += np.where(abs(trix_values) > 1.0, 5, 0)
+        confidence += np.where(abs(trix_values) > 0.5, 5, 0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        confidence += np.where(abs(trix_values) > 1.0, 5, 0)  # TODO: 将魔法数字提取到配置中
         
         return confidence
     
@@ -1115,7 +1119,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         atr = None
         if 'high' in data.columns and 'low' in data.columns:
             high = data['high']
-            atr = self.atr_Trix(high, low, close, 14)
+            atr = self.atr_Trix(high, low, close, 14)  # TODO: 将魔法数字提取到配置中
         
         # 买入信号的止损
         for i in range(len(signals)):
@@ -1128,19 +1132,19 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     confidence = signals['confidence'].iloc[i]
                     
                     # 根据信号置信度调整ATR倍数
-                    if confidence >= 80:
+                    if confidence >= 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         atr_multiplier = 2.0  # 高置信度，较宽止损
-                    elif confidence >= 60:
-                        atr_multiplier = 1.5  # 中等置信度，中等止损
+                    elif confidence >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                        atr_multiplier = 1.5  # TODO: 将魔法数字提取到配置中  # 中等置信度，中等止损  # TODO: 将魔法数字提取到配置中
                     else:
                         atr_multiplier = 1.0  # 低置信度，紧止损
                     
                     stop_loss.iloc[i] = current_close - (atr_value * atr_multiplier)
                 else:
                     # 使用最近低点作为止损
-                    if i >= 5:
-                        recent_low = low.iloc[i-5:i+1].min()
-                        stop_loss.iloc[i] = recent_low * 0.99  # 微调1%
+                    if i >= 5:  # TODO: 将魔法数字提取到配置中
+                        recent_low = low.iloc[i-5:i+1].min()  # TODO: 将魔法数字提取到配置中
+                        stop_loss.iloc[i] = recent_low * 0.99  # 微调1%  # TODO: 将魔法数字提取到配置中
         
         # 卖出信号的止损 (反向操作的止损位)
         for i in range(len(signals)):
@@ -1153,19 +1157,19 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     confidence = signals['confidence'].iloc[i]
                     
                     # 根据信号置信度调整ATR倍数
-                    if confidence >= 80:
+                    if confidence >= 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                         atr_multiplier = 2.0
-                    elif confidence >= 60:
-                        atr_multiplier = 1.5
+                    elif confidence >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                        atr_multiplier = 1.5  # TODO: 将魔法数字提取到配置中
                     else:
                         atr_multiplier = 1.0
                     
                     stop_loss.iloc[i] = current_close + (atr_value * atr_multiplier)
                 else:
                     # 使用最近高点作为止损
-                    if 'high' in data.columns and i >= 5:
+                    if 'high' in data.columns and i >= 5:  # TODO: 将魔法数字提取到配置中
                         high = data['high']
-                        recent_high = high.iloc[i-5:i+1].max()
+                        recent_high = high.iloc[i-5:i+1].max()  # TODO: 将魔法数字提取到配置中
                         stop_loss.iloc[i] = recent_high * 1.01  # 微调1%
         
         return stop_loss
@@ -1201,45 +1205,45 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查EnhancedTRIX形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -1276,7 +1280,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX线上穿信号线，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1286,7 +1290,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX线下穿信号线，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1297,7 +1301,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX从下方穿越零轴，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1307,7 +1311,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX从上方穿越零轴，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1318,7 +1322,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新低但TRIX未创新低，表明下跌动能减弱",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1328,7 +1332,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新高但TRIX未创新高，表明上涨动能减弱",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1339,7 +1343,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="多周期TRIX共振发出看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1349,7 +1353,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="多周期TRIX共振发出看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0,
+            score_impact=-30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1380,7 +1384,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX指标上升，长期动量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1390,7 +1394,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX指标下降，长期动量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1400,7 +1404,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX指标加速上升，表明价格上涨动能不断增强",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1420,7 +1424,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX多重信号共振，形成强烈看涨态势",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1430,7 +1434,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="TRIX多重信号共振，形成强烈看跌态势",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-30.0,
+            score_impact=-30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1470,8 +1474,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         buy_signal |= golden_cross
         sell_signal |= death_cross
-        signal_strength += golden_cross * 0.7
-        signal_strength += death_cross * 0.7
+        signal_strength += golden_cross * 0.7  # TODO: 将魔法数字提取到配置中
+        signal_strength += death_cross * 0.7  # TODO: 将魔法数字提取到配置中
 
         # 2. TRIX零轴穿越信号
         zero_cross_up = crossover(trix, 0)
@@ -1479,14 +1483,14 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         buy_signal |= zero_cross_up
         sell_signal |= zero_cross_down
-        signal_strength += zero_cross_up * 0.8
-        signal_strength += zero_cross_down * 0.8
+        signal_strength += zero_cross_up * 0.8  # TODO: 将魔法数字提取到配置中
+        signal_strength += zero_cross_down * 0.8  # TODO: 将魔法数字提取到配置中
 
-        # 3. 高质量零轴交叉信号
+        # 3. 高质量零轴交叉信号  # TODO: 将魔法数字提取到配置中
         zero_cross_quality = self.evaluate_zero_cross_quality()
         if not zero_cross_quality.empty and 'cross_quality_score' in zero_cross_quality.columns:
-            high_quality_up = zero_cross_up & (zero_cross_quality['cross_quality_score'] > 70)
-            high_quality_down = zero_cross_down & (zero_cross_quality['cross_quality_score'] > 70)
+            high_quality_up = zero_cross_up & (zero_cross_quality['cross_quality_score'] > 70)  # TODO: 将魔法数字提取到配置中
+            high_quality_down = zero_cross_down & (zero_cross_quality['cross_quality_score'] > 70)  # TODO: 将魔法数字提取到配置中
 
             buy_signal |= high_quality_up
             sell_signal |= high_quality_down
@@ -1499,7 +1503,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'signal_strength': signal_strength
         }
 
-    def atr_Trix(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
+    def atr_Trix(self, high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算平均真实范围(ATR)
 
@@ -1541,7 +1545,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "TRIX线上穿信号线，表明上升趋势开始",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
-                "score_impact": 20.0
+                "score_impact": 20.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_DEATH_CROSS": {
                 "id": "TRIX_DEATH_CROSS",
@@ -1549,7 +1553,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "TRIX线下穿信号线，表明下降趋势开始",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
-                "score_impact": -20.0
+                "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_ZERO_CROSS_UP": {
                 "id": "TRIX_ZERO_CROSS_UP",
@@ -1557,7 +1561,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "TRIX从下方穿越零轴，表明趋势转为看涨",
                 "type": "BULLISH",
                 "strength": "MEDIUM",
-                "score_impact": 15.0
+                "score_impact": 15.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_ZERO_CROSS_DOWN": {
                 "id": "TRIX_ZERO_CROSS_DOWN",
@@ -1565,7 +1569,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "TRIX从上方穿越零轴，表明趋势转为看跌",
                 "type": "BEARISH",
                 "strength": "MEDIUM",
-                "score_impact": -15.0
+                "score_impact": -15.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_BULLISH_DIVERGENCE": {
                 "id": "TRIX_BULLISH_DIVERGENCE",
@@ -1573,7 +1577,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "价格创新低但TRIX未创新低，表明下跌动能减弱",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 25.0
+                "score_impact": 25.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_BEARISH_DIVERGENCE": {
                 "id": "TRIX_BEARISH_DIVERGENCE",
@@ -1581,7 +1585,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "价格创新高但TRIX未创新高，表明上涨动能减弱",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -25.0
+                "score_impact": -25.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_MULTI_PERIOD_BULLISH": {
                 "id": "TRIX_MULTI_PERIOD_BULLISH",
@@ -1589,7 +1593,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "多周期TRIX共振发出看涨信号",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 30.0
+                "score_impact": 30.0  # TODO: 将魔法数字提取到配置中
             },
             "TRIX_MULTI_PERIOD_BEARISH": {
                 "id": "TRIX_MULTI_PERIOD_BEARISH",
@@ -1597,7 +1601,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "description": "多周期TRIX共振发出看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -30.0
+                "score_impact": -30.0  # TODO: 将魔法数字提取到配置中
             }
         }
 
@@ -1614,16 +1618,16 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         EnhancedTrix指标所需的最少数据周期数
 
-        计算逻辑：基于参数 smoothing_period(3) 计算
+        计算逻辑：基于参数 smoothing_period(3) 计算  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数
         """
         # 确保_parameters存在，如果不存在则使用默认值
         if not hasattr(self, '_parameters') or not self._parameters:
-            return 40  # 返回默认的最小周期数
+            return 40  # 返回默认的最小周期数  # TODO: 将魔法数字提取到配置中
 
-        smoothing_period = self._parameters.get('smoothing_period', 3)
+        smoothing_period = self._parameters.get('smoothing_period', 3)  # TODO: 将魔法数字提取到配置中
         return smoothing_period + max(10, smoothing_period // 2)
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -1660,14 +1664,14 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 默认参数字典
         """
         return {
-            'n': 12,
-            'm': 9,
-            'secondary_n': 24,
-            'multi_periods': [6, 12, 24],
+            'n': 12,  # TODO: 将魔法数字提取到配置中
+            'm': 9,  # TODO: 将魔法数字提取到配置中
+            'secondary_n': 24,  # TODO: 将魔法数字提取到配置中
+            'multi_periods': [6, 12, 24],  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             'adaptive_period': True,
-            'volatility_lookback': 20,
+            'volatility_lookback': 20,  # TODO: 将魔法数字提取到配置中
             'use_smoothed_trix': True,
-            'smoothing_period': 3
+            'smoothing_period': 3  # TODO: 将魔法数字提取到配置中
         }
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:

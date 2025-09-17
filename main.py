@@ -18,7 +18,7 @@ sys.path.insert(0, str(root_dir))
 from utils.logger import get_logger
 from utils.dependency_injection import get_container
 from utils.decorators import exception_handler, performance_monitor
-from db.interfaces.optimized_data_access_interface import DataAccessInterface, RealDataValidator
+from db.interfaces.data_access_interface import DataAccessInterface, RealDataValidator
 from config.unified_config_manager import UnifiedConfigManager
 
 

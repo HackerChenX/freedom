@@ -8,6 +8,7 @@ import re
 import json
 from typing import Dict, List, Any, Optional
 from datetime import datetime
+from db.sql_manager import SQLManager, QueryType
 from urllib.parse import urljoin, urlparse
 from crawler.spiders.base_spider import Base_spider
 from utils.logger import get_logger
@@ -270,6 +271,7 @@ class Taoguba_spider(Base_spider):
         """生成模拟文章数据"""
         import random
         from datetime import datetime
+from db.sql_manager import SQLManager, QueryType
 
         # 模拟股市相关内容
         mock_contents = [

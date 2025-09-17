@@ -18,6 +18,7 @@ try:
     from db.services.stock_data_service import get_stock_data_service
     from db.db_manager import get_db_manager
     from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 except ImportError as e:
     print(f"导入错误: {e}")
 

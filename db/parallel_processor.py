@@ -8,11 +8,7 @@ Author: System
 Date: 2025-01-15
 """
 
-import pandas as pd
 from typing import List, Dict, Any, Optional, Callable, Union
-from datetime import datetime
-import logging
-import multiprocessing as mp
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 import asyncio
 import time
@@ -21,11 +17,23 @@ from dataclasses import dataclass
 from enum import Enum
 
 from db.interfaces.data_access_interface import DataAccessInterface
-from indicators.unified_calculator import IndicatorResult
 from db.interfaces.cache_interface import ICacheService
-from utils.logger import getLogger
+from utils.logger import get_logger
 
-logger = getLogger(__name__)
+logger = get_logger(__name__)
+
+
+@dataclass
+class IndicatorResult:
+    """
+    指标计算结果
+    L3层内部定义，避免跨层依赖
+    """
+    indicator_name: str
+    values: Dict[str, Any]
+    signals: Dict[str, Any]
+    success: bool
+    error: Optional[str] = None
 
 
 class ProcessingMode(Enum):

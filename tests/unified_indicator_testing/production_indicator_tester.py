@@ -26,6 +26,7 @@ sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
 from unified_indicator_tester import UnifiedIndicatorTester
 from utils.logger import setup_logger
+from db.sql_manager import SQLManager, QueryType
 
 class ProductionIndicatorTester:
     """生产级指标测试器"""

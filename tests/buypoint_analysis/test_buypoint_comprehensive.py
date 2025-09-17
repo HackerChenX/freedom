@@ -25,7 +25,7 @@ sys.path.insert(0, str(project_root))
 
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from tests.reverse_validation.pattern_data_generator import Pattern_data_generator
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

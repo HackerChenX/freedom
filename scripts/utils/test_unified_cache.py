@@ -15,7 +15,7 @@ from typing import Dict, Any
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.cache_layer import UnifiedCacheLayer, CacheLevel
+from db.services.cache_service import CacheService, CacheLevel
 from db.services.cache_service import Cache_service, Cache_key_builder
 from config.cache_config import get_cache_config, CacheProfile
 from config.container_config import get_configured_container
@@ -31,7 +31,7 @@ def test_basic_cache_operations():
     
     # 创建缓存层
     config = get_cache_config(CacheProfile.TESTING)
-    cache_layer = UnifiedCacheLayer(config)
+    cache_layer = CacheService(config)
     
     # 测试设置和获取
     test_data = {"name": "测试股票", "code": "000001", "price": 10.5}
@@ -70,7 +70,7 @@ def test_multi_level_cache():
     print("\n=== 测试多级缓存 ===")
     
     config = get_cache_config(CacheProfile.DEVELOPMENT)
-    cache_layer = UnifiedCacheLayer(config)
+    cache_layer = CacheService(config)
     
     # 测试数据
     test_data = {"symbol": "AAPL", "price": 150.0, "volume": 1000000}
@@ -170,7 +170,7 @@ def test_cache_performance_Cache():
     print("\n=== 测试缓存性能 ===")
     
     config = get_cache_config(CacheProfile.HIGH_PERFORMANCE)
-    cache_layer = UnifiedCacheLayer(config)
+    cache_layer = CacheService(config)
     
     # 准备测试数据
     test_count = 1000
@@ -253,7 +253,7 @@ def test_cache_expiration():
     print("\n=== 测试缓存过期 ===")
     
     config = get_cache_config(CacheProfile.TESTING)
-    cache_layer = UnifiedCacheLayer(config)
+    cache_layer = CacheService(config)
     
     # 设置短期缓存
     key = "test:expiration"

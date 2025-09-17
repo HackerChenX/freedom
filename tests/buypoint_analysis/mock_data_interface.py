@@ -20,7 +20,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -387,7 +387,7 @@ class MockDataInterface(DataAccessInterface):
             return None
 
 
-class MockDataManager:
+class MockDataAccessManager:
     """模拟数据管理器"""
     
     def __init__(self):
@@ -409,6 +409,7 @@ class MockDataManager:
         """注入模拟数据接口到依赖注入系统"""
         try:
             from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
             
             container = get_container()
             
@@ -433,6 +434,7 @@ class MockDataManager:
         try:
             if self.original_interface:
                 from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
                 container = get_container()
                 container.register(DataAccessInterface, self.original_interface)
                 logger.info("恢复原始数据接口")
@@ -449,14 +451,14 @@ class MockDataManager:
 # 全局模拟数据管理器实例
 _mock_data_manager = None
 
-def get_mock_data_manager() -> MockDataManager:
+def get_mock_data_manager() -> MockDataAccessManager:
     """获取模拟数据管理器单例"""
     global _mock_data_manager
     if _mock_data_manager is None:
-        _mock_data_manager = MockDataManager()
+        _mock_data_manager = MockDataAccessManager()
     return _mock_data_manager
 
-def setup_test_data(test_data_dict: Dict[str, pd.DataFrame]) -> MockDataManager:
+def setup_test_data(test_data_dict: Dict[str, pd.DataFrame]) -> MockDataAccessManager:
     """
     设置测试数据的便捷函数
     
@@ -464,7 +466,7 @@ def setup_test_data(test_data_dict: Dict[str, pd.DataFrame]) -> MockDataManager:
         test_data_dict: 测试数据字典
         
     Returns:
-        MockDataManager: 模拟数据管理器
+        MockDataAccessManager: 模拟数据管理器
     """
     manager = get_mock_data_manager()
     manager.setup_mock_data(test_data_dict)

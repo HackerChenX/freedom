@@ -31,6 +31,7 @@ class QuickStrategyTester:
         """设置模拟服务"""
         try:
             from db.interfaces.indicator_calculator_interface import IIndicatorCalculator
+from db.sql_manager import SQLManager, QueryType
             
             # 创建简单但完整的模拟指标计算器
             class SimpleIndicatorCalculator:
@@ -73,8 +74,7 @@ class QuickStrategyTester:
         try:
             query = """
             SELECT DISTINCT code 
-            FROM stock_info 
-            WHERE level = '日线'
+            FROM stock_info WHERE code = %(code)s AND level = '日线'
             LIMIT 10
             """
             result = self.db.query(query)

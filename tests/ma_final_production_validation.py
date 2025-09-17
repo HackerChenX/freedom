@@ -21,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -142,8 +142,7 @@ class MAFinalProductionValidation:
                 low,
                 close,
                 volume
-            FROM stock_info
-            WHERE date >= '2024-01-01'
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2024-01-01'
             AND volume > 0
             AND close > 0
             ORDER BY date DESC, code
@@ -172,6 +171,7 @@ class MAFinalProductionValidation:
         try:
             # 尝试直接使用clickhouse_driver
             from clickhouse_driver import Client
+from db.sql_manager import SQLManager, QueryType
 
             # 创建客户端实例
             client = Client(
@@ -192,8 +192,7 @@ class MAFinalProductionValidation:
                 low,
                 close,
                 volume
-            FROM stock_info
-            WHERE date >= '2024-01-01'
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2024-01-01'
             AND volume > 0
             AND close > 0
             ORDER BY date DESC, code

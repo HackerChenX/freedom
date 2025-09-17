@@ -16,6 +16,7 @@ import time
 import json
 from pathlib import Path
 from typing import Dict, List, Any
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到路径
 project_root = Path(__file__).parent

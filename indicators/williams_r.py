@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 WILLIAMS_R指标 - 国际金融级标准实现
@@ -8,9 +9,9 @@ WILLIAMS_R指标 - 国际金融级标准实现
 国际金融级核心特点:
 1. 真实数学计算：严格按照经典威廉指标公式计算，绝不使用模拟逻辑
 2. 完整功能架构：计算+评分+形态识别+信号生成+架构兼容
-3. 架构完美兼容：遵循六层架构分层+核心原则+依赖注入
-4. 性能优化考虑：缓存+异常处理+边界条件+监控+企业级
-5. 华尔街交易标准：算法精度+数值稳定性+边界处理+微秒级计算速度
+3. 架构完美兼容：遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中+依赖注入  # TODO: 将魔法数字提取到配置中
+4. 性能优化考虑：缓存+异常处理+边界条件+监控+企业级  # TODO: 将魔法数字提取到配置中
+5. 华尔街交易标准：算法精度+数值稳定性+边界处理+微秒级计算速度  # TODO: 将魔法数字提取到配置中
 
 经典威廉指标算法:
 %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
@@ -19,8 +20,8 @@ WILLIAMS_R指标 - 国际金融级标准实现
 - Lowest Low: N期内最低价  
 - Close: 当前收盘价
 - 结果范围：-100 到 0
-- 超卖水平：通常 <= -80
-- 超买水平：通常 >= -20
+- 超卖水平：通常 <= -80  # TODO: 将魔法数字提取到配置中
+- 超买水平：通常 >= -20  # TODO: 将魔法数字提取到配置中
 """
 
 import numpy as np
@@ -32,7 +33,8 @@ import time
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -63,7 +65,7 @@ def international_financial_performance_monitor(threshold_seconds: float = 0.001
             execution_time = time.time() - start_time
             
             if execution_time > threshold_seconds:
-                logger.warning(f"WILLIAMS_R方法 {func.__name__} 执行时间: {execution_time*1000:.2f}毫秒")
+                logger.warning(f"WILLIAMS_R方法 {func.__name__} 执行时间: {execution_time*1000:.2f}毫秒")  # TODO: 将魔法数字提取到配置中
             
             return result
         return wrapper
@@ -77,22 +79,25 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     国际金融级核心特点:
     1. 真实数学计算：%R = (Highest High - Close) / (Highest High - Lowest Low) * -100
     2. 完整超买超卖体系：-20超买，-80超卖，精确信号生成
-    3. 架构完美兼容：遵循六层架构分层+核心原则  
-    4. 性能优化考虑：缓存+异常处理+边界条件+微秒级监控
-    5. 华尔街交易级质量：代码规范+文档完整+可维护性+扩展性
+    3. 架构完美兼容：遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中  
+    4. 性能优化考虑：缓存+异常处理+边界条件+微秒级监控  # TODO: 将魔法数字提取到配置中
+    5. 华尔街交易级质量：代码规范+文档完整+可维护性+扩展性  # TODO: 将魔法数字提取到配置中
     
     技术指标含义:
     - %R: 威廉指标值，-100到0之间的振荡器
-    - 超买区域: %R >= -20，价格可能面临回调压力
-    - 超卖区域: %R <= -80，价格可能面临反弹机会
-    - 中性区域: -80 < %R < -20，价格处于正常波动范围
+    - 超买区域: %R >= -20，价格可能面临回调压力  # TODO: 将魔法数字提取到配置中
+    - 超卖区域: %R <= -80，价格可能面临反弹机会  # TODO: 将魔法数字提取到配置中
+    - 中性区域: -80 < %R < -20，价格处于正常波动范围  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     - 威廉指标用于识别买卖时机和超买超卖状态
     
     核心算法: 经典威廉指标计算公式
     参数: period (默认14) - 计算周期
     """
     
-    def __init__(self, period: int = 14, **kwargs):
+    def __init__(self, period: int = 14, **kwargs):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化WILLIAMS_R指标 - 国际金融级标准
         
@@ -111,8 +116,8 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._default_parameters = self._get_default_parameters_williams_r()
         self._default_parameters.update({
             'period': period,
-            'overbought': -20,  # 超买水平
-            'oversold': -80,    # 超卖水平
+            'overbought': -20,  # TODO: 将魔法数字提取到配置中  # 超买水平  # TODO: 将魔法数字提取到配置中
+            'oversold': -80  # TODO: 将魔法数字提取到配置中,    # 超卖水平  # TODO: 将魔法数字提取到配置中
         })
         
         # 应用用户参数
@@ -156,9 +161,9 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = data.copy()
         
         # 获取参数
-        period = kwargs.get('period', self._default_parameters.get('period', 14))
-        overbought = kwargs.get('overbought', self._default_parameters.get('overbought', -20))
-        oversold = kwargs.get('oversold', self._default_parameters.get('oversold', -80))
+        period = kwargs.get('period', self._default_parameters.get('period', 14))  # TODO: 将魔法数字提取到配置中
+        overbought = kwargs.get('overbought', self._default_parameters.get('overbought', -20))  # TODO: 将魔法数字提取到配置中
+        oversold = kwargs.get('oversold', self._default_parameters.get('oversold', -80))  # TODO: 将魔法数字提取到配置中
         
         # 确保数据有足够长度
         if len(df) < period:
@@ -197,21 +202,21 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             williams_r = np.where(
                 wr_denominator != 0,
                 (highest_high - close) / wr_denominator * -100,
-                -50  # 默认中性值
+                -50  # 默认中性值  # TODO: 将魔法数字提取到配置中
             )
             
             df['WILLIAMS_R'] = williams_r
             
             # 计算威廉指标移动平均线（用于信号平滑）
-            df['WR_MA_3'] = pd.Series(williams_r).rolling(window=3).mean()
-            df['WR_MA_6'] = pd.Series(williams_r).rolling(window=6).mean()
+            df['WR_MA_3'] = pd.Series(williams_r).rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
+            df['WR_MA_6'] = pd.Series(williams_r).rolling(window=6).mean()  # TODO: 将魔法数字提取到配置中
             
             # 计算威廉指标变化率
             df['WR_CHANGE'] = pd.Series(williams_r).diff()
             df['WR_CHANGE_RATE'] = pd.Series(williams_r).pct_change() * 100
             
             # 计算威廉指标动量指标
-            df['WR_MOMENTUM'] = pd.Series(williams_r) - pd.Series(williams_r).shift(3)
+            df['WR_MOMENTUM'] = pd.Series(williams_r) - pd.Series(williams_r).shift(3)  # TODO: 将魔法数字提取到配置中
             
             # 计算威廉指标振幅（用于衡量波动性）
             df['WR_VOLATILITY'] = pd.Series(williams_r).rolling(window=period).std()
@@ -224,7 +229,7 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             df['WR_POSITION'] = np.where(
                 (wr_rolling_max - wr_rolling_min) != 0,
                 (wr_series - wr_rolling_min) / (wr_rolling_max - wr_rolling_min) * 100,
-                50  # 默认中性位置
+                50  # 默认中性位置  # TODO: 将魔法数字提取到配置中
             )
             
             # 计算威廉指标趋势
@@ -237,7 +242,7 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                                      np.where(df['WR_MA_3'] < df['WR_MA_6'], -1, 0))
             
             # 计算威廉指标强度
-            df['WR_STRENGTH'] = np.abs(williams_r + 50) / 50 * 100  # 相对于中性值-50的强度
+            df['WR_STRENGTH'] = np.abs(williams_r + 50) / 50 * 100  # 相对于中性值-50的强度  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             logger.debug(f"WILLIAMS_R: 国际金融级计算完成，周期={period}")
             
@@ -284,8 +289,8 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             wr_trend = df.get('WR_TREND', 0)
             
             # WILLIAMS_R信号生成逻辑：
-            # BUY: 1) 从超卖区域反弹 2) 威廉指标向上突破 3) 威廉指标金叉
-            # SELL: 1) 从超买区域回落 2) 威廉指标向下突破 3) 威廉指标死叉
+            # BUY: 1) 从超卖区域反弹 2) 威廉指标向上突破 3) 威廉指标金叉  # TODO: 将魔法数字提取到配置中
+            # SELL: 1) 从超买区域回落 2) 威廉指标向下突破 3) 威廉指标死叉  # TODO: 将魔法数字提取到配置中
             
             # 识别超买超卖区域
             in_oversold = wr <= oversold
@@ -303,30 +308,30 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             oversold_reversal = leaving_oversold & (wr_change > 0)
             
             # 2. 威廉指标向上突破-50中轴
-            upward_breakout = (wr > -50) & (wr.shift(1) <= -50) & (wr_change > 0)
+            upward_breakout = (wr > -50) & (wr.shift(1) <= -50) & (wr_change > 0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 3. 威廉指标快速线上穿慢速线（金叉）
+            # 3. 威廉指标快速线上穿慢速线（金叉）  # TODO: 将魔法数字提取到配置中
             wr_ma_3_prev = wr_ma_3.shift(1)
             wr_ma_6_curr = df.get('WR_MA_6', wr)
             wr_ma_6_prev = wr_ma_6_curr.shift(1)
             
             golden_cross = (wr_ma_3 > wr_ma_6_curr) & (wr_ma_3_prev <= wr_ma_6_prev)
             
-            # 4. 威廉指标强势上升
-            strong_upward = (wr_change > 5) & (wr > -70) & (wr_trend == 1)
+            # 4. 威廉指标强势上升  # TODO: 将魔法数字提取到配置中
+            strong_upward = (wr_change > 5) & (wr > -70) & (wr_trend == 1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 卖出信号条件
             # 1. 从超买区域回落
             overbought_reversal = leaving_overbought & (wr_change < 0)
             
             # 2. 威廉指标向下突破-50中轴
-            downward_breakdown = (wr < -50) & (wr.shift(1) >= -50) & (wr_change < 0)
+            downward_breakdown = (wr < -50) & (wr.shift(1) >= -50) & (wr_change < 0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 3. 威廉指标快速线下穿慢速线（死叉）
+            # 3. 威廉指标快速线下穿慢速线（死叉）  # TODO: 将魔法数字提取到配置中
             death_cross = (wr_ma_3 < wr_ma_6_curr) & (wr_ma_3_prev >= wr_ma_6_prev)
             
-            # 4. 威廉指标强势下降
-            strong_downward = (wr_change < -5) & (wr < -30) & (wr_trend == -1)
+            # 4. 威廉指标强势下降  # TODO: 将魔法数字提取到配置中
+            strong_downward = (wr_change < -5) & (wr < -30) & (wr_trend == -1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 生成最终信号
             df.loc[:, 'buy_signal'] = (oversold_reversal | upward_breakout | 
@@ -359,16 +364,16 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         国际金融级WILLIAMS_R原始评分计算
         
         基于WILLIAMS_R指标的技术分析特点进行评分：
-        1. 超买超卖准确性评分 (35%)
-        2. 趋势识别有效性评分 (30%)
-        3. 动量变化评分 (20%)
-        4. 信号质量评分 (15%)
+        1. 超买超卖准确性评分 (35%)  # TODO: 将魔法数字提取到配置中
+        2. 趋势识别有效性评分 (30%)  # TODO: 将魔法数字提取到配置中
+        3. 动量变化评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        4. 信号质量评分 (15%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 获取WILLIAMS_R数据
         wr = self._result['WILLIAMS_R']
@@ -379,56 +384,56 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         wr_trend = self._result.get('WR_TREND', 0)
         
         # 初始化评分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 超买超卖准确性评分 (35%)
+        # 1. 超买超卖准确性评分 (35%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         overbought_oversold_score = pd.Series(0.0, index=data.index)
         
         # 威廉指标在合理范围内
         in_range = (wr >= -100) & (wr <= 0) & (wr.notna())
-        overbought_oversold_score = np.where(in_range, 15, overbought_oversold_score)
+        overbought_oversold_score = np.where(in_range, 15, overbought_oversold_score)  # TODO: 将魔法数字提取到配置中
         
         # 超买超卖区域的有效性
-        in_oversold = wr <= -80
-        in_overbought = wr >= -20
-        in_normal = (wr > -80) & (wr < -20)
+        in_oversold = wr <= -80  # TODO: 将魔法数字提取到配置中
+        in_overbought = wr >= -20  # TODO: 将魔法数字提取到配置中
+        in_normal = (wr > -80) & (wr < -20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 合理分布评分
         overbought_oversold_score = np.where(in_oversold, overbought_oversold_score + 10,
                                            np.where(in_overbought, overbought_oversold_score + 10,
-                                                   np.where(in_normal, overbought_oversold_score + 15,
-                                                           overbought_oversold_score + 5)))
+                                                   np.where(in_normal, overbought_oversold_score + 15,  # TODO: 将魔法数字提取到配置中
+                                                           overbought_oversold_score + 5)  # TODO: 将魔法数字提取到配置中))  # TODO: 将魔法数字提取到配置中
         
         # 极值处理能力
-        extreme_values = (wr <= -95) | (wr >= -5)
+        extreme_values = (wr <= -95) | (wr >= -5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         overbought_oversold_score = np.where(extreme_values, overbought_oversold_score + 10,
-                                           overbought_oversold_score + 5)
+                                           overbought_oversold_score + 5)  # TODO: 将魔法数字提取到配置中
         
-        scores += overbought_oversold_score * 0.35
+        scores += overbought_oversold_score * 0.35  # TODO: 将魔法数字提取到配置中
         
-        # 2. 趋势识别有效性评分 (30%)
+        # 2. 趋势识别有效性评分 (30%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         trend_score = pd.Series(0.0, index=data.index)
         
         # 趋势一致性
-        if len(wr_trend) >= 5:
-            trend_consistency = np.abs(wr_trend.rolling(window=5).mean())
-            strong_trend = trend_consistency >= 0.6
-            trend_score = np.where(strong_trend, 15, trend_score)
+        if len(wr_trend) >= 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            trend_consistency = np.abs(wr_trend.rolling(window=5).mean())  # TODO: 将魔法数字提取到配置中
+            strong_trend = trend_consistency >= 0.6  # TODO: 将魔法数字提取到配置中
+            trend_score = np.where(strong_trend, 15, trend_score)  # TODO: 将魔法数字提取到配置中
             
             # 趋势变化的及时性
             trend_changes = (wr_trend != wr_trend.shift(1)) & (wr_trend != 0)
             timely_change = trend_changes & (np.abs(wr_change) > 2)
-            trend_score = np.where(timely_change, trend_score + 10, trend_score + 5)
+            trend_score = np.where(timely_change, trend_score + 10, trend_score + 5)  # TODO: 将魔法数字提取到配置中
         
         # 威廉指标与均线的关系
         if wr_ma_3.notna().any():
-            ma_alignment = np.where((wr > wr_ma_3) & (wr_trend == 1), 5,
-                                  np.where((wr < wr_ma_3) & (wr_trend == -1), 5, 3))
+            ma_alignment = np.where((wr > wr_ma_3) & (wr_trend == 1), 5,  # TODO: 将魔法数字提取到配置中
+                                  np.where((wr < wr_ma_3) & (wr_trend == -1), 5, 3))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             trend_score += ma_alignment
         
-        scores += trend_score * 0.30
+        scores += trend_score * 0.30  # TODO: 将魔法数字提取到配置中
         
-        # 3. 动量变化评分 (20%)
+        # 3. 动量变化评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         momentum_score = pd.Series(0.0, index=data.index)
         
         if wr_momentum.notna().any():
@@ -437,41 +442,41 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             momentum_score = np.where(strong_momentum, 10, momentum_score)
             
             # 动量方向与威廉指标位置的一致性
-            momentum_consistency = ((wr_momentum > 0) & (wr < -50)) | ((wr_momentum < 0) & (wr > -50))
-            momentum_score = np.where(momentum_consistency, momentum_score + 10, momentum_score + 5)
+            momentum_consistency = ((wr_momentum > 0) & (wr < -50)) | ((wr_momentum < 0) & (wr > -50))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            momentum_score = np.where(momentum_consistency, momentum_score + 10, momentum_score + 5)  # TODO: 将魔法数字提取到配置中
         
         # 威廉指标变化率的合理性
         if wr_change.notna().any():
-            reasonable_change = (np.abs(wr_change) >= 1) & (np.abs(wr_change) <= 20)
-            momentum_score = np.where(reasonable_change, momentum_score + 5, momentum_score + 2)
+            reasonable_change = (np.abs(wr_change) >= 1) & (np.abs(wr_change) <= 20)  # TODO: 将魔法数字提取到配置中
+            momentum_score = np.where(reasonable_change, momentum_score + 5, momentum_score + 2)  # TODO: 将魔法数字提取到配置中
         
-        scores += momentum_score * 0.20
+        scores += momentum_score * 0.20  # TODO: 将魔法数字提取到配置中
         
-        # 4. 信号质量评分 (15%)
+        # 4. 信号质量评分 (15%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         signal_score = pd.Series(0.0, index=data.index)
         
         # 波动性的合理性
         if wr_volatility.notna().any():
-            reasonable_volatility = (wr_volatility >= 5) & (wr_volatility <= 30)
+            reasonable_volatility = (wr_volatility >= 5) & (wr_volatility <= 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             signal_score = np.where(reasonable_volatility, 10, signal_score)
             
             # 低波动性时的信号质量
             low_volatility = wr_volatility < 10
-            signal_score = np.where(low_volatility & (np.abs(wr_change) < 3), signal_score + 5,
-                                  signal_score + 3)
+            signal_score = np.where(low_volatility & (np.abs(wr_change) < 3), signal_score + 5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                                  signal_score + 3)  # TODO: 将魔法数字提取到配置中
         
-        scores += signal_score * 0.15
+        scores += signal_score * 0.15  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在合理范围内
         scores = np.clip(scores, 0, 100)
         
         return scores
     
-    @international_financial_exception_handler(reraise=False, default_return=0.8)
+    @international_financial_exception_handler(reraise=False, default_return=0.8)  # TODO: 将魔法数字提取到配置中
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """实现抽象方法"""
         if self._result is None:
-            return 0.8
+            return 0.8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 基于WILLIAMS_R指标的可靠性计算置信度
         wr = self._result['WILLIAMS_R'].dropna()
@@ -479,7 +484,7 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         wr_trend = self._result.get('WR_TREND', pd.Series()).dropna()
         
         if len(wr) == 0:
-            return 0.8
+            return 0.8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算威廉指标的稳定性
         recent_wr = wr.iloc[-10:] if len(wr) >= 10 else wr
@@ -487,39 +492,39 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 威廉指标数值的合理性
         value_reasonableness = 0
         reasonable_values = (recent_wr >= -100) & (recent_wr <= 0)
-        if reasonable_values.sum() / len(recent_wr) >= 0.9:
-            value_reasonableness = 0.3
-        elif reasonable_values.sum() / len(recent_wr) >= 0.7:
+        if reasonable_values.sum() / len(recent_wr) >= 0.9:  # TODO: 将魔法数字提取到配置中
+            value_reasonableness = 0.3  # TODO: 将魔法数字提取到配置中
+        elif reasonable_values.sum() / len(recent_wr) >= 0.7:  # TODO: 将魔法数字提取到配置中
             value_reasonableness = 0.2
         else:
             value_reasonableness = 0.1
         
         # 趋势一致性
         trend_consistency = 0
-        if len(wr_trend) >= 5:
-            recent_trend = wr_trend.iloc[-5:]
+        if len(wr_trend) >= 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            recent_trend = wr_trend.iloc[-5:]  # TODO: 将魔法数字提取到配置中
             trend_changes = len(recent_trend[recent_trend != recent_trend.shift(1)].dropna())
             if trend_changes <= 1:  # 趋势稳定
-                trend_consistency = 0.25
+                trend_consistency = 0.25  # TODO: 将魔法数字提取到配置中
             elif trend_changes <= 2:
-                trend_consistency = 0.15
+                trend_consistency = 0.15  # TODO: 将魔法数字提取到配置中
             else:
-                trend_consistency = 0.05
+                trend_consistency = 0.05  # TODO: 将魔法数字提取到配置中
         
         # 波动性的合理性
         volatility_reasonableness = 0
-        if len(wr_volatility) >= 5:
-            recent_volatility = wr_volatility.iloc[-5:]
+        if len(wr_volatility) >= 5:  # TODO: 将魔法数字提取到配置中
+            recent_volatility = wr_volatility.iloc[-5:]  # TODO: 将魔法数字提取到配置中
             avg_volatility = recent_volatility.mean()
-            if 5 <= avg_volatility <= 25:  # 合理的波动性
+            if 5 <= avg_volatility <= 25:  # 合理的波动性  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 volatility_reasonableness = 0.2
-            elif 3 <= avg_volatility <= 35:
-                volatility_reasonableness = 0.15
+            elif 3 <= avg_volatility <= 35:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                volatility_reasonableness = 0.15  # TODO: 将魔法数字提取到配置中
             else:
-                volatility_reasonableness = 0.05
+                volatility_reasonableness = 0.05  # TODO: 将魔法数字提取到配置中
         
-        base_confidence = 0.3 + value_reasonableness + trend_consistency + volatility_reasonableness
-        return min(max(base_confidence, 0.5), 0.95)
+        base_confidence = 0.3 + value_reasonableness + trend_consistency + volatility_reasonableness  # TODO: 将魔法数字提取到配置中
+        return min(max(base_confidence, 0.5), 0.95)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     @international_financial_exception_handler(reraise=True)
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
@@ -544,21 +549,21 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         wr_trend = self._result.get('WR_TREND', 0)
         
         # 基本超买超卖形态
-        patterns['WR_OVERSOLD'] = wr <= -80
-        patterns['WR_OVERBOUGHT'] = wr >= -20
-        patterns['WR_NEUTRAL'] = (wr > -80) & (wr < -20)
+        patterns['WR_OVERSOLD'] = wr <= -80  # TODO: 将魔法数字提取到配置中
+        patterns['WR_OVERBOUGHT'] = wr >= -20  # TODO: 将魔法数字提取到配置中
+        patterns['WR_NEUTRAL'] = (wr > -80) & (wr < -20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 极值形态
-        patterns['WR_EXTREME_OVERSOLD'] = wr <= -95
-        patterns['WR_EXTREME_OVERBOUGHT'] = wr >= -5
+        patterns['WR_EXTREME_OVERSOLD'] = wr <= -95  # TODO: 将魔法数字提取到配置中
+        patterns['WR_EXTREME_OVERBOUGHT'] = wr >= -5  # TODO: 将魔法数字提取到配置中
         
         # 反转形态
-        patterns['WR_OVERSOLD_REVERSAL'] = (wr > -80) & (wr.shift(1) <= -80) & (wr_change > 0)
-        patterns['WR_OVERBOUGHT_REVERSAL'] = (wr < -20) & (wr.shift(1) >= -20) & (wr_change < 0)
+        patterns['WR_OVERSOLD_REVERSAL'] = (wr > -80) & (wr.shift(1) <= -80) & (wr_change > 0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['WR_OVERBOUGHT_REVERSAL'] = (wr < -20) & (wr.shift(1) >= -20) & (wr_change < 0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 突破形态
-        patterns['WR_UPWARD_BREAKOUT'] = (wr > -50) & (wr.shift(1) <= -50) & (wr_change > 2)
-        patterns['WR_DOWNWARD_BREAKDOWN'] = (wr < -50) & (wr.shift(1) >= -50) & (wr_change < -2)
+        patterns['WR_UPWARD_BREAKOUT'] = (wr > -50) & (wr.shift(1) <= -50) & (wr_change > 2)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['WR_DOWNWARD_BREAKDOWN'] = (wr < -50) & (wr.shift(1) >= -50) & (wr_change < -2)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 交叉形态
         if wr_ma_3.notna().any() and wr_ma_6.notna().any():
@@ -566,24 +571,24 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             patterns['WR_DEATH_CROSS'] = (wr_ma_3 < wr_ma_6) & (wr_ma_3.shift(1) >= wr_ma_6.shift(1))
         
         # 动量形态
-        patterns['WR_BULLISH_MOMENTUM'] = (wr_momentum > 10) & (wr < -50) & (wr_trend == 1)
-        patterns['WR_BEARISH_MOMENTUM'] = (wr_momentum < -10) & (wr > -50) & (wr_trend == -1)
+        patterns['WR_BULLISH_MOMENTUM'] = (wr_momentum > 10) & (wr < -50) & (wr_trend == 1)  # TODO: 将魔法数字提取到配置中
+        patterns['WR_BEARISH_MOMENTUM'] = (wr_momentum < -10) & (wr > -50) & (wr_trend == -1)  # TODO: 将魔法数字提取到配置中
         
         # 背离形态（简化版）
-        if len(wr) >= 20:
+        if len(wr) >= 20:  # TODO: 将魔法数字提取到配置中
             # 价格与威廉指标的背离
             price_trend = data['close'].rolling(window=10).apply(lambda x: 1 if x.iloc[-1] > x.iloc[0] else -1)
             wr_trend_simple = wr.rolling(window=10).apply(lambda x: 1 if x.iloc[-1] > x.iloc[0] else -1)
             
-            patterns['WR_BULLISH_DIVERGENCE'] = (price_trend == -1) & (wr_trend_simple == 1) & (wr < -60)
-            patterns['WR_BEARISH_DIVERGENCE'] = (price_trend == 1) & (wr_trend_simple == -1) & (wr > -40)
+            patterns['WR_BULLISH_DIVERGENCE'] = (price_trend == -1) & (wr_trend_simple == 1) & (wr < -60)  # TODO: 将魔法数字提取到配置中
+            patterns['WR_BEARISH_DIVERGENCE'] = (price_trend == 1) & (wr_trend_simple == -1) & (wr > -40)  # TODO: 将魔法数字提取到配置中
         
         # 振荡形态
-        patterns['WR_OSCILLATION'] = (wr > -70) & (wr < -30)
+        patterns['WR_OSCILLATION'] = (wr > -70) & (wr < -30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 趋势确认形态
-        patterns['WR_STRONG_UPTREND'] = (wr_trend == 1) & (wr > -60) & (wr_change > 0)
-        patterns['WR_STRONG_DOWNTREND'] = (wr_trend == -1) & (wr < -40) & (wr_change < 0)
+        patterns['WR_STRONG_UPTREND'] = (wr_trend == 1) & (wr > -60) & (wr_change > 0)  # TODO: 将魔法数字提取到配置中
+        patterns['WR_STRONG_DOWNTREND'] = (wr_trend == -1) & (wr < -40) & (wr_change < 0)  # TODO: 将魔法数字提取到配置中
         patterns['WR_SIDEWAYS'] = (wr_trend == 0) & (np.abs(wr_change) < 2)
         
         return patterns
@@ -616,9 +621,9 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _get_default_parameters_williams_r(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
-            'period': 14,
-            'overbought': -20,
-            'oversold': -80
+            'period': 14,  # TODO: 将魔法数字提取到配置中
+            'overbought': -20,  # TODO: 将魔法数字提取到配置中
+            'oversold': -80  # TODO: 将魔法数字提取到配置中
         }
     
     def has_result(self) -> bool:
@@ -630,16 +635,16 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         WilliamsR指标所需的最少数据周期数
 
-        计算逻辑：基于参数 period(14) 计算
+        计算逻辑：基于参数 period(14) 计算  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数
         """
         # 确保_parameters存在，如果不存在则使用实例属性或默认值
         if hasattr(self, '_parameters') and self._parameters:
-            period = self._parameters.get('period', 14)
+            period = self._parameters.get('period', 14)  # TODO: 将魔法数字提取到配置中
         else:
-            period = getattr(self, 'period', 14)
+            period = getattr(self, 'period', 14)  # TODO: 将魔法数字提取到配置中
 
         return period + max(10, period // 2)
 

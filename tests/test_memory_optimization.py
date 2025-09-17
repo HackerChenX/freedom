@@ -26,9 +26,10 @@ import tracemalloc
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from strategy.large_scale_memory_optimizer import LargeScaleMemoryOptimizer, LargeScaleMemoryConfig
+from strategy.large_scale_memory_optimizer import LargeScaleMemoryOptimizationService, LargeScaleMemoryConfig
 from strategy.strategy_executor import UnifiedStrategyExecutor as UnifiedStrategyExecutor
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -184,7 +185,7 @@ class MemoryOptimizationTester:
             memory_pressure_relief=True
         )
         
-        optimizer = LargeScaleMemoryOptimizer(config)
+        optimizer = LargeScaleMemoryOptimizationService(config)
         
         # 开始内存跟踪
         tracemalloc.start()
@@ -250,7 +251,7 @@ class MemoryOptimizationTester:
             force_gc_threshold=65.0         # 更低的GC阈值
         )
         
-        optimizer = LargeScaleMemoryOptimizer(config)
+        optimizer = LargeScaleMemoryOptimizationService(config)
         
         # 模拟内存压力（预先分配一些内存）
         pressure_data = [np.random.randn(100000) for _ in range(10)]

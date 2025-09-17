@@ -746,6 +746,7 @@ class StockInfoCompatibleDataGenerator:
 
                 # 验证是否真正形成金叉
                 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
                 temp_kdj = complete_registry.create_indicator('KDJ')
                 temp_result = temp_kdj.calculate(temp_data)
 
@@ -851,6 +852,7 @@ class StockInfoCompatibleDataGenerator:
 
                 # 验证是否真正突破
                 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
                 temp_boll = complete_registry.create_indicator('BOLL')
                 temp_result = temp_boll.calculate(temp_data)
 
@@ -1419,8 +1421,8 @@ class StockInfoCompatibleDataGenerator:
     def _calculate_turnover_rate(self, volumes: pd.Series) -> pd.Series:
         """计算换手率"""
         # 简单模拟换手率计算
-        base_turnover = 0.05  # 5%基础换手率
-        return volumes.apply(lambda v: base_turnover * random.uniform(0.1, 3.0))
+        base_turnover_rate = 0.05  # 5%基础换手率
+        return volumes.apply(lambda v: base_turnover_rate * random.uniform(0.1, 3.0))
 
     def _calculate_price_change(self, closes: pd.Series) -> pd.Series:
         """计算价格变动"""

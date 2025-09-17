@@ -19,7 +19,7 @@ from typing import Dict, List, Any
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from strategy.strategy_executor import Strategy_executor
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from monitoring.performance_monitor import get_performance_monitor
@@ -157,6 +157,7 @@ class Business_workflow_test:
             try:
                 # 直接测试数据处理器，避免复杂的指标分析
                 from analysis.buypoints.period_data_processor import Period_data_processor
+from db.sql_manager import SQLManager, QueryType
                 processor = Period_data_processor()
 
                 start_time = time.time()
@@ -237,6 +238,7 @@ class Business_workflow_test:
             buypoint_results = []
             if selected_stocks:
                 from analysis.buypoints.period_data_processor import Period_data_processor
+from db.sql_manager import SQLManager, QueryType
                 processor = Period_data_processor()
 
                 for stock_code in selected_stocks:

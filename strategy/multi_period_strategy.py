@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 多周期选股策略
 
@@ -15,7 +17,8 @@ from datetime import datetime
 
 from strategy.enhanced_base_strategy import Enhanced_base_strategy
 # from strategy.enhanced_base_strategy import Indicator_condition  # 暂时注释掉不存在的导入
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -28,6 +31,9 @@ class MultiPeriodStrategy(Enhanced_base_strategy):
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(
             name="多周期技术指标选股策略",
             description="基于多周期技术指标的综合选股策略",

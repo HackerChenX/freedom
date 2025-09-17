@@ -1,10 +1,11 @@
+from utils.container import container
 """
 增强型随机指标(KDJ)模块
 
 实现改进版的KDJ指标，优化计算方法和信号质量，增加多周期适应能力和市场环境感知
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 import numpy as np
 import pandas as pd
@@ -14,13 +15,25 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.base_indicator import BaseIndicator
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.indicator_utils import crossover, crossunder
 
 logger = get_logger(__name__)
 
 
 class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+"""
+EnhancedKdj - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 33个方法分为以下职责组:
+  * 核心功能方法 (约11个)
+  * 辅助工具方法 (约11个)  
+  * 接口适配方法 (约11个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     增强型随机指标(KDJ)
     
@@ -28,18 +41,21 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, 
-                n: int = 9, 
-                m1: int = 3, 
-                m2: int = 3,
+                n: int = 9,  # TODO: 将魔法数字提取到配置中 
+                m1: int = 3,  # TODO: 将魔法数字提取到配置中 
+                m2: int = 3,  # TODO: 将魔法数字提取到配置中
                 sensitivity: float = 1.0,
                 multi_periods: List[int] = None,
                 j_weight: float = 1.0,
-                smoothing_period_d: int = 3,
+                smoothing_period_d: int = 3,  # TODO: 将魔法数字提取到配置中
                 adaptive_params: bool = True,
-                volatility_lookback: int = 20,
-                secondary_n: int = 6,
+                volatility_lookback: int = 20,  # TODO: 将魔法数字提取到配置中
+                secondary_n: int = 6,  # TODO: 将魔法数字提取到配置中
                 use_smoothed_kdj: bool = True,
-                smoothing_period: int = 3):
+                smoothing_period: int = 3):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型KDJ指标
         
@@ -48,7 +64,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             m1: K值平滑周期，默认为3
             m2: D值平滑周期，默认为3
             sensitivity: 灵敏度参数，控制对价格变化的响应程度，默认为1.0
-            multi_periods: 多周期分析参数，默认为[5, 9, 14]
+            multi_periods: 多周期分析参数，默认为[5, 9, 14]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             j_weight: J线权重，用于调整J线在信号生成中的重要性，默认为1.0
             smoothing_period_d: D值平滑周期，默认为3
             adaptive_params: 是否使用自适应参数，默认为True
@@ -65,7 +81,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.name = "EnhancedKDJ"
         self.description = "增强型随机指标，优化计算方法和信号质量，增加多周期适应和市场环境感知"
         self.sensitivity = sensitivity
-        self.multi_periods = multi_periods or [5, 9, 14]
+        self.multi_periods = multi_periods or [5, 9, 14]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.j_weight = j_weight
         self.smoothing_period_d = smoothing_period_d
         self.adaptive_params = adaptive_params
@@ -197,19 +213,19 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 应用灵敏度调整
         if self.sensitivity != 1.0:
             # 调整RSV值的响应度
-            rsv = 50 + (rsv - 50) * self.sensitivity
+            rsv = 50 + (rsv - 50) * self.sensitivity  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             rsv = rsv.clip(0, 100)  # 确保RSV在0-100范围内
         
         # 计算K值，使用EMA方法
         k = rsv.ewm(alpha=1/m1, adjust=False).mean()
-        k.fillna(50.0, inplace=True)  # 填充初始Na_n值
+        k.fillna(50.0, inplace=True)  # 填充初始Na_n值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算D值，使用EMA方法
         d = k.ewm(alpha=1/m2, adjust=False).mean()
-        d.fillna(50.0, inplace=True)  # 填充初始Na_n值
+        d.fillna(50.0, inplace=True)  # 填充初始Na_n值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算J值
-        j = 3 * k - 2 * d
+        j = 3 * k - 2 * d  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 保存结果
         data["rsv"] = rsv
@@ -236,19 +252,19 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 应用灵敏度调整
         if self.sensitivity != 1.0:
-            rsv = 50 + (rsv - 50) * self.sensitivity
+            rsv = 50 + (rsv - 50) * self.sensitivity  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             rsv = rsv.clip(0, 100)
         
         # 计算K值，使用EMA方法
         k = rsv.ewm(alpha=1/m1, adjust=False).mean()
-        k.fillna(50.0, inplace=True)  # 填充初始Na_n值
+        k.fillna(50.0, inplace=True)  # 填充初始Na_n值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算D值，使用EMA方法
         d = k.ewm(alpha=1/m2, adjust=False).mean()
-        d.fillna(50.0, inplace=True)  # 填充初始Na_n值
+        d.fillna(50.0, inplace=True)  # 填充初始Na_n值  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算J值
-        j = 3 * k - 2 * d
+        j = 3 * k - 2 * d  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 保存结果
         data[f"rsv_{n}"] = rsv
@@ -256,7 +272,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         data[f"D_{n}"] = d
         data[f"J_{n}"] = j
     
-    def _calculate_j_acceleration(self, j: pd.Series, window: int = 3) -> pd.Series:
+    def _calculate_j_acceleration(self, j: pd.Series, window: int = 3) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算J线加速度
         
@@ -317,7 +333,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         j_normalized = (j - j_min) / (j_max - j_min + 1e-10) * 100
         
         # 填充前window个值
-        j_normalized.fillna(50, inplace=True)
+        j_normalized.fillna(50, inplace=True)  # TODO: 将魔法数字提取到配置中
         
         return j_normalized
     
@@ -341,9 +357,9 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         j = self._result["J"]
         
         # 1. 超买超卖区域判断
-        if k.iloc[-1] < 20 and d.iloc[-1] < 20:
+        if k.iloc[-1] < 20 and d.iloc[-1] < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append("KD超卖区域")
-        elif k.iloc[-1] > 80 and d.iloc[-1] > 80:
+        elif k.iloc[-1] > 80 and d.iloc[-1] > 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append("KD超买区域")
             
         # 2. J线极值判断
@@ -352,7 +368,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         elif j.iloc[-1] > 100:
             patterns.append("J线超买区域")
             
-        # 3. 金叉/死叉判断
+        # 3. 金叉/死叉判断  # TODO: 将魔法数字提取到配置中
         if crossover(k, d).iloc[-1]:
             # 检查金叉质量
             cross_angle = self._result["kd_cross_angle"].iloc[-1]
@@ -373,15 +389,15 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             else:
                 patterns.append("KD死叉")
                 
-        # 4. 三重底/三重顶形态
-        if len(j) >= 20:
-            if self._detect_triple_bottom(j.iloc[-20:]):
+        # 4. 三重底/三重顶形态  # TODO: 将魔法数字提取到配置中
+        if len(j) >= 20:  # TODO: 将魔法数字提取到配置中
+            if self._detect_triple_bottom(j.iloc[-20:]):  # TODO: 将魔法数字提取到配置中
                 patterns.append("KDJ三重底")
-            elif self._detect_triple_top(j.iloc[-20:]):
+            elif self._detect_triple_top(j.iloc[-20:]):  # TODO: 将魔法数字提取到配置中
                 patterns.append("KDJ三重顶")
                 
-        # 5. 背离检测
-        if len(data) >= 30:
+        # 5. 背离检测  # TODO: 将魔法数字提取到配置中
+        if len(data) >= 30:  # TODO: 将魔法数字提取到配置中
             divergence = self._detect_divergence_Enhanced_Kdj(data["close"], j)
             if divergence == "bullish":
                 patterns.append("KDJ正背离")
@@ -400,7 +416,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             bool: 是否形成三重底形态
         """
-        if len(j_series) < 15:
+        if len(j_series) < 15:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
             
         # 寻找局部最低点
@@ -410,18 +426,18 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 valleys.append((i, j_series.iloc[i]))
                 
         # 至少需要三个谷点
-        if len(valleys) < 3:
+        if len(valleys) < 3:  # TODO: 将魔法数字提取到配置中
             return False
             
         # 取最近的三个谷点
-        recent_valleys = sorted(valleys, key=lambda x: x[0])[-3:]
+        recent_valleys = sorted(valleys, key=lambda x: x[0])[-3:]  # TODO: 将魔法数字提取到配置中
         
         # 条件1: 三个谷点都在超卖区域或接近超卖区域
-        if not all(v[1] < 20 for v in recent_valleys):
+        if not all(v[1] < 20 for v in recent_valleys):  # TODO: 将魔法数字提取到配置中
             return False
             
         # 条件2: 谷点之间有足够的距离
-        if recent_valleys[1][0] - recent_valleys[0][0] < 3 or recent_valleys[2][0] - recent_valleys[1][0] < 3:
+        if recent_valleys[1][0] - recent_valleys[0][0] < 3 or recent_valleys[2][0] - recent_valleys[1][0] < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
             
         # 条件3: 第三个谷点不低于第一和第二个谷点
@@ -440,7 +456,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             bool: 是否形成三重顶形态
         """
-        if len(j_series) < 15:
+        if len(j_series) < 15:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
             
         # 寻找局部最高点
@@ -450,18 +466,18 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 peaks.append((i, j_series.iloc[i]))
                 
         # 至少需要三个峰点
-        if len(peaks) < 3:
+        if len(peaks) < 3:  # TODO: 将魔法数字提取到配置中
             return False
             
         # 取最近的三个峰点
-        recent_peaks = sorted(peaks, key=lambda x: x[0])[-3:]
+        recent_peaks = sorted(peaks, key=lambda x: x[0])[-3:]  # TODO: 将魔法数字提取到配置中
         
         # 条件1: 三个峰点都在超买区域或接近超买区域
-        if not all(p[1] > 80 for p in recent_peaks):
+        if not all(p[1] > 80 for p in recent_peaks):  # TODO: 将魔法数字提取到配置中
             return False
             
         # 条件2: 峰点之间有足够的距离
-        if recent_peaks[1][0] - recent_peaks[0][0] < 3 or recent_peaks[2][0] - recent_peaks[1][0] < 3:
+        if recent_peaks[1][0] - recent_peaks[0][0] < 3 or recent_peaks[2][0] - recent_peaks[1][0] < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
             
         # 条件3: 第三个峰点不高于第一和第二个峰点
@@ -481,35 +497,35 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             Optional[str]: 背离类型 ("bullish", "bearish" 或 None)
         """
-        if len(price) < 30 or len(j) < 30:
+        if len(price) < 30 or len(j) < 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return None
             
         # 寻找价格高点和低点
         price_highs = []
         price_lows = []
         
-        for i in range(5, len(price) - 5):
+        for i in range(5, len(price) - 5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 价格高点
             if price.iloc[i] > price.iloc[i-1] and price.iloc[i] > price.iloc[i+1] and \
-               price.iloc[i] == price.iloc[i-5:i+6].max():
+               price.iloc[i] == price.iloc[i-5:i+6].max():  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_highs.append((i, price.iloc[i]))
             # 价格低点
             if price.iloc[i] < price.iloc[i-1] and price.iloc[i] < price.iloc[i+1] and \
-               price.iloc[i] == price.iloc[i-5:i+6].min():
+               price.iloc[i] == price.iloc[i-5:i+6].min():  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_lows.append((i, price.iloc[i]))
         
         # 寻找J线高点和低点
         j_highs = []
         j_lows = []
         
-        for i in range(5, len(j) - 5):
+        for i in range(5, len(j) - 5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # J线高点
             if j.iloc[i] > j.iloc[i-1] and j.iloc[i] > j.iloc[i+1] and \
-               j.iloc[i] == j.iloc[i-5:i+6].max():
+               j.iloc[i] == j.iloc[i-5:i+6].max():  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 j_highs.append((i, j.iloc[i]))
             # J线低点
             if j.iloc[i] < j.iloc[i-1] and j.iloc[i] < j.iloc[i+1] and \
-               j.iloc[i] == j.iloc[i-5:i+6].min():
+               j.iloc[i] == j.iloc[i-5:i+6].min():  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 j_lows.append((i, j.iloc[i]))
         
         # 检查顶背离（价格创新高，J线未创新高）
@@ -518,7 +534,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             recent_j_highs = sorted(j_highs, key=lambda x: x[0])[-2:]
             
             # 确保最近的高点在相似的时间范围内
-            if abs(recent_price_highs[1][0] - recent_j_highs[1][0]) <= 3:
+            if abs(recent_price_highs[1][0] - recent_j_highs[1][0]) <= 3:  # TODO: 将魔法数字提取到配置中
                 # 价格创新高但J线未创新高
                 if recent_price_highs[1][1] > recent_price_highs[0][1] and \
                    recent_j_highs[1][1] < recent_j_highs[0][1]:
@@ -530,7 +546,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             recent_j_lows = sorted(j_lows, key=lambda x: x[0])[-2:]
             
             # 确保最近的低点在相似的时间范围内
-            if abs(recent_price_lows[1][0] - recent_j_lows[1][0]) <= 3:
+            if abs(recent_price_lows[1][0] - recent_j_lows[1][0]) <= 3:  # TODO: 将魔法数字提取到配置中
                 # 价格创新低但J线未创新低
                 if recent_price_lows[1][1] < recent_price_lows[0][1] and \
                    recent_j_lows[1][1] > recent_j_lows[0][1]:
@@ -554,9 +570,9 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Kdj_Enhanced_Kdj(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         k = self._result["K"]
         d = self._result["D"]
@@ -567,65 +583,65 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 1. 基础KDJ评分 - 超买超卖区域
         # KD在超卖区域，看涨
-        oversold_score = ((20 - k) / 20 * 15 + (20 - d) / 20 * 15).clip(0, 30)
-        score += ((k < 20) & (d < 20)) * oversold_score
+        oversold_score = ((20 - k) / 20 * 15 + (20 - d) / 20 * 15).clip(0, 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score += ((k < 20) & (d < 20)) * oversold_score  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # KD在超买区域，看跌
-        overbought_score = ((k - 80) / 20 * 15 + (d - 80) / 20 * 15).clip(0, 30)
-        score -= ((k > 80) & (d > 80)) * overbought_score
+        overbought_score = ((k - 80) / 20 * 15 + (d - 80) / 20 * 15).clip(0, 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score -= ((k > 80) & (d > 80)) * overbought_score  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 2. J线评分 - 考虑J线权重
         # J线超卖，看涨
-        j_oversold_score = ((0 - j) / 50 * 20 * self.j_weight).clip(0, 20)
+        j_oversold_score = ((0 - j) / 50 * 20 * self.j_weight).clip(0, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += (j < 0) * j_oversold_score
         
         # J线超买，看跌
-        j_overbought_score = ((j - 100) / 50 * 20 * self.j_weight).clip(0, 20)
+        j_overbought_score = ((j - 100) / 50 * 20 * self.j_weight).clip(0, 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score -= (j > 100) * j_overbought_score
         
-        # 3. KD交叉信号评分
+        # 3. KD交叉信号评分  # TODO: 将魔法数字提取到配置中
         # 金叉质量评分
         golden_cross = crossover(k, d)
-        cross_quality = kd_angle.fillna(0).abs().clip(0, 5)
-        score += golden_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成
+        cross_quality = kd_angle.fillna(0).abs().clip(0, 5)  # TODO: 将魔法数字提取到配置中
+        score += golden_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成  # TODO: 将魔法数字提取到配置中
 
         # 死叉质量评分
         death_cross = crossunder(k, d)
-        score -= death_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成
+        score -= death_cross * (15 + cross_quality)  # 基础15分 + 最多5分质量加成  # TODO: 将魔法数字提取到配置中
         
-        # 4. J线加速度评分
+        # 4. J线加速度评分  # TODO: 将魔法数字提取到配置中
         # J线加速度为正，看涨
-        score += (j_accel.fillna(0) > 0.5) * 10
+        score += (j_accel.fillna(0) > 0.5) * 10  # TODO: 将魔法数字提取到配置中
         
         # J线加速度为负，看跌
-        score -= (j_accel.fillna(0) < -0.5) * 10
+        score -= (j_accel.fillna(0) < -0.5) * 10  # TODO: 将魔法数字提取到配置中
         
-        # 5. KD位置评分
+        # 5. KD位置评分  # TODO: 将魔法数字提取到配置中
         # KD均值位置（估算当前位置相对于历史范围）
         kd_position = (k + d) / 2
-        score += ((kd_position - 50) / 50 * 10)  # KD均值偏高，加分；偏低，减分
+        score += ((kd_position - 50) / 50 * 10)  # KD均值偏高，加分；偏低，减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 6. 多周期KDJ一致性评分
+        # 6. 多周期KDJ一致性评分  # TODO: 将魔法数字提取到配置中
         multi_period_score = self._calculate_multi_period_consistency_Enhanced_Kdj()
         score += multi_period_score
         
-        # 7. 背离评分
+        # 7. 背离评分  # TODO: 将魔法数字提取到配置中
         divergence = [self._detect_divergence_Enhanced_Kdj(data["close"].iloc[:i+1], j.iloc[:i+1]) 
                      for i in range(len(data))]
         
         # 正背离（看涨）
-        score += pd.Series([25 if d == "bullish" else 0 for d in divergence], index=score.index)
+        score += pd.Series([25 if d == "bullish" else 0 for d in divergence], index=score.index)  # TODO: 将魔法数字提取到配置中
         
         # 负背离（看跌）
-        score -= pd.Series([25 if d == "bearish" else 0 for d in divergence], index=score.index)
+        score -= pd.Series([25 if d == "bearish" else 0 for d in divergence], index=score.index)  # TODO: 将魔法数字提取到配置中
         
-        # 8. KD交叉位置评分（低位金叉和高位死叉更有效）
+        # 8. KD交叉位置评分（低位金叉和高位死叉更有效）  # TODO: 将魔法数字提取到配置中
         # 低位金叉（在20以下金叉）更看涨
-        low_golden_cross = golden_cross & (k < 20) & (d < 20)
+        low_golden_cross = golden_cross & (k < 20) & (d < 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += low_golden_cross * 10
         
         # 高位死叉（在80以上死叉）更看跌
-        high_death_cross = death_cross & (k > 80) & (d > 80)
+        high_death_cross = death_cross & (k > 80) & (d > 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score -= high_death_cross * 10
         
         # 限制得分范围
@@ -674,9 +690,9 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     bearish_count += 1
                 # K>D看涨，K<D看跌
                 elif k_val > d_val:
-                    bullish_count += 0.5
+                    bullish_count += 0.5  # TODO: 将魔法数字提取到配置中
                 elif k_val < d_val:
-                    bearish_count += 0.5
+                    bearish_count += 0.5  # TODO: 将魔法数字提取到配置中
             
             # 计算一致性得分
             total_count = bullish_count + bearish_count
@@ -684,11 +700,11 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 if bullish_count > bearish_count:
                     # 多数看涨
                     consistency = bullish_count / total_count
-                    score.iloc[i] = consistency * 20  # 最高20分
+                    score.iloc[i] = consistency * 20  # 最高20分  # TODO: 将魔法数字提取到配置中
                 elif bearish_count > bullish_count:
                     # 多数看跌
                     consistency = bearish_count / total_count
-                    score.iloc[i] = -consistency * 20  # 最低-20分
+                    score.iloc[i] = -consistency * 20  # 最低-20分  # TODO: 将魔法数字提取到配置中
         
         return score
     
@@ -722,17 +738,17 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 生成买入信号
         buy_signal = (
             (crossover(signals['K'], signals['D'])) |  # KD金叉
-            ((signals['K'] < 20) & (signals['D'] < 20)) |  # KD处于超卖区
+            ((signals['K'] < 20) & (signals['D'] < 20)) |  # KD处于超卖区  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             (signals['J'] < 0) |  # J线处于超卖区
-            (signals['score'] > 70)  # 评分高于70
+            (signals['score'] > 70)  # 评分高于70  # TODO: 将魔法数字提取到配置中
         )
 
         # 生成卖出信号
         sell_signal = (
             (crossunder(signals['K'], signals['D'])) |  # KD死叉
-            ((signals['K'] > 80) & (signals['D'] > 80)) |  # KD处于超买区
+            ((signals['K'] > 80) & (signals['D'] > 80)) |  # KD处于超买区  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             (signals['J'] > 100) |  # J线处于超买区
-            (signals['score'] < 30)  # 评分低于30
+            (signals['score'] < 30)  # 评分低于30  # TODO: 将魔法数字提取到配置中
         )
         
         # 应用信号过滤 - 只保留高质量信号
@@ -749,19 +765,19 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         market_env = getattr(self, 'market_environment', 'normal')
         if market_env == 'bull_market':
             # 牛市中降低买入门槛，提高卖出门槛
-            buy_signal = buy_signal | (signals['score'] > 65)
-            sell_signal = sell_signal & (signals['score'] < 25)
+            buy_signal = buy_signal | (signals['score'] > 65)  # TODO: 将魔法数字提取到配置中
+            sell_signal = sell_signal & (signals['score'] < 25)  # TODO: 将魔法数字提取到配置中
         elif market_env == 'bear_market':
             # 熊市中提高买入门槛，降低卖出门槛
-            buy_signal = buy_signal & (signals['score'] > 75)
-            sell_signal = sell_signal | (signals['score'] < 35)
+            buy_signal = buy_signal & (signals['score'] > 75)  # TODO: 将魔法数字提取到配置中
+            sell_signal = sell_signal | (signals['score'] < 35)  # TODO: 将魔法数字提取到配置中
         
         signals['buy_signal'] = buy_signal
         signals['sell_signal'] = sell_signal
         
         # 计算指标多空趋势
-        signals['bull_trend'] = signals['score'] > 60
-        signals['bear_trend'] = signals['score'] < 40
+        signals['bull_trend'] = signals['score'] > 60  # TODO: 将魔法数字提取到配置中
+        signals['bear_trend'] = signals['score'] < 40  # TODO: 将魔法数字提取到配置中
         
         # 添加信号强度
         signals['signal_strength'] = self._calculate_signal_strength_Enhanced_Kdj(result, signals)
@@ -789,14 +805,14 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 j_val = result['J'].iloc[i]
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
-                if score > 85 and j_val < -10 and kd_angle > 2:
+                if score > 85 and j_val < -10 and kd_angle > 2:  # TODO: 将魔法数字提取到配置中
                     strength.iloc[i] = 1.0  # 非常强
-                elif score > 75 and j_val < 0:
-                    strength.iloc[i] = 0.8  # 强
-                elif score > 65:
-                    strength.iloc[i] = 0.6  # 中等
+                elif score > 75 and j_val < 0:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = 0.8  # 强  # TODO: 将魔法数字提取到配置中
+                elif score > 65:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = 0.6  # 中等  # TODO: 将魔法数字提取到配置中
                 else:
-                    strength.iloc[i] = 0.4  # 弱
+                    strength.iloc[i] = 0.4  # 弱  # TODO: 将魔法数字提取到配置中
             
             elif signals['sell_signal'].iloc[i]:
                 # 根据评分、J线和KD交叉角度确定信号强度
@@ -804,14 +820,14 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 j_val = result['J'].iloc[i]
                 kd_angle = result['kd_cross_angle'].iloc[i] if i > 0 else 0
                 
-                if score < 15 and j_val > 110 and kd_angle < -2:
+                if score < 15 and j_val > 110 and kd_angle < -2:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     strength.iloc[i] = -1.0  # 非常强（负向）
-                elif score < 25 and j_val > 100:
-                    strength.iloc[i] = -0.8  # 强（负向）
-                elif score < 35:
-                    strength.iloc[i] = -0.6  # 中等（负向）
+                elif score < 25 and j_val > 100:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = -0.8  # 强（负向）  # TODO: 将魔法数字提取到配置中
+                elif score < 35:  # TODO: 将魔法数字提取到配置中
+                    strength.iloc[i] = -0.6  # 中等（负向）  # TODO: 将魔法数字提取到配置中
                 else:
-                    strength.iloc[i] = -0.4  # 弱（负向）
+                    strength.iloc[i] = -0.4  # 弱（负向）  # TODO: 将魔法数字提取到配置中
         
         return strength
 
@@ -848,45 +864,45 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查EnhancedKDJ形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -919,8 +935,8 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基本形态
         patterns['KDJ_GOLDEN_CROSS'] = crossover(k, d)
         patterns['KDJ_DEATH_CROSS'] = crossunder(k, d)
-        patterns['KDJ_OVERSOLD'] = (k < 20) & (d < 20)
-        patterns['KDJ_OVERBOUGHT'] = (k > 80) & (d > 80)
+        patterns['KDJ_OVERSOLD'] = (k < 20) & (d < 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns['KDJ_OVERBOUGHT'] = (k > 80) & (d > 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         patterns['KDJ_J_OVERSOLD'] = j < 0
         patterns['KDJ_J_OVERBOUGHT'] = j > 100
 
@@ -949,7 +965,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线上穿D线，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -959,7 +975,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线下穿D线，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -970,7 +986,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线和D线均低于20，表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -980,7 +996,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线和D线均高于80，表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -991,7 +1007,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="J线低于0，表明极度超卖",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1001,7 +1017,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="J线高于100，表明极度超买",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1012,7 +1028,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线以大角度上穿D线，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1022,7 +1038,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="K线以大角度下穿D线，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-30.0,
+            score_impact=-30.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1063,26 +1079,26 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         buy_signal |= golden_cross
         sell_signal |= death_cross
-        signal_strength += golden_cross * 0.7
-        signal_strength += death_cross * 0.7
+        signal_strength += golden_cross * 0.7  # TODO: 将魔法数字提取到配置中
+        signal_strength += death_cross * 0.7  # TODO: 将魔法数字提取到配置中
 
         # 2. KDJ超买超卖信号
-        oversold = (k < 20) & (d < 20)
-        overbought = (k > 80) & (d > 80)
+        oversold = (k < 20) & (d < 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        overbought = (k > 80) & (d > 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         buy_signal |= oversold
         sell_signal |= overbought
-        signal_strength += oversold * 0.6
-        signal_strength += overbought * 0.6
+        signal_strength += oversold * 0.6  # TODO: 将魔法数字提取到配置中
+        signal_strength += overbought * 0.6  # TODO: 将魔法数字提取到配置中
 
-        # 3. J线极值信号
+        # 3. J线极值信号  # TODO: 将魔法数字提取到配置中
         j_oversold = j < 0
         j_overbought = j > 100
 
         buy_signal |= j_oversold
         sell_signal |= j_overbought
-        signal_strength += j_oversold * 0.8
-        signal_strength += j_overbought * 0.8
+        signal_strength += j_oversold * 0.8  # TODO: 将魔法数字提取到配置中
+        signal_strength += j_overbought * 0.8  # TODO: 将魔法数字提取到配置中
 
         return {
             'buy_signal': buy_signal,
@@ -1208,7 +1224,7 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         Enhanced KDJ指标所需的最少数据周期数
 
-        计算逻辑：基于参数 n(9), m1(3), m2(3) 计算
+        计算逻辑：基于参数 n(9), m1(3), m2(3) 计算  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数
@@ -1236,18 +1252,18 @@ class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 默认参数字典
         """
         return {
-            'n': 9,
-            'm1': 3,
-            'm2': 3,
+            'n': 9,  # TODO: 将魔法数字提取到配置中
+            'm1': 3,  # TODO: 将魔法数字提取到配置中
+            'm2': 3,  # TODO: 将魔法数字提取到配置中
             'sensitivity': 1.0,
-            'multi_periods': [6, 9, 12],
+            'multi_periods': [6, 9, 12],  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             'j_weight': 1.0,
-            'smoothing_period_d': 3,
+            'smoothing_period_d': 3,  # TODO: 将魔法数字提取到配置中
             'adaptive_params': True,
-            'volatility_lookback': 20,
-            'secondary_n': 6,
+            'volatility_lookback': 20,  # TODO: 将魔法数字提取到配置中
+            'secondary_n': 6,  # TODO: 将魔法数字提取到配置中
             'use_smoothed_kdj': True,
-            'smoothing_period': 3
+            'smoothing_period': 3  # TODO: 将魔法数字提取到配置中
         }
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:

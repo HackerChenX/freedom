@@ -17,7 +17,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import setup_logger
 from utils.path_utils import get_config_dir
-from config.config import get_config
+from config.unified_config_manager import get_config
 
 
 # 设置测试日志级别

@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -27,6 +29,9 @@ class KDJUpwardStrategyExecutor:
     """KDJ均上移策略执行器"""
     
     def __init__(self, config_file: str = "config/strategies/kdj_all_lines_upward_strategy.yaml"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化策略执行器"""
         self.config = self._load_config(config_file)
         self.target_date = self.config['strategy']['target_date']
@@ -157,6 +162,7 @@ class KDJUpwardStrategyExecutor:
         """获取股票数据"""
         try:
             from db.connection_pool_adapter import get_connection_pool_adapter
+from db.sql_manager import SQLManager, QueryType
 
             # 计算查询日期范围
             target_date = datetime.strptime(self.target_date, '%Y-%m-%d')
@@ -166,8 +172,7 @@ class KDJUpwardStrategyExecutor:
             adapter = get_connection_pool_adapter()
             query = f"""
             SELECT code, name, date, open, close, high, low, volume, turnover_rate
-            FROM stock_info
-            WHERE code = '{stock_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date}'
             AND date <= '{end_date}'
@@ -250,12 +255,12 @@ class KDJUpwardStrategyExecutor:
         # 获取股票池
         try:
             from db.connection_pool_adapter import get_connection_pool_adapter
+from db.sql_manager import SQLManager, QueryType
 
             adapter = get_connection_pool_adapter()
             query = """
             SELECT DISTINCT code
-            FROM stock_info
-            WHERE code IS NOT NULL
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IS NOT NULL
             AND name IS NOT NULL
             AND code != ''
             ORDER BY code

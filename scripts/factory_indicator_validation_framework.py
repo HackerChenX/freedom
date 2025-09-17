@@ -19,7 +19,7 @@ import traceback
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.enhanced_performance_monitor import performance_monitor
 from utils.enhanced_exception_handler import exception_handler
 
@@ -36,7 +36,7 @@ class FactoryIndicatorValidationFramework:
         
         # 54个工厂模式指标分类
         self.zxm_indicators = [
-            'ZXM_DAILY_MACD', 'ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
+            'ZXM_DAILY_MACD', 'ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_MA_CALLBACK',
             'ZXM_BS_ABSORB', 'ZXM_DAILY_TREND_UP', 'ZXM_WEEKLY_TREND_UP', 'ZXM_MONTHLY_KDJ_TREND_UP',
             'ZXM_WEEKLY_MACD', 'ZXM_MONTHLY_MACD', 'ZXM_AMPLITUDE_ELASTICITY', 'ZXM_RISE_ELASTICITY',
             'ZXM_ELASTICITY', 'ZXM_BOUNCE_DETECTOR', 'ZXM_BUYPOINT_SCORE', 'ZXM_TREND_SCORE',
@@ -198,6 +198,7 @@ class FactoryIndicatorValidationFramework:
         """获取工厂模式指标实例"""
         try:
             from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
             registry = get_indicator_registry()
             return registry.get_indicator(indicator_name)
         except Exception as e:

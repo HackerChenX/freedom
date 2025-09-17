@@ -26,6 +26,7 @@ sys.path.append(root_dir)
 
 # 首先导入logger
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 logger = getLogger(__name__)
 
 

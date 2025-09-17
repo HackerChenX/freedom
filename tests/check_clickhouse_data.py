@@ -17,6 +17,7 @@ def check_clickhouse_data():
     
     try:
         from clickhouse_driver import Client
+from db.sql_manager import SQLManager, QueryType
         
         # 连接ClickHouse
         client = Client(

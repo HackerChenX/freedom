@@ -18,7 +18,7 @@ from utils.dependency_injection import get_service
 
 # 导入统一缓存层（L3数据访问层）
 try:
-    from db.cache_layer import get_cache_layer, cache_decorator as unified_cache_decorator
+    from db.services.cache_service import get_cache_layer, cache_decorator as unified_cache_decorator
     UNIFIED_CACHE_AVAILABLE = True
 except ImportError:
     UNIFIED_CACHE_AVAILABLE = False
@@ -397,7 +397,7 @@ def cache_with_unified_layer(ttl: Optional[float] = None,
     if UNIFIED_CACHE_AVAILABLE:
         try:
             # 使用统一缓存层的装饰器
-            from db.cache_layer import CacheLevel
+            from db.services.cache_service import CacheLevel
             levels = [CacheLevel.MEMORY]
             if use_disk:
                 levels.append(CacheLevel.DISK)

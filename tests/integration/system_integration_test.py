@@ -253,6 +253,7 @@ def test_data_flow_integration():
     
     try:
         from utils.common_utils import DataProcessor, DateTimeUtils, ValidationUtils
+from db.sql_manager import SQLManager, QueryType
         
         # 测试数据处理流程
         raw_data = pd.DataFrame({

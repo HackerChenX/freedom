@@ -25,7 +25,7 @@ sys.path.insert(0, root_dir)
 
 from reporting.core.report_engine import BacktestReportEngine, ReportConfig, ReportGenerationRequest
 from analysis.integrated_performance_framework import PerformanceEvaluationFramework, PerformanceEvaluationRequest
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

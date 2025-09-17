@@ -19,7 +19,7 @@ import pandas as pd
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from config import get_config
+from config.unified_config_manager import get_config
 from strategy.advanced_strategy_executor import AdvancedStrategyExecutor
 from analysis.engines.unified_analysis_engine import UnifiedAnalysisEngine
 from monitoring.production_performance_monitor import ProductionPerformanceMonitor
@@ -125,7 +125,8 @@ class StockSelectionPerformanceTest:
         """获取测试股票列表"""
         try:
             # 从数据库获取真实股票代码
-            from db.unified_data_manager import get_unified_data_manager
+            from db.managers.data_access_manager import get_unified_data_manager
+from db.sql_manager import SQLManager, QueryType
             data_manager = get_unified_data_manager()
             
             # 获取最近有数据的股票

@@ -14,6 +14,7 @@ sys.path.insert(0, root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternInfo
+from db.sql_manager import SQLManager, QueryType
 
 def pattern_registry_example():
     """PatternRegistry使用示例"""

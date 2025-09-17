@@ -20,11 +20,12 @@ import logging
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(root_dir)
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from strategy.strategy_executor import Strategy_executor
 from utils.logger import get_logger, setup_logger
 from utils.path_utils import get_log_dir, get_cache_dir
 from utils.exceptions import DataAccessError
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

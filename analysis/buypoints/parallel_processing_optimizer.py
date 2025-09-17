@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -24,7 +25,7 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 import numpy as np
 import pandas as pd
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -63,6 +64,9 @@ class TaskQueue:
     """智能任务队列"""
 
     def __init__(self, maxsize: int = 0):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.queue = Queue(maxsize)
         self.priority_queue = Queue(maxsize)
         self.completed_tasks = {}
@@ -101,6 +105,9 @@ class WorkerMonitor:
     """工作进程监控器"""
 
     def __init__(self, config: ProcessorConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.worker_stats = {}
         self.monitoring_active = False
@@ -207,6 +214,9 @@ class LoadBalancer:
     """负载均衡器"""
 
     def __init__(self, config: ProcessorConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.worker_loads = {}
         self._lock = Lock()
@@ -261,6 +271,7 @@ def worker_process_function(worker_id: int,
 
     # 动态导入以避免序列化问题
     from analysis.buypoints.high_performance_backtest_engine import HighPerformanceBacktestEngine
+from db.sql_manager import SQLManager, QueryType
 
     # 在工作进程中初始化引擎
     engine = HighPerformanceBacktestEngine()
@@ -335,6 +346,9 @@ class ParallelProcessingOptimizer:
     """
 
     def __init__(self, config: Optional[ProcessorConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化并行处理优化器"""
         self.config = config or ProcessorConfig()
         self.logger = logger

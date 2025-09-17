@@ -22,7 +22,7 @@ from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
 from tests.helper.log_capture import Log_capture_mixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

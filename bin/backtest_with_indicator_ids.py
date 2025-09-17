@@ -24,7 +24,7 @@ from strategy.strategy_parser import Strategy_parser
 from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
 from utils.logger import get_logger, init_logging
 from utils.path_utils import get_result_dir
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from enums.period import Period
 from indicators.indicator_registry import indicator_registry, Indicator_enum
 

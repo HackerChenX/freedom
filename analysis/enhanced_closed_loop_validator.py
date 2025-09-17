@@ -21,13 +21,15 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 from utils.decorators import performance_monitor, exception_handler
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.complete_indicator_registry import complete_registry
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -444,8 +446,8 @@ class EnhancedClosedLoopValidator:
 
                 entry_point_analysis['price_action'] = {
                     'close_price': float(latest_data.get('close', 0)),
-                    'price_change': float(latest_data.get('close', 0) - prev_data.get('close', 0)),
-                    'price_change_pct': float((latest_data.get('close', 0) - prev_data.get('close', 0)) / prev_data.get('close', 1) * 100),
+                    0) - prev_data.get('close', 0)),
+                    _pct': float((latest_data.get('close', 0) - prev_data.get('close', 0)) / prev_data.get('close', 1) * 100),
                     'volume': float(latest_data.get('volume', 0)),
                     'high': float(latest_data.get('high', 0)),
                     'low': float(latest_data.get('low', 0))
@@ -506,8 +508,8 @@ class EnhancedClosedLoopValidator:
                     context['trend_direction'] = 'downward'
 
                 # 波动性水平
-                price_changes = recent_data['close'].pct_change().dropna()
-                volatility = price_changes.std()
+                s = recent_data['close'].pct_change().dropna()
+                volatility = s.std()
 
                 if volatility > 0.03:
                     context['volatility_level'] = 'high'

@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 import pandas as pd
 import numpy as np
@@ -10,7 +11,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -23,6 +25,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
     """
     
     def __init__(self, name: str = "ZXMMarketBreadth", description: str = "ZXM市场宽度指标"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化ZXM市场宽度指标"""
         super().__init__(name, description)
         self.indicator_type = "ZXM_MARKET_BREADTH"
@@ -30,12 +35,12 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         
         # 市场宽度评估指标权重
         self.breadth_weights = {
-            'advance_decline': 0.20,      # 涨跌家数比率
-            'new_highs_lows': 0.15,       # 新高新低比率
-            'percentage_above_ma': 0.20,  # 站上均线比例
-            'sector_strength': 0.15,      # 板块强度
-            'volume_breadth': 0.15,       # 成交量宽度
-            'momentum_breadth': 0.15      # 动量宽度
+            'advance_decline': 0.20,      # 涨跌家数比率  # TODO: 将魔法数字提取到配置中
+            'new_highs_lows': 0.15,       # 新高新低比率  # TODO: 将魔法数字提取到配置中
+            'percentage_above_ma': 0.20,  # 站上均线比例  # TODO: 将魔法数字提取到配置中
+            'sector_strength': 0.15,      # 板块强度  # TODO: 将魔法数字提取到配置中
+            'volume_breadth': 0.15,       # 成交量宽度  # TODO: 将魔法数字提取到配置中
+            'momentum_breadth': 0.15      # 动量宽度  # TODO: 将魔法数字提取到配置中
         }
 
     def calculate(self, data: pd.DataFrame, *args, **kwargs) -> Dict[str, any]:
@@ -65,9 +70,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
 
             # 添加主要指标
             if 'market_breadth_indicator' in result_df.columns:
-                result['market_sentiment'] = result_df['market_breadth_indicator'].iloc[-1] if len(result_df) > 0 else 50.0
+                result['market_sentiment'] = result_df['market_breadth_indicator'].iloc[-1] if len(result_df) > 0 else 50.0  # TODO: 将魔法数字提取到配置中
             else:
-                result['market_sentiment'] = 50.0  # 默认中性情绪
+                result['market_sentiment'] = 50.0  # 默认中性情绪  # TODO: 将魔法数字提取到配置中
 
             # 添加其他关键指标
             if 'ad_ratio' in result_df.columns:
@@ -77,10 +82,10 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 result['market_state'] = result_df['market_state'].iloc[-1] if len(result_df) > 0 else 'neutral'
 
             # 添加情绪强度
-            sentiment_value = result.get('market_sentiment', 50.0)
-            if sentiment_value > 70:
+            sentiment_value = result.get('market_sentiment', 50.0)  # TODO: 将魔法数字提取到配置中
+            if sentiment_value > 70:  # TODO: 将魔法数字提取到配置中
                 result['sentiment_strength'] = 'bullish'
-            elif sentiment_value < 30:
+            elif sentiment_value < 30:  # TODO: 将魔法数字提取到配置中
                 result['sentiment_strength'] = 'bearish'
             else:
                 result['sentiment_strength'] = 'neutral'
@@ -102,7 +107,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             *args: 位置参数
             **kwargs: 关键字参数
                 lookback_period: 回溯分析周期，默认60个交易日
-                ma_periods: 均线周期列表，默认[20, 50, 200]
+                ma_periods: 均线周期列表，默认[20, 50, 200]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 index_code: 大盘指数代码，默认None
                 
         Returns:
@@ -112,8 +117,8 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             return pd.DataFrame()
 
         # 获取参数
-        lookback_period = kwargs.get('lookback_period', 60)
-        ma_periods = kwargs.get('ma_periods', [20, 50, 200])
+        lookback_period = kwargs.get('lookback_period', 60)  # TODO: 将魔法数字提取到配置中
+        ma_periods = kwargs.get('ma_periods', [20, 50, 200])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         index_code = kwargs.get('index_code', None)
         
         # 检查数据结构，如果不是多层索引，则使用简化计算
@@ -138,37 +143,37 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         result.loc[:, 'new_lows_ratio'] = highs_lows['new_lows_ratio']
         result.loc[:, 'hl_ratio'] = highs_lows['hl_ratio']
         
-        # 3. 计算站上各均线的股票比例
+        # 3. 计算站上各均线的股票比例  # TODO: 将魔法数字提取到配置中
         for period in ma_periods:
             above_ma = self._calculate_percentage_above_ma(data, period)
             result[f'above_ma{period}'] = above_ma
         
-        # 4. 计算板块强度
-        if 'sector' in data.columns or 'industry' in data.columns:
+        # 4. 计算板块强度  # TODO: 将魔法数字提取到配置中
+        if 'sector' in data.columns or in data.columns:
             sector_strength = self._calculate_sector_strength(data)
             result.loc[:, 'strongest_sector'] = sector_strength['strongest_sector']
             result.loc[:, 'weakest_sector'] = sector_strength['weakest_sector']
             result.loc[:, 'sector_rotation'] = sector_strength['sector_rotation']
         
-        # 5. 计算成交量宽度
+        # 5. 计算成交量宽度  # TODO: 将魔法数字提取到配置中
         volume_breadth = self._calculate_volume_breadth(data)
         result.loc[:, 'volume_surge_ratio'] = volume_breadth['volume_surge_ratio']
         result.loc[:, 'volume_decline_ratio'] = volume_breadth['volume_decline_ratio']
         
-        # 6. 计算动量宽度
+        # 6. 计算动量宽度  # TODO: 将魔法数字提取到配置中
         momentum_breadth = self._calculate_momentum_breadth(data)
         result.loc[:, 'momentum_positive_ratio'] = momentum_breadth['positive_ratio']
         result.loc[:, 'momentum_negative_ratio'] = momentum_breadth['negative_ratio']
         
-        # 7. 如果有大盘指数，计算市场与指数的相对强度
+        # 7. 如果有大盘指数，计算市场与指数的相对强度  # TODO: 将魔法数字提取到配置中
         if index_code is not None and index_code in data.index.get_level_values(1):
             relative_strength = self._calculate_market_relative_strength(data, index_code)
             result.loc[:, 'market_relative_strength'] = relative_strength
         
-        # 8. 计算综合市场宽度指标 (0-100)
+        # 8. 计算综合市场宽度指标 (0-100)  # TODO: 将魔法数字提取到配置中
         result.loc[:, 'market_breadth_indicator'] = self._calculate_breadth_indicator(result)
         
-        # 9. 市场状态分类
+        # 9. 市场状态分类  # TODO: 将魔法数字提取到配置中
         result.loc[:, 'market_state'] = self._classify_market_state(result)
 
         # 添加形态识别和信号生成
@@ -191,7 +196,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         """
         # 初始化评分Series
         dates = data.index.get_level_values(0).unique()
-        scores = pd.Series(50.0, index=dates, name='raw_score')  # 默认评分50分（中性）
+        scores = pd.Series(50.0, index=dates, name='raw_score')  # 默认评分50分（中性）  # TODO: 将魔法数字提取到配置中
         
         # 计算市场宽度指标
         breadth_result = self._calculate_marketbreadth(data, *args, **kwargs)
@@ -209,23 +214,23 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         if 'ad_ratio' in breadth_result.columns and 'above_ma50' in breadth_result.columns:
             for i in range(len(scores)):
                 # 涨跌比例评分（归一化到0-100）
-                ad_score = min(100, max(0, (breadth_result['ad_ratio'].iloc[i] * 50) + 50))
+                ad_score = min(100, max(0, (breadth_result['ad_ratio'].iloc[i] * 50) + 50))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 站上50日均线比例评分
                 ma_score = min(100, max(0, breadth_result['above_ma50'].iloc[i] * 100))
                 
                 # 新高新低比例评分
-                hl_score = 50
+                hl_score = 50  # TODO: 将魔法数字提取到配置中
                 if 'hl_ratio' in breadth_result.columns:
                     hl_ratio = breadth_result['hl_ratio'].iloc[i]
                     if not pd.isna(hl_ratio) and hl_ratio != 0:
                         if hl_ratio > 1:  # 新高多于新低
-                            hl_score = min(100, 50 + hl_ratio * 10)
+                            hl_score = min(100, 50 + hl_ratio * 10)  # TODO: 将魔法数字提取到配置中
                         else:  # 新低多于新高
-                            hl_score = max(0, 50 - (1/hl_ratio) * 10)
+                            hl_score = max(0, 50 - (1/hl_ratio) * 10)  # TODO: 将魔法数字提取到配置中
                 
                 # 综合评分
-                final_score = ad_score * 0.4 + ma_score * 0.4 + hl_score * 0.2
+                final_score = ad_score * 0.4 + ma_score * 0.4 + hl_score * 0.2  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 scores.iloc[i] = final_score
         
         return scores
@@ -238,13 +243,13 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             data: Data_frame，包含市场数据，需要有多个股票的数据
             *args: 位置参数
             **kwargs: 关键字参数
-                min_pattern_strength: 最小形态强度阈值，默认0.6
+                min_pattern_strength: 最小形态强度阈值，默认0.6  # TODO: 将魔法数字提取到配置中
                 
         Returns:
             Data_frame: 包含识别出的形态的Data_frame
         """
         # 获取参数
-        min_pattern_strength = kwargs.get('min_pattern_strength', 0.6)
+        min_pattern_strength = kwargs.get('min_pattern_strength', 0.6)  # TODO: 将魔法数字提取到配置中
         
         # 初始化形态DataFrame
         dates = data.index.get_level_values(0).unique()
@@ -260,49 +265,49 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             return patterns
         
         # 识别各种市场形态
-        for i in range(5, len(patterns)):
+        for i in range(5, len(patterns)):  # TODO: 将魔法数字提取到配置中
             # 1. 市场顶部钝化形态
             if (self._is_breadth_divergence(breadth_result, i, bearish=True) and
                 self._is_breadth_extreme(breadth_result, i, high=True)):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场顶部钝化'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场出现顶部钝化，涨跌比率下降但指数仍在上涨，警惕市场即将回调'
             
             # 2. 市场底部形态
             elif (self._is_breadth_divergence(breadth_result, i, bearish=False) and
                   self._is_breadth_extreme(breadth_result, i, high=False)):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场底部形成'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场出现底部形态，涨跌比率改善但指数仍在下跌，可能是市场即将反弹的信号'
             
-            # 3. 市场宽度扩展形态
+            # 3. 市场宽度扩展形态  # TODO: 将魔法数字提取到配置中
             elif self._is_breadth_expansion(breadth_result, i):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场宽度扩展'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场宽度指标快速扩展，表明市场强势上涨，多数股票参与'
             
-            # 4. 市场宽度收缩形态
+            # 4. 市场宽度收缩形态  # TODO: 将魔法数字提取到配置中
             elif self._is_breadth_contraction(breadth_result, i):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场宽度收缩'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场宽度指标快速收缩，表明市场走势变窄，可能是行情转变的前兆'
             
-            # 5. 板块轮动形态
-            elif 'sector_rotation' in breadth_result.columns and breadth_result['sector_rotation'].iloc[i] > 0.5:
+            # 5. 板块轮动形态  # TODO: 将魔法数字提取到配置中
+            elif 'sector_rotation' in breadth_result.columns and breadth_result['sector_rotation'].iloc[i] > 0.5:  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern'] = '板块轮动'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.6
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.6  # TODO: 将魔法数字提取到配置中
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场出现明显的板块轮动，热点切换，关注强势板块'
             
-            # 6. 市场过热形态
+            # 6. 市场过热形态  # TODO: 将魔法数字提取到配置中
             elif self._is_market_overheated(breadth_result, i):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场过热'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.75
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中5
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场各项指标过热，可能面临短期调整压力'
             
-            # 7. 市场超跌形态
+            # 7. 市场超跌形态  # TODO: 将魔法数字提取到配置中
             elif self._is_market_oversold(breadth_result, i):
                 patterns.loc[patterns.index[i], 'pattern'] = '市场超跌'
-                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.75
+                patterns.loc[patterns.index[i], 'pattern_strength'] = 0.7  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中5
                 patterns.loc[patterns.index[i], 'pattern_desc'] = '市场各项指标超跌，具备反弹条件'
         
         return patterns
@@ -321,7 +326,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             Data_frame: 包含标准化信号的Data_frame
         """
         # 获取参数
-        signal_threshold = kwargs.get('signal_threshold', 70)
+        signal_threshold = kwargs.get('signal_threshold', 70)  # TODO: 将魔法数字提取到配置中
         
         # 初始化信号DataFrame
         dates = data.index.get_level_values(0).unique()
@@ -330,10 +335,10 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         signals.loc[:, 'sell_signal'] = False
         signals.loc[:, 'neutral_signal'] = True  # 默认为中性信号
         signals.loc[:, 'trend'] = 0  # 0表示中性
-        signals.loc[:, 'score'] = 50.0  # 默认评分50分
+        signals.loc[:, 'score'] = 50.0  # 默认评分50分  # TODO: 将魔法数字提取到配置中
         signals.loc[:, 'signal_type'] = None
         signals.loc[:, 'signal_desc'] = None
-        signals.loc[:, 'confidence'] = 50.0
+        signals.loc[:, 'confidence'] = 50.0  # TODO: 将魔法数字提取到配置中
         signals.loc[:, 'risk_level'] = '中'
         signals.loc[:, 'position_size'] = 0.0
         signals.loc[:, 'stop_loss'] = None
@@ -350,9 +355,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         patterns = self.identify_patterns_Breadth(data, *args, **kwargs)
         
         # 基于市场宽度指标生成信号
-        for i in range(5, len(signals)):
+        for i in range(5, len(signals)):  # TODO: 将魔法数字提取到配置中
             # 跳过没有足够数据的早期记录
-            if i < 5:
+            if i < 5:  # TODO: 将魔法数字提取到配置中
                 continue
             
             # 设置基本分数
@@ -385,11 +390,11 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 # 市场宽度指标由低位快速上升
                 if (breadth_result['market_breadth_indicator'].iloc[i] > 
                     breadth_result['market_breadth_indicator'].iloc[i-1] + 10 and
-                    breadth_result['market_breadth_indicator'].iloc[i-1] < 40):
+                    breadth_result['market_breadth_indicator'].iloc[i-1] < 40):  # TODO: 将魔法数字提取到配置中
                     buy_condition = True
                     signals.loc[signals.index[i], 'signal_type'] = '市场宽度改善'
                     signals.loc[signals.index[i], 'signal_desc'] = '市场宽度指标快速改善，市场可能开始走强'
-                    signals.loc[signals.index[i], 'confidence'] = 70
+                    signals.loc[signals.index[i], 'confidence'] = 70  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 通过形态强化信号
             if patterns['pattern'].iloc[i] in ['市场底部形成', '市场超跌']:
@@ -405,11 +410,11 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 # 市场宽度指标由高位快速下降
                 if (breadth_result['market_breadth_indicator'].iloc[i] < 
                     breadth_result['market_breadth_indicator'].iloc[i-1] - 10 and
-                    breadth_result['market_breadth_indicator'].iloc[i-1] > 70):
+                    breadth_result['market_breadth_indicator'].iloc[i-1] > 70):  # TODO: 将魔法数字提取到配置中
                     sell_condition = True
                     signals.loc[signals.index[i], 'signal_type'] = '市场宽度恶化'
                     signals.loc[signals.index[i], 'signal_desc'] = '市场宽度指标快速恶化，市场可能开始走弱'
-                    signals.loc[signals.index[i], 'confidence'] = 70
+                    signals.loc[signals.index[i], 'confidence'] = 70  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 通过形态强化信号
             if patterns['pattern'].iloc[i] in ['市场顶部钝化', '市场过热']:
@@ -425,12 +430,12 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 signals.loc[signals.index[i], 'trend'] = 1
                 
                 # 设置风险级别
-                if signals['confidence'].iloc[i] > 80:
+                if signals['confidence'].iloc[i] > 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'risk_level'] = '低'
                 
                 # 建议仓位比例（根据信号强度和置信度）
                 confidence_factor = signals['confidence'].iloc[i] / 100
-                signals.loc[signals.index[i], 'position_size'] = min(0.8, 0.3 + confidence_factor * 0.5)
+                signals.loc[signals.index[i], 'position_size'] = min(0.8, 0.3 + confidence_factor * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 应用卖出信号
             elif sell_condition:
@@ -439,22 +444,22 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 signals.loc[signals.index[i], 'trend'] = -1
                 
                 # 设置风险级别
-                if signals['confidence'].iloc[i] > 80:
+                if signals['confidence'].iloc[i] > 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'risk_level'] = '高'
                 
                 # 建议仓位比例（减仓或清仓）
                 confidence_factor = signals['confidence'].iloc[i] / 100
-                signals.loc[signals.index[i], 'position_size'] = max(0, 0.5 - confidence_factor * 0.5)
+                signals.loc[signals.index[i], 'position_size'] = max(0, 0.5 - confidence_factor * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 成交量确认
             if 'volume_surge_ratio' in breadth_result.columns and 'volume_decline_ratio' in breadth_result.columns:
-                if buy_condition and breadth_result['volume_surge_ratio'].iloc[i] > 0.4:
+                if buy_condition and breadth_result['volume_surge_ratio'].iloc[i] > 0.4:  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'volume_confirmation'] = True
-                    signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                    signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
-                if sell_condition and breadth_result['volume_decline_ratio'].iloc[i] > 0.4:
+                if sell_condition and breadth_result['volume_decline_ratio'].iloc[i] > 0.4:  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'volume_confirmation'] = True
-                    signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)
+                    signals.loc[signals.index[i], 'confidence'] = min(90, signals['confidence'].iloc[i] + 10)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return signals
 
@@ -471,12 +476,12 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1] if hasattr(score, 'iloc') else score
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
@@ -485,9 +490,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         elif "市场顶部钝化" in patterns:
             pattern_boost += 0.2
         elif "市场宽度扩展" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "市场宽度收缩" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "市场过热" in patterns:
             pattern_boost += 0.1
         elif "市场超跌" in patterns:
@@ -517,12 +522,12 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         Args:
             **kwargs: 参数字典，可包含：
                 - lookback_period: 回溯分析周期，默认60
-                - ma_periods: 均线周期列表，默认[20, 50, 200]
+                - ma_periods: 均线周期列表，默认[20, 50, 200]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 - signal_threshold: 信号阈值，默认70
         """
-        self.lookback_period = kwargs.get('lookback_period', 60)
-        self.ma_periods = kwargs.get('ma_periods', [20, 50, 200])
-        self.signal_threshold = kwargs.get('signal_threshold', 70)
+        self.lookback_period = kwargs.get('lookback_period', 60)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        self.ma_periods = kwargs.get('ma_periods', [20, 50, 200])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        self.signal_threshold = kwargs.get('signal_threshold', 70)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def _calculate_advance_decline_ratio(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算涨跌家数比率"""
@@ -671,7 +676,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         # 简化实现，返回默认值
         result.loc[:, 'strongest_sector'] = 'Technology'
         result.loc[:, 'weakest_sector'] = 'Energy'
-        result.loc[:, 'sector_rotation'] = 0.5
+        result.loc[:, 'sector_rotation'] = 0.5  # TODO: 将魔法数字提取到配置中
 
         return result
 
@@ -691,8 +696,8 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
 
                     # 简化计算：假设成交量放大和缩小的比例
                     avg_volume = day_data['volume'].mean()
-                    volume_surge_count = (day_data['volume'] > avg_volume * 1.5).sum()
-                    volume_decline_count = (day_data['volume'] < avg_volume * 0.5).sum()
+                    volume_surge_count = (day_data['volume'] > avg_volume * 1.5).sum()  # TODO: 将魔法数字提取到配置中
+                    volume_decline_count = (day_data['volume'] < avg_volume * 0.5).sum()  # TODO: 将魔法数字提取到配置中
 
                     if total_count > 0:
                         result.loc[date, 'volume_surge_ratio'] = volume_surge_count / total_count
@@ -764,25 +769,25 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         breadth_indicator = pd.Series(index=result.index, dtype=float)
 
         for i in range(len(result)):
-            score = 50.0  # 基础分数
+            score = 50.0  # 基础分数  # TODO: 将魔法数字提取到配置中
 
             # AD比率贡献
             if 'ad_ratio' in result.columns:
                 ad_ratio = result['ad_ratio'].iloc[i]
-                score += ad_ratio * 25  # -1到1映射到25-75
+                score += ad_ratio * 25  # -1到1映射到25-75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 站上均线比例贡献
             if 'above_ma50' in result.columns:
                 above_ma50 = result['above_ma50'].iloc[i]
-                score += (above_ma50 - 0.5) * 50  # 0-1映射到25-75
+                score += (above_ma50 - 0.5) * 50  # 0-1映射到25-75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 新高新低比率贡献
             if 'hl_ratio' in result.columns:
                 hl_ratio = result['hl_ratio'].iloc[i]
                 if hl_ratio > 1:
-                    score += min(25, (hl_ratio - 1) * 10)
+                    score += min(25, (hl_ratio - 1) * 10)  # TODO: 将魔法数字提取到配置中
                 else:
-                    score -= min(25, (1 - hl_ratio) * 10)
+                    score -= min(25, (1 - hl_ratio) * 10)  # TODO: 将魔法数字提取到配置中
 
             breadth_indicator.iloc[i] = max(0, min(100, score))
 
@@ -796,13 +801,13 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             if 'market_breadth_indicator' in result.columns:
                 breadth_score = result['market_breadth_indicator'].iloc[i]
 
-                if breadth_score > 75:
+                if breadth_score > 75:  # TODO: 将魔法数字提取到配置中
                     market_state.iloc[i] = 'bull'
-                elif breadth_score < 25:
+                elif breadth_score < 25:  # TODO: 将魔法数字提取到配置中
                     market_state.iloc[i] = 'bear'
-                elif breadth_score > 85:
+                elif breadth_score > 85:  # TODO: 将魔法数字提取到配置中
                     market_state.iloc[i] = 'top'
-                elif breadth_score < 15:
+                elif breadth_score < 15:  # TODO: 将魔法数字提取到配置中
                     market_state.iloc[i] = 'bottom'
                 else:
                     market_state.iloc[i] = 'sideways'
@@ -813,7 +818,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
 
     def _is_breadth_divergence(self, result: pd.DataFrame, index: int, bearish: bool = True) -> bool:
         """检测宽度背离"""
-        if index < 5 or 'market_breadth_indicator' not in result.columns:
+        if index < 5 or 'market_breadth_indicator' not in result.columns:  # TODO: 将魔法数字提取到配置中
             return False
 
         # 简化实现
@@ -821,9 +826,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         prev_breadth = result['market_breadth_indicator'].iloc[index-1]
 
         if bearish:
-            return current_breadth < prev_breadth - 5
+            return current_breadth < prev_breadth - 5  # TODO: 将魔法数字提取到配置中
         else:
-            return current_breadth > prev_breadth + 5
+            return current_breadth > prev_breadth + 5  # TODO: 将魔法数字提取到配置中
 
     def _is_breadth_extreme(self, result: pd.DataFrame, index: int, high: bool = True) -> bool:
         """检测宽度极值"""
@@ -833,29 +838,29 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         current_breadth = result['market_breadth_indicator'].iloc[index]
 
         if high:
-            return current_breadth > 85
+            return current_breadth > 85  # TODO: 将魔法数字提取到配置中
         else:
-            return current_breadth < 15
+            return current_breadth < 15  # TODO: 将魔法数字提取到配置中
 
     def _is_breadth_expansion(self, result: pd.DataFrame, index: int) -> bool:
         """检测宽度扩展"""
-        if index < 3 or 'market_breadth_indicator' not in result.columns:
+        if index < 3 or 'market_breadth_indicator' not in result.columns:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
 
         current_breadth = result['market_breadth_indicator'].iloc[index]
-        prev_breadth = result['market_breadth_indicator'].iloc[index-3]
+        prev_breadth = result['market_breadth_indicator'].iloc[index-3]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        return current_breadth > prev_breadth + 15
+        return current_breadth > prev_breadth + 15  # TODO: 将魔法数字提取到配置中
 
     def _is_breadth_contraction(self, result: pd.DataFrame, index: int) -> bool:
         """检测宽度收缩"""
-        if index < 3 or 'market_breadth_indicator' not in result.columns:
+        if index < 3 or 'market_breadth_indicator' not in result.columns:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
 
         current_breadth = result['market_breadth_indicator'].iloc[index]
-        prev_breadth = result['market_breadth_indicator'].iloc[index-3]
+        prev_breadth = result['market_breadth_indicator'].iloc[index-3]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        return current_breadth < prev_breadth - 15
+        return current_breadth < prev_breadth - 15  # TODO: 将魔法数字提取到配置中
 
     def _is_market_overheated(self, result: pd.DataFrame, index: int) -> bool:
         """检测市场过热"""
@@ -863,7 +868,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             return False
 
         current_breadth = result['market_breadth_indicator'].iloc[index]
-        return current_breadth > 90
+        return current_breadth > 90  # TODO: 将魔法数字提取到配置中
 
     def _is_market_oversold(self, result: pd.DataFrame, index: int) -> bool:
         """检测市场超跌"""
@@ -923,7 +928,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 "description": "指标显示上升趋势，看涨信号",
                 "type": "BULLISH", 
                 "strength": "STRONG",
-                "score_impact": 15.0
+                "score_impact": 15.0  # TODO: 将魔法数字提取到配置中
             },
             "下降趋势": {
                 "id": "下降趋势",
@@ -931,7 +936,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 "description": "指标显示下降趋势，看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG", 
-                "score_impact": -15.0
+                "score_impact": -15.0  # TODO: 将魔法数字提取到配置中
             },
             # 信号形态
             "买入信号": {
@@ -940,7 +945,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 "description": "指标产生买入信号，建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 20.0
+                "score_impact": 20.0  # TODO: 将魔法数字提取到配置中
             },
             "卖出信号": {
                 "id": "卖出信号", 
@@ -948,7 +953,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 "description": "指标产生卖出信号，建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -20.0
+                "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
             }
         }
         
@@ -965,7 +970,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         Returns:
             Data_frame: 包含简化市场宽度指标的Data_frame
         """
-        if data.empty or len(data) < 20:
+        if data.empty or len(data) < 20:  # TODO: 将魔法数字提取到配置中
             return pd.DataFrame(index=data.index)
 
         result = pd.DataFrame(index=data.index)
@@ -974,11 +979,11 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         try:
             # 1. 基于价格动量的简化涨跌比率
             if 'close' in data.columns:
-                price_change = data['close'].pct_change()
+                = data['close'].pct_change()
                 # 使用滚动窗口计算涨跌比率
-                window = min(20, len(data) // 4)
-                positive_days = (price_change > 0).rolling(window=window).sum()
-                negative_days = (price_change < 0).rolling(window=window).sum()
+                window = min(20, len(data) // 4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                positive_days = (> 0).rolling(window=window).sum()
+                negative_days = (< 0).rolling(window=window).sum()
                 total_days = positive_days + negative_days
 
                 # 避免除零错误
@@ -987,47 +992,47 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 result['ad_line'] = pd.Series(ad_ratio).cumsum()
 
             # 2. 基于均线的简化指标
-            ma_periods = kwargs.get('ma_periods', [20, 50])
+            ma_periods = kwargs.get('ma_periods', [20, 50])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             for period in ma_periods:
                 if len(data) >= period and 'close' in data.columns:
                     ma = data['close'].rolling(window=period).mean()
                     above_ma = (data['close'] > ma).astype(float)
                     result[f'above_ma{period}'] = above_ma
 
-            # 3. 基于成交量的简化指标
+            # 3. 基于成交量的简化指标  # TODO: 将魔法数字提取到配置中
             if 'volume' in data.columns:
-                volume_ma = data['volume'].rolling(window=20).mean()
-                volume_surge = (data['volume'] > volume_ma * 1.5).astype(float)
+                volume_ma = data['volume'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
+                volume_surge = (data['volume'] > volume_ma * 1.5).astype(float)  # TODO: 将魔法数字提取到配置中
                 result['volume_surge_ratio'] = volume_surge
                 result['volume_decline_ratio'] = 1 - volume_surge
 
-            # 4. 计算简化的市场宽度指标 (0-100)
+            # 4. 计算简化的市场宽度指标 (0-100)  # TODO: 将魔法数字提取到配置中
             breadth_components = []
 
             if 'ad_ratio' in result.columns:
                 # 将涨跌比率标准化到0-100
-                ad_normalized = ((result['ad_ratio'] + 1) / 2 * 100).fillna(50)
-                breadth_components.append(ad_normalized * 0.4)
+                ad_normalized = ((result['ad_ratio'] + 1) / 2 * 100).fillna(50)  # TODO: 将魔法数字提取到配置中
+                breadth_components.append(ad_normalized * 0.4)  # TODO: 将魔法数字提取到配置中
 
             if 'above_ma20' in result.columns:
-                breadth_components.append(result['above_ma20'] * 100 * 0.3)
+                breadth_components.append(result['above_ma20'] * 100 * 0.3)  # TODO: 将魔法数字提取到配置中
 
             if 'volume_surge_ratio' in result.columns:
-                breadth_components.append(result['volume_surge_ratio'] * 100 * 0.3)
+                breadth_components.append(result['volume_surge_ratio'] * 100 * 0.3)  # TODO: 将魔法数字提取到配置中
 
             if breadth_components:
                 market_breadth = sum(breadth_components)
-                result['market_breadth_indicator'] = market_breadth.fillna(50)
+                result['market_breadth_indicator'] = market_breadth.fillna(50)  # TODO: 将魔法数字提取到配置中
             else:
-                result['market_breadth_indicator'] = 50
+                result['market_breadth_indicator'] = 50  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            # 5. 市场状态分类
+            # 5. 市场状态分类  # TODO: 将魔法数字提取到配置中
             if 'market_breadth_indicator' in result.columns:
                 conditions = [
-                    result['market_breadth_indicator'] >= 80,
-                    result['market_breadth_indicator'] >= 60,
-                    result['market_breadth_indicator'] <= 20,
-                    result['market_breadth_indicator'] <= 40
+                    result['market_breadth_indicator'] >= 80,  # TODO: 将魔法数字提取到配置中
+                    result['market_breadth_indicator'] >= 60,  # TODO: 将魔法数字提取到配置中
+                    result['market_breadth_indicator'] <= 20,  # TODO: 将魔法数字提取到配置中
+                    result['market_breadth_indicator'] <= 40  # TODO: 将魔法数字提取到配置中
                 ]
                 choices = ['bull', 'neutral_bull', 'bear', 'neutral_bear']
                 result['market_state'] = np.select(conditions, choices, default='neutral')
@@ -1035,7 +1040,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         except Exception as e:
             logger.debug(f"{self.name}: 简化计算出错: {e}")
             # 返回默认值
-            result['market_breadth_indicator'] = 50
+            result['market_breadth_indicator'] = 50  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             result['market_state'] = 'neutral'
 
         return result
@@ -1053,9 +1058,9 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
                 'description': 'ZXM市场情绪分析指标',
                 'signals': ['bullish', 'bearish', 'neutral'],
                 'thresholds': {
-                    'bullish': 70,
-                    'bearish': 30,
-                    'neutral_range': [30, 70]
+                    'bullish': 70,  # TODO: 将魔法数字提取到配置中
+                    'bearish': 30,  # TODO: 将魔法数字提取到配置中
+                    'neutral_range': [30, 70]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 },
                 'components': [
                     'advance_decline_ratio',
@@ -1080,4 +1085,4 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         Returns:
             int: 最少需要的数据周期数
         """
-        return 25
+        return 25  # TODO: 将魔法数字提取到配置中

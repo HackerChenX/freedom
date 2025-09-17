@@ -49,11 +49,12 @@ from utils.logger import get_logger
 from utils.performance_monitor import PerformanceMonitor
 from utils.memory_manager import MemoryManager
 from utils.exception_handler import exception_handler
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
 
-class SystemPerformanceOptimizer:
+class SystemPerformanceOptimizationService:
     """
     系统性能优化器
 
@@ -66,9 +67,9 @@ class SystemPerformanceOptimizer:
     def __init__(self):
         """初始化性能优化器"""
         self.optimization_metrics = {}
-        self.cache_manager = EnhancedCacheManager()
-        self.memory_optimizer = MemoryOptimizer()
-        self.database_optimizer = DatabaseQueryOptimizer()
+        self.cache_manager = EnhancedCacheService()
+        self.memory_optimizer = MemoryOptimizationService()
+        self.database_optimizer = DatabaseQueryOptimizationService()
         self.exception_optimizer = ExceptionHandlingOptimizer()
         self.concurrency_optimizer = ConcurrencyOptimizer()
 
@@ -449,7 +450,7 @@ class SystemPerformanceOptimizer:
             return ""
 
 
-class MemoryOptimizer:
+class MemoryOptimizationService:
     """内存使用优化器"""
 
     def __init__(self):
@@ -605,7 +606,7 @@ class MemoryOptimizer:
             return 0
 
 
-class DatabaseQueryOptimizer:
+class DatabaseQueryOptimizationService:
     """数据库查询优化器"""
 
     def __init__(self):
@@ -722,7 +723,7 @@ class DatabaseQueryOptimizer:
             return 0
 
 
-class EnhancedCacheManager:
+class EnhancedCacheService:
     """增强型缓存管理器"""
 
     def __init__(self):
@@ -1015,7 +1016,7 @@ def run_system_optimization():
 
     try:
         # 创建优化器实例
-        optimizer = SystemPerformanceOptimizer()
+        optimizer = SystemPerformanceOptimizationService()
 
         # 运行全面优化
         results = optimizer.run_comprehensive_optimization()

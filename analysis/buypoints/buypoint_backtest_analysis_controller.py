@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 import pandas as pd
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 
@@ -28,6 +28,7 @@ from utils.unified_container import get_container
 from .enhanced_backtest_engine import EnhancedBacktestEngine, BacktestConfig, BuyPointData, BacktestSummary
 from .enhanced_buypoint_detector import EnhancedBuyPointDetector, BuyPointDetectionConfig, BuyPointSignal
 from .enhanced_backtest_evaluator import EnhancedBacktestEvaluator, EvaluationResult
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -487,7 +488,7 @@ class BuyPointBacktestAnalysisController:
             # 检查数据访问
             try:
                 # 简单的数据访问测试
-                test_query = "SELECT COUNT(*) as count FROM stock_info WHERE level = '日线' LIMIT 1"
+                test_query = "SELECT COUNT(*) as count FROM stock_info WHERE code = %(code)s AND level = '日线' LIMIT 1"
                 result = self.data_access.query_dataframe(test_query)
                 data_access_ok = len(result) > 0
             except:

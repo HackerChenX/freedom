@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 测试 freedom_select.py 的基本功能
 """
@@ -10,6 +10,7 @@ import sys
 import os
 import subprocess
 from pathlib import Path
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到路径
 root_dir = Path(__file__).parent

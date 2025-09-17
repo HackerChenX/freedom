@@ -35,6 +35,7 @@ from utils.decorators import performance_monitor, exception_handler
 from indicators.factory import IndicatorFactory
 from indicators.base_indicator import BaseIndicator
 from db.managers.query_executor import UnifiedQueryExecutor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger('parameter_combination_tester')
 
@@ -264,8 +265,7 @@ class ParameterCombinationTester:
             # 从数据库获取测试数据
             query = """
             SELECT code, name, date, open, high, low, close, volume, turnover_rate
-            FROM stock_info 
-            WHERE code IN ('000001', '000002', '000858', '002415', '600036')
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('000001', '000002', '000858', '002415', '600036')
             AND level = '日线'
             AND date >= '2024-01-01' AND date <= '2024-12-31'
             ORDER BY code, date ASC

@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 增强选股执行引擎
 
@@ -15,12 +16,13 @@ from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 import time
 
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.complete_indicator_registry import complete_registry
 from strategy.enhanced_strategy_config_engine import StrategyConfig, StrategyRule, StrategyCondition
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

@@ -10,6 +10,7 @@ from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from datetime import datetime
 from dataclasses import dataclass
+from db.sql_manager import SQLManager, QueryType
 
 
 @dataclass

@@ -15,6 +15,7 @@ import time
 from utils.logger import getLogger
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from .stock_selection_engine import StockSelection
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

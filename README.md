@@ -16,9 +16,10 @@
 - **三重优化**: 并行处理 + 向量化计算 + 智能缓存
 
 ### 📊 专业分析
-- **86个技术指标**: 涵盖趋势、震荡、成交量、波动率等各类指标
-- **智能买点检测**: 基于ZXM体系的专业买点分析
-- **多周期分析**: 支持日线、周线、月线等多时间框架
+- **128个技术指标**: 涵盖趋势、震荡、成交量、波动率等各类指标，99.6%覆盖率
+- **🆕 多周期买点分析**: 15分钟到月线全覆盖，正确区分不同周期信号
+- **智能信号聚合**: 跨周期信号验证和智能聚合，专业级技术分析
+- **金叉死叉检测**: 精确识别技术形态，15分钟KDJ金叉 ≠ 日线KDJ金叉
 
 ### 🔧 技术创新
 - **向量化计算**: 使用numpy/pandas优化，性能提升40-70%
@@ -56,7 +57,50 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 ```
 
-### ⚡ 基本使用
+### 🆕 **多周期买点分析（推荐）**
+
+```bash
+# 多周期买点分析 - 正确区分不同时间周期的技术信号
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods daily weekly \
+    --output results/analysis.json
+
+# 全周期综合分析 - 15分钟到月线全覆盖
+python bin/multi_period_buypoint_analyzer.py \
+    --stock-code 300005 \
+    --date 2025-05-09 \
+    --periods 15min 30min 60min daily weekly monthly \
+    --output results/comprehensive.json
+```
+
+```python
+from bin.multi_period_buypoint_analyzer import MultiPeriodBuypointAnalyzer
+from db.services.multi_period_data_service import Period
+
+# 创建多周期分析器
+analyzer = MultiPeriodBuypointAnalyzer()
+
+# 多周期买点分析
+result = analyzer.analyze_multi_period_buypoint(
+    stock_code='300005',
+    target_date='2025-05-09',
+    periods=[Period.DAILY, Period.WEEKLY],
+    focus_indicators=['KDJ', 'MACD', 'RSI', 'MA']
+)
+
+print(f"📊 多周期分析完成!")
+print(f"🎯 综合评分: {result['overall_score']:.2f}/100")
+print(f"💡 买点建议: {result['recommendations']['action']}")
+print(f"🔍 置信度: {result['recommendations']['confidence']}")
+
+# 查看不同周期的信号
+for period, data in result['multi_period_indicators']['periods'].items():
+    print(f"📈 {period}: {data['data_points']}个数据点")
+```
+
+### ⚡ 高性能单周期分析（Legacy）
 
 ```python
 from analysis.optimized_buypoint_analyzer import OptimizedBuyPointAnalyzer
@@ -110,6 +154,50 @@ kdj_result = optimizer.optimize_kdj_calculation(stock_data)
 print("🎯 向量化计算完成，性能提升40-70%!")
 ```
 
+## 🆕 **多周期分析技术突破**
+
+### 🎯 **解决的核心问题**
+
+传统股票分析系统存在一个**根本性缺陷**：**指标与周期混淆**
+
+❌ **错误认知**: 15分钟KDJ金叉 = 日线KDJ金叉
+✅ **正确理解**: 15分钟KDJ金叉 ≠ 日线KDJ金叉（完全不同的技术信号）
+
+### 🔍 **技术信号的周期特性**
+
+| 周期 | KDJ金叉含义 | 适用场景 | 信号强度 |
+|------|-------------|----------|----------|
+| **15分钟** | 短期动量转换 | 日内交易、快进快出 | 短期强 |
+| **60分钟** | 中短期趋势变化 | 波段交易 | 中等 |
+| **日线** | 中期趋势转折 | 中线投资 | 较强 |
+| **周线** | 长期趋势确认 | 长线投资 | 很强 |
+
+### 🏆 **多周期分析优势**
+
+1. **精确信号识别**: 正确区分不同周期的技术信号
+2. **跨周期验证**: 多个时间维度的信号一致性验证
+3. **智能信号聚合**: 基于周期权重的智能信号聚合
+4. **专业级分析**: 符合专业交易员的多周期分析方法
+
+### 📊 **实际案例对比**
+
+**传统单周期分析**:
+```
+股票300005 (2025-05-09)
+- KDJ: BUY信号 (混淆了所有周期)
+- 无法区分信号来源和强度
+```
+
+**🆕 多周期分析**:
+```
+股票300005 (2025-05-09)
+- 15分钟KDJ: HOLD (短期震荡)
+- 60分钟KDJ: BUY (中短期向上)
+- 日线KDJ: BUY (中期趋势确认)
+- 周线KDJ: HOLD (长期观察)
+- 综合评分: 45.78/100 (HOLD建议)
+```
+
 ## 🏗️ 技术架构
 
 ### 🔧 三重优化架构
@@ -143,17 +231,30 @@ print("🎯 向量化计算完成，性能提升40-70%!")
 
 ```
 stock-analysis-system/
+├── 🆕 bin/                         # 命令行工具
+│   ├── 🎯 multi_period_buypoint_analyzer.py   # 多周期买点分析器（推荐）
+│   ├── 📊 buypoint_batch_analyzer.py          # 传统批量分析器（Legacy）
+│   └── 🔧 zxm_analysis.py                     # ZXM分析工具
 ├── 📊 analysis/                    # 核心分析模块
 │   ├── 🚀 optimized_buypoint_analyzer.py      # 优化买点分析器
 │   ├── ⚡ parallel_buypoint_analyzer.py       # 并行处理引擎
 │   ├── 🎯 vectorized_indicator_optimizer.py   # 向量化优化器
 │   ├── 💾 intelligent_cache_system.py         # 智能缓存系统
 │   └── 📈 indicator_performance_profiler.py   # 性能分析器
-├── 🔧 indicators/                  # 技术指标库（86个指标）
+├── 🔧 indicators/                  # 技术指标库（128个指标，99.6%覆盖率）
 │   ├── 📊 core/                   # 核心指标（RSI、MACD、KDJ等）
 │   ├── 🎯 enhanced/               # 增强指标
 │   ├── 🔮 zxm/                    # ZXM专业体系
-│   └── 📋 pattern/                # 形态识别
+│   ├── 📋 pattern/                # 形态识别
+│   ├── 🆕 services/               # 多周期指标服务
+│   │   └── multi_period_indicator_service.py  # 多周期指标计算
+│   └── signal_method_adapter.py   # 统一信号适配器
+├── 🗄️ db/                         # 数据访问层
+│   ├── 🆕 services/               # 数据服务
+│   │   └── multi_period_data_service.py       # 多周期数据服务
+│   ├── interfaces/                # 数据接口
+│   ├── managers/                  # 数据管理器
+│   └── enhanced_connection_pool.py            # 连接池
 ├── 🗄️ data/                       # 数据存储
 │   ├── 📈 stock_data/             # 股票数据
 │   ├── 🎯 buypoints.csv           # 买点数据

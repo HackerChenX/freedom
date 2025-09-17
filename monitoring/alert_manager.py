@@ -22,6 +22,7 @@ from utils.logger import get_logger
 from utils.exception_handler import exception_handler
 from utils.performance_monitor import performance_monitor
 from monitoring.intelligent_alert_system import get_intelligent_alert_system
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

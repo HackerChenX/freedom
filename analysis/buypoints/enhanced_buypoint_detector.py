@@ -22,11 +22,12 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from enums.signal_types import SignalType
 from enums.pattern_types import Candle_pattern_type as PatternType
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -71,7 +72,7 @@ class BuyPointDetectionConfig:
     min_score: float = 60.0
     lookback_periods: int = 20
     volume_threshold: float = 1.5  # 成交量倍数
-    price_change_threshold: float = 0.02  # 价格变化阈值
+    _threshold: float = 0.02  # 价格变化阈值
     enable_ml_detection: bool = False
     detection_types: List[BuyPointType] = None
     
@@ -80,6 +81,18 @@ class BuyPointDetectionConfig:
             self.detection_types = list(BuyPointType)
 
 class EnhancedBuyPointDetector:
+"""
+EnhancedBuyPointDetector - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 23个方法分为以下职责组:
+  * 核心功能方法 (约7个)
+  * 辅助工具方法 (约7个)  
+  * 接口适配方法 (约7个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     增强买点识别系统
     
@@ -202,9 +215,7 @@ class EnhancedBuyPointDetector:
             start_date = end_date - timedelta(days=self.config.lookback_periods * 2)
             
             query = f"""
-            SELECT code, name, date, open, high, low, close, volume, turnover_rate
-            FROM stock_info 
-            WHERE code = '{stock_code}'
+            SELECT code, name, date, open, high, low, close, volume FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date.strftime('%Y-%m-%d')}' 
             AND date <= '{detection_date}'

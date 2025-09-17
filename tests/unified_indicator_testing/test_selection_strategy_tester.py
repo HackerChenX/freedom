@@ -21,6 +21,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(root_dir)
 
 from tests.unified_indicator_testing.components.selection_strategy_tester import SelectionStrategyTester
+from db.sql_manager import SQLManager, QueryType
 
 
 class TestSelectionStrategyTester(unittest.TestCase):

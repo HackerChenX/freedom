@@ -24,6 +24,7 @@ sys.path.insert(0, '/Users/hacker/PycharmProjects/freedom')
 
 from db.enhanced_connection_pool import get_connection_pool
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -46,12 +47,12 @@ class ConcurrencyPerformanceTester:
             "SELECT code, name, date, close FROM stock_info WHERE code = '000003' AND level = '日线' ORDER BY date DESC LIMIT 10",
             
             # 中等复杂度查询
-            "SELECT code, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE level = '日线' AND code LIKE '0000%' GROUP BY code LIMIT 20",
-            "SELECT code, name, date, close, volume FROM stock_info WHERE close > 10 AND volume > 100000 AND level = '日线' ORDER BY date DESC LIMIT 50",
+            "SELECT code, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE code = %(code)s AND level = '日线' AND code LIKE '0000%' GROUP BY code LIMIT 20",
+            "SELECT code, name, date, close, volume FROM stock_info WHERE code = %(code)s AND close > 10 AND volume > 100000 AND level = '日线' ORDER BY date DESC LIMIT 50",
             
             # 聚合查询
-            "SELECT industry, COUNT(*) as stock_count FROM stock_info WHERE level = '日线' GROUP BY industry LIMIT 10",
-            "SELECT date, COUNT(*) as daily_count FROM stock_info WHERE level = '日线' AND date >= '2024-01-01' GROUP BY date ORDER BY date DESC LIMIT 30"
+            "SELECT industry, COUNT(*) as stock_count FROM stock_info WHERE code = %(code)s AND level = '日线' GROUP BY industry LIMIT 10",
+            "SELECT date, COUNT(*) as daily_count FROM stock_info WHERE code = %(code)s AND level = '日线' AND date >= '2024-01-01' GROUP BY date ORDER BY date DESC LIMIT 30"
         ]
     
     def test_concurrent_performance(self, num_workers: int = 10, queries_per_worker: int = 5) -> Dict[str, Any]:

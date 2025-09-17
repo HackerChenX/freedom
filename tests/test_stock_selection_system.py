@@ -18,7 +18,7 @@ import numpy as np
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_parser import Strategy_parser
 from strategy.strategy_manager import Strategy_manager
@@ -28,8 +28,8 @@ logger = get_logger(__name__)
 
 
 def test_data_manager_stock_list():
-    """测试DataManager的get_stock_list方法"""
-    print("\n=== 测试DataManager.get_stock_list方法 ===")
+    """测试DataAccessManager的get_stock_list方法"""
+    print("\n=== 测试DataAccessManager.get_stock_list方法 ===")
     
     try:
         dm = get_unified_data_manager()
@@ -109,6 +109,7 @@ def test_strategy_condition_evaluator():
     
     try:
         from strategy.strategy_condition_evaluator import StrategyConditionEvaluator
+from db.sql_manager import SQLManager, QueryType
         
         # 创建评估器
         evaluator = StrategyConditionEvaluator()
@@ -216,7 +217,7 @@ def main_teststockselectionsystem():
     test_results = []
     
     # 运行各项测试
-    test_results.append(("DataManager股票列表", test_data_manager_stock_list()))
+    test_results.append(("DataAccessManager股票列表", test_data_manager_stock_list()))
     test_results.append(("策略执行器基本功能", test_strategy_executor_basic()))
     test_results.append(("策略条件评估器", test_strategy_condition_evaluator()))
     test_results.append(("端到端选股流程", test_end_to_end_selection()))

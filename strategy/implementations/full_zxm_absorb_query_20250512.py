@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -27,6 +28,9 @@ class FullStockZXMAnalyzer:
     """全量股票ZXM吸筹信号分析器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.target_date = '2025-05-12'
         self.results = []
         self.processed_count = 0
@@ -35,7 +39,8 @@ class FullStockZXMAnalyzer:
     def get_all_stock_codes(self) -> List[str]:
         """获取所有股票代码"""
         try:
-            from db.clickhouse_db import get_clickhouse_db
+            # from db.clickhouse_db  # 修复跨层调用违规 import get_clickhouse_db
+from db.sql_manager import SQLManager, QueryType
             db = get_clickhouse_db()
             
             # 查询所有股票代码
@@ -94,7 +99,8 @@ class FullStockZXMAnalyzer:
     def get_stock_data(self, stock_code: str) -> Optional[pd.DataFrame]:
         """获取单只股票的历史数据"""
         try:
-            from db.clickhouse_db import get_clickhouse_db
+            # from db.clickhouse_db  # 修复跨层调用违规 import get_clickhouse_db
+from db.sql_manager import SQLManager, QueryType
             db = get_clickhouse_db()
             
             # 获取目标日期前60天的数据（用于计算55周期指标）

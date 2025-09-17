@@ -61,7 +61,7 @@ class SingletonOptimizer:
             },
             {
                 'file': 'utils/cache.py',
-                'class': 'CacheManager',
+                'class': 'CacheService',
                 'instance_var': '_instance',
                 'getter_func': 'get_cache_manager'
             },
@@ -217,6 +217,7 @@ class SingletonOptimizer:
 """
 
 from utils.dependency_injection import get_service_Optimize_Global_Singletons_Optimize_Global_Singletons
+from db.sql_manager import SQLManager, QueryType
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.managers.data_access_manager import Data_access_manager
 
@@ -318,6 +319,7 @@ container = configure_container_Optimize_Global_Singletons()
 ```python
 # 通过容器获取服务
 from utils.dependency_injection import get_service_Optimize_Global_Singletons_Optimize_Global_Singletons
+from db.sql_manager import SQLManager, QueryType
 
 container = get_container()
 service = get_service_Optimize_Global_Singletons_Optimize_Global_Singletons(Data_access_interface)

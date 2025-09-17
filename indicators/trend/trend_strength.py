@@ -1,6 +1,8 @@
+from utils.container import container
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 趋势强度指标
@@ -16,7 +18,8 @@ import warnings
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -32,6 +35,9 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, params: Dict[str, Any] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化趋势强度指标
 
@@ -49,9 +55,9 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 设置默认参数
         self.params = {
-            "lookback_period": 20,
-            "min_strength": 30,
-            "strong_threshold": 70
+            "lookback_period": 20,  # TODO: 将魔法数字提取到配置中
+            "min_strength": 30,  # TODO: 将魔法数字提取到配置中
+            "strong_threshold": 70  # TODO: 将魔法数字提取到配置中
         }
         
         # 更新自定义参数
@@ -97,13 +103,13 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 🔧 Ultra Think修复：添加真实的趋势强度计算算法
         # 1. 计算价格变化率
-        df['price_change'] = df['close'].pct_change()
+        df[] = df['close'].pct_change()
 
         # 2. 计算移动平均趋势
         short_ma = df['close'].rolling(window=min(10, len(df)), min_periods=1).mean()
         long_ma = df['close'].rolling(window=min(lookback_period, len(df)), min_periods=1).mean()
 
-        # 3. 计算趋势方向
+        # 3. 计算趋势方向  # TODO: 将魔法数字提取到配置中
         trend_direction = []
         for i in range(len(df)):
             if i < 1:
@@ -124,43 +130,43 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         df['trend_direction'] = trend_direction
 
-        # 4. 计算趋势强度 (0-100)
+        # 4. 计算趋势强度 (0-100)  # TODO: 将魔法数字提取到配置中
         trend_strength = []
         for i in range(len(df)):
             if i < lookback_period:
-                trend_strength.append(50.0)  # 默认中性强度
+                trend_strength.append(50.0)  # 默认中性强度  # TODO: 将魔法数字提取到配置中
                 continue
 
             # 计算价格相对于移动平均的偏离程度
             price_deviation = abs(df['close'].iloc[i] - long_ma.iloc[i]) / long_ma.iloc[i]
 
             # 计算价格变化的一致性
-            recent_changes = df['price_change'].iloc[i-min(5, i):i+1]
+            recent_changes = df[].iloc[i-min(5, i):i+1]  # TODO: 将魔法数字提取到配置中
             if len(recent_changes) > 0:
-                consistency = abs(recent_changes.mean()) / (recent_changes.std() + 1e-8)
+                consistency = abs(recent_changes.mean()) / (recent_changes.std() + 1e-8)  # TODO: 将魔法数字提取到配置中
             else:
                 consistency = 0
 
             # 综合计算趋势强度
-            strength = min(100, max(0, (price_deviation * 1000 + consistency * 20) * 2))
+            strength = min(100, max(0, (price_deviation * 1000 + consistency * 20) * 2))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             trend_strength.append(strength)
 
         df['trend_strength'] = trend_strength
 
-        # 5. 计算趋势类别
+        # 5. 计算趋势类别  # TODO: 将魔法数字提取到配置中
         trend_category = []
         for i in range(len(df)):
             strength = trend_strength[i]
             direction = trend_direction[i]
 
-            if strength > 70:
+            if strength > 70:  # TODO: 将魔法数字提取到配置中
                 if direction == 'uptrend':
                     trend_category.append('strong_bullish')
                 elif direction == 'downtrend':
                     trend_category.append('strong_bearish')
                 else:
                     trend_category.append('strong_neutral')
-            elif strength > 40:
+            elif strength > 40:  # TODO: 将魔法数字提取到配置中
                 if direction == 'uptrend':
                     trend_category.append('moderate_bullish')
                 elif direction == 'downtrend':
@@ -179,18 +185,18 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return df
         
         # 计算价格变化百分比
-        df['price_change_pct'] = df['close'].pct_change(periods=1) * 100
+        df[_pct'] = df['close'].pct_change(periods=1) * 100
         
         # 计算价格动量 (N日价格变化)
         df['price_momentum'] = df['close'].pct_change(periods=lookback_period) * 100
         
         # 计算方向一致性 (正向变化的天数比例)
-        df['direction_consistency'] = df['price_change_pct'].rolling(window=lookback_period).apply(
+        df['direction_consistency'] = df[_pct'].rolling(window=lookback_period).apply(
             lambda x: np.sum(x > 0) / len(x) * 100 if len(x) > 0 else np.nan
         )
         
         # 计算波动率 (标准差)
-        df['volatility'] = df['price_change_pct'].rolling(window=lookback_period).std()
+        df['volatility'] = df[_pct'].rolling(window=lookback_period).std()
         
         # 计算趋势强度得分 (0-100)
         df['trend_strength'] = 0.0
@@ -201,17 +207,17 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if mask.any():
             # 价格动量的绝对值 (0-100)
             momentum_abs = df.loc[mask, 'price_momentum'].abs()
-            max_momentum = max(momentum_abs.max(), 20)  # 使用至少20作为最大值，避免较小的变化导致过高的分数
-            momentum_score = momentum_abs / max_momentum * 40  # 贡献40%的权重
-            momentum_score = momentum_score.clip(0, 40)
+            max_momentum = max(momentum_abs.max(), 20)  # 使用至少20作为最大值，避免较小的变化导致过高的分数  # TODO: 将魔法数字提取到配置中
+            momentum_score = momentum_abs / max_momentum * 40  # 贡献40%的权重  # TODO: 将魔法数字提取到配置中
+            momentum_score = momentum_score.clip(0, 40)  # TODO: 将魔法数字提取到配置中
             
-            # 方向一致性 (0-40)
-            consistency_score = (df.loc[mask, 'direction_consistency'] - 50) * 0.8  # 贡献40%的权重
-            consistency_score = consistency_score.clip(0, 40)
+            # 方向一致性 (0-40)  # TODO: 将魔法数字提取到配置中
+            consistency_score = (df.loc[mask, 'direction_consistency'] - 50) * 0.8  # 贡献40%的权重  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            consistency_score = consistency_score.clip(0, 40)  # TODO: 将魔法数字提取到配置中
             
-            # 低波动性奖励 (0-20)
+            # 低波动性奖励 (0-20)  # TODO: 将魔法数字提取到配置中
             volatility_median = df.loc[mask, 'volatility'].median()
-            volatility_score = 20 - (df.loc[mask, 'volatility'] / volatility_median * 10).clip(0, 20)  # 贡献20%的权重
+            volatility_score = 20 - (df.loc[mask, 'volatility'] / volatility_median * 10).clip(0, 20)  # 贡献20%的权重  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 合并得分
             df.loc[mask, 'trend_strength'] = (momentum_score + consistency_score + volatility_score).clip(0, 100)
@@ -225,7 +231,7 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                                         np.where(df['trend_strength'] >= min_strength, 'moderate', 'weak'))
         
         # 清理中间计算列
-        df.drop(['price_change_pct', 'volatility'], axis=1, inplace=True)
+        df.drop([_pct', 'volatility'], axis=1, inplace=True)
         
         # 保存结果
         self._result = df
@@ -251,7 +257,7 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         #     result = self._result
         
         # 初始化评分，默认为50分（中性）
-        score = pd.Series(50.0, index=data.index)
+        score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 检查结果是否有效
         if result.empty or 'trend_strength' not in result.columns or 'trend_direction' not in result.columns:
@@ -264,20 +270,20 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算评分：
         # 1. 上升趋势：根据强度映射到50-100分
         # 2. 下降趋势：根据强度映射到0-50分
-        # 3. 中性：保持50分
+        # 3. 中性：保持50分  # TODO: 将魔法数字提取到配置中
         
-        # 上升趋势评分 (50-100)
+        # 上升趋势评分 (50-100)  # TODO: 将魔法数字提取到配置中
         uptrend_mask = trend_direction == 'uptrend'
         if uptrend_mask.any():
-            score.loc[uptrend_mask] = 50 + trend_strength.loc[uptrend_mask] / 2
+            score.loc[uptrend_mask] = 50 + trend_strength.loc[uptrend_mask] / 2  # TODO: 将魔法数字提取到配置中
         
-        # 下降趋势评分 (0-50)
+        # 下降趋势评分 (0-50)  # TODO: 将魔法数字提取到配置中
         downtrend_mask = trend_direction == 'downtrend'
         if downtrend_mask.any():
-            score.loc[downtrend_mask] = 50 - trend_strength.loc[downtrend_mask] / 2
+            score.loc[downtrend_mask] = 50 - trend_strength.loc[downtrend_mask] / 2  # TODO: 将魔法数字提取到配置中
         
         # 处理可能的缺失值
-        score = score.fillna(50.0)
+        score = score.fillna(50.0)  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -326,15 +332,15 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """实现BaseIndicator要求的置信度计算方法"""
         # 基于趋势强度计算置信度
         if len(score) == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 计算评分的标准差，标准差越小置信度越高
         score_std = score.std()
         if pd.isna(score_std) or score_std == 0:
-            return 0.8
+            return 0.8  # TODO: 将魔法数字提取到配置中
 
         # 标准差越小，置信度越高
-        confidence = max(0.3, min(0.9, 1.0 - score_std / 50.0))
+        confidence = max(0.3, min(0.9, 1.0 - score_std / 50.0))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         return confidence
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -349,12 +355,12 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         if 'trend_strength' in result.columns and 'trend_direction' in result.columns:
             # 强趋势形态
-            strong_up = (result['trend_strength'] > 70) & (result['trend_direction'] == 'uptrend')
-            strong_down = (result['trend_strength'] > 70) & (result['trend_direction'] == 'downtrend')
+            strong_up = (result['trend_strength'] > 70) & (result['trend_direction'] == 'uptrend')  # TODO: 将魔法数字提取到配置中
+            strong_down = (result['trend_strength'] > 70) & (result['trend_direction'] == 'downtrend')  # TODO: 将魔法数字提取到配置中
 
             patterns['strong_uptrend'] = strong_up
             patterns['strong_downtrend'] = strong_down
-            patterns['weak_trend'] = result['trend_strength'] < 30
+            patterns['weak_trend'] = result['trend_strength'] < 30  # TODO: 将魔法数字提取到配置中
 
         return patterns
 
@@ -366,4 +372,4 @@ class TrendStrength(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
-        return self.params.get("lookback_period", 20) + 10
+        return self.params.get("lookback_period", 20) + 10  # TODO: 将魔法数字提取到配置中

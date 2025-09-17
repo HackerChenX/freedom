@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from utils.logger import get_logger
-from db.unified_data_manager import (
+from db.managers.data_access_manager import (
     get_unified_data_manager, 
     get_production_data_access_layer,
     initialize_production_data_access_layer
@@ -116,9 +116,9 @@ class DataAccessLayerValidator:
             # 获取实例
             prod_layer = get_production_data_access_layer()
             
-            # 检查是否继承自UnifiedDataManager
-            from db.unified_data_manager import UnifiedDataManager
-            assert isinstance(prod_layer, UnifiedDataManager), "生产级数据访问层应继承UnifiedDataManager"
+            # 检查是否继承自UnifiedDataAccessManager
+            from db.managers.data_access_manager import UnifiedDataAccessManager
+            assert isinstance(prod_layer, UnifiedDataAccessManager), "生产级数据访问层应继承UnifiedDataAccessManager"
             
             # 检查生产级特有方法
             assert hasattr(prod_layer, 'health_check'), "缺少健康检查方法"
@@ -221,21 +221,21 @@ class DataAccessLayerValidator:
         """测试向后兼容性"""
         try:
             # 测试向后兼容的获取函数
-            from db.unified_data_manager import (
+            from db.managers.data_access_manager import (
                 get_data_manager, 
                 get_enhanced_data_manager,
                 get_data_manager_adapter
             )
             
-            # 所有函数都应该返回UnifiedDataManager实例
+            # 所有函数都应该返回UnifiedDataAccessManager实例
             dm1 = get_data_manager()
             dm2 = get_enhanced_data_manager()
             dm3 = get_data_manager_adapter()
             
-            from db.unified_data_manager import UnifiedDataManager
-            assert isinstance(dm1, UnifiedDataManager), "get_data_manager应返回UnifiedDataManager"
-            assert isinstance(dm2, UnifiedDataManager), "get_enhanced_data_manager应返回UnifiedDataManager"
-            assert isinstance(dm3, UnifiedDataManager), "get_data_manager_adapter应返回UnifiedDataManager"
+            from db.managers.data_access_manager import UnifiedDataAccessManager
+            assert isinstance(dm1, UnifiedDataAccessManager), "get_data_manager应返回UnifiedDataAccessManager"
+            assert isinstance(dm2, UnifiedDataAccessManager), "get_enhanced_data_manager应返回UnifiedDataAccessManager"
+            assert isinstance(dm3, UnifiedDataAccessManager), "get_data_manager_adapter应返回UnifiedDataAccessManager"
             
             logger.info("  ✓ 向后兼容性正常")
             return True

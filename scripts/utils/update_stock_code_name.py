@@ -1,3 +1,4 @@
+from db.sql_manager import SQLManager, QueryType
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 

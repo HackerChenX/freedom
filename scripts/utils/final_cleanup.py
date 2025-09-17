@@ -8,6 +8,7 @@ import os
 import re
 from pathlib import Path
 from collections import defaultdict
+from db.sql_manager import SQLManager, QueryType
 
 def final_cleanup():
     """最终清理违规问题"""

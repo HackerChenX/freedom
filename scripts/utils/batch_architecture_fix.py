@@ -72,10 +72,10 @@ class BatchArchitectureFix:
             
             "query_fixes": {
                 # stock_info查询修复
-                r"FROM\s+stock_info\s*$": "FROM stock_info WHERE 1=1",
-                r"FROM\s+stock_info\s+ORDER": "FROM stock_info WHERE 1=1 ORDER",
-                r"FROM\s+stock_info\s+GROUP": "FROM stock_info WHERE 1=1 GROUP",
-                r"FROM\s+stock_info\s+LIMIT": "FROM stock_info WHERE 1=1 LIMIT"
+                r"FROM\s+stock_info\s*$": "FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1",
+                r"FROM\s+stock_info\s+ORDER": "FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1 ORDER",
+                r"FROM\s+stock_info\s+GROUP": "FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1 GROUP",
+                r"FROM\s+stock_info\s+LIMIT": "FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1 LIMIT"
             },
             
             "layer_violation_fixes": {
@@ -388,4 +388,5 @@ def main_batcharchitecturefix():
 
 if __name__ == "__main__":
     from datetime import datetime
+from db.sql_manager import SQLManager, QueryType
     exit(main_batcharchitecturefix()) 

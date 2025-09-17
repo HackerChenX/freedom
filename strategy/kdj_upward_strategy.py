@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -12,8 +13,9 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 
 from strategy.unified_base_strategy import UnifiedBaseStrategy
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -26,6 +28,9 @@ class KDJUpwardStrategy(UnifiedBaseStrategy):
     """
     
     def __init__(self, k_period: int = 9, d_period: int = 3, j_multiplier: int = 3):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化KDJ上升策略
         

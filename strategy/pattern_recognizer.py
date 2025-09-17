@@ -24,10 +24,11 @@ from scipy import stats
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from analysis.buypoints.enhanced_backtest_engine import BuyPointData
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -75,6 +76,18 @@ class PatternRecognitionConfig:
     cache_enabled: bool = True
 
 class PatternRecognizer:
+"""
+PatternRecognizer - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 35个方法分为以下职责组:
+  * 核心功能方法 (约11个)
+  * 辅助工具方法 (约11个)  
+  * 接口适配方法 (约11个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     技术形态模式识别器
 

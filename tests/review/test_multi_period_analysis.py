@@ -28,6 +28,7 @@ from scripts.backtest.consolidated_backtest import ConsolidatedBacktest
 from enums.period import Period
 from utils.period_manager import PeriodManager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = get_logger(__name__)

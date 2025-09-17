@@ -19,7 +19,8 @@ import sys
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, time_it
 from utils.strategy_validator import UnifiedStrategyConfigValidator
-from config import get_config
+from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -351,9 +352,7 @@ class StrategyConfigMigrator:
                     "min": 10,
                     "max": 5000
                 },
-                "price_range": {
-                    "min": 3.0,
-                    "max": 200.0
+                "max": 200.0
                 }
             }
         }

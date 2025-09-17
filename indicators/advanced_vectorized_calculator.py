@@ -1,11 +1,13 @@
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 """
 高级向量化指标计算器
 
-将向量化计算覆盖率从7.6%大幅提升到30%+。
+将向量化计算覆盖率从7.6%大幅提升到30%+。  # TODO: 将魔法数字提取到配置中
 实现32个主要技术指标的高性能向量化计算。
 
 Author: System
-Date: 2025-01-15
+Date: 2025-01-15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 """
 
 import pandas as pd
@@ -32,14 +34,15 @@ except ImportError:
             return func
         return decorator
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
 
 @dataclass
-class VectorizationStats:
+class VectorizationStats(BaseIndicator):
     """向量化统计信息"""
     total_indicators: int
     vectorized_indicators: int
@@ -49,22 +52,25 @@ class VectorizationStats:
     average_speedup: float
 
 
-class AdvancedVectorizedCalculator:
+class AdvancedVectorizedCalculator(BaseIndicator):
     """
     高级向量化指标计算器
     
-    目标：将向量化覆盖率从7.6%提升到30%+
+    目标：将向量化覆盖率从7.6%提升到30%+  # TODO: 将魔法数字提取到配置中
     
     包含32个向量化指标：
     1. 核心指标(6个): MA, EMA, MACD, RSI, BOLL, PSY
     2. 趋势指标(8个): DMA, DMI, ADX, AROON, SAR, TRIX, CCI, WMA
-    3. 振荡器指标(6个): KDJ, WR, CMO, STOCHRSI, MOMENTUM, ROC  
-    4. 成交量指标(6个): OBV, AD, EMV, VOSC, MFI, PVT
-    5. 波动率指标(3个): ATR, KC, STDDEV
-    6. 复合指标(3个): ENHANCED_RSI, ENHANCED_MACD, ENHANCED_KDJ
+    3. 振荡器指标(6个): KDJ, WR, CMO, STOCHRSI, MOMENTUM, ROC  # TODO: 将魔法数字提取到配置中  
+    4. 成交量指标(6个): OBV, AD, EMV, VOSC, MFI, PVT  # TODO: 将魔法数字提取到配置中
+    5. 波动率指标(3个): ATR, KC, STDDEV  # TODO: 将魔法数字提取到配置中
+    6. 复合指标(3个): ENHANCED_RSI, ENHANCED_MACD, ENHANCED_KDJ  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.vectorized_indicators = {}
         self.performance_stats = {
             'calculation_times': {},
@@ -230,7 +236,7 @@ class AdvancedVectorizedCalculator:
         
         return result
     
-    def vectorized_ma(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> pd.DataFrame:
+    def vectorized_ma(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20, 60]) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """向量化移动平均计算"""
         close_prices = data['close'].values
         results = pd.DataFrame(index=data.index)
@@ -242,7 +248,7 @@ class AdvancedVectorizedCalculator:
         
         return results
     
-    def vectorized_ema(self, data: pd.DataFrame, periods: List[int] = [12, 26]) -> pd.DataFrame:
+    def vectorized_ema(self, data: pd.DataFrame, periods: List[int] = [12, 26]) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """向量化指数移动平均计算"""
         close_prices = data['close']
         results = pd.DataFrame(index=data.index)
@@ -256,9 +262,9 @@ class AdvancedVectorizedCalculator:
     def vectorized_macd(
         self, 
         data: pd.DataFrame, 
-        fast_period: int = 12, 
-        slow_period: int = 26, 
-        signal_period: int = 9
+        fast_period: int = 12,  # TODO: 将魔法数字提取到配置中 
+        slow_period: int = 26,  # TODO: 将魔法数字提取到配置中 
+        signal_period: int = 9  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     ) -> pd.DataFrame:
         """向量化MACD计算"""
         close_prices = data['close']
@@ -283,7 +289,7 @@ class AdvancedVectorizedCalculator:
         }, index=data.index)
     
     @njit
-    def _fast_rsi(self, prices: np.ndarray, period: int = 14) -> np.ndarray:
+    def _fast_rsi(self, prices: np.ndarray, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> np.ndarray:  # TODO: 将魔法数字提取到配置中
         """快速RSI计算（Numba优化）"""
         result = np.empty_like(prices)
         result[:period] = np.nan
@@ -319,7 +325,7 @@ class AdvancedVectorizedCalculator:
         
         return result
     
-    def vectorized_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_rsi(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """向量化RSI计算"""
         close_prices = data['close'].values
         rsi_values = self._fast_rsi(close_prices, period)
@@ -329,7 +335,7 @@ class AdvancedVectorizedCalculator:
     def vectorized_bollinger(
         self, 
         data: pd.DataFrame, 
-        period: int = 20, 
+        period: int = 20,  # TODO: 将魔法数字提取到配置中 
         std_dev: float = 2.0
     ) -> pd.DataFrame:
         """向量化布林带计算"""
@@ -351,21 +357,21 @@ class AdvancedVectorizedCalculator:
             'BOLL_Lower': lower_band
         }, index=data.index)
     
-    def vectorized_psy(self, data: pd.DataFrame, period: int = 12) -> pd.Series:
+    def vectorized_psy(self, data: pd.DataFrame, period: int = 12) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """向量化心理线计算"""
         close_prices = data['close']
         
         # 计算涨跌
-        price_change = close_prices.diff() > 0
+        = close_prices.diff() > 0
         
         # 计算心理线
-        psy = price_change.rolling(window=period).mean() * 100
+        psy = .rolling(window=period).mean() * 100
         
         return pd.Series(psy, index=data.index, name='PSY')
     
     # ==================== 趋势指标 ====================
     
-    def vectorized_dma(self, data: pd.DataFrame, short: int = 10, long: int = 50) -> pd.DataFrame:
+    def vectorized_dma(self, data: pd.DataFrame, short: int = 10, long: int = 50) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """向量化DMA计算"""
         close_prices = data['close']
         
@@ -385,7 +391,7 @@ class AdvancedVectorizedCalculator:
         high: np.ndarray, 
         low: np.ndarray, 
         close: np.ndarray, 
-        period: int = 14
+        period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """快速DMI计算（Numba优化）"""
         n = len(high)
@@ -429,7 +435,7 @@ class AdvancedVectorizedCalculator:
         
         return pdi, mdi, adx
     
-    def vectorized_dmi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def vectorized_dmi(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.DataFrame:
         """向量化DMI计算"""
         high_prices = data['high'].values
         low_prices = data['low'].values
@@ -443,12 +449,12 @@ class AdvancedVectorizedCalculator:
             'ADX': adx
         }, index=data.index)
     
-    def vectorized_adx(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_adx(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化ADX计算"""
         dmi_result = self.vectorized_dmi(data, period)
         return pd.Series(dmi_result['ADX'], index=data.index, name='ADX')
     
-    def vectorized_aroon(self, data: pd.DataFrame, period: int = 25) -> pd.DataFrame:
+    def vectorized_aroon(self, data: pd.DataFrame, period: int = 25) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """向量化AROON计算"""
         high_prices = data['high']
         low_prices = data['low']
@@ -521,7 +527,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(sar, index=data.index, name='SAR')
     
-    def vectorized_trix(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_trix(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化TRIX计算"""
         close_prices = data['close']
         
@@ -535,14 +541,14 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(trix, index=data.index, name='TRIX')
     
-    def vectorized_cci(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_cci(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化CCI计算"""
         high_prices = data['high']
         low_prices = data['low']
         close_prices = data['close']
         
         # 计算典型价格
-        tp = (high_prices + low_prices + close_prices) / 3
+        tp = (high_prices + low_prices + close_prices) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算移动平均
         ma_tp = tp.rolling(window=period).mean()
@@ -551,11 +557,11 @@ class AdvancedVectorizedCalculator:
         mad = tp.rolling(window=period).apply(lambda x: np.mean(np.abs(x - np.mean(x))))
         
         # 计算CCI
-        cci = (tp - ma_tp) / (0.015 * mad)
+        cci = (tp - ma_tp) / (0.015 * mad)  # TODO: 将魔法数字提取到配置中
         
         return pd.Series(cci, index=data.index, name='CCI')
     
-    def vectorized_wma(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20]) -> pd.DataFrame:
+    def vectorized_wma(self, data: pd.DataFrame, periods: List[int] = [5, 10, 20]) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """向量化加权移动平均计算"""
         close_prices = data['close']
         results = pd.DataFrame(index=data.index)
@@ -577,7 +583,7 @@ class AdvancedVectorizedCalculator:
         high: np.ndarray, 
         low: np.ndarray, 
         close: np.ndarray, 
-        period: int = 9
+        period: int = 9  # TODO: 将魔法数字提取到配置中
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """快速KDJ计算（Numba优化）"""
         n = len(close)
@@ -589,21 +595,21 @@ class AdvancedVectorizedCalculator:
         d[:period-1] = np.nan
         j[:period-1] = np.nan
         
-        k_val = 50.0
-        d_val = 50.0
+        k_val = 50.0  # TODO: 将魔法数字提取到配置中
+        d_val = 50.0  # TODO: 将魔法数字提取到配置中
         
         for i in range(period-1, n):
             highest = np.max(high[i-period+1:i+1])
             lowest = np.min(low[i-period+1:i+1])
             
             if highest == lowest:
-                rsv = 50
+                rsv = 50  # TODO: 将魔法数字提取到配置中
             else:
                 rsv = (close[i] - lowest) / (highest - lowest) * 100
             
-            k_val = (2/3) * k_val + (1/3) * rsv
-            d_val = (2/3) * d_val + (1/3) * k_val
-            j_val = 3 * k_val - 2 * d_val
+            k_val = (2/3) * k_val + (1/3) * rsv  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            d_val = (2/3) * d_val + (1/3) * k_val  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            j_val = 3 * k_val - 2 * d_val  # TODO: 将魔法数字提取到配置中
             
             k[i] = k_val
             d[i] = d_val
@@ -611,7 +617,7 @@ class AdvancedVectorizedCalculator:
         
         return k, d, j
     
-    def vectorized_kdj(self, data: pd.DataFrame, period: int = 9) -> pd.DataFrame:
+    def vectorized_kdj(self, data: pd.DataFrame, period: int = 9  # TODO: 将魔法数字提取到配置中) -> pd.DataFrame:
         """向量化KDJ计算"""
         high_prices = data['high'].values
         low_prices = data['low'].values
@@ -625,7 +631,7 @@ class AdvancedVectorizedCalculator:
             'J': j
         }, index=data.index)
     
-    def vectorized_wr(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_wr(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化威廉指标计算"""
         high_prices = data['high']
         low_prices = data['low']
@@ -638,16 +644,16 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(wr, index=data.index, name='WR')
     
-    def vectorized_cmo(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_cmo(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化CMO计算"""
         close_prices = data['close']
         
         # 计算价格变化
-        price_change = close_prices.diff()
+        = close_prices.diff()
         
         # 分离上涨和下跌
-        gains = price_change.where(price_change > 0, 0)
-        losses = -price_change.where(price_change < 0, 0)
+        gains = .where(> 0, 0)
+        losses = -.where(< 0, 0)
         
         # 计算周期内的总和
         sum_gains = gains.rolling(window=period).sum()
@@ -658,7 +664,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(cmo, index=data.index, name='CMO')
     
-    def vectorized_stochrsi(self, data: pd.DataFrame, period: int = 14, k_period: int = 3) -> pd.DataFrame:
+    def vectorized_stochrsi(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中, k_period: int = 3) -> pd.DataFrame:
         """向量化StochRSI计算"""
         # 先计算RSI
         rsi = self.vectorized_rsi(data, period)
@@ -684,7 +690,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(momentum, index=data.index, name='MOMENTUM')
     
-    def vectorized_roc(self, data: pd.DataFrame, period: int = 12) -> pd.Series:
+    def vectorized_roc(self, data: pd.DataFrame, period: int = 12) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """向量化变化率指标计算"""
         close_prices = data['close']
         roc = (close_prices / close_prices.shift(period) - 1) * 100
@@ -735,7 +741,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(ad_line, index=data.index, name='AD')
     
-    def vectorized_emv(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_emv(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化EMV计算"""
         high_prices = data['high']
         low_prices = data['low']
@@ -753,7 +759,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(emv_ma, index=data.index, name='EMV')
     
-    def vectorized_vosc(self, data: pd.DataFrame, short: int = 12, long: int = 26) -> pd.Series:
+    def vectorized_vosc(self, data: pd.DataFrame, short: int = 12, long: int = 26) -> pd.Series:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """向量化成交量震荡器计算"""
         volume = data['volume']
         
@@ -764,7 +770,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(vosc, index=data.index, name='VOSC')
     
-    def vectorized_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_mfi(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化资金流向指标计算"""
         high_prices = data['high']
         low_prices = data['low']
@@ -772,7 +778,7 @@ class AdvancedVectorizedCalculator:
         volume = data['volume']
         
         # 计算典型价格
-        tp = (high_prices + low_prices + close_prices) / 3
+        tp = (high_prices + low_prices + close_prices) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算资金流向
         money_flow = tp * volume
@@ -796,10 +802,10 @@ class AdvancedVectorizedCalculator:
         volume = data['volume']
         
         # 计算价格变化率
-        price_change_ratio = close_prices.pct_change()
+        _ratio = close_prices.pct_change()
         
         # 计算PVT
-        pvt = (price_change_ratio * volume).cumsum()
+        pvt = (_ratio * volume).cumsum()
         
         return pd.Series(pvt, index=data.index, name='PVT')
     
@@ -811,7 +817,7 @@ class AdvancedVectorizedCalculator:
         high: np.ndarray, 
         low: np.ndarray, 
         close: np.ndarray, 
-        period: int = 14
+        period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     ) -> np.ndarray:
         """快速ATR计算（Numba优化）"""
         n = len(high)
@@ -835,7 +841,7 @@ class AdvancedVectorizedCalculator:
         
         return atr
     
-    def vectorized_atr(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def vectorized_atr(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.Series:
         """向量化ATR计算"""
         high_prices = data['high'].values
         low_prices = data['low'].values
@@ -845,7 +851,7 @@ class AdvancedVectorizedCalculator:
         
         return pd.Series(atr_values, index=data.index, name='ATR')
     
-    def vectorized_kc(self, data: pd.DataFrame, period: int = 20, multiplier: float = 2.0) -> pd.DataFrame:
+    def vectorized_kc(self, data: pd.DataFrame, period: int = 20,  # TODO: 将魔法数字提取到配置中 multiplier: float = 2.0) -> pd.DataFrame:
         """向量化肯特纳通道计算"""
         close_prices = data['close']
         atr = self.vectorized_atr(data, period)
@@ -863,7 +869,7 @@ class AdvancedVectorizedCalculator:
             'KC_Lower': lower_channel
         }, index=data.index)
     
-    def vectorized_stddev(self, data: pd.DataFrame, period: int = 20) -> pd.Series:
+    def vectorized_stddev(self, data: pd.DataFrame, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """向量化标准差计算"""
         close_prices = data['close']
         stddev = close_prices.rolling(window=period).std()
@@ -872,18 +878,18 @@ class AdvancedVectorizedCalculator:
     
     # ==================== 复合指标 ====================
     
-    def vectorized_enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def vectorized_enhanced_rsi(self, data: pd.DataFrame, period: int = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中) -> pd.DataFrame:
         """向量化增强RSI计算"""
         rsi = self.vectorized_rsi(data, period)
         
         # RSI的移动平均
-        rsi_ma = rsi.rolling(window=5).mean()
+        rsi_ma = rsi.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # RSI的标准差
         rsi_std = rsi.rolling(window=period).std()
         
         # RSI强度
-        rsi_strength = np.where(rsi > 70, 1, np.where(rsi < 30, -1, 0))
+        rsi_strength = np.where(rsi > 70, 1, np.where(rsi < 30, -1, 0))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'RSI': rsi,
@@ -897,7 +903,7 @@ class AdvancedVectorizedCalculator:
         macd_basic = self.vectorized_macd(data)
         
         # MACD的移动平均
-        macd_ma = macd_basic['MACD'].rolling(window=5).mean()
+        macd_ma = macd_basic['MACD'].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # MACD强度
         macd_strength = np.where(
@@ -916,13 +922,13 @@ class AdvancedVectorizedCalculator:
         kdj_basic = self.vectorized_kdj(data)
         
         # KDJ的移动平均
-        k_ma = kdj_basic['K'].rolling(window=3).mean()
-        d_ma = kdj_basic['D'].rolling(window=3).mean()
+        k_ma = kdj_basic['K'].rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
+        d_ma = kdj_basic['D'].rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
         
         # KDJ强度
         kdj_strength = np.where(
-            (kdj_basic['K'] > kdj_basic['D']) & (kdj_basic['J'] > 80), 1,
-            np.where((kdj_basic['K'] < kdj_basic['D']) & (kdj_basic['J'] < 20), -1, 0)
+            (kdj_basic['K'] > kdj_basic['D']) & (kdj_basic['J'] > 80), 1,  # TODO: 将魔法数字提取到配置中
+            np.where((kdj_basic['K'] < kdj_basic['D']) & (kdj_basic['J'] < 20), -1, 0)  # TODO: 将魔法数字提取到配置中
         )
         
         result = kdj_basic.copy()
@@ -939,12 +945,12 @@ class AdvancedVectorizedCalculator:
         vectorized_count = len(self.vectorized_indicators)
         
         # 假设总共有105个指标（基于之前的分析）
-        total_indicators = 105
+        total_indicators = 105  # TODO: 将魔法数字提取到配置中
         vectorization_coverage = vectorized_count / total_indicators * 100
         
         # 计算性能改进（基于历史数据）
         avg_calculation_time = np.mean(list(self.performance_stats['calculation_times'].values())) if self.performance_stats['calculation_times'] else 0
-        estimated_speedup = 3.5  # 向量化平均加速比
+        estimated_speedup = 3.5  # 向量化平均加速比  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return VectorizationStats(
             total_indicators=total_indicators,
@@ -964,7 +970,7 @@ class AdvancedVectorizedCalculator:
                 'total_indicators': stats.total_indicators,
                 'vectorized_indicators': stats.vectorized_indicators,
                 'coverage_percentage': f"{stats.vectorization_coverage:.1f}%",
-                'target_achieved': stats.vectorization_coverage >= 30.0
+                'target_achieved': stats.vectorization_coverage >= 30.0  # TODO: 将魔法数字提取到配置中
             },
             'performance_metrics': {
                 'total_calculations': self.performance_stats['total_calculations'],
@@ -973,16 +979,16 @@ class AdvancedVectorizedCalculator:
                 'cache_hit_rate': f"{self.performance_stats['cache_hits'] / max(1, self.performance_stats['total_calculations']) * 100:.1f}%"
             },
             'indicator_categories': {
-                'core_indicators': 6,
-                'trend_indicators': 8,
-                'oscillator_indicators': 6,
-                'volume_indicators': 6,
-                'volatility_indicators': 3,
-                'composite_indicators': 3
+                'core_indicators': 6,  # TODO: 将魔法数字提取到配置中
+                'trend_indicators': 8,  # TODO: 将魔法数字提取到配置中
+                'oscillator_indicators': 6,  # TODO: 将魔法数字提取到配置中
+                'volume_indicators': 6,  # TODO: 将魔法数字提取到配置中
+                'volatility_indicators': 3,  # TODO: 将魔法数字提取到配置中
+                'composite_indicators': 3  # TODO: 将魔法数字提取到配置中
             },
             'optimization_impact': {
-                'coverage_improvement': f"{stats.vectorization_coverage - 7.6:.1f}%",
-                'target_status': "✅ 已达成" if stats.vectorization_coverage >= 30.0 else "🔄 进行中"
+                'coverage_improvement': f"{stats.vectorization_coverage - 7.6:.1f}%",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                'target_status': "✅ 已达成" if stats.vectorization_coverage >= 30.0 else "🔄 进行中"  # TODO: 将魔法数字提取到配置中
             }
         }
 
@@ -998,15 +1004,15 @@ if __name__ == "__main__":
     import numpy as np
     
     # 创建测试数据
-    np.random.seed(42)
-    dates = pd.date_range('2023-01-01', periods=252, freq='D')
+    np.random.seed(42)  # TODO: 将魔法数字提取到配置中
+    dates = pd.date_range('2023-01-01', periods=252, freq='D')  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     test_data = pd.DataFrame({
         'date': dates,
-        'open': np.random.randn(252).cumsum() + 100,
-        'high': np.random.randn(252).cumsum() + 105,
-        'low': np.random.randn(252).cumsum() + 95,
-        'close': np.random.randn(252).cumsum() + 100,
-        'volume': np.random.randint(1000000, 10000000, 252)
+        'open': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'high': np.random.randn(252).cumsum() + 105,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'low': np.random.randn(252).cumsum() + 95,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'close': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'volume': np.random.randint(1000000, 10000000, 252)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     })
     
     # 创建计算器
@@ -1047,11 +1053,11 @@ if __name__ == "__main__":
     total_vectorized = sum(categories.values())
     print(f"总向量化指标: {total_vectorized}个")
     
-    print(f"\n🎯 优化目标: 从7.6%提升到30%+")
+    print(f"\n🎯 优化目标: 从7.6%提升到30%+")  # TODO: 将魔法数字提取到配置中
     print(f"实际达成: {report['vectorization_overview']['coverage_percentage']}")
     print(f"提升幅度: +{report['optimization_impact']['coverage_improvement']}")
     
-    if float(report['vectorization_overview']['coverage_percentage'].rstrip('%')) >= 30.0:
+    if float(report['vectorization_overview']['coverage_percentage'].rstrip('%')) >= 30.0:  # TODO: 将魔法数字提取到配置中
         print("🎉 成功达成30%+向量化覆盖率目标！")
     else:
         print("🔄 继续优化中...") 

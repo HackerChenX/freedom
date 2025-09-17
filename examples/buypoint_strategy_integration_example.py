@@ -21,6 +21,7 @@ from analysis.buypoints.buypoint_strategy_adapter import get_buypoint_strategy_a
 from analysis.buypoints.buypoint_batch_analyzer import BuyPointBatchAnalyzer
 from strategy.strategy_executor import StrategyExecutor
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

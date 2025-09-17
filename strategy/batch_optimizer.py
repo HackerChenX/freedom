@@ -14,8 +14,9 @@ import pandas as pd
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -103,7 +104,7 @@ class BatchOptimizer:
             codes_str = "', '".join(stock_codes)
             query = f"""
             SELECT code, trade_date, open, high, low, close, volume, amount, pct_chg
-            FROM stock_info WHERE 1=1
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE code IN ('{codes_str}')
             AND level = '日线'
             AND trade_date >= '{start_date}'
@@ -135,7 +136,7 @@ class BatchOptimizer:
             return {}
     
     @performance_monitor(threshold=1.0)
-    def batch_preload_industry_data(self, stock_codes: List[str]) -> Dict[str, str]:
+    def batch_preload__data(self, stock_codes: List[str]) -> Dict[str, str]:
         """
         批量预加载行业数据
         
@@ -149,8 +150,7 @@ class BatchOptimizer:
             # 构建批量查询SQL
             codes_str = "', '".join(stock_codes)
             query = f"""
-            SELECT DISTINCT code, industry
-            FROM stock_info WHERE 1=1
+            SELECT DISTINCT code, FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE code IN ('{codes_str}')
             AND level = '日线'
             """
@@ -161,15 +161,13 @@ class BatchOptimizer:
                 return {}
             
             # 转换为字典
-            industry_dict = {}
+            _dict = {}
             for _, row in result.iterrows():
                 stock_code = row.get('code') or row.get('col_0', '')
-                industry = row.get('industry') or row.get('col_1', '未知')
+                = row.get() or row.get('col_1', '未知')
                 if stock_code:
-                    industry_dict[stock_code] = industry
-            
-            logger.info(f"批量预加载 {len(industry_dict)} 只股票行业数据完成")
-            return industry_dict
+                    _dict[stock_code] = logger.info(f"批量预加载 {len(_dict)} 只股票行业数据完成")
+            return _dict
             
         except Exception as e:
             logger.error(f"批量预加载行业数据失败: {e}")
@@ -216,19 +214,19 @@ class BatchOptimizer:
                         ]
             
             # 行业过滤
-            if 'industry' in filters and filters['industry']:
-                industries = filters['industry']
+            if in filters and filters[]:
+                industries = filters[]
                 if isinstance(industries, str):
                     industries = [industries]
                 
                 # 批量获取行业数据
                 stock_codes = filtered_list.iloc[:, 0].tolist()
-                industry_dict = self.batch_preload_industry_data(stock_codes)
+                _dict = self.batch_preload__data(stock_codes)
                 
                 # 过滤行业
                 valid_codes = [
-                    code for code, industry in industry_dict.items()
-                    if industry in industries
+                    code for code, in _dict.items()
+                    if in industries
                 ]
                 
                 stock_code_col = 'stock_code' if 'stock_code' in filtered_list.columns else 'col_0'
@@ -284,7 +282,7 @@ class BatchOptimizer:
                 where_clause = " OR ".join(conditions)
                 return f"""
                 SELECT DISTINCT code
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE level = '日线' AND ({where_clause})
                 """
             

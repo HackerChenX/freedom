@@ -13,6 +13,7 @@ from tests.helper.log_capture import LogCaptureMixin
 from indicators.zxm.buy_point_indicators import ZXMBSAbsorb
 from indicators.composite import Composite
 from indicators.zxm_washplate import WashPlateType
+from db.sql_manager import SQLManager, QueryType
 
 # 🔧 Ultra Think修复：为了兼容性创建别名
 Wash_plate_type = WashPlateType

@@ -7,6 +7,7 @@
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Union
+from db.sql_manager import SQLManager, QueryType
 
 
 class Data_frame_to_zXMAdapter:

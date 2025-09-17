@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from tests.comprehensive.test_config_manager import TestConfigManager, TestConfig
+from db.sql_manager import SQLManager, QueryType
 
 
 class TestConfigManagerTest(unittest.TestCase):

@@ -115,11 +115,11 @@ class SystemIntegrationTester:
     def _test_cache_basic_operations(self) -> bool:
         """测试缓存基本操作"""
         try:
-            from db.cache_layer import UnifiedCacheLayer
+            from db.services.cache_service import CacheService
             from config.cache_config import get_cache_config
             
             cache_config = get_cache_config()
-            cache = UnifiedCacheLayer(cache_config)
+            cache = CacheService(cache_config)
             
             # 测试设置和获取
             test_key = "test_key_integration"
@@ -145,11 +145,11 @@ class SystemIntegrationTester:
     def _test_cache_performance(self) -> bool:
         """测试缓存性能"""
         try:
-            from db.cache_layer import UnifiedCacheLayer
+            from db.services.cache_service import CacheService
             from config.cache_config import get_cache_config
             
             cache_config = get_cache_config()
-            cache = UnifiedCacheLayer(cache_config)
+            cache = CacheService(cache_config)
             
             # 测试缓存访问时间
             test_key = "perf_test_key"
@@ -278,9 +278,9 @@ class SystemIntegrationTester:
     def _test_batch_data_optimizer(self) -> bool:
         """测试批量数据优化器"""
         try:
-            from db.batch_data_optimizer import BatchDataOptimizer
+            from db.services.integrated.batch_data_optimizer import DataOptimizationService
             
-            optimizer = BatchDataOptimizer()
+            optimizer = DataOptimizationService()
             
             # 验证基本方法存在
             if not hasattr(optimizer, 'optimize_batch_queries'):
@@ -318,7 +318,7 @@ class SystemIntegrationTester:
     def _test_memory_optimizer(self) -> bool:
         """测试内存优化器"""
         try:
-            from db.memory_optimizer import Memory_optimizer
+            from db.services.integrated.memory_optimizer import Memory_optimizer
             
             optimizer = Memory_optimizer()
             
@@ -338,7 +338,8 @@ class SystemIntegrationTester:
     def _test_performance_optimizer(self) -> bool:
         """测试性能主控制器"""
         try:
-            from db.performance_optimizer import Performance_optimizer
+            from db.services.integrated.performance_optimizer import Performance_optimizer
+from db.sql_manager import SQLManager, QueryType
             
             optimizer = Performance_optimizer()
             
@@ -434,7 +435,8 @@ class SystemIntegrationTester:
             
             from db.services.cache_service import Cache_service
             from db.managers.data_access_manager import Data_access_manager
-            from db.performance_optimizer import Performance_optimizer
+            from db.services.integrated.performance_optimizer import Performance_optimizer
+from db.sql_manager import SQLManager, QueryType
             
             # 创建组件
             cache_service = Cache_service()

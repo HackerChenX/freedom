@@ -18,6 +18,7 @@
 """
 
 from .test_buypoint_comprehensive import BuyPointAnalysisTestSuite
+from db.sql_manager import SQLManager, QueryType
 from .enhanced_test_data_generator import EnhancedTestDataGenerator
 from .run_buypoint_tests import BuyPointTestRunner
 
@@ -60,6 +61,7 @@ def get_test_suite_info():
 def get_supported_patterns():
     """获取支持的技术形态列表"""
     from .test_buypoint_comprehensive import BuyPointAnalysisTestSuite
+from db.sql_manager import SQLManager, QueryType
     
     patterns = []
     for category_patterns in BuyPointAnalysisTestSuite.pattern_categories.values():

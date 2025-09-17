@@ -24,7 +24,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
 from db.clickhouse_db import get_clickhouse_db
-from config import get_config
+from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -409,7 +410,7 @@ class QueryPerformanceAnalyzer:
             return []
 
 
-class QueryPerformanceOptimizer:
+class QueryPerformanceOptimizationService:
     """查询性能优化器"""
     
     def __init__(self):
@@ -697,7 +698,7 @@ def main():
     """主函数"""
     print("🚀 启动查询性能优化综合分析...")
     
-    optimizer = QueryPerformanceOptimizer()
+    optimizer = QueryPerformanceOptimizationService()
     
     try:
         # 运行综合优化分析

@@ -15,6 +15,7 @@ sys.path.insert(0, root_dir)
 from utils.logger import get_logger
 from utils.path_utils import get_project_root
 from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

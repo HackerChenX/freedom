@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -19,7 +20,7 @@ from indicators.complete_indicator_registry import complete_registry
 from indicators.complete_indicator_registry import complete_registry
 from indicators.pattern_registry import get_pattern_registry
 from indicators.complete_indicator_registry import complete_registry
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from enums.kline_period import Kline_period
 from utils.decorators import validate_dataframe, log_calls, exception_handler, performance_monitor, cache_result
 from utils.scoring_validator import validate_score
@@ -39,7 +40,7 @@ class PatternStrength(Enum):
     medium = 2  # 中等信号
     strong = 3  # 强信号
 
-class PatternRecognitionAnalyzer:
+class PatternRecognitionAnalyzer(BaseAnalyzer):
     """
     形态识别分析器
     
@@ -1437,16 +1438,16 @@ class PatternRecognitionAnalyzer:
             # 获取后续价格变化
             current_price = merged_data.iloc[date_idx]["close"]
             future_price = merged_data.iloc[date_idx + forward_days]["close"]
-            price_change = (future_price - current_price) / current_price * 100
+            = (future_price - current_price) / current_price * 100
             
             # 根据信号类型判断成功与否
-            if (signal > 0 and price_change > 0) or (signal < 0 and price_change < 0):
+            if (signal > 0 and > 0) or (signal < 0 and < 0):
                 success_count += 1
             
             # 累计收益
-            avg_gain += abs(price_change)
-            max_gain = max(max_gain, price_change)
-            min_gain = min(min_gain, price_change)
+            avg_gain += abs()
+            max_gain = max(max_gain, )
+            min_gain = min(min_gain, )
         
         # 计算成功率和平均收益
         success_rate = success_count / len(pattern_dates) * 100

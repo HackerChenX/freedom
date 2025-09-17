@@ -1,6 +1,8 @@
+from utils.container import container
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 加权移动平均线(WMA)
@@ -18,7 +20,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
 logger = get_logger(__name__)
@@ -35,7 +38,10 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # WMA指标只需要close列
     REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
 
-    def __init__(self, period: int = 14, periods: List[int] = None):
+    def __init__(self, period: int = 14, periods: List[int] = None):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化加权移动平均线(WMA)指标
         
@@ -109,7 +115,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 new_periods = kwargs['periods']
                 if isinstance(new_periods, list) and all(isinstance(p, int) and p > 0 for p in new_periods):
                     self.periods = new_periods
-                    self.period = new_periods[0] if new_periods else 14
+                    self.period = new_periods[0] if new_periods else 14  # TODO: 将魔法数字提取到配置中
                     self._result = None  # 清除缓存
                     return True
             
@@ -309,11 +315,11 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             wma_rising = wma_line > wma_line.shift(1)
             wma_falling = wma_line < wma_line.shift(1)
 
-            # 3. 价格位置确认
+            # 3. 价格位置确认  # TODO: 将魔法数字提取到配置中
             price_above_wma = close_price > wma_line
             price_below_wma = close_price < wma_line
 
-            # 4. 多周期WMA交叉信号（如果有多个周期）
+            # 4. 多周期WMA交叉信号（如果有多个周期）  # TODO: 将魔法数字提取到配置中
             wma_golden_cross = pd.Series(False, index=df.index)
             wma_death_cross = pd.Series(False, index=df.index)
 
@@ -414,7 +420,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 创建新的轴对象（如果未提供）
         if ax is None:
-            fig, ax = plt.subplots(figsize=(10, 5))
+            fig, ax = plt.subplots(figsize=(10, 5))  # TODO: 将魔法数字提取到配置中
         
         # 绘制各个周期的WMA指标线
         colors = ['blue', 'red', 'green', 'purple', 'orange']
@@ -428,7 +434,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         ax.set_ylabel(f'加权移动平均线(WMA)')
         ax.legend(loc='best')
-        ax.grid(True, alpha=0.3)
+        ax.grid(True, alpha=0.3)  # TODO: 将魔法数字提取到配置中
         
         return ax
         
@@ -460,9 +466,9 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Wma(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 获取价格数据
         close_price = data['close']
@@ -475,15 +481,15 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         cross_score = self._calculate_wma_cross_score()
         score += cross_score
         
-        # 3. WMA趋势评分
+        # 3. WMA趋势评分  # TODO: 将魔法数字提取到配置中
         trend_score = self._calculate_wma_trend_score()
         score += trend_score
         
-        # 4. WMA排列评分
+        # 4. WMA排列评分  # TODO: 将魔法数字提取到配置中
         arrangement_score = self._calculate_wma_arrangement_score()
         score += arrangement_score
         
-        # 5. 价格穿越评分
+        # 5. 价格穿越评分  # TODO: 将魔法数字提取到配置中
         penetration_score = self._calculate_price_wma_penetration_score(close_price)
         score += penetration_score
         
@@ -519,15 +525,15 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         arrangement_patterns = self._detect_wma_arrangement_patterns()
         patterns.extend(arrangement_patterns)
         
-        # 3. 检测价格与WMA关系形态
+        # 3. 检测价格与WMA关系形态  # TODO: 将魔法数字提取到配置中
         price_patterns = self._detect_price_wma_patterns(close_price)
         patterns.extend(price_patterns)
         
-        # 4. 检测WMA趋势形态
+        # 4. 检测WMA趋势形态  # TODO: 将魔法数字提取到配置中
         trend_patterns = self._detect_wma_trend_patterns()
         patterns.extend(trend_patterns)
         
-        # 5. 检测WMA支撑阻力形态
+        # 5. 检测WMA支撑阻力形态  # TODO: 将魔法数字提取到配置中
         support_resistance_patterns = self._detect_wma_support_resistance_patterns(close_price)
         patterns.extend(support_resistance_patterns)
         
@@ -552,18 +558,18 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 价格在WMA上方+6分（WMA对近期价格权重更高，反应更敏感）
                 above_wma = close_price > wma_values
-                price_score += above_wma * 6
+                price_score += above_wma * 6  # TODO: 将魔法数字提取到配置中
                 
                 # 价格在WMA下方-6分
                 below_wma = close_price < wma_values
-                price_score -= below_wma * 6
+                price_score -= below_wma * 6  # TODO: 将魔法数字提取到配置中
                 
                 # 价格距离WMA的相对位置评分
                 price_distance = (close_price - wma_values) / wma_values * 100
                 
-                # 距离适中（1-3%）额外加分
-                moderate_distance = (abs(price_distance) >= 1) & (abs(price_distance) <= 3)
-                price_score += moderate_distance * 4
+                # 距离适中（1-3%）额外加分  # TODO: 将魔法数字提取到配置中
+                moderate_distance = (abs(price_distance) >= 1) & (abs(price_distance) <= 3)  # TODO: 将魔法数字提取到配置中
+                price_score += moderate_distance * 4  # TODO: 将魔法数字提取到配置中
         
         return price_score / len(self.periods)  # 平均化
     
@@ -592,11 +598,11 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if short_wma in self._result.columns and long_wma in self._result.columns:
                 # 金叉（短期WMA上穿长期WMA）+22分（WMA反应更快，权重稍高）
                 golden_cross = crossover(self._result[short_wma], self._result[long_wma])
-                cross_score += golden_cross * 22
+                cross_score += golden_cross * 22  # TODO: 将魔法数字提取到配置中
                 
                 # 死叉（短期WMA下穿长期WMA）-22分
                 death_cross = crossunder(self._result[short_wma], self._result[long_wma])
-                cross_score -= death_cross * 22
+                cross_score -= death_cross * 22  # TODO: 将魔法数字提取到配置中
         
         return cross_score
     
@@ -616,21 +622,21 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # WMA上升趋势+9分（WMA对趋势变化更敏感）
                 wma_rising = wma_values > wma_values.shift(1)
-                trend_score += wma_rising * 9
+                trend_score += wma_rising * 9  # TODO: 将魔法数字提取到配置中
                 
                 # WMA下降趋势-9分
                 wma_falling = wma_values < wma_values.shift(1)
-                trend_score -= wma_falling * 9
+                trend_score -= wma_falling * 9  # TODO: 将魔法数字提取到配置中
                 
                 # WMA加速上升+13分
-                if len(wma_values) >= 3:
+                if len(wma_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     wma_accelerating = (wma_values.diff() > wma_values.shift(1).diff())
-                    trend_score += wma_accelerating * 13
+                    trend_score += wma_accelerating * 13  # TODO: 将魔法数字提取到配置中
                 
                 # WMA加速下降-13分
-                if len(wma_values) >= 3:
+                if len(wma_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     wma_decelerating = (wma_values.diff() < wma_values.shift(1).diff())
-                    trend_score -= wma_decelerating * 13
+                    trend_score -= wma_decelerating * 13  # TODO: 将魔法数字提取到配置中
         
         return trend_score / len(self.periods)  # 平均化
     
@@ -643,7 +649,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         arrangement_score = pd.Series(0.0, index=self._result.index)
         
-        if len(self.periods) < 3:
+        if len(self.periods) < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return arrangement_score
         
         sorted_periods = sorted(self.periods)
@@ -664,10 +670,10 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 bearish_arrangement &= (self._result[short_wma] < self._result[long_wma])
         
         # 多头排列+27分（WMA排列信号更强）
-        arrangement_score += bullish_arrangement * 27
+        arrangement_score += bullish_arrangement * 27  # TODO: 将魔法数字提取到配置中
         
         # 空头排列-27分
-        arrangement_score -= bearish_arrangement * 27
+        arrangement_score -= bearish_arrangement * 27  # TODO: 将魔法数字提取到配置中
         
         return arrangement_score
     
@@ -690,11 +696,11 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # 价格上穿WMA+16分（WMA穿越信号较强）
                 price_cross_up = crossover(close_price, wma_values)
-                penetration_score += price_cross_up * 16
+                penetration_score += price_cross_up * 16  # TODO: 将魔法数字提取到配置中
                 
                 # 价格下穿WMA-16分
                 price_cross_down = crossunder(close_price, wma_values)
-                penetration_score -= price_cross_down * 16
+                penetration_score -= price_cross_down * 16  # TODO: 将魔法数字提取到配置中
         
         return penetration_score / len(self.periods)  # 平均化
     
@@ -721,7 +727,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             
             if short_wma in self._result.columns and long_wma in self._result.columns:
                 # 检查最近的交叉
-                recent_periods = min(5, len(self._result))
+                recent_periods = min(5, len(self._result))  # TODO: 将魔法数字提取到配置中
                 recent_short = self._result[short_wma].tail(recent_periods)
                 recent_long = self._result[long_wma].tail(recent_periods)
                 
@@ -742,7 +748,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         patterns = []
         
-        if len(self.periods) < 3:
+        if len(self.periods) < 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return patterns
         
         sorted_periods = sorted(self.periods)
@@ -813,19 +819,19 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if total_wma > 0:
             above_ratio = above_count / total_wma
             
-            if above_ratio >= 0.8:
+            if above_ratio >= 0.8:  # TODO: 将魔法数字提取到配置中
                 patterns.append("价格强势突破WMA")
-            elif above_ratio >= 0.6:
+            elif above_ratio >= 0.6:  # TODO: 将魔法数字提取到配置中
                 patterns.append("价格温和上行WMA")
             elif above_ratio <= 0.2:
                 patterns.append("价格强势跌破WMA")
-            elif above_ratio <= 0.4:
+            elif above_ratio <= 0.4:  # TODO: 将魔法数字提取到配置中
                 patterns.append("价格温和下行WMA")
             else:
                 patterns.append("价格WMA附近震荡")
         
         # 检查价格穿越
-        recent_periods = min(5, len(close_price))
+        recent_periods = min(5, len(close_price))  # TODO: 将魔法数字提取到配置中
         for period in self.periods:
             wma_col = f'WMA{period}'
             if wma_col in self._result.columns:
@@ -871,13 +877,13 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if total_wma > 0:
             rising_ratio = rising_count / total_wma
             
-            if rising_ratio >= 0.8:
+            if rising_ratio >= 0.8:  # TODO: 将魔法数字提取到配置中
                 patterns.append("WMA全面上升")
-            elif rising_ratio >= 0.6:
+            elif rising_ratio >= 0.6:  # TODO: 将魔法数字提取到配置中
                 patterns.append("WMA多数上升")
             elif rising_ratio <= 0.2:
                 patterns.append("WMA全面下降")
-            elif rising_ratio <= 0.4:
+            elif rising_ratio <= 0.4:  # TODO: 将魔法数字提取到配置中
                 patterns.append("WMA多数下降")
             else:
                 patterns.append("WMA方向分化")
@@ -896,7 +902,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         patterns = []
         
-        if len(close_price) < 5:
+        if len(close_price) < 5:  # TODO: 将魔法数字提取到配置中
             return patterns
         
         recent_periods = min(10, len(close_price))
@@ -1023,7 +1029,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             indicator_id="WMA",
             pattern_type=Pattern_type.CONSOLIDATION,
             default_strength=Pattern_strength.MEDIUM,
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中
             detection_function=self._detect_wma_convergence
         )
         
@@ -1045,7 +1051,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 确保数据量足够
-        if len(data) < 20:
+        if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
         
         # 检查必要的列是否存在
@@ -1057,15 +1063,15 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 获取短中长周期的WMA数据
-        wma_short = self._result[wma_short_col].iloc[-5:]
-        wma_long = self._result[wma_long_col].iloc[-5:]
+        wma_short = self._result[wma_short_col].iloc[-5:]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        wma_long = self._result[wma_long_col].iloc[-5:]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算WMA线之间的距离变化
         diff_start = abs(wma_short.iloc[0] - wma_long.iloc[0])
         diff_end = abs(wma_short.iloc[-1] - wma_long.iloc[-1])
         
         # 收敛条件：WMA线之间的距离逐渐减小
-        convergence = diff_end < diff_start * 0.75  # 距离至少减少25%
+        convergence = diff_end < diff_start * 0.75  # 距离至少减少25%  # TODO: 将魔法数字提取到配置中
         
         return convergence
     
@@ -1075,7 +1081,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 确保数据量足够
-        if len(data) < 20:
+        if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
         
         # 检查必要的列是否存在
@@ -1087,15 +1093,15 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 获取短中长周期的WMA数据
-        wma_short = self._result[wma_short_col].iloc[-5:]
-        wma_long = self._result[wma_long_col].iloc[-5:]
+        wma_short = self._result[wma_short_col].iloc[-5:]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        wma_long = self._result[wma_long_col].iloc[-5:]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算WMA线之间的距离变化
         diff_start = abs(wma_short.iloc[0] - wma_long.iloc[0])
         diff_end = abs(wma_short.iloc[-1] - wma_long.iloc[-1])
         
         # 发散条件：WMA线之间的距离逐渐增大
-        divergence = diff_end > diff_start * 1.25  # 距离至少增加25%
+        divergence = diff_end > diff_start * 1.25  # 距离至少增加25%  # TODO: 将魔法数字提取到配置中
         
         return divergence
     
@@ -1105,15 +1111,15 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 确保数据量足够
-        if len(data) < 20:
+        if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
         
         # 获取短周期的WMA数据
         wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-10:]
         
         # 计算WMA的斜率变化
-        slope_prev = wma_short.iloc[4] - wma_short.iloc[0]
-        slope_curr = wma_short.iloc[-1] - wma_short.iloc[-5]
+        slope_prev = wma_short.iloc[4] - wma_short.iloc[0]  # TODO: 将魔法数字提取到配置中
+        slope_curr = wma_short.iloc[-1] - wma_short.iloc[-5]  # TODO: 将魔法数字提取到配置中
         
         # 趋势变化条件：斜率从正变负或从负变正
         trend_change = (slope_prev * slope_curr < 0)
@@ -1126,14 +1132,14 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
         
         # 确保数据量足够
-        if len(data) < 20:
+        if len(data) < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             return False
         
         # 获取短周期的WMA数据
-        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-15:]
+        wma_short = self._result[f'wma_{self.periods[0]}'].iloc[-15:]  # TODO: 将魔法数字提取到配置中
         
         # 计算WMA的变化率
-        changes = [wma_short.iloc[i+5] - wma_short.iloc[i] for i in range(0, 10, 5)]
+        changes = [wma_short.iloc[i+5] - wma_short.iloc[i] for i in range(0, 10, 5)]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 加速条件：变化率逐渐增大，且方向一致
         acceleration = (changes[0] > 0 and changes[1] > changes[0] and changes[2] > changes[1]) or \
@@ -1273,45 +1279,45 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查WMA形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -1332,11 +1338,11 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             raw_scores = self.calculate_raw_score_Wma(data, **kwargs)
 
             # 如果数据不足，返回中性评分
-            if len(raw_scores) < 3:
-                return {'score': 50.0, 'confidence': 0.5}
+            if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
+                return {'score': 50.0, 'confidence': 0.5}  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 取最近的评分作为最终评分，但考虑近期趋势
-            recent_scores = raw_scores.iloc[-3:]
+            recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 最终评分 = 最新评分 + 趋势调整
@@ -1348,7 +1354,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 2. 获取形态和信号
             patterns = self.get_patterns_Wma(data, **kwargs)
 
-            # 3. 计算置信度
+            # 3. 计算置信度  # TODO: 将魔法数字提取到配置中
             confidence = self.calculate_confidence_Wma(raw_scores, patterns, {})
 
             return {
@@ -1357,7 +1363,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             }
         except Exception as e:
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
-            return {'score': 50.0, 'confidence': 0.0}
+            return {'score': 50.0, 'confidence': 0.0}  # TODO: 将魔法数字提取到配置中
 
     def register_patterns_Wma(self):
         """
@@ -1370,7 +1376,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="短期WMA上穿长期WMA，表明趋势转为看涨",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1380,7 +1386,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="短期WMA下穿长期WMA，表明趋势转为看跌",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1391,7 +1397,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格从下方突破WMA，看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1401,7 +1407,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格从上方跌破WMA，看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1412,7 +1418,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="短期WMA在长期WMA上方，表明强势上升趋势",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1422,7 +1428,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="短期WMA在长期WMA下方，表明强势下降趋势",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1463,7 +1469,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _get_default_parameters_wma(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14, "periods": None}
+        return {"period": 14, "periods": None}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Wma_Wma_Wma_wma_duplicate(self, **kwargs):
         """
@@ -1484,7 +1490,8 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('WMA', params)
             if not is_valid:
-                from utils.dependency_injection import get_logger
+                from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"WMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
@@ -1498,7 +1505,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if hasattr(self, 'period') and not hasattr(self, 'periods'):
                 self.periods = [self.period]
             elif hasattr(self, 'periods') and self.periods is None:
-                self.periods = [self.period] if hasattr(self, 'period') else [14]
+                self.periods = [self.period] if hasattr(self, 'period') else [14]  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理
@@ -1512,7 +1519,7 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        period = getattr(self, 'period', 14)
+        period = getattr(self, 'period', 14)  # TODO: 将魔法数字提取到配置中
         return max(period, 10)  # WMA周期，最少10个周期
 
 # 类别名

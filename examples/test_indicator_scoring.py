@@ -25,6 +25,7 @@ from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -37,7 +38,7 @@ def test_single_indicator_scoring():
     data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -89,7 +90,7 @@ def test_comprehensive_scoring_Scoring():
     data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
@@ -197,7 +198,7 @@ def test_indicator_registry():
         data_access = get_container().resolve(DataAccessInterface)
         sql = """
         SELECT date, open, high, low, close, volume
-        FROM stock_info WHERE 1=1
+        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
         WHERE code = '000001'
         AND level = '日线'
         AND date >= '2024-01-01'
@@ -226,7 +227,7 @@ def test_pattern_recognition_Scoring():
     data_access = get_container().resolve(DataAccessInterface)
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2023-01-01'

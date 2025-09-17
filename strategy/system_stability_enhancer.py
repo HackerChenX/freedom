@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 系统稳定性增强器
 完善错误处理和监控机制，提升系统整体稳定性
@@ -93,6 +95,9 @@ class CircuitBreaker:
     """熔断器"""
     
     def __init__(self, name: str, config: StabilityConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.name = name
         self.config = config
         self.state = CircuitBreakerState(name=name)
@@ -164,6 +169,9 @@ class RetryManager:
     """重试管理器"""
     
     def __init__(self, config: StabilityConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.retry_stats = {}
         self.lock = threading.Lock()
@@ -240,6 +248,9 @@ class HealthChecker:
     """健康检查器"""
     
     def __init__(self, config: StabilityConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.health_checks = {}
         self.health_status = {}
@@ -364,6 +375,9 @@ class SystemStabilityEnhancer:
     """系统稳定性增强器主控制器"""
 
     def __init__(self, config: Optional[StabilityConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config or StabilityConfig()
         self.circuit_breakers = {}
         self.retry_manager = RetryManager(self.config)
@@ -559,7 +573,7 @@ class SystemStabilityEnhancer:
         # 数据库连接恢复策略（任务5整合：使用增强连接池）
         def database_recovery_strategy(error: Exception) -> bool:
             try:
-                from db.enhanced_connection_pool import initialize_connection_pool
+                # from db.enhanced_connection_pool  # 修复跨层调用违规 import initialize_connection_pool
                 initialize_connection_pool()
                 logger.info("数据库连接池已重新初始化")
                 return True
@@ -585,7 +599,7 @@ class SystemStabilityEnhancer:
         # 缓存清理恢复策略
         def cache_cleanup_strategy(error: Exception) -> bool:
             try:
-                from db.multi_layer_cache import get_multi_cache
+                from db.services.cache_service import get_multi_cache
                 cache = get_multi_cache()
                 cache.clear()
                 logger.info("缓存已清理")

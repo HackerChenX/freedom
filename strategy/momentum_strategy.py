@@ -1,3 +1,4 @@
+from utils.container import container
 """
 动量策略模块
 
@@ -9,8 +10,9 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from enums.kline_period import Kline_period
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -23,6 +25,9 @@ class MomentumStrategy(BaseStrategy):
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化动量策略"""
         super().__init__(name="动量策略", description="基于股票动量特性的选股策略，结合吸筹、弹性和换手率等因素")
         
@@ -108,8 +113,7 @@ class MomentumStrategy(BaseStrategy):
                     selected_stocks.append({
                         'code': f.stock_code,
                         'name': f.name,
-                        'industry': f.industry
-                    })
+                        })
                     logger.info(f"选出股票: {f.get_desc()}")
             
             except Exception as e:

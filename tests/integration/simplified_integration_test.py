@@ -20,7 +20,7 @@ from typing import Dict, List, Any
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from monitoring.performance_monitor import get_performance_monitor
 from utils.stability_enhancer import get_stability_manager
 from utils.logger import get_logger

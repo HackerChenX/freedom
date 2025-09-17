@@ -32,9 +32,10 @@ from multiprocessing import Manager
 import logging
 from functools import lru_cache
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -453,8 +454,7 @@ class HighPerformanceBacktestEngine:
             codes_str = "','".join(stock_codes)
             query = f"""
             SELECT code, date, open, high, low, close, volume
-            FROM stock_info
-            WHERE code IN ('{codes_str}')
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{codes_str}')
             AND date >= '{start_date}' AND date <= '{end_date}'
             AND level = '日线'
             ORDER BY code, date
@@ -486,8 +486,7 @@ class HighPerformanceBacktestEngine:
         try:
             query = f"""
             SELECT code, date, open, high, low, close, volume
-            FROM stock_info
-            WHERE code = '{stock_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND date >= '{start_date}' AND date <= '{end_date}'
             AND level = '日线'
             ORDER BY date

@@ -8,7 +8,7 @@ import os
 from typing import Dict, Any, Optional
 from pathlib import Path
 
-from config import get_config
+from config.unified_config_manager import get_config
 from utils.logger import getLogger
 from utils.file_utils import ensure_dir
 

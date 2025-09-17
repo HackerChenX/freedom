@@ -5,6 +5,7 @@
 """
 
 from enum import Enum, auto
+from db.sql_manager import SQLManager, QueryType
 
 
 class Indicatortype_indicator_types(Enum):
@@ -94,7 +95,7 @@ class Indicatortype_indicator_types(Enum):
     
     # 买点指标
     ZXM_DAILY_MACD = "ZXM_DAILY_MACD"  # ZXM买点-日MACD指标
-    ZXM_TURNOVER = "ZXM_TURNOVER"  # ZXM买点-换手率指标
+    ZXM_turnover_rate = "ZXM_turnover_rate"  # ZXM买点-换手率指标
     ZXM_VOLUME_SHRINK = "ZXM_VOLUME_SHRINK"  # ZXM买点-缩量指标
     ZXM_MA_CALLBACK = "ZXM_MA_CALLBACK"  # ZXM买点-回踩均线指标
     ZXM_BS_ABSORB = "ZXM_BS_ABSORB"  # ZXM买点-BS吸筹指标

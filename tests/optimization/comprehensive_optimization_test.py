@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 综合优化验证测试
 
@@ -21,7 +21,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from monitoring.performance_monitor import get_performance_monitor, start_monitoring, stop_monitoring
 from utils.stability_enhancer import get_stability_manager, retry, Circuit_breaker
 from utils.logger import get_logger

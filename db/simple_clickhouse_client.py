@@ -16,6 +16,7 @@ import pandas as pd
 from typing import Optional, Dict, Any
 import clickhouse_connect
 from contextlib import contextmanager
+from db.sql_manager import SQLManager, QueryType
 
 logger = logging.getLogger(__name__)
 

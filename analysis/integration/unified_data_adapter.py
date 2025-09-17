@@ -19,7 +19,7 @@ import threading
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_service
@@ -39,7 +39,7 @@ class UnifiedDataAdapter:
             'required_fields': [
                 'stock_code',      # 股票代码
                 'stock_name',      # 股票名称  
-                'industry',        # 行业信息
+                # 行业信息
                 'price',           # 当前价格
                 'change_pct',      # 涨跌幅
                 'score',           # 综合评分
@@ -52,13 +52,12 @@ class UnifiedDataAdapter:
                 'pe_ratio',        # 市盈率
                 'pb_ratio',        # 市净率
                 'volume',          # 成交量
-                'turnover_rate',   # 换手率
+                # 价格区间
                 'source_system'    # 数据来源系统
             ],
             'data_types': {
                 'stock_code': str,
                 'stock_name': str,
-                'industry': str,
                 'price': float,
                 'change_pct': float,
                 'score': float,
@@ -69,7 +68,6 @@ class UnifiedDataAdapter:
                 'pe_ratio': float,
                 'pb_ratio': float,
                 'volume': int,
-                'turnover_rate': float,
                 'source_system': str
             }
         }
@@ -161,7 +159,6 @@ class UnifiedDataAdapter:
                 # 必需字段
                 'stock_code': stock_code,
                 'stock_name': stock_info['name'],
-                'industry': stock_info['industry'],
                 'price': stock_info['price'],
                 'change_pct': stock_info['change_pct'],
                 'score': score,
@@ -174,7 +171,6 @@ class UnifiedDataAdapter:
                 'pe_ratio': stock_info.get('pe_ratio'),
                 'pb_ratio': stock_info.get('pb_ratio'),
                 'volume': stock_info.get('volume'),
-                'turnover_rate': stock_info.get('turnover_rate'),
                 'source_system': 'buypoint_analysis'
             }
             
@@ -328,15 +324,12 @@ class UnifiedDataAdapter:
             query = f"""
             SELECT 
                 name,
-                industry,
                 close as price,
                 change_pct,
                 market_cap,
                 pe_ratio,
                 pb_ratio,
-                volume,
-                turnover_rate
-            FROM stock_info WHERE 1=1
+                volume FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE code = '{stock_code}' 
             AND date <= '{date}'
             ORDER BY date DESC 
@@ -349,28 +342,26 @@ class UnifiedDataAdapter:
                 row = result.iloc[0]
                 return {
                     'name': row.get('name', f'股票{stock_code}'),
-                    'industry': row.get('industry', '未知行业'),
+                    '未知行业'),
                     'price': float(row.get('price', 0)),
                     'change_pct': float(row.get('change_pct', 0)),
                     'market_cap': float(row.get('market_cap', 0)) if row.get('market_cap') else None,
                     'pe_ratio': float(row.get('pe_ratio', 0)) if row.get('pe_ratio') else None,
                     'pb_ratio': float(row.get('pb_ratio', 0)) if row.get('pb_ratio') else None,
                     'volume': int(row.get('volume', 0)) if row.get('volume') else None,
-                    'turnover_rate': float(row.get('turnover_rate', 0)) if row.get('turnover_rate') else None
+                    0)) if row.get() else None
                 }
             else:
                 # 返回默认信息
                 return {
                     'name': f'股票{stock_code}',
-                    'industry': '未知行业',
                     'price': 0.0,
                     'change_pct': 0.0,
                     'market_cap': None,
                     'pe_ratio': None,
                     'pb_ratio': None,
                     'volume': None,
-                    'turnover_rate': None
-                }
+                    }
                 
         except Exception as e:
             logger.error(f"获取股票基本信息失败 {stock_code}: {e}")
@@ -582,6 +573,7 @@ def get_unified_data_adapter_unified_data_adapter() -> UnifiedDataAdapter:
     """
     try:
         from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
         container = get_container()
         return container.resolve(UnifiedDataAdapter)
     except Exception as e:
@@ -597,6 +589,7 @@ def get_legacy_unified_data_adapter() -> UnifiedDataAdapter:
 # 注册到依赖注入容器
 try:
     from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
     container = get_container()
     if not container.is_registered(UnifiedDataAdapter):
         container.register_singleton(UnifiedDataAdapter, UnifiedDataAdapter)

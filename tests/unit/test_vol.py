@@ -308,6 +308,7 @@ class Testvol_vol(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         """测试VOL标准化功能"""
         # 测试启用标准化
         from indicators.vol import VOL
+from db.sql_manager import SQLManager, QueryType
         indicator_with_std = VOL(enable_standardization=True)
         result_with_std = indicator_with_std.calculate(self.data)
         
@@ -330,6 +331,7 @@ class Testvol_vol(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):
         
         # 测试启用周期分析
         from indicators.vol import VOL
+from db.sql_manager import SQLManager, QueryType
         indicator_with_cycles = VOL(enable_cycles_analysis=True)
         result_with_cycles = indicator_with_cycles.calculate(long_data)
         

@@ -320,13 +320,13 @@ class TestPerformanceStabilityOptimizationModule(unittest.TestCase):
         
         try:
             from strategy.performance_stability_optimizer import (
-                MemoryOptimizer, 
+                MemoryOptimizationService, 
                 PerformanceOptimizationConfig
             )
             
             # 创建内存优化器
             config = PerformanceOptimizationConfig()
-            memory_optimizer = MemoryOptimizer(config)
+            memory_optimizer = MemoryOptimizationService(config)
             
             # 执行内存优化
             result = memory_optimizer.optimize_memory_usage()

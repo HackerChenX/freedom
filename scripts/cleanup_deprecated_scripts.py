@@ -298,9 +298,13 @@ class DeprecatedScriptCleaner:
         # 导入映射表
         import_mappings = {
             'from strategy.strategy_executor import UnifiedStrategyExecutor as': 'from strategy.strategy_executor import UnifiedStrategyExecutor as',
+from db.sql_manager import SQLManager, QueryType
             'from strategy.strategy_executor import UnifiedStrategyExecutor as': 'from strategy.strategy_executor import UnifiedStrategyExecutor as',
+from db.sql_manager import SQLManager, QueryType
             'from strategy.strategy_executor import UnifiedStrategyExecutor as': 'from strategy.strategy_executor import UnifiedStrategyExecutor as',
+from db.sql_manager import SQLManager, QueryType
             'from strategy.strategy_executor import UnifiedStrategyExecutor as': 'from strategy.strategy_executor import UnifiedStrategyExecutor as',
+from db.sql_manager import SQLManager, QueryType
             'UnifiedStrategyExecutor': 'UnifiedStrategyExecutor',
             'UnifiedStrategyExecutor': 'UnifiedStrategyExecutor',
             'UnifiedStrategyExecutor': 'UnifiedStrategyExecutor',

@@ -14,7 +14,7 @@ from indicators.zxm.trend_indicators import (
     Trend_detector, Trend_duration, ZXMWeekly_mACD
 )
 from indicators.zxm.buy_point_indicators import (
-    ZXMDaily_mACD, ZXMTurnover, ZXMVolume_shrink,
+    ZXMDaily_mACD, ZXMturnover_rate, ZXMVolume_shrink,
     ZXMMACallback, ZXMBSAbsorb
 )
 from indicators.zxm.elasticity_indicators import (
@@ -25,6 +25,7 @@ from indicators.zxm.score_indicators import (
 )
 from indicators.complete_indicator_registry import complete_registry
 from indicators.zxm.diagnostics import ZXMDiagnostics
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_zXMComprehensive(unittest.TestCase):
@@ -58,7 +59,7 @@ class Test_zXMComprehensive(unittest.TestCase):
             'level': [1] * 150,
             'industry': ['科技'] * 150,
             'seq': range(150),
-            'turnover': [p * v for p, v in zip(prices, np.random.randint(1000000, 5000000, 150))],
+            'turnover_rate': [p * v for p, v in zip(prices, np.random.randint(1000000, 5000000, 150))],
             'turnover_rate': np.random.uniform(0.1, 3.0, 150),
             'price_change': np.random.uniform(-5, 5, 150),
             'price_range': np.random.uniform(1, 10, 150)
@@ -114,7 +115,7 @@ class Test_zXMComprehensive(unittest.TestCase):
         """测试所有ZXM买点指标"""
         buy_point_indicators = [
             ZXMDaily_mACD(),
-            ZXMTurnover(),
+            ZXMturnover_rate(),
             ZXMVolume_shrink(),
             ZXMMACallback(),
             ZXMBSAbsorb()

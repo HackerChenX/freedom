@@ -17,6 +17,7 @@ sys.path.append(root_dir)
 from indicators.zxm.score_indicators import ZXMElasticityScore, ZXMBuyPointScore
 from utils.logger import get_logger, init_logging
 from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -36,7 +37,7 @@ def test_zxm_elasticity_score_Indicators():
     SELECT
         toDate(date) as trade_date,
         open, high, low, close,
-        volume, turnover,
+        volume, turnover_rate,
         amount
     FROM stock_daily_data
     WHERE code = '{stock_code}'
@@ -77,7 +78,7 @@ def test_zxm_buypoint_score():
     SELECT
         toDate(date) as trade_date,
         open, high, low, close,
-        volume, turnover,
+        volume, turnover_rate,
         amount
     FROM stock_daily_data
     WHERE code = '{stock_code}'

@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -16,14 +17,14 @@ sys.path.insert(0, root_dir)
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import Data_access_interface
 from enums.kline_period import Kline_period
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.path_utils import get_result_dir
 from indicators.complete_indicator_registry import complete_registry
 
 # 获取日志记录器
 logger = getLogger(__name__)
 
-class MarketDimensionAnalyzer:
+class MarketDimensionAnalyzer(BaseAnalyzer):
     """
     市场维度分析器 - 对整个市场进行多维度分析
     
@@ -48,7 +49,7 @@ class MarketDimensionAnalyzer:
         # 存储分析结果
         self.analysis_results = {
             "market_summary": {},
-            "industry_analysis": {},
+            _analysis": {},
             "concept_analysis": {},
             "market_cap_analysis": {},
             "correlation_analysis": {}
@@ -108,7 +109,7 @@ class MarketDimensionAnalyzer:
             logger.error(f"市场概况分析失败: {e}")
             return {}
     
-    def analyze_industry_distribution(self, date: str) -> Dict[str, Any]:
+    def analyze__distribution(self, date: str) -> Dict[str, Any]:
         """
         分析行业分布
         
@@ -122,48 +123,48 @@ class MarketDimensionAnalyzer:
         
         try:
             # 获取行业数据
-            industry_data = self.data_access.get_industry_data(date)
+            _data = self.data_access.get__data(date)
             
-            if industry_data.empty:
+            if _data.empty:
                 logger.warning(f"未找到日期 {date} 的行业数据")
                 return {}
             
             # 按行业统计
-            industry_stats = {}
-            for industry in industry_data['industry'].unique():
-                industry_stocks = industry_data[industry_data['industry'] == industry]
+            _stats = {}
+            for in _data[].unique():
+                _stocks = _data[_data[] == ]
                 
                 stats = {
-                    "stock_count": len(industry_stocks),
-                    "up_count": len(industry_stocks[industry_stocks['change_pct'] > 0]),
-                    "down_count": len(industry_stocks[industry_stocks['change_pct'] < 0]),
-                    "average_change": industry_stocks['change_pct'].mean(),
-                    "median_change": industry_stocks['change_pct'].median(),
-                    "total_volume": industry_stocks['volume'].sum(),
-                    "total_amount": industry_stocks['amount'].sum()
+                    "stock_count": len(_stocks),
+                    "up_count": len(_stocks[_stocks['change_pct'] > 0]),
+                    "down_count": len(_stocks[_stocks['change_pct'] < 0]),
+                    "average_change": _stocks['change_pct'].mean(),
+                    "median_change": _stocks['change_pct'].median(),
+                    "total_volume": _stocks['volume'].sum(),
+                    "total_amount": _stocks['amount'].sum()
                 }
                 
                 stats["up_ratio"] = stats["up_count"] / stats["stock_count"] if stats["stock_count"] > 0 else 0
                 stats["down_ratio"] = stats["down_count"] / stats["stock_count"] if stats["stock_count"] > 0 else 0
                 
-                industry_stats[industry] = stats
+                _stats[] = stats
             
             # 排序（按平均涨幅）
-            sorted_industries = sorted(industry_stats.items(), 
+            sorted_industries = sorted(_stats.items(), 
                                      key=lambda x: x[1]['average_change'], 
                                      reverse=True)
             
             analysis_result = {
                 "date": date,
-                "industry_count": len(industry_stats),
-                "industry_stats": dict(sorted_industries),
+                _count": len(_stats),
+                _stats": dict(sorted_industries),
                 "top_performers": sorted_industries[:10],
                 "worst_performers": sorted_industries[-10:]
             }
             
-            self.analysis_results["industry_analysis"] = analysis_result
+            self.analysis_results[_analysis"] = analysis_result
             
-            logger.info(f"行业分布分析完成 - 行业数: {analysis_result['industry_count']}")
+            logger.info(f"行业分布分析完成 - 行业数: {analysis_result[_count']}")
             return analysis_result
             
         except Exception as e:
@@ -270,14 +271,14 @@ class MarketDimensionAnalyzer:
                 return {}
             
             # 构建价格变化矩阵
-            price_changes = sample_data.pivot(
+            s = sample_data.pivot(
                 index='date', 
                 columns='code', 
                 values='change_pct'
             )
             
             # 计算相关性矩阵
-            correlation_matrix = price_changes.corr()
+            correlation_matrix = s.corr()
             
             # 分析相关性统计
             correlation_stats = {
@@ -329,7 +330,7 @@ class MarketDimensionAnalyzer:
         try:
             # 执行各项分析
             market_overview = self.analyze_market_overview(date)
-            industry_analysis = self.analyze_industry_distribution(date)
+            _analysis = self.analyze__distribution(date)
             market_cap_analysis = self.analyze_market_cap_distribution(date)
             
             # 生成综合报告
@@ -337,9 +338,9 @@ class MarketDimensionAnalyzer:
                 "analysis_date": date,
                 "generation_time": datetime.now().isoformat(),
                 "market_overview": market_overview,
-                "industry_analysis": industry_analysis,
+                _analysis": _analysis,
                 "market_cap_analysis": market_cap_analysis,
-                "summary": self._generate_summary_Market_Dimension_Analyzer(market_overview, industry_analysis, market_cap_analysis)
+                "summary": self._generate_summary_Market_Dimension_Analyzer(market_overview, _analysis, market_cap_analysis)
             }
             
             # 保存报告
@@ -353,14 +354,14 @@ class MarketDimensionAnalyzer:
             return {}
     
     def _generate_summary_Market_Dimension_Analyzer(self, market_overview: Dict[str, Any], 
-                         industry_analysis: Dict[str, Any],
+                         _analysis: Dict[str, Any],
                          market_cap_analysis: Dict[str, Any]) -> Dict[str, Any]:
         """
         生成分析总结
         
         Args:
             market_overview: 市场概况
-            industry_analysis: 行业分析
+            _analysis: 行业分析
             market_cap_analysis: 市值分析
             
         Returns:
@@ -387,11 +388,9 @@ class MarketDimensionAnalyzer:
                 summary["dominant_trends"].append("明显下跌")
             
             # 关键观察
-            if industry_analysis.get("industry_count", 0) > 0:
-                top_industry = industry_analysis.get("top_performers", [])
-                if top_industry:
-                    summary["key_observations"].append(
-                        f"表现最佳行业: {top_industry[0][0]}"
+            if _analysis.get(_count", 0) > 0:
+                top_= _analysis.get("top_performers", [])
+                if top_}"
                     )
             
             # 风险因素
@@ -436,7 +435,7 @@ class MarketDimensionAnalyzer:
         """清空分析结果"""
         self.analysis_results = {
             "market_summary": {},
-            "industry_analysis": {},
+            _analysis": {},
             "concept_analysis": {},
             "market_cap_analysis": {},
             "correlation_analysis": {}

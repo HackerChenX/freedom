@@ -18,10 +18,11 @@ from pathlib import Path
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from tests.unified_indicator_testing.unified_indicator_tester import UnifiedIndicatorTester
 from tests.production_validation.rsi_production_test import RSIProductionValidator
 from tests.production_validation.macd_production_test import MACDProductionValidator
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

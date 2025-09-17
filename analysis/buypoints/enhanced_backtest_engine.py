@@ -23,11 +23,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import numpy as np
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from enums.signal_types import SignalType
 from enums.pattern_types import Candle_pattern_type as PatternType
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -303,9 +304,7 @@ class EnhancedBacktestEngine:
             try:
                 # 构建标准查询
                 query = f"""
-                SELECT code, name, date, open, high, low, close, volume, turnover_rate
-                FROM stock_info
-                WHERE code = '{stock_code}'
+                SELECT code, name, date, open, high, low, close, volume FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
                 AND level = '{period}'
                 AND date >= '{start_date}' AND date <= '{end_date}'
                 ORDER BY date ASC

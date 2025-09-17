@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -24,7 +25,7 @@ import json
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
@@ -32,7 +33,7 @@ from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
 logger = get_logger(__name__)
 
 
-class SimplePerformanceAnalyzer:
+class SimplePerformanceAnalyzer(BaseAnalyzer):
     """简化的性能分析器"""
     
     def __init___91(self):

@@ -35,7 +35,7 @@ from pathlib import Path
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from utils.decorators import performance_monitor, exception_handler
 from db.interfaces.data_access_interface import DataAccessInterface
 from analysis.strategy_performance_evaluator import (
@@ -48,6 +48,7 @@ from analysis.strategy_performance_evaluator import (
 from analysis.performance_metrics_calculator import performance_calculator
 from analysis.performance_report_generator import PerformanceReportGenerator
 from strategy.unified_base_strategy import UnifiedBaseStrategy
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -534,8 +535,7 @@ class PerformanceEvaluationFramework:
                 # 从ClickHouse获取基准数据（优化查询）
                 query = f"""
                 SELECT date, close, volume
-                FROM stock_info
-                WHERE code = '{benchmark_code}'
+                FROM stock_info WHERE level = %(level)s AND code = '{benchmark_code}'
                 AND level = '日线'
                 AND date >= '{start_date.strftime('%Y-%m-%d')}'
                 AND date <= '{end_date.strftime('%Y-%m-%d')}'

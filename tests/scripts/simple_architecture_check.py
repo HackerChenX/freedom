@@ -195,6 +195,7 @@ class SimpleArchitectureChecker:
                         is_migrated = (
                             'from db.query_executor import get_query_executor' in content or
                             'from db.sql_manager import QueryType' in content or
+from db.sql_manager import SQLManager, QueryType
                             'query_executor.get_stock_data' in content or
                             'query_executor.execute_query' in content
                         )

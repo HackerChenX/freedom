@@ -21,7 +21,7 @@ from typing import Dict, List, Any, Optional
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -333,8 +333,7 @@ class KDJArchitectureCompliantValidation:
                 # 通过数据管理器的查询接口，让数据层处理SQL
                 query = f"""
                 SELECT date, code, open, high, low, close, volume
-                FROM stock_info
-                WHERE code = '{stock_code}'
+                FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
                 AND level = '日线'
                 AND date >= '2024-01-01'
                 AND date <= '2025-05-23'
@@ -383,6 +382,7 @@ class KDJArchitectureCompliantValidation:
         
         try:
             from indicators.kdj import KdjKdj
+from db.sql_manager import SQLManager, QueryType
             kdj = KdjKdj()
             
             # 性能测试
@@ -419,6 +419,7 @@ class KDJArchitectureCompliantValidation:
         
         try:
             from indicators.kdj import KdjKdj
+from db.sql_manager import SQLManager, QueryType
             kdj = KdjKdj()
             
             result = kdj.calculate(data)

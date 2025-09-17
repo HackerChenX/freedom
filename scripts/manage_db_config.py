@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 数据库配置管理工具
 

@@ -1,5 +1,5 @@
 """
-from config import get_config
+from config.unified_config_manager import get_config
 部署管理器
 
 生产环境部署管理工具
@@ -10,6 +10,7 @@ import json
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

@@ -1,4 +1,4 @@
-from config.config import get_config\n"""
+from config.unified_config_manager import get_config\n"""
 系统性能测试
 
 验证P2级优化后的系统性能改进
@@ -18,6 +18,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, init_logging
+from db.sql_manager import SQLManager, QueryType
 
 # 初始化日志
 init_logging(level=get_config('logging.level', 'INFO'))
@@ -31,7 +32,7 @@ class Test_system_performance(unittest.TestCase):
         """设置测试环境"""
         self.test_indicators = [
             'ZXM_BS_ABSORB',
-            'ZXM_TURNOVER', 
+            'ZXM_turnover_rate', 
             'ZXM_VOLUME_SHRINK',
             'ZXM_DAILY_TREND_UP',
             'ZXM_AMPLITUDE_ELASTICITY',
@@ -111,7 +112,7 @@ class Test_system_performance(unittest.TestCase):
         logger.info("=== 测试每股处理时间 ===")
         
         # 选择代表性指标进行测试
-        test_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        test_indicators = ['ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
         test_data = self.performance_test_data['daily_medium']
         
         total_processing_times = []
@@ -206,7 +207,7 @@ class Test_system_performance(unittest.TestCase):
         signal_generation_times = []
         
         # 测试已修复的指标的信号生成性能
-        fixed_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        fixed_indicators = ['ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
         
         for indicator_name in fixed_indicators:
             start_time = time.time()
@@ -303,7 +304,7 @@ class Test_system_performance(unittest.TestCase):
         import threading
         
         test_data = self.performance_test_data['daily_medium']
-        test_indicators = ['ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
+        test_indicators = ['ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 'ZXM_DAILY_TREND_UP']
         
         # 串行处理时间
         start_time = time.time()

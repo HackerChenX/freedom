@@ -237,6 +237,7 @@ def validate_environment():
         # 检查数据库连接（如果可能）
         try:
             from db.query_executor import get_query_executor
+from db.sql_manager import SQLManager, QueryType
             query_executor = get_query_executor()
             # 这里可以添加简单的连接测试
             logger.info("数据库连接验证通过")

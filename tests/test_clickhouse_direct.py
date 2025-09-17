@@ -108,6 +108,7 @@ def test_clickhouse_connection():
         # 方法3: 直接使用clickhouse_driver
         print("📊 尝试直接使用clickhouse_driver...")
         from clickhouse_driver import Client
+from db.sql_manager import SQLManager, QueryType
 
         client = Client(
             host='localhost',

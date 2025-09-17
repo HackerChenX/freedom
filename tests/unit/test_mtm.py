@@ -13,6 +13,7 @@ from indicators.mtm import Momentum
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
+from db.sql_manager import SQLManager, QueryType
 
 
 class Testmtm_mtm(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):

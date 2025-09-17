@@ -74,6 +74,7 @@ def run_demo():
         # 导入测试器
         try:
             from comprehensive_indicator_pattern_strategy_tester import ComprehensiveIndicatorPatternStrategyTester
+from db.sql_manager import SQLManager, QueryType
         except ImportError as e:
             logger.error(f"❌ 导入测试器失败: {e}")
             print("请确保所有依赖文件都在正确位置")

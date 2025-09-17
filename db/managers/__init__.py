@@ -5,11 +5,11 @@
 """
 
 from db.managers.data_access_manager import DataAccessManager
-from db.managers.cache_manager import CacheManager
-from db.managers.connection_manager import ConnectionManager
+from db.services.cache_service import CacheService
+from db.enhanced_connection_pool import get_connection_pool
 
 __all__ = [
     'DataAccessManager',
-    'CacheManager', 
+    'CacheService', 
     'ConnectionManager'
 ] 

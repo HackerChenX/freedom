@@ -20,6 +20,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -63,8 +64,7 @@ class RealFullDataPerformanceTest:
         try:
             result = self.client.query("""
                 SELECT DISTINCT code 
-                FROM stock_info 
-                WHERE level = '日线'
+                FROM stock_info WHERE code = %(code)s AND level = '日线'
                 ORDER BY code
             """)
             
@@ -117,8 +117,7 @@ class RealFullDataPerformanceTest:
             codes_str = "', '".join(stock_codes)
             result = self.client.query(f"""
                 SELECT code, name, date, open, high, low, close, volume
-                FROM stock_info 
-                WHERE code IN ('{codes_str}') AND level = '日线'
+                FROM stock_info WHERE code = %(code)s AND code IN ('{codes_str}') AND level = '日线'
                 ORDER BY code, date DESC
             """)
             

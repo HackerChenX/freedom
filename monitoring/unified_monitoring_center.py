@@ -36,6 +36,7 @@ from monitoring.prometheus_grafana_integration import create_prometheus_grafana_
 from monitoring.elk_log_management import get_elk_log_manager
 from monitoring.intelligent_multi_channel_alert_system import get_intelligent_alert_manager
 from monitoring.automated_ops_toolkit import get_automated_ops_toolkit
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

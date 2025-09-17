@@ -289,6 +289,7 @@ sys.path.insert(0, root_dir)
 
 from db.sql_manager import get_sql_manager, QueryType
 from db.query_executor import get_query_executor
+from db.sql_manager import SQLManager, QueryType
 
 def migrate_sql_queries():
     """执行SQL查询迁移"""

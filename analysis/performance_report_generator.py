@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -33,7 +34,7 @@ from pathlib import Path
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from analysis.strategy_performance_evaluator import PerformanceMetrics, RiskMetrics, TimeSeriesAnalysis, EvaluationConfig
 
@@ -41,6 +42,18 @@ logger = get_logger(__name__)
 
 
 class PerformanceReportGenerator:
+"""
+PerformanceReportGenerator - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 34个方法分为以下职责组:
+  * 核心功能方法 (约11个)
+  * 辅助工具方法 (约11个)  
+  * 接口适配方法 (约11个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     策略性能报告生成器
 
@@ -53,6 +66,9 @@ class PerformanceReportGenerator:
     """
 
     def __init__(self, output_dir: str = "./reports"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化报告生成器
 

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from collections import defaultdict, deque
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

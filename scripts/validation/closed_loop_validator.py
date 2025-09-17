@@ -35,6 +35,7 @@ from utils.decorators import performance_monitor, exception_handler
 from utils.date_utils import get_latest_trading_date
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

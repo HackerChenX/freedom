@@ -32,6 +32,7 @@ from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from .config import get_test_config, TestEnvironmentConfig
 from .logging_config import get_test_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_test_logger('test_infrastructure')
 

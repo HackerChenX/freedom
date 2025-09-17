@@ -22,8 +22,9 @@ sys.path.append(project_root)
 from analysis.buypoints.buypoint_strategy_adapter import get_buypoint_strategy_adapter
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from strategy.strategy_executor import StrategyExecutor
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

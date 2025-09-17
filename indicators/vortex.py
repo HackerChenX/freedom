@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 VORTEX (Vortex Indicator) 涡流指标
 
@@ -13,7 +14,7 @@ from typing import Dict, Any, List, Optional, Union
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -28,6 +29,9 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化VORTEX指标
         
@@ -45,7 +49,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_vortex(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """实现抽象方法"""
@@ -61,6 +65,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -78,7 +83,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
         
         # 设置参数
-        self.period = params.get('period', 14)
+        self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -167,7 +172,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算涡流指标的差值和比率
         df['VORTEX_DIFF'] = df['VI_PLUS'] - df['VI_MINUS']
-        df['VORTEX_RATIO'] = df['VI_PLUS'] / (df['VI_MINUS'] + 1e-8)  # 避免除零
+        df['VORTEX_RATIO'] = df['VI_PLUS'] / (df['VI_MINUS'] + 1e-8)  # 避免除零  # TODO: 将魔法数字提取到配置中
         
         # 计算涡流指标的强度
         df['VORTEX_STRENGTH'] = abs(df['VORTEX_DIFF'])
@@ -261,16 +266,16 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算VORTEX原始评分
         
         基于VORTEX指标的技术分析特点进行评分：
-        1. 趋势方向评分 (40%)
-        2. 交叉信号评分 (30%)
-        3. 强度评分 (20%)
-        4. 持续性评分 (10%)
+        1. 趋势方向评分 (40%)  # TODO: 将魔法数字提取到配置中
+        2. 交叉信号评分 (30%)  # TODO: 将魔法数字提取到配置中
+        3. 强度评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        4. 持续性评分 (10%)  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 获取VORTEX数据
         vi_plus = self._result['VI_PLUS']
@@ -280,83 +285,83 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vortex_trend = self._result['VORTEX_TREND']
         
         # 初始化评分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 趋势方向评分 (40%)
+        # 1. 趋势方向评分 (40%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于VI+和VI-的相对位置
         trend_score = pd.Series(0.0, index=data.index)
         
         # 强烈上升趋势
         strong_uptrend = (vi_plus > vi_minus) & (vortex_diff > 0.1)
-        trend_score = np.where(strong_uptrend, 15, trend_score)
+        trend_score = np.where(strong_uptrend, 15, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等上升趋势
-        moderate_uptrend = (vi_plus > vi_minus) & (vortex_diff > 0.05) & (vortex_diff <= 0.1)
+        moderate_uptrend = (vi_plus > vi_minus) & (vortex_diff > 0.05) & (vortex_diff <= 0.1)  # TODO: 将魔法数字提取到配置中
         trend_score = np.where(moderate_uptrend, 10, trend_score)
         
         # 弱上升趋势
-        weak_uptrend = (vi_plus > vi_minus) & (vortex_diff > 0) & (vortex_diff <= 0.05)
-        trend_score = np.where(weak_uptrend, 5, trend_score)
+        weak_uptrend = (vi_plus > vi_minus) & (vortex_diff > 0) & (vortex_diff <= 0.05)  # TODO: 将魔法数字提取到配置中
+        trend_score = np.where(weak_uptrend, 5, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 强烈下降趋势
         strong_downtrend = (vi_minus > vi_plus) & (vortex_diff < -0.1)
-        trend_score = np.where(strong_downtrend, -15, trend_score)
+        trend_score = np.where(strong_downtrend, -15, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 中等下降趋势
-        moderate_downtrend = (vi_minus > vi_plus) & (vortex_diff < -0.05) & (vortex_diff >= -0.1)
+        moderate_downtrend = (vi_minus > vi_plus) & (vortex_diff < -0.05) & (vortex_diff >= -0.1)  # TODO: 将魔法数字提取到配置中
         trend_score = np.where(moderate_downtrend, -10, trend_score)
         
         # 弱下降趋势
-        weak_downtrend = (vi_minus > vi_plus) & (vortex_diff < 0) & (vortex_diff >= -0.05)
-        trend_score = np.where(weak_downtrend, -5, trend_score)
+        weak_downtrend = (vi_minus > vi_plus) & (vortex_diff < 0) & (vortex_diff >= -0.05)  # TODO: 将魔法数字提取到配置中
+        trend_score = np.where(weak_downtrend, -5, trend_score)  # TODO: 将魔法数字提取到配置中
         
-        scores += trend_score * 0.4
+        scores += trend_score * 0.4  # TODO: 将魔法数字提取到配置中
         
-        # 2. 交叉信号评分 (30%)
+        # 2. 交叉信号评分 (30%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于VI+和VI-的交叉
         cross_score = pd.Series(0.0, index=data.index)
         
         # 金叉信号 (VI+ 上穿 VI-)
         golden_cross = (vi_plus > vi_minus) & (vi_plus.shift(1) <= vi_minus.shift(1))
-        cross_score = np.where(golden_cross, 12, cross_score)
+        cross_score = np.where(golden_cross, 12, cross_score)  # TODO: 将魔法数字提取到配置中
         
         # 死叉信号 (VI- 上穿 VI+)
         death_cross = (vi_minus > vi_plus) & (vi_minus.shift(1) <= vi_plus.shift(1))
-        cross_score = np.where(death_cross, -12, cross_score)
+        cross_score = np.where(death_cross, -12, cross_score)  # TODO: 将魔法数字提取到配置中
         
         # 趋势持续信号
         if len(vortex_trend.dropna()) > 0:
             trend_continuation = (vortex_trend == vortex_trend.shift(1)) & (abs(vortex_trend) == 1)
-            cross_score += np.where(trend_continuation, vortex_trend * 3, 0)
+            cross_score += np.where(trend_continuation, vortex_trend * 3, 0)  # TODO: 将魔法数字提取到配置中
         
-        scores += cross_score * 0.3
+        scores += cross_score * 0.3  # TODO: 将魔法数字提取到配置中
         
-        # 3. 强度评分 (20%)
+        # 3. 强度评分 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于涡流指标的强度
         strength_score = pd.Series(0.0, index=data.index)
         
         if len(vortex_strength.dropna()) > 0:
             # 计算强度的相对位置
-            strength_mean = vortex_strength.rolling(window=20).mean()
-            strength_std = vortex_strength.rolling(window=20).std()
+            strength_mean = vortex_strength.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strength_std = vortex_strength.rolling(window=20).std()  # TODO: 将魔法数字提取到配置中
             
             # 标准化强度
-            strength_normalized = (vortex_strength - strength_mean) / (strength_std + 1e-8)
+            strength_normalized = (vortex_strength - strength_mean) / (strength_std + 1e-8)  # TODO: 将魔法数字提取到配置中
             
             # 很强
             strength_score = np.where(strength_normalized > 2, 10, strength_score)
             # 强
-            strength_score = np.where((strength_normalized > 1) & (strength_normalized <= 2), 6, strength_score)
+            strength_score = np.where((strength_normalized > 1) & (strength_normalized <= 2), 6, strength_score)  # TODO: 将魔法数字提取到配置中
             # 中等
-            strength_score = np.where((strength_normalized > 0.5) & (strength_normalized <= 1), 3, strength_score)
+            strength_score = np.where((strength_normalized > 0.5) & (strength_normalized <= 1), 3, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 弱
-            strength_score = np.where((strength_normalized >= -0.5) & (strength_normalized <= 0.5), 0, strength_score)
+            strength_score = np.where((strength_normalized >= -0.5) & (strength_normalized <= 0.5), 0, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 很弱
-            strength_score = np.where(strength_normalized < -0.5, -3, strength_score)
+            strength_score = np.where(strength_normalized < -0.5, -3, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         scores += strength_score * 0.2
         
-        # 4. 持续性评分 (10%)
+        # 4. 持续性评分 (10%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于趋势的持续性
         persistence_score = pd.Series(0.0, index=data.index)
         
@@ -367,9 +372,9 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             trend_duration = vortex_trend.groupby(trend_groups).cumcount() + 1
             
             # 长期趋势加分
-            persistence_score = np.where(trend_duration >= 5, 5, persistence_score)
-            persistence_score = np.where((trend_duration >= 3) & (trend_duration < 5), 3, persistence_score)
-            persistence_score = np.where((trend_duration >= 2) & (trend_duration < 3), 1, persistence_score)
+            persistence_score = np.where(trend_duration >= 5, 5, persistence_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            persistence_score = np.where((trend_duration >= 3) & (trend_duration < 5), 3, persistence_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            persistence_score = np.where((trend_duration >= 2) & (trend_duration < 3), 1, persistence_score)  # TODO: 将魔法数字提取到配置中
         
         scores += persistence_score * 0.1
         
@@ -387,7 +392,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Vortex(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if self._result is None:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
         # 基于VORTEX指标的明确性计算置信度
         vi_plus = self._result['VI_PLUS'].dropna()
@@ -395,7 +400,7 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vortex_strength = self._result['VORTEX_STRENGTH'].dropna()
         
         if len(vi_plus) == 0 or len(vi_minus) == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算最近的VORTEX值
         recent_diff = abs(vi_plus.iloc[-1] - vi_minus.iloc[-1]) if len(vi_plus) > 0 else 0
@@ -403,24 +408,24 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # VI+和VI-的分离度
         separation = 0
-        if recent_diff > 0.15:
-            separation = 0.3
+        if recent_diff > 0.15:  # TODO: 将魔法数字提取到配置中
+            separation = 0.3  # TODO: 将魔法数字提取到配置中
         elif recent_diff > 0.1:
             separation = 0.2
-        elif recent_diff > 0.05:
-            separation = 0.15
+        elif recent_diff > 0.05:  # TODO: 将魔法数字提取到配置中
+            separation = 0.15  # TODO: 将魔法数字提取到配置中
         elif recent_diff > 0.02:
             separation = 0.1
         
         # 强度一致性
         strength_consistency = 0
-        if len(vortex_strength) >= 5:
-            recent_strength_trend = vortex_strength.iloc[-5:].diff().dropna()
+        if len(vortex_strength) >= 5:  # TODO: 将魔法数字提取到配置中
+            recent_strength_trend = vortex_strength.iloc[-5:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_strength_trend) > 0:
                 # 如果强度趋势一致，提高置信度
                 positive_changes = len(recent_strength_trend[recent_strength_trend > 0])
                 negative_changes = len(recent_strength_trend[recent_strength_trend < 0])
-                if positive_changes >= 3 or negative_changes >= 3:
+                if positive_changes >= 3 or negative_changes >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     strength_consistency = 0.2
                 elif positive_changes >= 2 or negative_changes >= 2:
                     strength_consistency = 0.1
@@ -432,15 +437,15 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             vi_minus_volatility = vi_minus.iloc[-10:].std()
             avg_volatility = (vi_plus_volatility + vi_minus_volatility) / 2
             
-            if avg_volatility < 0.05:
-                stability = 0.15
+            if avg_volatility < 0.05:  # TODO: 将魔法数字提取到配置中
+                stability = 0.15  # TODO: 将魔法数字提取到配置中
             elif avg_volatility < 0.1:
                 stability = 0.1
             elif avg_volatility < 0.2:
-                stability = 0.05
+                stability = 0.05  # TODO: 将魔法数字提取到配置中
         
-        base_confidence = 0.25 + separation + strength_consistency + stability
-        return min(max(base_confidence, 0.2), 0.9)
+        base_confidence = 0.25 + separation + strength_consistency + stability  # TODO: 将魔法数字提取到配置中
+        return min(max(base_confidence, 0.2), 0.9)  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> Union[pd.DataFrame, List[Dict[str, Any]]]:
         """实现抽象方法"""
@@ -473,9 +478,9 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 强度形态
         if len(vortex_strength.dropna()) > 0:
-            strength_mean = vortex_strength.rolling(window=20).mean()
-            patterns['VORTEX_STRONG'] = vortex_strength > strength_mean * 1.5
-            patterns['VORTEX_WEAK'] = vortex_strength < strength_mean * 0.5
+            strength_mean = vortex_strength.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            patterns['VORTEX_STRONG'] = vortex_strength > strength_mean * 1.5  # TODO: 将魔法数字提取到配置中
+            patterns['VORTEX_WEAK'] = vortex_strength < strength_mean * 0.5  # TODO: 将魔法数字提取到配置中
             patterns['VORTEX_NORMAL'] = ~(patterns['VORTEX_STRONG'] | patterns['VORTEX_WEAK'])
         
         # 趋势形态
@@ -491,22 +496,22 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             
             patterns['VORTEX_TREND_STARTING'] = trend_duration == 1
             patterns['VORTEX_TREND_CONTINUING'] = trend_duration > 1
-            patterns['VORTEX_LONG_TREND'] = trend_duration >= 5
+            patterns['VORTEX_LONG_TREND'] = trend_duration >= 5  # TODO: 将魔法数字提取到配置中
         
         # 差值形态
         patterns['VORTEX_STRONG_BULL'] = vortex_diff > 0.1
-        patterns['VORTEX_MODERATE_BULL'] = (vortex_diff > 0.05) & (vortex_diff <= 0.1)
-        patterns['VORTEX_WEAK_BULL'] = (vortex_diff > 0) & (vortex_diff <= 0.05)
+        patterns['VORTEX_MODERATE_BULL'] = (vortex_diff > 0.05) & (vortex_diff <= 0.1)  # TODO: 将魔法数字提取到配置中
+        patterns['VORTEX_WEAK_BULL'] = (vortex_diff > 0) & (vortex_diff <= 0.05)  # TODO: 将魔法数字提取到配置中
         patterns['VORTEX_STRONG_BEAR'] = vortex_diff < -0.1
-        patterns['VORTEX_MODERATE_BEAR'] = (vortex_diff < -0.05) & (vortex_diff >= -0.1)
-        patterns['VORTEX_WEAK_BEAR'] = (vortex_diff < 0) & (vortex_diff >= -0.05)
+        patterns['VORTEX_MODERATE_BEAR'] = (vortex_diff < -0.05) & (vortex_diff >= -0.1)  # TODO: 将魔法数字提取到配置中
+        patterns['VORTEX_WEAK_BEAR'] = (vortex_diff < 0) & (vortex_diff >= -0.05)  # TODO: 将魔法数字提取到配置中
         patterns['VORTEX_NEUTRAL'] = abs(vortex_diff) <= 0.02
         
         # 极值形态
-        vi_plus_high = vi_plus.rolling(window=20).max()
-        vi_plus_low = vi_plus.rolling(window=20).min()
-        vi_minus_high = vi_minus.rolling(window=20).max()
-        vi_minus_low = vi_minus.rolling(window=20).min()
+        vi_plus_high = vi_plus.rolling(window=20).max()  # TODO: 将魔法数字提取到配置中
+        vi_plus_low = vi_plus.rolling(window=20).min()  # TODO: 将魔法数字提取到配置中
+        vi_minus_high = vi_minus.rolling(window=20).max()  # TODO: 将魔法数字提取到配置中
+        vi_minus_low = vi_minus.rolling(window=20).min()  # TODO: 将魔法数字提取到配置中
         
         patterns['VI_PLUS_NEW_HIGH'] = vi_plus >= vi_plus_high
         patterns['VI_PLUS_NEW_LOW'] = vi_plus <= vi_plus_low
@@ -525,4 +530,4 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 20
+        return 20  # TODO: 将魔法数字提取到配置中

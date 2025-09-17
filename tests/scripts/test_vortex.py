@@ -21,6 +21,7 @@ from indicators.vortex import VORTEX
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -39,8 +40,8 @@ def get_test_data(code: str = "000001.SZ", limit: int = 100) -> pd.DataFrame:
             low,
             close,
             vol as volume,
-            amount as turnover
-        FROM stock_info WHERE 1=1
+            amount as turnover_rate
+        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
         WHERE ts_code = '{code}'
         ORDER BY trade_date DESC
         LIMIT {limit}

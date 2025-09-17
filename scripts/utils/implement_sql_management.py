@@ -11,6 +11,7 @@ import re
 import logging
 from pathlib import Path
 from typing import Dict, List, Set, Tuple
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到Python路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -143,8 +144,7 @@ class SQLQueryExtractor:
         # 常见的股票数据查询模板
         templates['get_stock_data'] = """
 SELECT code, date, open, high, low, close, volume
-FROM stock_info 
-WHERE code = %(code)s 
+FROM stock_info WHERE level = %(level)s AND code = %(code)s 
 AND date >= %(start_date)s 
 AND date <= %(end_date)s
 ORDER BY date
@@ -152,8 +152,7 @@ ORDER BY date
         
         templates['get_batch_stock_data'] = """
 SELECT code, date, open, high, low, close, volume
-FROM stock_info 
-WHERE code IN %(codes)s 
+FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN %(codes)s 
 AND date >= %(start_date)s 
 AND date <= %(end_date)s
 ORDER BY code, date
@@ -161,30 +160,26 @@ ORDER BY code, date
         
         templates['get_stock_list'] = """
 SELECT DISTINCT code 
-FROM stock_info 
-WHERE date >= %(min_date)s
+FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= %(min_date)s
 ORDER BY code
 """
         
         templates['get_latest_data'] = """
 SELECT code, date, open, high, low, close, volume
-FROM stock_info 
-WHERE date = (SELECT MAX(date) FROM stock_info WHERE code = %(code)s)
+FROM stock_info WHERE level = %(level)s AND date = (SELECT MAX(date) FROM stock_info WHERE level = %(level)s AND code = %(code)s)
 AND code = %(code)s
 """
         
         templates['count_stock_records'] = """
 SELECT code, COUNT(*) as record_count
-FROM stock_info 
-WHERE date >= %(start_date)s
+FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= %(start_date)s
 GROUP BY code
 ORDER BY record_count DESC
 """
         
         templates['get_date_range'] = """
 SELECT MIN(date) as min_date, MAX(date) as max_date
-FROM stock_info
-WHERE code = %(code)s
+FROM stock_info WHERE level = %(level)s AND code = %(code)s
 """
         
         return templates

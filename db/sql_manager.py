@@ -23,7 +23,7 @@ class QueryType(Enum):
     STOCK_INFO = "stock_info"
     INDICATOR_DATA = "indicator_data"
     STRATEGY_CONFIG = "strategy_config"
-    INDUSTRY_LIST = "industry_list"
+    SAVE_STRATEGY_CONFIG = "save_strategy_config"
     DATE_RANGE = "date_range"
     STOCK_COUNT = "stock_count"
     LATEST_DATA = "latest_data"
@@ -45,9 +45,8 @@ class SQLManager:
         """初始化查询语句模板"""
         return {
             QueryType.STOCK_DATA: """
-                SELECT code, name, date, open, high, low, close, volume, 
-                       turnover_rate, price_change, price_range, industry
-                FROM stock_info 
+                SELECT code, name, date, open, high, low, close, volume,
+                       turnover FROM stock_info 
                 WHERE code = %(code)s 
                 AND date BETWEEN %(start_date)s AND %(end_date)s
                 AND level = %(level)s
@@ -55,9 +54,8 @@ class SQLManager:
             """,
             
             QueryType.BATCH_STOCK_DATA: """
-                SELECT code, name, date, open, high, low, close, volume, 
-                       turnover_rate, price_change, price_range, industry
-                FROM stock_info 
+                SELECT code, name, date, open, high, low, close, volume,
+                       turnover FROM stock_info 
                 WHERE code IN %(codes)s
                 AND date BETWEEN %(start_date)s AND %(end_date)s
                 AND level = %(level)s
@@ -65,22 +63,20 @@ class SQLManager:
             """,
             
             QueryType.STOCK_LIST: """
-                SELECT DISTINCT code, name, industry
-                FROM stock_info 
+                SELECT DISTINCT code, name FROM stock_info
                 WHERE date = (SELECT MAX(date) FROM stock_info)
                 AND level = %(level)s
                 ORDER BY code
             """,
             
             QueryType.STOCK_INFO: """
-                SELECT code, name, industry, 
+                SELECT code, name 
                        MAX(date) as latest_date,
                        COUNT(*) as record_count
                 FROM stock_info 
                 WHERE code = %(code)s
                 AND level = %(level)s
-                GROUP BY code, name, industry
-            """,
+                GROUP BY code, name""",
             
             QueryType.INDICATOR_DATA: """
                 SELECT * FROM %(table_name)s
@@ -90,39 +86,36 @@ class SQLManager:
             """,
             
             QueryType.STRATEGY_CONFIG: """
-                SELECT config FROM strategy_definitions 
-                WHERE strategy_id = %(strategy_id)s 
+                SELECT config FROM strategy_definitions
+                WHERE strategy_id = %(strategy_id)s
                 LIMIT 1
             """,
-            
-            QueryType.INDUSTRY_LIST: """
-                SELECT DISTINCT industry, COUNT(*) as stock_count
-                FROM stock_info 
-                WHERE industry IS NOT NULL 
-                AND date = (SELECT MAX(date) FROM stock_info)
-                AND level = %(level)s
-                GROUP BY industry
-                ORDER BY industry
-            """,
-            
-            QueryType.DATE_RANGE: """
-                SELECT MIN(date) as start_date, MAX(date) as end_date
-                FROM stock_info 
-                WHERE code = %(code)s
-                AND level = %(level)s
+
+            QueryType.SAVE_STRATEGY_CONFIG: """
+                INSERT INTO strategy_definitions (strategy_id, config, created_at, updated_at, is_active)
+                VALUES (%(strategy_id)s, %(config)s, NOW(), NOW(), 1)
+                ON DUPLICATE KEY UPDATE
+                config = VALUES(config),
+                updated_at = NOW()
             """,
             
             QueryType.STOCK_COUNT: """
                 SELECT COUNT(DISTINCT code) as total_stocks
-                FROM stock_info 
+                FROM stock_info
                 WHERE date = (SELECT MAX(date) FROM stock_info)
+                AND level = %(level)s
+            """,
+
+            QueryType.DATE_RANGE: """
+                SELECT MIN(date) as start_date, MAX(date) as end_date
+                FROM stock_info
+                WHERE code = %(code)s
                 AND level = %(level)s
             """,
             
             QueryType.LATEST_DATA: """
-                SELECT code, name, date, open, high, low, close, volume, 
-                       turnover_rate, price_change, price_range, industry
-                FROM stock_info 
+                SELECT code, name, date, open, high, low, close, volume,
+                       turnover FROM stock_info 
                 WHERE code = %(code)s
                 AND level = %(level)s
                 ORDER BY date DESC
@@ -160,7 +153,7 @@ class SQLManager:
             QueryType.STOCK_INFO: ['code', 'level'],
             QueryType.INDICATOR_DATA: ['table_name', 'code', 'start_date', 'end_date'],
             QueryType.STRATEGY_CONFIG: ['strategy_id'],
-            QueryType.INDUSTRY_LIST: ['level'],
+            QueryType.SAVE_STRATEGY_CONFIG: ['strategy_id', 'config'],
             QueryType.DATE_RANGE: ['code', 'level'],
             QueryType.STOCK_COUNT: ['level'],
             QueryType.LATEST_DATA: ['code', 'level', 'limit'],

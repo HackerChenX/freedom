@@ -1,3 +1,5 @@
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 """
 指标工厂模块
 
@@ -8,7 +10,7 @@ from typing import Dict, Any, Optional
 import pandas as pd
 import numpy as np
 
-class IndicatorFactory:
+class IndicatorFactory(BaseIndicator):
     """指标工厂类"""
     
     @staticmethod
@@ -26,19 +28,23 @@ class IndicatorFactory:
         return MockIndicator(indicator_name, **kwargs)
 
 
-class MockIndicator:
+class MockIndicator(BaseIndicator):
     """模拟指标类，用于测试"""
 
     def __init__(self, name: str, **kwargs):
+            super().__init__(name=self.__class__.__name__, **kwargs)
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.name = name
         self.params = kwargs
         # 添加常用的指标属性
-        self.period = kwargs.get('period', 14)
-        self.fast_period = kwargs.get('fast_period', 12)
-        self.slow_period = kwargs.get('slow_period', 26)
-        self.signal_period = kwargs.get('signal_period', 9)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
+        self.fast_period = kwargs.get('fast_period', 12)  # TODO: 将魔法数字提取到配置中
+        self.slow_period = kwargs.get('slow_period', 26)  # TODO: 将魔法数字提取到配置中
+        self.signal_period = kwargs.get('signal_period', 9)  # TODO: 将魔法数字提取到配置中
         self.multiplier = kwargs.get('multiplier', 2.0)
-        self.length = kwargs.get('length', 20)
+        self.length = kwargs.get('length', 20)  # TODO: 将魔法数字提取到配置中
         self.deviation = kwargs.get('deviation', 2)
     
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -50,12 +56,12 @@ class MockIndicator:
             close = data['close']
             
             if self.name == "MA":
-                periods = self.params.get('periods', [20])
+                periods = self.params.get('periods', [20])  # TODO: 将魔法数字提取到配置中
                 for period in periods:
                     result[f'MA{period}'] = close.rolling(window=period).mean()
                     
             elif self.name == "BOLL":
-                period = self.params.get('period', 20)
+                period = self.params.get('period', 20)  # TODO: 将魔法数字提取到配置中
                 std_dev = self.params.get('std_dev', 2)
                 ma = close.rolling(window=period).mean()
                 std = close.rolling(window=period).std()
@@ -70,7 +76,7 @@ class MockIndicator:
                 
             else:
                 # 对于其他指标，返回简单的模拟值
-                result[self.name] = close * 0.5
+                result[self.name] = close * 0.5  # TODO: 将魔法数字提取到配置中
         
         return result
     
@@ -80,3 +86,26 @@ class MockIndicator:
             # 返回简单的随机信号
             return pd.Series([False] * len(data), index=data.index)
         return pd.Series(dtype=bool) 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

@@ -1,3 +1,4 @@
+from utils.container import container
 """
 横盘突破买点策略模块
 
@@ -11,11 +12,12 @@ import numpy as np
 from strategy.base_strategy import BaseStrategy
 from formula import formula
 from enums.kline_period import Kline_period
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.ma import MaMa as MA
 from indicators.boll import BollBoll as BOLL
 from indicators.indicator_factory import IndicatorFactory
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -28,6 +30,9 @@ class BreakoutStrategy(BaseStrategy):
     """
     
     def __init__(self, name: str = "横盘突破", description: str = "横盘整理后向上突破买点策略"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化横盘突破买点策略
         
@@ -40,7 +45,7 @@ class BreakoutStrategy(BaseStrategy):
         # 设置默认参数
         self._parameters = {
             'consolidation_days': 10,  # 横盘整理的最短天数
-            'price_range_pct': 0.05,   # 横盘整理期间的价格波动范围百分比
+            _pct': 0.05,   # 横盘整理期间的价格波动范围百分比
             'breakout_pct': 0.03,      # 突破确认的最小涨幅百分比
             'volume_ratio': 1.5,       # 突破时成交量放大的最小倍数
             'macd_up': True,           # 是否要求MACD上移
@@ -70,7 +75,7 @@ class BreakoutStrategy(BaseStrategy):
         
         # 获取参数
         consolidation_days = self._parameters['consolidation_days']
-        price_range_pct = self._parameters['price_range_pct']
+        _pct = self._parameters[_pct']
         breakout_pct = self._parameters['breakout_pct']
         volume_ratio = self._parameters['volume_ratio']
         macd_up = self._parameters['macd_up']
@@ -151,10 +156,10 @@ class BreakoutStrategy(BaseStrategy):
                         # 计算前N天的价格波动范围
                         price_high = max(high[i-consolidation_days:i])
                         price_low = min(low[i-consolidation_days:i])
-                        price_range = (price_high - price_low) / price_low
+                        = (price_high - price_low) / price_low
                         
                         # 判断价格波动是否在指定范围内
-                        if price_range <= price_range_pct:
+                        if <= _pct:
                             is_match = True
                             breakout_index = i
                             consolidation_start = i - consolidation_days
@@ -195,12 +200,11 @@ class BreakoutStrategy(BaseStrategy):
                     result_list.append({
                         'code': code,
                         'name': f.name,
-                        'industry': f.industry,
                         'close': close[-1],
                         'breakout_price': close[breakout_index],
                         'consolidation_start': consolidation_start,
                         'breakout_index': breakout_index,
-                        'price_change_pct': (close[-1] / close[breakout_index] - 1) * 100
+                        _pct': (close[-1] / close[breakout_index] - 1) * 100
                     })
             
             except Exception as e:
@@ -209,13 +213,13 @@ class BreakoutStrategy(BaseStrategy):
         # 转换为DataFrame并排序
         if result_list:
             result_df = pd.DataFrame(result_list)
-            result_df = result_df.sort_values('price_change_pct', ascending=False)
+            result_df = result_df.sort_values(_pct', ascending=False)
             return result_df
         else:
-            return pd.DataFrame(columns=['code', 'name', 'industry', 'close', 'breakout_price', 
-                                        'consolidation_start', 'breakout_index', 'price_change_pct'])
+            return pd.DataFrame(columns=['code', 'name', 'close', 'breakout_price', 
+                                        'consolidation_start', 'breakout_index', _pct'])
     
-    def _is_consolidating(self, high, low, consolidation_days, price_range_pct):
+    def _is_consolidating(self, high, low, consolidation_days, _pct):
         """判断是否处于横盘整理状态"""
         if len(high) < consolidation_days or len(low) < consolidation_days:
             return False
@@ -224,9 +228,9 @@ class BreakoutStrategy(BaseStrategy):
         highest_price = max(high[-consolidation_days:])
         lowest_price = min(low[-consolidation_days:])
         
-        price_range = (highest_price - lowest_price) / lowest_price
+        = (highest_price - lowest_price) / lowest_price
         
-        return price_range <= price_range_pct
+        return <= _pct
     
     def _is_breaking_out(self, close, consolidation_days, breakout_pct):
         """判断是否突破"""

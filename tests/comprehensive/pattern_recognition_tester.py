@@ -34,6 +34,7 @@ from utils.decorators import performance_monitor, exception_handler
 from db.managers.query_executor import UnifiedQueryExecutor
 from indicators.pattern.pattern_detector import PatternDetector
 from indicators.pattern.pattern_registry import PatternRegistry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger('pattern_recognition_tester')
 
@@ -393,8 +394,7 @@ class PatternRecognitionTester:
             for stock_code in stocks:
                 query = f"""
                 SELECT code, name, date, open, high, low, close, volume, turnover_rate
-                FROM stock_info 
-                WHERE code = '{stock_code}'
+                FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
                 AND level = '日线'
                 AND date >= '2024-01-01' AND date <= '2024-12-31'
                 ORDER BY date ASC

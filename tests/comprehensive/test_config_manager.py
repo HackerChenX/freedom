@@ -619,7 +619,8 @@ def main():
         print("配置验证通过")
     
     # 打印配置
-    print("\nfrom config.config import get_config\n配置信息:")
+    print("\nfrom config.unified_config_manager import get_config\n配置信息:")
+from db.sql_manager import SQLManager, QueryType
     print(f"超时时间: {config.execution.timeout_seconds}秒")
     print(f"性能阈值: {config.execution.performance_threshold}")
     print(f"最大工作线程数: {config.execution.max_workers}")

@@ -276,7 +276,7 @@ class DiskCache(Generic[K, V]):
                 'hit_rate': hit_rate
             }
 
-class CacheManager:
+class CacheService:
     """多级缓存管理器"""
     
     def __init__(self, memory_capacity: int = 1000, memory_ttl: int = 3600, 
@@ -432,16 +432,16 @@ class CacheManager:
 _cache_manager = None
 
 
-def get_cache_manager() -> CacheManager:
+def get_cache_manager() -> CacheService:
     """
     获取全局缓存管理器实例
     
     Returns:
-        CacheManager: 缓存管理器实例
+        CacheService: 缓存管理器实例
     """
     global _cache_manager
     if _cache_manager is None:
-        _cache_manager = CacheManager()
+        _cache_manager = CacheService()
     return _cache_manager
 
 
@@ -450,7 +450,7 @@ def main():
     print("测试缓存管理器...")
     
     # 创建缓存管理器
-    cache_manager = CacheManager(memory_capacity=100, disk_cache_dir="test_cache")
+    cache_manager = CacheService(memory_capacity=100, disk_cache_dir="test_cache")
     
     # 测试缓存操作
     print("\n测试内存缓存...")

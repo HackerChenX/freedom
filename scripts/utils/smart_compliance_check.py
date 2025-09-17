@@ -10,6 +10,7 @@ import os
 import re
 from pathlib import Path
 from collections import defaultdict
+from db.sql_manager import SQLManager, QueryType
 
 def check_compliance():
     """检查项目合规性"""

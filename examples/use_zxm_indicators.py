@@ -16,6 +16,7 @@ sys.path.append(root_dir)
 
 # 导入统一指标注册系统
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 
 def generate_sample_data_Indicators(days=180):

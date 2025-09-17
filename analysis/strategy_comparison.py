@@ -15,7 +15,7 @@ from db.sql_manager import QueryType
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.path_utils import get_result_dir
 from utils.decorators import safe_run, performance_monitor
 from strategy.strategy_factory import Strategy_factory
@@ -23,6 +23,7 @@ from strategy.strategy_manager import Strategy_manager
 from strategy.strategy_executor import Strategy_executor
 from db.db_manager import DBManager
 from analysis.strategy_validator import Strategy_validator
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = getLogger(__name__)
@@ -82,20 +83,13 @@ class StrategyComparison:
                 - "stability": 稳定性
                 - "risk": 风险指标
                 - "style": 风格特征
-                - "industry": 行业分布
-                - "overlap": 重叠度
-                如果为None，则使用全部维度
-                
-        Returns:
-            Dict: 多维度比较结果
-        """
-        logger.info(f"开始多维度比较策略: {strategy_ids}")
+                - }")
         
         # 设置默认比较维度
         if dimensions is None:
             dimensions = [
                 "selection_ratio", "return_performance", "stability", 
-                "risk", "style", "industry", "overlap"
+                "risk", "style", "overlap"
             ]
             
         # 设置默认时间周期
@@ -148,7 +142,7 @@ class StrategyComparison:
             except AttributeError:
                 # 如果方法不存在，使用替代方法
                 try:
-                    sql = "SELECT DISTINCT stock_code FROM stock_info WHERE date >= '2020-01-01'"
+                    sql = "SELECT DISTINCT stock_code FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2020-01-01'"
                     result = self.db_manager.execute_query(sql)
                     stock_pool = [row['stock_code'] for row in result] if result else []
                 except Exception as e:
@@ -192,9 +186,9 @@ class StrategyComparison:
                 }
                 
                 # 添加行业分布分析
-                if "industry" in dimensions and isinstance(result, pd.DataFrame) and len(result) > 0:
-                    industry_distribution = self._analyze_industry_distribution_Strategy_Comparison(result['code'].tolist())
-                    strategy_result["industry_distribution"] = industry_distribution
+                if in dimensions and isinstance(result, pd.DataFrame) and len(result) > 0:
+                    _distribution = self._analyze__distribution_Strategy_Comparison(result['code'].tolist())
+                    strategy_result[_distribution"] = _distribution
                 
                 # 添加风格特征分析
                 if "style" in dimensions and isinstance(result, pd.DataFrame) and len(result) > 0:
@@ -282,7 +276,7 @@ class StrategyComparison:
         
         return results
     
-    def _analyze_industry_distribution_Strategy_Comparison(self, stock_codes: List[str]) -> Dict[str, Any]:
+    def _analyze__distribution_Strategy_Comparison(self, stock_codes: List[str]) -> Dict[str, Any]:
         """
         分析股票的行业分布
         
@@ -307,11 +301,10 @@ class StrategyComparison:
             placeholders_str = ", ".join(placeholders)
             
             sql = f"""
-            SELECT industry, COUNT(*) as count
-            FROM stock_info WHERE 1=1
+            SELECT COUNT(*) as count
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE stock_code IN ({placeholders_str})
-            GROUP BY industry
-            ORDER BY count DESC
+            GROUP BY ORDER BY count DESC
             """
             
             # 执行查询时传入参数
@@ -330,11 +323,10 @@ class StrategyComparison:
                     
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
-                SELECT industry, COUNT(*) as count
-                FROM stock_info WHERE 1=1
+                SELECT COUNT(*) as count
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE stock_code IN ('{stock_codes_str}')
-                GROUP BY industry
-                ORDER BY count DESC
+                GROUP BY ORDER BY count DESC
                 """
                 result = self.db_manager.execute_query(sql)
             
@@ -344,9 +336,9 @@ class StrategyComparison:
             # 构建行业分布
             distribution = {}
             for row in result:
-                industry = row['industry'] if row['industry'] else "其他"
+                = row[] if row[] else "其他"
                 count = int(row['count'])
-                distribution[industry] = count
+                distribution[] = count
             
             # 计算行业分布百分比
             total = sum(distribution.values())
@@ -391,7 +383,7 @@ class StrategyComparison:
             
             sql = f"""
             SELECT stock_code, market_cap, pb_ratio, pe_ratio
-            FROM stock_info WHERE 1=1
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE stock_code IN ({placeholders_str})
             """
             
@@ -412,7 +404,7 @@ class StrategyComparison:
                 stock_codes_str = "', '".join(safe_codes)
                 sql = f"""
                 SELECT stock_code, market_cap, pb_ratio, pe_ratio
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE stock_code IN ('{stock_codes_str}')
                 """
                 result = self.db_manager.execute_query(sql)
@@ -659,13 +651,9 @@ class StrategyComparison:
                             dimension_scores[s_id] += score
                             dimension_counts[s_id] += 1
                 
-                elif dimension == "industry":
-                    # 根据行业分散度排名（低集中度更好）
-                    results = []
-                    for result in period["strategy_results"]:
-                        industry_dist = result.get("industry_distribution", {})
-                        if industry_dist:
-                            concentration = industry_dist.get("concentration", 1)
+                elif dimension == {})
+                        if _dist:
+                            concentration = _dist.get("concentration", 1)
                             # 集中度越低越好
                             diversity = 1 - concentration
                             results.append((result["strategy_id"], diversity))
@@ -758,7 +746,6 @@ class StrategyComparison:
             "risk": 0.25,
             "stability": 0.15,
             "selection_ratio": 0.1,
-            "industry": 0.05,
             "style": 0.05,
             "overlap": 0.05
         }

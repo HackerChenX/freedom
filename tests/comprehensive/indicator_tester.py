@@ -36,6 +36,7 @@ from db.managers.query_executor import UnifiedQueryExecutor
 from enums.indicator_enum import Indicator_enum
 from indicators.factory import IndicatorFactory
 from indicators.base_indicator import BaseIndicator
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger('indicator_tester')
 
@@ -109,7 +110,7 @@ class TechnicalIndicatorTester:
         
         # ZXM指标列表
         self.zxm_indicators = [
-            "ZXM_ABSORB", "ZXM_TURNOVER", "ZXM_DAILY_MACD", "ZXM_MA_CALLBACK",
+            "ZXM_ABSORB", "ZXM_turnover_rate", "ZXM_DAILY_MACD", "ZXM_MA_CALLBACK",
             "ZXM_RISE_ELASTICITY", "ZXM_AMPLITUDE_ELASTICITY", "ZXM_ELASTICITY_SCORE",
             "ZXM_BUYPOINT_SCORE", "ZXM_DAILY_TREND_UP"
         ]
@@ -642,8 +643,7 @@ class TechnicalIndicatorTester:
             # 从数据库获取测试数据
             query = """
             SELECT code, name, date, open, high, low, close, volume, turnover_rate
-            FROM stock_info 
-            WHERE code = '000001'
+            FROM stock_info WHERE level = %(level)s AND code = '000001'
             AND level = '日线'
             AND date >= '2024-01-01' AND date <= '2024-12-31'
             ORDER BY date ASC

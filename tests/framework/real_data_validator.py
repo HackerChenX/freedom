@@ -17,7 +17,8 @@ from clickhouse_driver import Client
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -93,8 +94,7 @@ class RealDataValidator:
                     close,
                     volume,
                     ROW_NUMBER() OVER (PARTITION BY date ORDER BY code) as rn
-                FROM stock_info
-                WHERE volume > 0
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND volume > 0
                 AND close > 0
                 AND open > 0
                 AND high > 0

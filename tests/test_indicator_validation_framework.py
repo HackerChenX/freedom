@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from config import get_config
+from config.unified_config_manager import get_config
 """
 指标验证框架测试
 
@@ -19,6 +19,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
 from analysis.engines.indicator_validation_framework import (
+from db.sql_manager import SQLManager, QueryType
     Indicator_validation_framework,
     Indicator_validation_config,
     Validation_mode,

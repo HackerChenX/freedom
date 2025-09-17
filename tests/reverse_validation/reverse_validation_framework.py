@@ -27,6 +27,7 @@ from indicators.pattern_registry import get_pattern_registry, PatternRegistry
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from utils.dependency_injection import get_service, get_logger
 from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

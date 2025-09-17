@@ -1,4 +1,4 @@
-from config.config import get_config\n"""
+from config.unified_config_manager import get_config\n"""
 策略执行器性能测试模块
 
 用于测试策略执行引擎在不同负载下的性能表现
@@ -24,7 +24,7 @@ sys.path.append(root_dir)
 
 from strategy.strategy_parser import StrategyParser
 from strategy.strategy_executor import StrategyExecutor
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, setup_logger
 from strategy.base_strategy import BaseStrategy
@@ -157,8 +157,8 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
         self.strategy_executor.clear_cache()
     
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_executor_performance_baseline(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试执行器基准性能"""
         # 配置模拟对象行为
@@ -189,8 +189,8 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
         self.assertLess(execution_time, 30, "执行时间不应超过30秒")
     
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_executor_performance_with_cache(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试执行器使用缓存时的性能"""
         # 配置模拟对象行为
@@ -234,8 +234,8 @@ class TestStrategyExecutorPerformance(unittest.TestCase):
         self.assertLess(mock_get_kline.call_count, 10, "使用缓存后应减少数据库调用")
     
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_executor_performance_scaling(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试执行器在不同工作线程数下的性能表现"""
         # 配置模拟对象行为

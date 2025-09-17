@@ -17,6 +17,7 @@ from datetime import datetime
 from pathlib import Path
 
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 
 class TestLogManager:

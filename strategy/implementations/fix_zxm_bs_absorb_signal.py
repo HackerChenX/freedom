@@ -25,7 +25,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(root_dir)
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, init_logging
 

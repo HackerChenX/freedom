@@ -23,7 +23,7 @@ from typing import Dict, List, Any
 # 添加项目根目录到路径
 sys.path.append(os.path.join(os.path.dirname(__file__), '../..'))
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from tests.unified_indicator_testing.components.buypoint_analyzer import BuypointAnalyzer
 from tests.unified_indicator_testing.components.stockinfo_compatible_data_generator import StockInfoCompatibleDataGenerator
 

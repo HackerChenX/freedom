@@ -100,6 +100,7 @@ class FocusedSQLMigrator:
             'analysis': {
                 'imports': '''from db.query_executor import get_query_executor
 from db.sql_manager import QueryType''',
+from db.sql_manager import SQLManager, QueryType
                 'initialization': 'query_executor = get_query_executor()',
                 'stock_data_query': 'query_executor.get_stock_data(code=stock_code, start_date=start_date, end_date=end_date, level="日线")',
                 'stock_count_query': 'query_executor.get_stock_count()',
@@ -108,6 +109,7 @@ from db.sql_manager import QueryType''',
             'strategy': {
                 'imports': '''from db.query_executor import get_query_executor
 from db.sql_manager import QueryType''',
+from db.sql_manager import SQLManager, QueryType
                 'initialization': 'query_executor = get_query_executor()',
                 'stock_data_query': 'query_executor.get_stock_data(code=code, start_date=start_date, end_date=end_date, level=level)',
                 'batch_query': 'query_executor.get_batch_stock_data(codes=codes, start_date=start_date, end_date=end_date, level=level)'
@@ -115,12 +117,14 @@ from db.sql_manager import QueryType''',
             'test': {
                 'imports': '''from db.query_executor import get_query_executor
 from db.sql_manager import QueryType''',
+from db.sql_manager import SQLManager, QueryType
                 'initialization': 'query_executor = get_query_executor()',
                 'test_query': 'query_executor.execute_query(QueryType.STOCK_DATA, test_params)'
             },
             'script': {
                 'imports': '''from db.query_executor import get_query_executor
 from db.sql_manager import QueryType''',
+from db.sql_manager import SQLManager, QueryType
                 'initialization': 'query_executor = get_query_executor()',
                 'custom_query': 'query_executor.execute_query(QueryType.CUSTOM, custom_params)'
             }

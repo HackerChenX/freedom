@@ -199,7 +199,7 @@ class QueryExecutor:
         }
         return self.execute_query(QueryType.INDICATOR_DATA, params)
     
-    def get_industry_list(self, level: str = '日线') -> pd.DataFrame:
+    def get__list(self, level: str = '日线') -> pd.DataFrame:
         """获取行业列表
         
         Args:
@@ -209,7 +209,7 @@ class QueryExecutor:
             pd.DataFrame: 行业列表
         """
         params = {'level': level}
-        return self.execute_query(QueryType.INDUSTRY_LIST, params)
+        return self.execute_query(QueryType._LIST, params)
     
     def get_date_range_query_executor(self, code: str, level: str = '日线') -> pd.DataFrame:
         """获取股票数据日期范围

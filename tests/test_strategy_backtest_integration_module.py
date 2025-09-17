@@ -36,7 +36,7 @@ from strategy.bidirectional_validation_system import (
     BidirectionalValidationSystem, ValidationLevel
 )
 from strategy.integrated_analysis_controller import IntegratedAnalysisController
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

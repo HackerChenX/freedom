@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -15,7 +16,7 @@ import operator
 from typing import Dict, List, Any, Union, Optional, Callable
 from dataclasses import dataclass
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor
 
 logger = get_logger(__name__)
@@ -46,6 +47,9 @@ class ConditionParser:
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化条件解析器"""
         self.operators = {
             '>': operator.gt,

@@ -13,6 +13,7 @@ import json
 import pandas as pd
 
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

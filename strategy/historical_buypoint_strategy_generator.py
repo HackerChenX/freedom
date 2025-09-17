@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -22,12 +24,13 @@ from dataclasses import dataclass, asdict, field
 from collections import defaultdict, Counter
 from enum import Enum
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from indicators.complete_indicator_registry import CompleteIndicatorRegistry
 from utils.financial_statistical_validator import get_statistical_validator, FinancialStatisticalValidator
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -114,6 +117,9 @@ class TechnicalFeatureExtractor:
     """技术特征提取器 - 核心算法组件"""
 
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化特征提取器"""
         self.data_manager = get_container().resolve(DataAccessInterface)
         # Create indicator registry instance directly as it may not be registered in container
@@ -350,6 +356,9 @@ class PatternRecognitionEngine:
     """模式识别引擎 - 从特征中识别技术模式"""
 
     def __init__(self, method: PatternRecognitionMethod = PatternRecognitionMethod.STATISTICAL):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化模式识别引擎"""
         self.method = method
         self.min_confidence = 0.6
@@ -632,6 +641,9 @@ class HistoricalBuyPointStrategyGenerator:
     def __init__(self,
                  generation_mode: StrategyGenerationMode = StrategyGenerationMode.BALANCED,
                  pattern_method: PatternRecognitionMethod = PatternRecognitionMethod.STATISTICAL):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化策略生成器
 

@@ -12,6 +12,6 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 # from indicators.volume.enhanced_vr import EnhancedVR
 
 # 版本信息
-__version__ = '0.1.0'
+__version__ = "0.1.0"
 
 __all__ = []

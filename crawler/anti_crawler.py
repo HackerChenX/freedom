@@ -10,6 +10,7 @@ import requests
 from typing import List, Dict, Optional
 from utils.logger import get_logger
 from config.unified_config import get_config_value
+from db.sql_manager import SQLManager, QueryType
 
 # 可选导入redis
 try:

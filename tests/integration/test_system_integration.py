@@ -12,6 +12,7 @@ from pathlib import Path
 
 from tests.comprehensive.system_manager import initialize_system, shutdown_system
 from tests.comprehensive.test_config_manager import get_config_manager
+from db.sql_manager import SQLManager, QueryType
 
 
 class SystemIntegrationTest(unittest.TestCase):

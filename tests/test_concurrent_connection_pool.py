@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 并发连接池测试脚本
 
@@ -17,6 +17,7 @@ import pandas as pd
 
 from db.enhanced_connection_pool import get_connection_pool, initialize_connection_pool
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -67,7 +68,7 @@ class ConcurrentConnectionPoolTester:
                 with self.pool.get_connection() as conn:
                     # 执行简单的测试查询
                     result = conn.query_dataframe(
-                        "SELECT code, COUNT(*) as count FROM stock_info WHERE level = '日线' GROUP BY code LIMIT 10"
+                        "SELECT code, COUNT(*) as count FROM stock_info WHERE code = %(code)s AND level = '日线' GROUP BY code LIMIT 10"
                     )
                     
                     if not result.empty:

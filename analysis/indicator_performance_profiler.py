@@ -20,7 +20,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 
 logger = getLogger(__name__)

@@ -16,6 +16,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from tests.comprehensive.stock_selection_tester import ComprehensiveStockSelectionTester
+from db.sql_manager import SQLManager, QueryType
 
 
 async def test_system():

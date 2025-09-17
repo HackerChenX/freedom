@@ -82,7 +82,7 @@ class StockPricePusher:
                 'change': round(base_price * change_percent / 100, 2),
                 'change_percent': round(change_percent, 2),
                 'volume': volume,
-                'turnover': round(base_price * volume, 2),
+                'turnover_rate': round(base_price * volume, 2),
                 'high': round(base_price * random.uniform(1.0, 1.05), 2),
                 'low': round(base_price * random.uniform(0.95, 1.0), 2),
                 'open': round(base_price * random.uniform(0.98, 1.02), 2),
@@ -326,6 +326,7 @@ if __name__ == "__main__":
         
         # 启动WebSocket服务器
         from api.websocket_server import start_websocket_server
+from db.sql_manager import SQLManager, QueryType
         await start_websocket_server()
         
         # 启动实时数据推送

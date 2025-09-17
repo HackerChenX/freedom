@@ -35,7 +35,7 @@ import hashlib
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.unified_base_strategy import UnifiedBaseStrategy, PeriodConfig
 from utils.decorators import performance_monitor, exception_handler
@@ -525,8 +525,7 @@ class StrategyPerformanceEvaluator:
             # 从ClickHouse获取基准数据
             query = f"""
             SELECT date, close
-            FROM stock_info
-            WHERE code = '{self.config.benchmark_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{self.config.benchmark_code}'
             AND level = '日线'
             AND date >= '{start_date.strftime('%Y-%m-%d')}'
             AND date <= '{end_date.strftime('%Y-%m-%d')}'
@@ -570,6 +569,7 @@ class StrategyPerformanceEvaluator:
             PerformanceMetrics: 性能指标
         """
         from analysis.performance_metrics_calculator import performance_calculator
+from db.sql_manager import SQLManager, QueryType
 
         # 提取收益率数据
         strategy_returns = strategy_data['returns']
@@ -593,6 +593,7 @@ class StrategyPerformanceEvaluator:
             RiskMetrics: 风险指标
         """
         from analysis.performance_metrics_calculator import performance_calculator
+from db.sql_manager import SQLManager, QueryType
 
         return performance_calculator.calculate_risk_metrics(
             returns=strategy_data['returns'],
@@ -610,6 +611,7 @@ class StrategyPerformanceEvaluator:
             TimeSeriesAnalysis: 时间序列分析结果
         """
         from analysis.performance_metrics_calculator import performance_calculator
+from db.sql_manager import SQLManager, QueryType
 
         return performance_calculator.perform_time_series_analysis(
             returns=strategy_data['returns'],

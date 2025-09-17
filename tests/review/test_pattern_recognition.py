@@ -16,8 +16,11 @@ import pandas as pd
 import numpy as np
 
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 class Test_pattern_recognition(unittest.TestCase):
     """测试形态识别功能"""

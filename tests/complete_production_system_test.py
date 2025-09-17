@@ -30,6 +30,7 @@ sys.path.append(project_root)
 from utils.logger import get_logger
 # Import components directly
 from tests.production_level_performance_test import ProductionConnectionPool, PerformanceMonitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -214,9 +215,8 @@ class CompleteProductionSystem:
         try:
             with self.connection_pool.get_connection() as conn:
                 result = conn.query(f"""
-                    SELECT date, code, name, open, high, low, close, volume, turnover
-                    FROM stock_info 
-                    WHERE code = '{stock_code}' 
+                    SELECT date, code, name, open, high, low, close, volume, turnover_rate
+                    FROM stock_info WHERE level = %(level)s AND code = '{stock_code}' 
                       AND level = '日线'
                       AND date >= '2024-01-01'
                     ORDER BY date ASC
@@ -226,11 +226,11 @@ class CompleteProductionSystem:
                     return pd.DataFrame()
                 
                 df = pd.DataFrame(result.result_rows, columns=[
-                    'date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume', 'turnover'
+                    'date', 'code', 'name', 'open', 'high', 'low', 'close', 'volume', 'turnover_rate'
                 ])
                 
                 # 数据类型转换
-                numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'turnover']
+                numeric_columns = ['open', 'high', 'low', 'close', 'volume', 'turnover_rate']
                 for col in numeric_columns:
                     df[col] = pd.to_numeric(df[col], errors='coerce')
                 
@@ -433,8 +433,7 @@ class CompleteProductionSystem:
             with self.connection_pool.get_connection() as conn:
                 result = conn.query("""
                     SELECT DISTINCT code 
-                    FROM stock_info 
-                    WHERE level = '日线'
+                    FROM stock_info WHERE code = %(code)s AND level = '日线'
                     ORDER BY code
                     LIMIT 2000
                 """)

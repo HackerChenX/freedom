@@ -24,6 +24,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
 from .indicator_discovery import IndicatorDiscovery, IndicatorInfo
 from .pattern_registry_manager import PatternRegistryManager
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

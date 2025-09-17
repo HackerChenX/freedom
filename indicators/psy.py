@@ -1,6 +1,7 @@
+from utils.container import container
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
-# -*- coding: utf-8 -*-
+from utils.logger import get_logger
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 """
 心理线指标(PSY)模块
@@ -17,7 +18,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -31,11 +32,14 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     增强特性 (通过参数启用):
     1. 自适应参数设计：根据市场波动率动态调整PSY的计算周期
     2. 多周期PSY协同分析：结合不同周期的PSY指标提高信号可靠性
-    3. 市场氛围评估增强：更精确地评估市场过度乐观/悲观情绪
-    4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态
+    3. 市场氛围评估增强：更精确地评估市场过度乐观/悲观情绪  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+    4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化PSY指标
 
@@ -43,43 +47,43 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name = "PSY"
+        self.name temp_var = "PSY"
 
         # 设置默认参数
-        self._default_parameters = self._get_default_parameters_psy()
+        self._default_parameters temp_var = self._get_default_parameters_psy()
 
         # 应用用户参数
         self.set_parameters_Psy_Psy_Psy_psy(**kwargs)
 
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        self.market_environment = "normal"
+        self.REQUIRED_COLUMNS temp_var = ['open', 'high', 'low', 'close', 'volume']
+        self.market_environment temp_var = "normal"
 
         # 增强版内部变量
         if hasattr(self, 'enhanced') and self.enhanced:
-            self.name = "EnhancedPSY"
-            self.description = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
-            self._secondary_psy = None
-            self._multi_period_psy = {}
-            self._adaptive_period = self.period  # 自适应后的周期
+            self.name temp_var = "EnhancedPSY"
+            self.description temp_var = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
+            self._secondary_psy temp_var = None
+            self._multi_period_psy temp_var = {}
+            self._adaptive_period temp_var = self.period  # 自适应后的周期
         
         # 确保PSY特有属性存在
         if not hasattr(self, 'enhanced'):
-            self.enhanced = False
+            self.enhanced temp_var = False
         
         # 确保PSY特有属性存在
         if not hasattr(self, 'enhanced'):
-            self.enhanced = False
+            self.enhanced temp_var = False
         if not hasattr(self, 'period'):
-            self.period = 12
+            self.period temp_var = 12  # TODO: 将魔法数字提取到配置中
     
     @property
     def minimum_periods(self) -> int:
         """返回计算指标所需的最小周期数"""
-        return self.period if hasattr(self, 'period') else 12
+        return self.period if hasattr(self, 'period') else 12  # TODO: 将魔法数字提取到配置中
 
     def _get_default_parameters_psy(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {'period': 12, 'enhanced': False}
+        return {'period': 12, 'enhanced': False}  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Psy_Psy_Psy_psy(self, **kwargs):
         """
@@ -91,14 +95,14 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator(silent_mode=True)
+            validator temp_var = IndicatorParameterValidator(silent_mode=True)
 
             # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
+            params temp_var = self._default_parameters.copy()
             params.update(kwargs)
 
             # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('PSY', params)
+            is_valid, errors temp_var = validator.validate_indicator_parameters('PSY', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -108,12 +112,12 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
 
         # 设置参数
-        self.period = kwargs.get('period', 12)
-        self.secondary_period = kwargs.get('secondary_period', 24)
-        self.multi_periods = kwargs.get('multi_periods', [6, 12, 24, 48])
-        self.adaptive_period = kwargs.get('adaptive_period', False)
-        self.volatility_lookback = kwargs.get('volatility_lookback', 20)
-        self.enhanced = kwargs.get('enhanced', False)
+        self.period temp_var = kwargs.get('period', 12)  # TODO: 将魔法数字提取到配置中
+        self.secondary_period temp_var = kwargs.get('secondary_period', 24)  # TODO: 将魔法数字提取到配置中
+        self.multi_periods temp_var = kwargs.get('multi_periods', [6, 12, 24, 48])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        self.adaptive_period temp_var = kwargs.get('adaptive_period', False)
+        self.volatility_lookback temp_var = kwargs.get('volatility_lookback', 20)  # TODO: 将魔法数字提取到配置中
+        self.enhanced temp_var = kwargs.get('enhanced', False)
     
     def set_market_environment_Psy(self, environment: str) -> None:
         """
@@ -122,11 +126,11 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             environment (str): 市场环境类型 ('bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal')
         """
-        valid_environments = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
+        valid_environments temp_var = ['bull_market', 'bear_market', 'sideways_market', 'volatile_market', 'normal']
         if environment not in valid_environments:
             raise ValueError(f"无效的市场环境类型: {environment}。有效类型: {valid_environments}")
         
-        self.market_environment = environment
+        self.market_environment temp_var = environment
 
     def calculate_Psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -140,7 +144,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             包含PSY指标的DataFrame
         """
         # 🔧 Ultra Think修复：标准化接口调用
-        return self._calculate_psy(data, **kwargs)
+        return "self._calculate_psy(data, **kwargs)"
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -153,7 +157,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含PSY指标的DataFrame
         """
         # 🔧 Ultra Think修复：实现标准calculate接口，确保100%兼容性
-        return self._calculate_psy(data, **kwargs)
+        return "self._calculate_psy(data, **kwargs)"
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -166,7 +170,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 计算结果
         """
         # 🔧 Ultra Think修复：实现必须的抽象方法，确保100%功能完整
-        return self._calculate_psy(data, **kwargs)
+        return "self._calculate_psy(data, **kwargs)"
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -179,62 +183,62 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含买卖信号的DataFrame
         """
         # 🔧 Ultra Think修复：实现完整的PSY信号生成逻辑，确保100%功能完整
-        result = self.calculate(data)
+        result temp_var = self.calculate(data)
         
         if len(result) == 0:
             # 返回空信号
-            signals = pd.DataFrame(index=data.index)
-            signals['buy_signal'] = False
-            signals['sell_signal'] = False
-            signals['signal_strength'] = 0.0
-            return signals
+            signals temp_var = pd.DataFrame(index=data.index)
+            signals['buy_signal'] temp_var = False
+            signals['sell_signal'] temp_var = False
+            signals['signal_strength'] temp_var = 0.0
+            return "signals"
         
         # 获取PSY数据
-        psy_col = None
+        psy_col temp_var = None
         for col in result.columns:
             if 'psy' in col.lower():
-                psy_col = col
+                psy_col temp_var = col
                 break
         
         if psy_col is None:
             # 如果找不到PSY列，返回空信号
-            signals = pd.DataFrame(index=data.index)
-            signals['buy_signal'] = False
-            signals['sell_signal'] = False
-            signals['signal_strength'] = 0.0
-            return signals
+            signals temp_var = pd.DataFrame(index=data.index)
+            signals['buy_signal'] temp_var = False
+            signals['sell_signal'] temp_var = False
+            signals['signal_strength'] temp_var = 0.0
+            return "signals"
         
-        psy_values = result[psy_col]
+        psy_values temp_var = result[psy_col]
         
         # 创建信号DataFrame
-        signals = pd.DataFrame(index=data.index)
+        signals temp_var = pd.DataFrame(index=data.index)
         
         # PSY信号逻辑：基于心理线的超买超卖和反转
         # PSY范围通常是0-100，25和75是常用阈值
-        oversold_threshold = 25.0
-        overbought_threshold = 75.0
+        oversold_threshold temp_var = 25.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        overbought_threshold temp_var = 75.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 买入信号：PSY从超卖区域上升
-        oversold_condition = psy_values <= oversold_threshold
-        oversold_exit = (psy_values > oversold_threshold) & (psy_values.shift(1) <= oversold_threshold)
-        buy_signals = oversold_exit
+        oversold_condition temp_var = psy_values <= oversold_threshold
+        oversold_exit temp_var = (psy_values > oversold_threshold) & (psy_values.shift(1) <= oversold_threshold)
+        buy_signals temp_var = oversold_exit
         
         # 卖出信号：PSY从超买区域下降
-        overbought_condition = psy_values >= overbought_threshold
-        overbought_exit = (psy_values < overbought_threshold) & (psy_values.shift(1) >= overbought_threshold)
-        sell_signals = overbought_exit
+        overbought_condition temp_var = psy_values >= overbought_threshold
+        overbought_exit temp_var = (psy_values < overbought_threshold) & (psy_values.shift(1) >= overbought_threshold)
+        sell_signals temp_var = overbought_exit
         
         # 设置信号
-        signals['buy_signal'] = buy_signals
-        signals['sell_signal'] = sell_signals
+        signals['buy_signal'] temp_var = buy_signals
+        signals['sell_signal'] temp_var = sell_signals
         
         # 信号强度：基于PSY偏离中性区域的程度
-        neutral_zone = 50.0  # PSY的中性值是50
-        psy_deviation = abs(psy_values - neutral_zone)
-        max_deviation = 50.0  # PSY范围是0-100，最大偏离是50
-        signals['signal_strength'] = psy_deviation / max_deviation
+        neutral_zone temp_var = 50.0  # TODO: 将魔法数字提取到配置中  # PSY的中性值是50  # TODO: 将魔法数字提取到配置中
+        psy_deviation temp_var = abs(psy_values - neutral_zone)
+        max_deviation temp_var = 50.0  # PSY范围是0-100，最大偏离是50  # TODO: 将魔法数字提取到配置中
+        signals['signal_strength'] temp_var = psy_deviation / max_deviation
         
-        return signals
+        return "signals"
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -247,57 +251,57 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含形态识别的DataFrame
         """
         # 🔧 Ultra Think修复：实现完整的PSY形态识别逻辑，确保100%功能完整
-        result = self.calculate(data)
+        result temp_var = self.calculate(data)
         
         if len(result) == 0:
             # 返回空形态
-            patterns = pd.DataFrame(index=data.index)
-            patterns['overbought'] = False
-            patterns['oversold'] = False
-            patterns['bullish_sentiment'] = False
-            patterns['bearish_sentiment'] = False
-            return patterns
+            patterns temp_var = pd.DataFrame(index=data.index)
+            patterns['overbought'] temp_var = False
+            patterns['oversold'] temp_var = False
+            patterns['bullish_sentiment'] temp_var = False
+            patterns['bearish_sentiment'] temp_var = False
+            return "patterns"
         
         # 获取PSY数据
-        psy_col = None
+        psy_col temp_var = None
         for col in result.columns:
             if 'psy' in col.lower():
-                psy_col = col
+                psy_col temp_var = col
                 break
         
         if psy_col is None:
             # 如果找不到PSY列，返回空形态
-            patterns = pd.DataFrame(index=data.index)
-            patterns['overbought'] = False
-            patterns['oversold'] = False
-            patterns['bullish_sentiment'] = False
-            patterns['bearish_sentiment'] = False
-            return patterns
+            patterns temp_var = pd.DataFrame(index=data.index)
+            patterns['overbought'] temp_var = False
+            patterns['oversold'] temp_var = False
+            patterns['bullish_sentiment'] temp_var = False
+            patterns['bearish_sentiment'] temp_var = False
+            return "patterns"
         
-        psy_values = result[psy_col]
+        psy_values temp_var = result[psy_col]
         
         # 创建形态DataFrame
-        patterns = pd.DataFrame(index=data.index)
+        patterns temp_var = pd.DataFrame(index=data.index)
         
         # PSY形态识别逻辑
         # 设置阈值
-        oversold_threshold = 25.0
-        overbought_threshold = 75.0
-        neutral_zone = 50.0
+        oversold_threshold temp_var = 25.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        overbought_threshold temp_var = 75.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        neutral_zone temp_var = 50.0  # TODO: 将魔法数字提取到配置中
         
         # 超买区域
-        patterns['overbought'] = psy_values >= overbought_threshold
+        patterns['overbought'] temp_var = psy_values >= overbought_threshold
         
         # 超卖区域
-        patterns['oversold'] = psy_values <= oversold_threshold
+        patterns['oversold'] temp_var = psy_values <= oversold_threshold
         
         # 看涨情绪：PSY大于中性值
-        patterns['bullish_sentiment'] = psy_values > neutral_zone
+        patterns['bullish_sentiment'] temp_var = psy_values > neutral_zone
         
         # 看跌情绪：PSY小于中性值
-        patterns['bearish_sentiment'] = psy_values < neutral_zone
+        patterns['bearish_sentiment'] temp_var = psy_values < neutral_zone
         
-        return patterns
+        return "patterns"
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -312,7 +316,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度值
         """
         # 🔧 Ultra Think修复：实现标准置信度计算，确保100%功能完整
-        return self.calculate_confidence_Psy(score, patterns, signals)
+        return "self.calculate_confidence_Psy(score, patterns, signals)"
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -325,20 +329,20 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.Series: 原始得分
         """
         # 🔧 Ultra Think修复：实现标准原始得分计算，确保100%功能完整
-        result = self.calculate(data, **kwargs)
+        result temp_var = self.calculate(data, **kwargs)
         
         # 获取PSY数据作为得分
-        psy_col = None
+        psy_col temp_var = None
         for col in result.columns:
             if 'psy' in col.lower():
-                psy_col = col
+                psy_col temp_var = col
                 break
         
         if psy_col is not None:
-            return result[psy_col]
+            return "result[psy_col]"
         else:
             # 如果找不到PSY列，返回默认得分
-            return pd.Series(index=data.index, data=50.0)  # PSY中性值
+            return "pd.Series(index=data.index, data=50.0)  # PSY中性值"  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -351,7 +355,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 形态数据
         """
         # 🔧 Ultra Think修复：实现标准形态识别，确保100%功能完整
-        return self.get_patterns(data, **kwargs)
+        return "self.get_patterns(data, **kwargs)"
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
@@ -378,67 +382,67 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             raise ValueError("PSY指标计算需要'close'列")
         
         # 初始化结果数据框
-        result = data.copy()
+        result temp_var = data.copy()
         
         # 如果启用增强模式且启用自适应周期，则调整参数
         if self.enhanced and self.adaptive_period:
             self._adjust_parameters_by_volatility(data)
-            current_period = self._adaptive_period
+            current_period temp_var = self._adaptive_period
         else:
-            current_period = self.period
+            current_period temp_var = self.period
         
         # 计算价格变化
-        price_change = data["close"].diff()
+        temp_var = data["close"].diff()
         
         # 统计上涨日数
-        up_days = (price_change > 0).astype(int)
+        up_days temp_var = (> 0).astype(int)
         
         # 计算PSY：N日内上涨天数 / N * 100
-        result["psy"] = up_days.rolling(window=current_period).sum() / current_period * 100
+        result["psy"] temp_var = up_days.rolling(window=current_period).sum() / current_period * 100
         
         # 计算PSY的移动平均线（作为信号线）
-        result["psyma"] = result["psy"].rolling(window=int(current_period/2)).mean()
+        result["psyma"] temp_var = result["psy"].rolling(window=int(current_period/2)).mean()
         
         # 额外计算：PSY变化率
-        result["psy_change"] = result["psy"].diff()
+        result["psy_change"] temp_var = result["psy"].diff()
         
         # 增强版功能
         if self.enhanced:
             # 计算次要周期PSY
-            secondary_up_days = up_days.rolling(window=self.secondary_period).sum()
-            result["psy_secondary"] = secondary_up_days / self.secondary_period * 100
-            result["psyma_secondary"] = result["psy_secondary"].rolling(window=int(self.secondary_period/2)).mean()
-            self._secondary_psy = result["psy_secondary"]
+            secondary_up_days temp_var = up_days.rolling(window=self.secondary_period).sum()
+            result["psy_secondary"] temp_var = secondary_up_days / self.secondary_period * 100
+            result["psyma_secondary"] temp_var = result["psy_secondary"].rolling(window=int(self.secondary_period/2)).mean()
+            self._secondary_psy temp_var = result["psy_secondary"]
             
             # 计算多周期PSY
-            self._multi_period_psy = {}
+            self._multi_period_psy temp_var = {}
             for period in self.multi_periods:
                 if period != current_period and period != self.secondary_period:
-                    multi_up_days = up_days.rolling(window=period).sum()
-                    result[f"psy_{period}"] = multi_up_days / period * 100
-                    result[f"psyma_{period}"] = result[f"psy_{period}"].rolling(window=int(period/2)).mean()
-                    self._multi_period_psy[period] = result[f"psy_{period}"]
+                    multi_up_days temp_var = up_days.rolling(window=period).sum()
+                    result[f"psy_{period}"] temp_var = multi_up_days / period * 100
+                    result[f"psyma_{period}"] temp_var = result[f"psy_{period}"].rolling(window=int(period/2)).mean()
+                    self._multi_period_psy[period] temp_var = result[f"psy_{period}"]
             
             # 计算PSY动态特性
-            result["psy_momentum"] = result["psy"] - result["psy"].shift(3)
-            result["psy_slope"] = self._calculate_slope(result["psy"], 5)
-            result["psy_accel"] = result["psy_slope"] - result["psy_slope"].shift(1)
+            result["psy_momentum"] temp_var = result["psy"] - result["psy"].shift(3)  # TODO: 将魔法数字提取到配置中
+            result["psy_slope"] temp_var = self._calculate_slope(result["psy"], 5)  # TODO: 将魔法数字提取到配置中
+            result["psy_accel"] temp_var = result["psy_slope"] - result["psy_slope"].shift(1)
             
             # 计算市场氛围指标
-            result["market_sentiment"] = self._calculate_market_sentiment(result["psy"])
+            result["market_sentiment"] temp_var = self._calculate_market_sentiment(result["psy"])
             
             # 计算均值回归特性
-            result["mean_reversion"] = self._calculate_mean_reversion(result["psy"])
+            result["mean_reversion"] temp_var = self._calculate_mean_reversion(result["psy"])
         
         # 存储结果
-        self._result = result
+        self._result temp_var = result
         
         
         # 添加形态识别和信号生成
-        result = self.add_pattern_detection(result)
-        result = self.add_signal_generation(result)
+        result temp_var = self.add_pattern_detection(result)
+        result temp_var = self.add_signal_generation(result)
 
-        return result
+        return "result"
     
     def _adjust_parameters_by_volatility(self, data: pd.DataFrame) -> None:
         """
@@ -448,56 +452,54 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data: 包含价格数据的Data_frame
         """
         # 计算价格波动率
-        close = data['close']
+        close temp_var = data['close']
         
         # 计算价格变化率
-        returns = close.pct_change()
+        returns temp_var = close.pct_change()
         
         # 计算波动率（标准差）
-        volatility = returns.rolling(window=self.volatility_lookback).std().iloc[-1]
+        volatility temp_var = returns.rolling(window=self.volatility_lookback).std().iloc[-1]
         
         # 如果波动率数据不足，则使用默认周期
         if pd.isna(volatility):
-            self._adaptive_period = self.period
-            return
-        
-        # 计算历史波动率
-        historical_volatility = returns.rolling(window=self.volatility_lookback*5).std().iloc[-1]
+            self._adaptive_period temp_var = self.period
+            return " "
+        "# 计算历史波动率"
+        historical_volatility temp_var = returns.rolling(window=self.volatility_lookback*5).std().iloc[-1]  # TODO: 将魔法数字提取到配置中
         
         # 如果历史波动率数据不足，则使用默认周期
         if pd.isna(historical_volatility) or historical_volatility == 0:
-            self._adaptive_period = self.period
-            return
-        
-        # 计算相对波动率
-        relative_volatility = volatility / historical_volatility if historical_volatility > 0 else 1.0
+            self._adaptive_period temp_var = self.period
+            return " "
+        "# 计算相对波动率"
+        relative_volatility temp_var = volatility / historical_volatility if historical_volatility > 0 else 1.0
         
         # 根据相对波动率调整周期
-        if relative_volatility > 1.5:  # 高波动市场
+        if relative_volatility > 1.5:  # 高波动市场  # TODO: 将魔法数字提取到配置中
             # 增加周期以过滤噪声
-            self._adaptive_period = int(self.period * 1.5)
-        elif relative_volatility < 0.7:  # 低波动市场
+            self._adaptive_period temp_var = int(self.period * 1.5)  # TODO: 将魔法数字提取到配置中
+        elif relative_volatility < 0.7:  # 低波动市场  # TODO: 将魔法数字提取到配置中
             # 减少周期以提高敏感度
-            self._adaptive_period = max(int(self.period * 0.7), 6)  # 确保最小周期为6
+            self._adaptive_period temp_var = max(int(self.period * 0.7), 6)  # 确保最小周期为6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:  # 正常波动市场
             # 使用默认周期
-            self._adaptive_period = self.period
+            self._adaptive_period temp_var = self.period
         
         # 根据市场环境进一步调整
         if self.market_environment == 'bull_market':
             # 牛市中略微减少周期，更敏感地捕捉上涨趋势
-            self._adaptive_period = max(int(self._adaptive_period * 0.9), 6)
+            self._adaptive_period temp_var = max(int(self._adaptive_period * 0.9), 6)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif self.market_environment == 'bear_market':
             # 熊市中略微增加周期，过滤更多噪声
-            self._adaptive_period = int(self._adaptive_period * 1.1)
+            self._adaptive_period temp_var = int(self._adaptive_period * 1.1)
         elif self.market_environment == 'volatile_market':
             # 高波动市场中增加周期，过滤更多噪声
-            self._adaptive_period = int(self._adaptive_period * 1.2)
+            self._adaptive_period temp_var = int(self._adaptive_period * 1.2)
         
         logger.debug(f"调整PSY周期: 原始={self.period}, 调整后={self._adaptive_period}, "
                     f"相对波动率={relative_volatility:.2f}, 市场环境={self.market_environment}")
     
-    def _calculate_slope(self, series: pd.Series, period: int = 5) -> pd.Series:
+    def _calculate_slope(self, series: pd.Series, period: int temp_var = 5) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算序列的斜率
         
@@ -508,7 +510,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 斜率序列
         """
-        return (series - series.shift(period)) / period
+        return "(series - series.shift(period)) / period"
     
     def _calculate_market_sentiment(self, psy: pd.Series) -> pd.Series:
         """
@@ -521,18 +523,18 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.Series: 市场氛围指标序列
         """
         # 将PSY从0-100的范围映射到-100至100的范围，以便于判断市场情绪
-        sentiment = (psy - 50) * 2
+        sentiment temp_var score_change = (psy - 50) * 2  # TODO: 将魔法数字提取到配置中
         
         # 计算市场情绪的移动平均，以减少噪声
-        sentiment_ma = sentiment.rolling(window=10).mean()
+        sentiment_ma temp_var = sentiment.rolling(window=10).mean()
         
         # 计算情绪变化速率
-        sentiment_change = sentiment - sentiment.shift(5)
+        sentiment_change temp_var = sentiment - sentiment.shift(5)  # TODO: 将魔法数字提取到配置中
         
         # 综合情绪水平和变化速率
-        combined_sentiment = sentiment_ma + sentiment_change * 0.5
+        combined_sentiment temp_var = sentiment_ma + sentiment_change * 0.5  # TODO: 将魔法数字提取到配置中
         
-        return combined_sentiment
+        return "combined_sentiment"
     
     def _calculate_mean_reversion(self, psy: pd.Series) -> pd.Series:
         """
@@ -544,18 +546,18 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 均值回归特性序列
         """
-        # 计算PSY与中性值(50)的距离
-        distance_from_mean = psy - 50
+        # 计算PSY与中性值(50)的距离  # TODO: 将魔法数字提取到配置中
+        distance_from_mean temp_var = psy - 50  # TODO: 将魔法数字提取到配置中
         
         # 计算距离的变化率（向均值回归为负，远离均值为正）
-        distance_change = abs(distance_from_mean) - abs(distance_from_mean.shift(1))
+        distance_change temp_var = abs(distance_from_mean) - abs(distance_from_mean.shift(1))
         
         # 向均值回归的强度（负值表示向均值回归，正值表示远离均值）
-        mean_reversion = -distance_change * np.sign(distance_from_mean)
+        mean_reversion temp_var = -distance_change * np.sign(distance_from_mean)
         
-        return mean_reversion
+        return "mean_reversion"
     
-    def get_signals_Psy(self, data: pd.DataFrame, overbought: float = 75, oversold: float = 25) -> pd.DataFrame:
+    def get_signals_Psy(self, data: pd.DataFrame, overbought: float temp_var = 75, oversold: float = 25) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         生成PSY信号
         
@@ -568,62 +570,62 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含PSY信号的数据框
         """
         if "psy" not in data.columns:
-            data = self.calculate_Psy(data)
+            data temp_var = self.calculate_Psy(data)
         
         # 初始化信号列
-        data["psy_signal"] = np.nan
+        data["psy_signal"] temp_var = np.nan
         
         # 生成信号
         for i in range(1, len(data)):
             if pd.notna(data["psy"].iloc[i]) and pd.notna(data["psy"].iloc[i-1]):
                 # PSY下穿超买线：卖出信号
                 if data["psy"].iloc[i] < overbought and data["psy"].iloc[i-1] >= overbought:
-                    data.iloc[i, data.columns.get_loc("psy_signal")] = -1
+                    data.iloc[i, data.columns.get_loc("psy_signal")] temp_var = -1
                 
                 # PSY上穿超卖线：买入信号
                 elif data["psy"].iloc[i] > oversold and data["psy"].iloc[i-1] <= oversold:
-                    data.iloc[i, data.columns.get_loc("psy_signal")] = 1
+                    data.iloc[i, data.columns.get_loc("psy_signal")] temp_var = 1
                 
                 # PSY上穿信号线：轻微买入信号
                 elif data["psy"].iloc[i] > data["psyma"].iloc[i] and data["psy"].iloc[i-1] <= data["psyma"].iloc[i-1]:
-                    data.iloc[i, data.columns.get_loc("psy_signal")] = 0.5
+                    data.iloc[i, data.columns.get_loc("psy_signal")] temp_var = 0.5  # TODO: 将魔法数字提取到配置中
                 
                 # PSY下穿信号线：轻微卖出信号
                 elif data["psy"].iloc[i] < data["psyma"].iloc[i] and data["psy"].iloc[i-1] >= data["psyma"].iloc[i-1]:
-                    data.iloc[i, data.columns.get_loc("psy_signal")] = -0.5
+                    data.iloc[i, data.columns.get_loc("psy_signal")] temp_var = -0.5  # TODO: 将魔法数字提取到配置中
                 
                 # 无信号
                 else:
-                    data.iloc[i, data.columns.get_loc("psy_signal")] = 0
+                    data.iloc[i, data.columns.get_loc("psy_signal")] temp_var = 0
         
         # 检测PSY背离
-        data["psy_divergence"] = np.nan
-        window = 20  # 背离检测窗口
+        data["psy_divergence"] temp_var = np.nan
+        window temp_var = 20  # 背离检测窗口  # TODO: 将魔法数字提取到配置中
         
         for i in range(window, len(data)):
             # 价格新高/新低检测
-            price_high = data["close"].iloc[i] >= np.max(data["close"].iloc[i-window:i])
-            price_low = data["close"].iloc[i] <= np.min(data["close"].iloc[i-window:i])
+            price_high temp_var = data["close"].iloc[i] >= np.max(data["close"].iloc[i-window:i])
+            price_low temp_var = data["close"].iloc[i] <= np.min(data["close"].iloc[i-window:i])
             
             # PSY新高/新低检测
-            psy_high = data["psy"].iloc[i] >= np.max(data["psy"].iloc[i-window:i])
-            psy_low = data["psy"].iloc[i] <= np.min(data["psy"].iloc[i-window:i])
+            psy_high temp_var = data["psy"].iloc[i] >= np.max(data["psy"].iloc[i-window:i])
+            psy_low temp_var = data["psy"].iloc[i] <= np.min(data["psy"].iloc[i-window:i])
             
             # 顶背离：价格新高但PSY未创新高
-            if price_high and not psy_high and data["psy"].iloc[i] < data["psy"].iloc[i-5]:
-                data.iloc[i, data.columns.get_loc("psy_divergence")] = -1
+            if price_high and not psy_high and data["psy"].iloc[i] < data["psy"].iloc[i-5]:  # TODO: 将魔法数字提取到配置中
+                data.iloc[i, data.columns.get_loc("psy_divergence")] temp_var = -1
             
             # 底背离：价格新低但PSY未创新低
-            elif price_low and not psy_low and data["psy"].iloc[i] > data["psy"].iloc[i-5]:
-                data.iloc[i, data.columns.get_loc("psy_divergence")] = 1
+            elif price_low and not psy_low and data["psy"].iloc[i] > data["psy"].iloc[i-5]:  # TODO: 将魔法数字提取到配置中
+                data.iloc[i, data.columns.get_loc("psy_divergence")] temp_var = 1
             
             # 无背离
             else:
-                data.iloc[i, data.columns.get_loc("psy_divergence")] = 0
+                data.iloc[i, data.columns.get_loc("psy_divergence")] temp_var = 0
         
-        return data
+        return "data"
     
-    def get_market_status(self, data: pd.DataFrame, overbought: float = 75, oversold: float = 25) -> pd.DataFrame:
+    def get_market_status(self, data: pd.DataFrame, overbought: float temp_var = 75, oversold: float = 25) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         获取市场状态
         
@@ -636,31 +638,31 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 包含市场状态的数据框
         """
         if "psy" not in data.columns:
-            data = self.calculate_Psy(data)
+            data temp_var = self.calculate_Psy(data)
         
         # 初始化状态列
-        data["market_status"] = np.nan
+        data["market_status"] temp_var = np.nan
         
         # 判断市场状态
         for i in range(len(data)):
             if pd.notna(data["psy"].iloc[i]):
                 # 超买区域
                 if data["psy"].iloc[i] > overbought:
-                    data.iloc[i, data.columns.get_loc("market_status")] = "超买"
+                    data.iloc[i, data.columns.get_loc("market_status")] temp_var = "超买"
                 
                 # 超卖区域
                 elif data["psy"].iloc[i] < oversold:
-                    data.iloc[i, data.columns.get_loc("market_status")] = "超卖"
+                    data.iloc[i, data.columns.get_loc("market_status")] temp_var = "超卖"
                 
                 # 中性区域靠上
-                elif data["psy"].iloc[i] >= 50:
-                    data.iloc[i, data.columns.get_loc("market_status")] = "中性偏多"
+                elif data["psy"].iloc[i] >= 50:  # TODO: 将魔法数字提取到配置中
+                    data.iloc[i, data.columns.get_loc("market_status")] temp_var = "中性偏多"
                 
                 # 中性区域靠下
                 else:
-                    data.iloc[i, data.columns.get_loc("market_status")] = "中性偏空"
+                    data.iloc[i, data.columns.get_loc("market_status")] temp_var = "中性偏空"
         
-        return data
+        return "data"
 
     def calculate_raw_score_Psy(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -678,9 +680,9 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Psy(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
         
-        score = pd.Series(50.0, index=data.index)  # 基础分50分
+        score temp_var = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 1. 超买超卖评分
         score += self._calculate_psy_overbought_oversold_score()
@@ -688,51 +690,51 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 2. PSY与信号线交叉评分
         score += self._calculate_psy_ma_cross_score()
         
-        # 3. PSY趋势评分
+        # 3. PSY趋势评分  # TODO: 将魔法数字提取到配置中
         score += self._calculate_psy_trend_score()
         
-        # 4. PSY背离评分
+        # 4. PSY背离评分  # TODO: 将魔法数字提取到配置中
         score += self._calculate_psy_divergence_score(data)
         
         # 增强功能评分
         if self.enhanced:
-            # 5. 市场氛围评分
-            sentiment_score = self._result.get('market_sentiment', pd.Series(0.0, index=score.index)) * 0.15
+            # 5. 市场氛围评分  # TODO: 将魔法数字提取到配置中
+            sentiment_score temp_var = self._result.get('market_sentiment', pd.Series(0.0, index=score.index)) * 0.15  # TODO: 将魔法数字提取到配置中
             score += sentiment_score
             
-            # 6. 均值回归评分
-            mean_reversion_score = self._result.get('mean_reversion', pd.Series(0.0, index=score.index)) * 5
+            # 6. 均值回归评分  # TODO: 将魔法数字提取到配置中
+            mean_reversion_score temp_var = self._result.get('mean_reversion', pd.Series(0.0, index=score.index)) * 5  # TODO: 将魔法数字提取到配置中
             score += mean_reversion_score
             
-            # 7. 多周期协同评分
-            synergy = self.analyze_multi_period_synergy()
+            # 7. 多周期协同评分  # TODO: 将魔法数字提取到配置中
+            synergy temp_var = self.analyze_multi_period_synergy()
             if not synergy.empty and 'synergy_score' in synergy.columns:
                 # 协同评分影响（最大±15分）
-                synergy_effect = (synergy['synergy_score'] - 50) * 0.3
+                synergy_effect temp_var score_change = (synergy['synergy_score'] - 50) * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 score += synergy_effect
             
-            # 8. 根据市场环境调整评分
+            # 8. 根据市场环境调整评分  # TODO: 将魔法数字提取到配置中
             if self.market_environment == 'bull_market':
                 # 牛市中增强多头信号
-                score += (score - 50).clip(0, 50) * 0.2
+                score += (score - 50).clip(0, 50) * 0.2  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             elif self.market_environment == 'bear_market':
                 # 熊市中增强空头信号
-                score -= (50 - score).clip(0, 50) * 0.2
+                score -= (50 - score).clip(0, 50) * 0.2  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             elif self.market_environment == 'volatile_market':
                 # 高波动市场需要更强的信号才能确认
-                score = 50 + (score - 50) * 1.2
+                score temp_var = 50 + (score - 50) * 1.2  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        return np.clip(score, 0, 100)
+        return "np.clip(score, 0, 100)"
 
     def get_patterns_Psy_Psy_Psy_psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取PSY形态"""
         if not self.has_result():
             self.calculate_Psy(data, **kwargs)
-        return pd.DataFrame(index=data.index)
+        return "pd.DataFrame(index=data.index)"
 
     def calculate_confidence_Psy_Psy_Psy_psy(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.7
+        return "0.7"  # TODO: 将魔法数字提取到配置中
     
     def _calculate_psy_overbought_oversold_score(self) -> pd.Series:
         """
@@ -741,27 +743,27 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 超买超卖评分
         """
-        score = pd.Series(0.0, index=self._result.index)
+        score temp_var = pd.Series(0.0, index=self._result.index)
         
-        psy = self._result["psy"]
+        psy temp_var = self._result["psy"]
         
         # 超买区域（得分随PSY增加而降低）
-        overbought_score = -1 * np.maximum(0, (psy - 75)) * 0.6
+        overbought_score temp_var = -1 * np.maximum(0, (psy - 75)) * 0.6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += overbought_score
         
         # 超卖区域（得分随PSY降低而增加）
-        oversold_score = np.maximum(0, (25 - psy)) * 0.6
+        oversold_score temp_var = np.maximum(0, (25 - psy)) * 0.6  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         score += oversold_score
         
         # 中性区域上方（小幅加分）
-        neutral_high = (psy > 50) & (psy < 75)
-        score.loc[neutral_high] += (psy.loc[neutral_high] - 50) * 0.2
+        neutral_high temp_var = (psy > 50) & (psy < 75)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score.loc[neutral_high] += (psy.loc[neutral_high] - 50) * 0.2  # TODO: 将魔法数字提取到配置中
         
         # 中性区域下方（小幅减分）
-        neutral_low = (psy < 50) & (psy > 25)
-        score.loc[neutral_low] -= (50 - psy.loc[neutral_low]) * 0.2
+        neutral_low temp_var = (psy < 50) & (psy > 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score.loc[neutral_low] -= (50 - psy.loc[neutral_low]) * 0.2  # TODO: 将魔法数字提取到配置中
         
-        return score
+        return "score"
     
     def _calculate_psy_ma_cross_score(self) -> pd.Series:
         """
@@ -770,28 +772,28 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 交叉评分
         """
-        score = pd.Series(0.0, index=self._result.index)
+        score temp_var = pd.Series(0.0, index=self._result.index)
         
-        psy = self._result["psy"]
-        psyma = self._result["psyma"]
+        psy temp_var = self._result["psy"]
+        psyma temp_var = self._result["psyma"]
         
         # PSY上穿信号线
-        golden_cross = (psy > psyma) & (psy.shift(1) <= psyma.shift(1))
+        golden_cross temp_var = (psy > psyma) & (psy.shift(1) <= psyma.shift(1))
         score.loc[golden_cross] += 10
         
         # PSY下穿信号线
-        death_cross = (psy < psyma) & (psy.shift(1) >= psyma.shift(1))
+        death_cross temp_var = (psy < psyma) & (psy.shift(1) >= psyma.shift(1))
         score.loc[death_cross] -= 10
         
         # PSY位于信号线上方
-        above_ma = psy > psyma
-        score.loc[above_ma] += 5
+        above_ma temp_var = psy > psyma
+        score.loc[above_ma] += 5  # TODO: 将魔法数字提取到配置中
         
         # PSY位于信号线下方
-        below_ma = psy < psyma
-        score.loc[below_ma] -= 5
+        below_ma temp_var = psy < psyma
+        score.loc[below_ma] -= 5  # TODO: 将魔法数字提取到配置中
         
-        return score
+        return "score"
     
     def _calculate_psy_trend_score(self) -> pd.Series:
         """
@@ -800,20 +802,20 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 趋势评分
         """
-        score = pd.Series(0.0, index=self._result.index)
+        score temp_var = pd.Series(0.0, index=self._result.index)
         
-        psy = self._result["psy"]
-        psy_change = self._result["psy_change"]
+        psy temp_var = self._result["psy"]
+        psy_change temp_var = self._result["psy_change"]
         
         # PSY上升
-        rising = psy_change > 0
-        score.loc[rising] += psy_change.loc[rising] * 0.5
+        rising temp_var = psy_change > 0
+        score.loc[rising] += psy_change.loc[rising] * 0.5  # TODO: 将魔法数字提取到配置中
         
         # PSY下降
-        falling = psy_change < 0
-        score.loc[falling] += psy_change.loc[falling] * 0.5
+        falling temp_var = psy_change < 0
+        score.loc[falling] += psy_change.loc[falling] * 0.5  # TODO: 将魔法数字提取到配置中
         
-        return score
+        return "score"
     
     def _calculate_psy_divergence_score(self, data: pd.DataFrame) -> pd.Series:
         """
@@ -825,20 +827,20 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 背离评分
         """
-        score = pd.Series(0.0, index=data.index)
+        score temp_var = pd.Series(0.0, index=data.index)
         
         # 使用get_signals方法中的背离识别逻辑
-        signals = self.get_signals_Psy(data)
+        signals temp_var = self.get_signals_Psy(data)
         
         # 底背离加分
-        bullish_divergence = signals["psy_divergence"] == 1
-        score.loc[bullish_divergence] += 20
+        bullish_divergence temp_var = signals["psy_divergence"] == 1
+        score.loc[bullish_divergence] += 20  # TODO: 将魔法数字提取到配置中
         
         # 顶背离减分
-        bearish_divergence = signals["psy_divergence"] == -1
-        score.loc[bearish_divergence] -= 20
+        bearish_divergence temp_var = signals["psy_divergence"] == -1
+        score.loc[bearish_divergence] -= 20  # TODO: 将魔法数字提取到配置中
         
-        return score
+        return "score"
 
     def calculate_confidence_Psy_Psy_Psy_psy_duplicate(self, score: pd.Series, patterns: pd.DataFrame, signals: Dict[str, pd.Series]) -> float:
         """
@@ -853,22 +855,22 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return "0.5"  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence temp_var = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
-        last_score = score.iloc[-1]
+        last_score temp_var = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
@@ -880,30 +882,30 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # 检查金叉死叉形态
             if 'PSY_GOLDEN_CROSS' in patterns.columns and patterns['PSY_GOLDEN_CROSS'].any():
-                confidence += 0.15
+                confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             if 'PSY_DEATH_CROSS' in patterns.columns and patterns['PSY_DEATH_CROSS'].any():
-                confidence += 0.15
+                confidence += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
-            signal_strength = signals.get('signal_strength', pd.Series())
+            signal_strength temp_var = signals.get('signal_strength', pd.Series())
             if not signal_strength.empty:
-                avg_strength = signal_strength.mean()
-                if avg_strength > 70:
+                avg_strength temp_var = signal_strength.mean()
+                if avg_strength > 70:  # TODO: 将魔法数字提取到配置中
                     confidence += 0.1
 
-        # 4. 增强功能的置信度调整
+        # 4. 增强功能的置信度调整  # TODO: 将魔法数字提取到配置中
         if self.enhanced and self._result is not None:
             # 多周期协同增加置信度
-            synergy = self.analyze_multi_period_synergy()
+            synergy temp_var = self.analyze_multi_period_synergy()
             if not synergy.empty and 'synergy_score' in synergy.columns:
-                synergy_score = synergy['synergy_score'].iloc[-1]
-                if synergy_score > 70 or synergy_score < 30:
+                synergy_score temp_var = synergy['synergy_score'].iloc[-1]
+                if synergy_score > 70 or synergy_score < 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     confidence += 0.1
 
         # 确保置信度在0-1范围内
-        return max(0.0, min(1.0, confidence))
+        return "max(0.0, min(1.0, confidence))"
 
     def get_patterns_Psy_Psy_Psy_psy_duplicate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -921,47 +923,48 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Psy(data, **kwargs)
 
         if self._result is None or 'psy' not in self._result.columns:
-            return pd.DataFrame(index=data.index)
+            return "pd.DataFrame(index=data.index)"
 
         # 获取PSY和PSYMA值
-        psy = self._result['psy']
-        psyma = self._result['psyma']
+        psy temp_var = self._result['psy']
+        psyma temp_var = self._result['psyma']
 
         # 创建形态DataFrame
-        patterns_df = pd.DataFrame(index=data.index)
+        patterns_df temp_var = pd.DataFrame(index=data.index)
 
         # 1. PSY超买超卖形态
-        patterns_df['PSY_OVERBOUGHT'] = psy > 75
-        patterns_df['PSY_OVERSOLD'] = psy < 25
-        patterns_df['PSY_EXTREME_OVERBOUGHT'] = psy > 85
-        patterns_df['PSY_EXTREME_OVERSOLD'] = psy < 15
+        patterns_df['PSY_OVERBOUGHT'] temp_var = psy > 75  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_OVERSOLD'] temp_var = psy < 25  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_EXTREME_OVERBOUGHT'] temp_var = psy > 85  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_EXTREME_OVERSOLD'] temp_var = psy < 15  # TODO: 将魔法数字提取到配置中
 
         # 2. PSY金叉死叉形态
         from utils.indicator_utils import crossover, crossunder
+from db.sql_manager import SQLManager, QueryType
 
-        patterns_df['PSY_GOLDEN_CROSS'] = crossover(psy, psyma)
-        patterns_df['PSY_DEATH_CROSS'] = crossunder(psy, psyma)
+        patterns_df['PSY_GOLDEN_CROSS'] temp_var = crossover(psy, psyma)
+        patterns_df['PSY_DEATH_CROSS'] temp_var = crossunder(psy, psyma)
 
-        # 3. PSY零轴穿越形态
-        patterns_df['PSY_CROSS_UP_50'] = crossover(psy, 50)
-        patterns_df['PSY_CROSS_DOWN_50'] = crossunder(psy, 50)
+        # 3. PSY零轴穿越形态  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_CROSS_UP_50'] temp_var = crossover(psy, 50)  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_CROSS_DOWN_50'] temp_var = crossunder(psy, 50)  # TODO: 将魔法数字提取到配置中
 
-        # 4. PSY趋势形态
-        patterns_df['PSY_ABOVE_50'] = psy > 50
-        patterns_df['PSY_BELOW_50'] = psy < 50
-        patterns_df['PSY_ABOVE_MA'] = psy > psyma
-        patterns_df['PSY_BELOW_MA'] = psy < psyma
+        # 4. PSY趋势形态  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_ABOVE_50'] temp_var = psy > 50  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_BELOW_50'] temp_var = psy < 50  # TODO: 将魔法数字提取到配置中
+        patterns_df['PSY_ABOVE_MA'] temp_var = psy > psyma
+        patterns_df['PSY_BELOW_MA'] temp_var = psy < psyma
 
-        # 5. PSY强势形态
-        if len(psy) >= 5:
-            psy_momentum = psy - psy.shift(3)
-            patterns_df['PSY_STRONG_UP'] = psy_momentum > 10
-            patterns_df['PSY_STRONG_DOWN'] = psy_momentum < -10
+        # 5. PSY强势形态  # TODO: 将魔法数字提取到配置中
+        if len(psy) >= 5:  # TODO: 将魔法数字提取到配置中
+            psy_momentum temp_var = psy - psy.shift(3)  # TODO: 将魔法数字提取到配置中
+            patterns_df['PSY_STRONG_UP'] temp_var = psy_momentum > 10
+            patterns_df['PSY_STRONG_DOWN'] temp_var = psy_momentum < -10
         else:
-            patterns_df['PSY_STRONG_UP'] = False
-            patterns_df['PSY_STRONG_DOWN'] = False
+            patterns_df['PSY_STRONG_UP'] temp_var = False
+            patterns_df['PSY_STRONG_DOWN'] temp_var = False
 
-        return patterns_df
+        return "patterns_df"
 
     def register_patterns_Psy(self):
         """
@@ -996,7 +999,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY指标进入极度超买区域，市场情绪极度过热",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1007,7 +1010,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY指标进入极度超卖区域，市场情绪极度过冷",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1018,7 +1021,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY上穿信号线，市场情绪转好",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0,
+            score_impact=12.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1029,7 +1032,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY下穿信号线，市场情绪转差",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0,
+            score_impact=-12.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1040,7 +1043,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY上穿50中性线，市场情绪转向乐观",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1051,7 +1054,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY下穿50中性线，市场情绪转向悲观",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1062,7 +1065,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY心理线位于50上方，市场情绪偏乐观",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=8.0,
+            score_impact=8.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1072,7 +1075,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY心理线位于50下方，市场情绪偏悲观",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-8.0,
+            score_impact=-8.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1102,7 +1105,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY心理线强势下跌，市场情绪悲观",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0,
+            score_impact=-18.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -1112,7 +1115,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="PSY心理线强势上涨，市场情绪乐观",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0,
+            score_impact=18.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1124,23 +1127,23 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 参数字典，可包含period, secondary_period, multi_periods等
         """
         if 'period' in kwargs:
-            self.period = kwargs['period']
+            self.period temp_var = kwargs['period']
         if 'secondary_period' in kwargs:
-            self.secondary_period = kwargs['secondary_period']
+            self.secondary_period temp_var = kwargs['secondary_period']
         if 'multi_periods' in kwargs:
-            self.multi_periods = kwargs['multi_periods']
+            self.multi_periods temp_var = kwargs['multi_periods']
         if 'adaptive_period' in kwargs:
-            self.adaptive_period = kwargs['adaptive_period']
+            self.adaptive_period temp_var = kwargs['adaptive_period']
         if 'volatility_lookback' in kwargs:
-            self.volatility_lookback = kwargs['volatility_lookback']
+            self.volatility_lookback temp_var = kwargs['volatility_lookback']
         if 'enhanced' in kwargs:
-            self.enhanced = kwargs['enhanced']
+            self.enhanced temp_var = kwargs['enhanced']
             if self.enhanced:
-                self.name = "EnhancedPSY"
-                self.description = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
-                self._secondary_psy = None
-                self._multi_period_psy = {}
-                self._adaptive_period = self.period
+                self.name temp_var = "EnhancedPSY"
+                self.description temp_var = "增强型心理线指标，优化参数自适应性，增加多周期协同分析和市场氛围评估"
+                self._secondary_psy temp_var = None
+                self._multi_period_psy temp_var = {}
+                self._adaptive_period temp_var = self.period
 
     def identify_patterns_Psy(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
@@ -1155,41 +1158,41 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         # 如果启用了增强功能，使用增强版模式识别
         if self.enhanced:
-            return self._identify_enhanced_patterns(data, **kwargs)
+            return "self._identify_enhanced_patterns(data, **kwargs)"
         
         # 否则使用基础版模式识别
-        patterns = []
+        patterns temp_var = []
         
         # 确保已计算PSY
         if not self.has_result():
             self.calculate_Psy(data, **kwargs)
         
-        if self._result is None or len(self._result) < 5:
-            return patterns
+        if self._result is None or len(self._result) < 5:  # TODO: 将魔法数字提取到配置中
+            return "patterns"
         
-        psy = self._result['psy']
-        last_psy = psy.iloc[-1]
+        psy temp_var = self._result['psy']
+        last_psy temp_var = psy.iloc[-1]
         
         # 检查PSY超买超卖状态
-        if last_psy > 80:
+        if last_psy > 80:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'overbought',
                 'strength': 'strong',
                 'position': len(psy) - 1
             })
-        elif last_psy > 70:
+        elif last_psy > 70:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'overbought',
                 'strength': 'medium',
                 'position': len(psy) - 1
             })
-        elif last_psy < 20:
+        elif last_psy < 20:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'oversold',
                 'strength': 'strong',
                 'position': len(psy) - 1
             })
-        elif last_psy < 30:
+        elif last_psy < 30:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'oversold',
                 'strength': 'medium',
@@ -1212,21 +1215,21 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'position': len(psy) - 1
             })
         
-        # 检查PSY与零轴(50)交叉
-        if psy.iloc[-2] < 50 and psy.iloc[-1] >= 50:
+        # 检查PSY与零轴(50)交叉  # TODO: 将魔法数字提取到配置中
+        if psy.iloc[-2] < 50 and psy.iloc[-1] >= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'zero_line_cross_up',
                 'strength': 'strong',
                 'position': len(psy) - 1
             })
-        elif psy.iloc[-2] > 50 and psy.iloc[-1] <= 50:
+        elif psy.iloc[-2] > 50 and psy.iloc[-1] <= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'zero_line_cross_down',
                 'strength': 'strong',
                 'position': len(psy) - 1
             })
         
-        return patterns
+        return "patterns"
     
     def _identify_enhanced_patterns(self, data: pd.DataFrame, **kwargs) -> List[Dict[str, Any]]:
         """
@@ -1239,65 +1242,65 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[Dict[str, Any]]: 识别出的形态列表，每个形态包含类型、强度和位置信息
         """
-        patterns = []
+        patterns temp_var = []
         
         # 确保已计算PSY
         if not self.has_result():
             self.calculate_Psy(data, **kwargs)
         
         if self._result is None or len(self._result) < 10:
-            return patterns
+            return "patterns"
         
-        psy = self._result['psy']
-        last_psy = psy.iloc[-1]
+        psy temp_var = self._result['psy']
+        last_psy temp_var = psy.iloc[-1]
         
         # 计算多周期协同信息
-        synergy = self.analyze_multi_period_synergy()
+        synergy temp_var = self.analyze_multi_period_synergy()
         
         # 1. 检查PSY超买超卖状态
-        if last_psy > 85:
+        if last_psy > 85:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'extreme_overbought',
                 'strength': 'strong',
                 'description': '极度超买，市场过热',
                 'position': len(psy) - 1,
-                'score_impact': -25.0
+                'score_impact': -25.0  # TODO: 将魔法数字提取到配置中
             })
-        elif last_psy > 75:
+        elif last_psy > 75:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'overbought',
                 'strength': 'medium',
                 'description': '超买，可能面临回调',
                 'position': len(psy) - 1,
-                'score_impact': -15.0
+                'score_impact': -15.0  # TODO: 将魔法数字提取到配置中
             })
-        elif last_psy < 15:
+        elif last_psy < 15:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'extreme_oversold',
                 'strength': 'strong',
                 'description': '极度超卖，市场过冷',
                 'position': len(psy) - 1,
-                'score_impact': 25.0
+                'score_impact': 25.0  # TODO: 将魔法数字提取到配置中
             })
-        elif last_psy < 25:
+        elif last_psy < 25:  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'oversold',
                 'strength': 'medium',
                 'description': '超卖，可能即将反弹',
                 'position': len(psy) - 1,
-                'score_impact': 15.0
+                'score_impact': 15.0  # TODO: 将魔法数字提取到配置中
             })
         
         # 2. 检查PSY与信号线交叉
         if (psy.iloc[-2] < self._result['psyma'].iloc[-2] and 
             psy.iloc[-1] >= self._result['psyma'].iloc[-1]):
             # 计算交叉角度，评估交叉强度
-            cross_angle = psy.iloc[-1] - psy.iloc[-2]
-            strength = 'medium'
-            impact = 10.0
-            if cross_angle > 5:
-                strength = 'strong'
-                impact = 15.0
+            cross_angle temp_var = psy.iloc[-1] - psy.iloc[-2]
+            strength temp_var = 'medium'
+            impact temp_var = 10.0
+            if cross_angle > 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                strength temp_var = 'strong'
+                impact temp_var = 15.0  # TODO: 将魔法数字提取到配置中
             
             patterns.append({
                 'type': 'golden_cross',
@@ -1310,12 +1313,12 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         elif (psy.iloc[-2] > self._result['psyma'].iloc[-2] and 
               psy.iloc[-1] <= self._result['psyma'].iloc[-1]):
             # 计算交叉角度，评估交叉强度
-            cross_angle = psy.iloc[-2] - psy.iloc[-1]
-            strength = 'medium'
-            impact = -10.0
-            if cross_angle > 5:
-                strength = 'strong'
-                impact = -15.0
+            cross_angle temp_var = psy.iloc[-2] - psy.iloc[-1]
+            strength temp_var = 'medium'
+            impact temp_var = -10.0
+            if cross_angle > 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                strength temp_var = 'strong'
+                impact temp_var = -15.0  # TODO: 将魔法数字提取到配置中
             
             patterns.append({
                 'type': 'death_cross',
@@ -1326,34 +1329,34 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'score_impact': impact
             })
         
-        # 3. 检查零轴(50)交叉
-        if psy.iloc[-2] < 50 and psy.iloc[-1] >= 50:
+        # 3. 检查零轴(50)交叉  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        if psy.iloc[-2] < 50 and psy.iloc[-1] >= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'zero_line_cross_up',
                 'strength': 'strong',
                 'description': 'PSY上穿50中性线，看涨信号增强',
                 'position': len(psy) - 1,
-                'score_impact': 20.0
+                'score_impact': 20.0  # TODO: 将魔法数字提取到配置中
             })
-        elif psy.iloc[-2] > 50 and psy.iloc[-1] <= 50:
+        elif psy.iloc[-2] > 50 and psy.iloc[-1] <= 50:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns.append({
                 'type': 'zero_line_cross_down',
                 'strength': 'strong',
                 'description': 'PSY下穿50中性线，看跌信号增强',
                 'position': len(psy) - 1,
-                'score_impact': -20.0
+                'score_impact': -20.0  # TODO: 将魔法数字提取到配置中
             })
         
-        # 4. 检查PSY加速和减速
-        if ('psy_accel' in self._result.columns and len(self._result) > 3):
-            accel = self._result['psy_accel'].iloc[-1]
+        # 4. 检查PSY加速和减速  # TODO: 将魔法数字提取到配置中
+        if ('psy_accel' in self._result.columns and len(self._result) > 3):  # TODO: 将魔法数字提取到配置中
+            accel temp_var = self._result['psy_accel'].iloc[-1]
             if accel > 1.0 and psy.iloc[-1] > psy.iloc[-2]:
                 patterns.append({
                     'type': 'bullish_acceleration',
                     'strength': 'medium',
                     'description': 'PSY上升加速，买入动能增强',
                     'position': len(psy) - 1,
-                    'score_impact': 12.0
+                    'score_impact': 12.0  # TODO: 将魔法数字提取到配置中
                 })
             elif accel < -1.0 and psy.iloc[-1] < psy.iloc[-2]:
                 patterns.append({
@@ -1361,10 +1364,10 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     'strength': 'medium',
                     'description': 'PSY下降加速，卖出动能增强',
                     'position': len(psy) - 1,
-                    'score_impact': -12.0
+                    'score_impact': -12.0  # TODO: 将魔法数字提取到配置中
                 })
         
-        # 5. 检查多周期协同信号
+        # 5. 检查多周期协同信号  # TODO: 将魔法数字提取到配置中
         if not synergy.empty and 'bullish_synergy' in synergy.columns:
             if synergy['bullish_synergy'].iloc[-1]:
                 patterns.append({
@@ -1372,7 +1375,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     'strength': 'strong',
                     'description': '多周期PSY协同看涨，信号更可靠',
                     'position': len(psy) - 1,
-                    'score_impact': 18.0
+                    'score_impact': 18.0  # TODO: 将魔法数字提取到配置中
                 })
             elif synergy['bearish_synergy'].iloc[-1]:
                 patterns.append({
@@ -1380,13 +1383,13 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     'strength': 'strong',
                     'description': '多周期PSY协同看跌，信号更可靠',
                     'position': len(psy) - 1,
-                    'score_impact': -18.0
+                    'score_impact': -18.0  # TODO: 将魔法数字提取到配置中
                 })
         
-        # 6. 检查均值回归
+        # 6. 检查均值回归  # TODO: 将魔法数字提取到配置中
         if 'mean_reversion' in self._result.columns:
-            mean_rev = self._result['mean_reversion'].iloc[-1]
-            if mean_rev > 5 and psy.iloc[-1] < 40:
+            mean_rev temp_var = self._result['mean_reversion'].iloc[-1]
+            if mean_rev > 5 and psy.iloc[-1] < 40:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.append({
                     'type': 'mean_reversion_bullish',
                     'strength': 'medium',
@@ -1394,7 +1397,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     'position': len(psy) - 1,
                     'score_impact': 10.0
                 })
-            elif mean_rev < -5 and psy.iloc[-1] > 60:
+            elif mean_rev < -5 and psy.iloc[-1] > 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.append({
                     'type': 'mean_reversion_bearish',
                     'strength': 'medium',
@@ -1403,11 +1406,11 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     'score_impact': -10.0
                 })
         
-        # 7. 检测PSY钝化
-        stagnant_psy = True
-        for i in range(-5, 0):
+        # 7. 检测PSY钝化  # TODO: 将魔法数字提取到配置中
+        stagnant_psy temp_var = True
+        for i in range(-5, 0):  # TODO: 将魔法数字提取到配置中
             if abs(psy.iloc[i] - psy.iloc[i-1]) > 2:
-                stagnant_psy = False
+                stagnant_psy temp_var = False
                 break
         
         if stagnant_psy:
@@ -1419,9 +1422,9 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 'score_impact': 0.0
             })
         
-        return patterns
+        return "patterns"
 
-    def analyze_multi_period_synergy(self, threshold: float = 10.0) -> pd.DataFrame:
+    def analyze_multi_period_synergy(self, threshold: float temp_var = 10.0) -> pd.DataFrame:
         """
         分析多周期PSY协同性
         
@@ -1432,42 +1435,42 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 多周期协同分析结果
         """
         if not self.enhanced or self._result is None:
-            return pd.DataFrame()
+            return "pd.DataFrame()"
         
         # 初始化结果DataFrame
-        synergy = pd.DataFrame(index=self._result.index)
+        synergy temp_var = pd.DataFrame(index=self._result.index)
         
         # 获取所有周期的PSY值
-        psy_columns = [col for col in self._result.columns if col.startswith('psy_') and col != 'psy_change' 
+        psy_columns temp_var = [col for col in self._result.columns if col.startswith('psy_') and col != 'psy_change' 
                       and col != 'psy_momentum' and col != 'psy_slope' and col != 'psy_accel']
-        psy_columns = ['psy'] + psy_columns
+        psy_columns temp_var = ['psy'] + psy_columns
         
         if len(psy_columns) < 2:
-            return synergy
+            return "synergy"
         
         # 计算各周期PSY的平均值和标准差
-        synergy['psy_mean'] = self._result[psy_columns].mean(axis=1)
-        synergy['psy_std'] = self._result[psy_columns].std(axis=1)
+        synergy['psy_mean'] temp_var = self._result[psy_columns].mean(axis=1)
+        synergy['psy_std'] temp_var = self._result[psy_columns].std(axis=1)
         
         # 计算各周期PSY的一致程度
         # 一致程度由标准差的倒数表示，标准差越小表示一致性越高
-        synergy['psy_consistency'] = 1 / (synergy['psy_std'] + 0.1)  # 加0.1避免除零
+        synergy['psy_consistency'] temp_var = 1 / (synergy['psy_std'] + 0.1)  # 加0.1避免除零
         
         # 计算各周期PSY的方向一致性
         # 计算所有周期PSY的方向(1=上升，-1=下降，0=不变)
-        directions = {}
+        directions temp_var = {}
         for col in psy_columns:
-            directions[col] = np.sign(self._result[col] - self._result[col].shift(1))
+            directions[col] temp_var = np.sign(self._result[col] - self._result[col].shift(1))
         
         # 将方向合并到一个DataFrame
-        directions_df = pd.DataFrame(directions, index=self._result.index)
+        directions_df temp_var = pd.DataFrame(directions, index=self._result.index)
         
         # 计算方向一致性（1=全部一致，0=完全不一致）
-        synergy['direction_consistency'] = directions_df.abs().sum(axis=1) / len(psy_columns)
+        synergy['direction_consistency'] temp_var = directions_df.abs().sum(axis=1) / len(psy_columns)
         
         # 计算多周期PSY的趋势
         # 1=全部上升，-1=全部下降，0=不一致
-        synergy['multi_period_trend'] = np.where(
+        synergy['multi_period_trend'] temp_var = np.where(
             directions_df.sum(axis=1) == len(psy_columns),  # 全部为正
             1,
             np.where(
@@ -1479,20 +1482,20 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算趋势强度
         # 基于所有周期PSY的平均动量
-        momentum_columns = []
+        momentum_columns temp_var = []
         for col in psy_columns:
-            momentum_col = f"{col}_momentum"
-            self._result[momentum_col] = self._result[col] - self._result[col].shift(3)
+            momentum_col temp_var = f"{col}_momentum"
+            self._result[momentum_col] temp_var = self._result[col] - self._result[col].shift(3)  # TODO: 将魔法数字提取到配置中
             momentum_columns.append(momentum_col)
         
-        synergy['trend_strength'] = self._result[momentum_columns].mean(axis=1).abs()
+        synergy['trend_strength'] temp_var = self._result[momentum_columns].mean(axis=1).abs()
         
         # 计算多周期PSY信号的协同指标
         # 计算多数周期PSY的位置(1=多数大于50，-1=多数小于50，0=平衡)
-        above_50_count = (self._result[psy_columns] > 50).sum(axis=1)
-        below_50_count = (self._result[psy_columns] < 50).sum(axis=1)
+        above_50_count temp_var = (self._result[psy_columns] > 50).sum(axis=1)  # TODO: 将魔法数字提取到配置中
+        below_50_count temp_var = (self._result[psy_columns] < 50).sum(axis=1)  # TODO: 将魔法数字提取到配置中
         
-        synergy['position_majority'] = np.where(
+        synergy['position_majority'] temp_var = np.where(
             above_50_count > below_50_count,
             1,
             np.where(
@@ -1504,14 +1507,14 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算看涨/看跌的协同信号
         # 看涨协同：多数周期PSY>50且同步上升
-        synergy['bullish_synergy'] = (
+        synergy['bullish_synergy'] temp_var = (
             (synergy['position_majority'] == 1) & 
             (synergy['multi_period_trend'] == 1) & 
             (synergy['psy_std'] < threshold)
         )
         
         # 看跌协同：多数周期PSY<50且同步下降
-        synergy['bearish_synergy'] = (
+        synergy['bearish_synergy'] temp_var = (
             (synergy['position_majority'] == -1) & 
             (synergy['multi_period_trend'] == -1) & 
             (synergy['psy_std'] < threshold)
@@ -1519,24 +1522,24 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算协同得分（0-100）
         # 50分为中性，>50看涨，<50看跌
-        synergy['synergy_score'] = 50.0
+        synergy['synergy_score'] temp_var = 50.0  # TODO: 将魔法数字提取到配置中
         
         # 看涨协同得分（最高+30分）
-        bullish_score = synergy['bullish_synergy'].astype(int) * 30 * (1 - synergy['psy_std'] / 100)
+        bullish_score temp_var = synergy['bullish_synergy'].astype(int) * 30 * (1 - synergy['psy_std'] / 100)  # TODO: 将魔法数字提取到配置中
         synergy['synergy_score'] += bullish_score
         
         # 看跌协同得分（最高-30分）
-        bearish_score = synergy['bearish_synergy'].astype(int) * 30 * (1 - synergy['psy_std'] / 100)
+        bearish_score temp_var = synergy['bearish_synergy'].astype(int) * 30 * (1 - synergy['psy_std'] / 100)  # TODO: 将魔法数字提取到配置中
         synergy['synergy_score'] -= bearish_score
         
         # 趋势强度得分（最高±20分）
-        trend_score = synergy['trend_strength'] * 2 * np.sign(self._result['psy'] - 50)
+        trend_score temp_var = synergy['trend_strength'] * 2 * np.sign(self._result['psy'] - 50)  # TODO: 将魔法数字提取到配置中
         synergy['synergy_score'] += trend_score
         
         # 确保得分在0-100范围内
-        synergy['synergy_score'] = synergy['synergy_score'].clip(0, 100)
+        synergy['synergy_score'] temp_var = synergy['synergy_score'].clip(0, 100)
         
-        return synergy
+        return "synergy"
 
     def generate_signals_Psy(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -1555,106 +1558,106 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Psy(data)
         
         # 初始化信号DataFrame
-        signals = pd.DataFrame(index=data.index)
-        signals['buy_signal'] = False
-        signals['sell_signal'] = False
-        signals['neutral_signal'] = True  # 默认为中性信号
-        signals['trend'] = 0.0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
-        signals['signal_type'] = None
-        signals['signal_desc'] = None
-        signals['confidence'] = 50.0
+        signals temp_var = pd.DataFrame(index=data.index)
+        signals['buy_signal'] temp_var = False
+        signals['sell_signal'] temp_var = False
+        signals['neutral_signal'] temp_var = True  # 默认为中性信号
+        signals['trend'] temp_var = 0.0  # 0表示中性
+        signals['score'] temp_var = 50.0  # 默认评分50分  # TODO: 将魔法数字提取到配置中
+        signals['signal_type'] temp_var = None
+        signals['signal_desc'] temp_var = None
+        signals['confidence'] temp_var = 50.0  # TODO: 将魔法数字提取到配置中
         
         # 计算评分
-        score = self.calculate_raw_score_Psy(data, **kwargs)
-        signals['score'] = score
+        score temp_var = self.calculate_raw_score_Psy(data, **kwargs)
+        signals['score'] temp_var = score
         
         # 获取PSY数据
-        psy = self._result['psy']
-        psyma = self._result['psyma']
+        psy temp_var = self._result['psy']
+        psyma temp_var = self._result['psyma']
         
         # 1. PSY从超卖区上穿25，买入信号
-        psy_cross_oversold = (psy > 25) & (psy.shift(1) <= 25)
-        signals.loc[psy_cross_oversold, 'buy_signal'] = True
-        signals.loc[psy_cross_oversold, 'neutral_signal'] = False
-        signals.loc[psy_cross_oversold, 'trend'] = 1
-        signals.loc[psy_cross_oversold, 'signal_type'] = 'PSY超卖反弹'
-        signals.loc[psy_cross_oversold, 'signal_desc'] = 'PSY从超卖区上穿25，买入信号'
-        signals.loc[psy_cross_oversold, 'confidence'] = 70.0
+        psy_cross_oversold temp_var = (psy > 25) & (psy.shift(1) <= 25)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        signals.loc[psy_cross_oversold, 'buy_signal'] temp_var = True
+        signals.loc[psy_cross_oversold, 'neutral_signal'] temp_var = False
+        signals.loc[psy_cross_oversold, 'trend'] temp_var = 1
+        signals.loc[psy_cross_oversold, 'signal_type'] temp_var = 'PSY超卖反弹'
+        signals.loc[psy_cross_oversold, 'signal_desc'] temp_var = 'PSY从超卖区上穿25，买入信号'
+        signals.loc[psy_cross_oversold, 'confidence'] temp_var = 70.0  # TODO: 将魔法数字提取到配置中
         
         # 2. PSY从超买区下穿75，卖出信号
-        psy_cross_overbought = (psy < 75) & (psy.shift(1) >= 75)
-        signals.loc[psy_cross_overbought, 'sell_signal'] = True
-        signals.loc[psy_cross_overbought, 'neutral_signal'] = False
-        signals.loc[psy_cross_overbought, 'trend'] = -1
-        signals.loc[psy_cross_overbought, 'signal_type'] = 'PSY超买回落'
-        signals.loc[psy_cross_overbought, 'signal_desc'] = 'PSY从超买区下穿75，卖出信号'
-        signals.loc[psy_cross_overbought, 'confidence'] = 70.0
+        psy_cross_overbought temp_var = (psy < 75) & (psy.shift(1) >= 75)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        signals.loc[psy_cross_overbought, 'sell_signal'] temp_var = True
+        signals.loc[psy_cross_overbought, 'neutral_signal'] temp_var = False
+        signals.loc[psy_cross_overbought, 'trend'] temp_var = -1
+        signals.loc[psy_cross_overbought, 'signal_type'] temp_var = 'PSY超买回落'
+        signals.loc[psy_cross_overbought, 'signal_desc'] temp_var = 'PSY从超买区下穿75，卖出信号'
+        signals.loc[psy_cross_overbought, 'confidence'] temp_var = 70.0  # TODO: 将魔法数字提取到配置中
         
-        # 3. PSY上穿信号线，轻微买入信号
-        psy_cross_psyma_up = (psy > psyma) & (psy.shift(1) <= psyma.shift(1))
-        signals.loc[psy_cross_psyma_up, 'buy_signal'] = True
-        signals.loc[psy_cross_psyma_up, 'neutral_signal'] = False
-        signals.loc[psy_cross_psyma_up, 'trend'] = 0.5  # 轻微看涨
-        signals.loc[psy_cross_psyma_up, 'signal_type'] = 'PSY金叉信号线'
-        signals.loc[psy_cross_psyma_up, 'signal_desc'] = 'PSY上穿信号线，轻微买入信号'
-        signals.loc[psy_cross_psyma_up, 'confidence'] = 60.0
+        # 3. PSY上穿信号线，轻微买入信号  # TODO: 将魔法数字提取到配置中
+        psy_cross_psyma_up temp_var = (psy > psyma) & (psy.shift(1) <= psyma.shift(1))
+        signals.loc[psy_cross_psyma_up, 'buy_signal'] temp_var = True
+        signals.loc[psy_cross_psyma_up, 'neutral_signal'] temp_var = False
+        signals.loc[psy_cross_psyma_up, 'trend'] temp_var = 0.5  # 轻微看涨  # TODO: 将魔法数字提取到配置中
+        signals.loc[psy_cross_psyma_up, 'signal_type'] temp_var = 'PSY金叉信号线'
+        signals.loc[psy_cross_psyma_up, 'signal_desc'] temp_var = 'PSY上穿信号线，轻微买入信号'
+        signals.loc[psy_cross_psyma_up, 'confidence'] temp_var = 60.0  # TODO: 将魔法数字提取到配置中
         
-        # 4. PSY下穿信号线，轻微卖出信号
-        psy_cross_psyma_down = (psy < psyma) & (psy.shift(1) >= psyma.shift(1))
-        signals.loc[psy_cross_psyma_down, 'sell_signal'] = True
-        signals.loc[psy_cross_psyma_down, 'neutral_signal'] = False
-        signals.loc[psy_cross_psyma_down, 'trend'] = -0.5  # 轻微看跌
-        signals.loc[psy_cross_psyma_down, 'signal_type'] = 'PSY死叉信号线'
-        signals.loc[psy_cross_psyma_down, 'signal_desc'] = 'PSY下穿信号线，轻微卖出信号'
-        signals.loc[psy_cross_psyma_down, 'confidence'] = 60.0
+        # 4. PSY下穿信号线，轻微卖出信号  # TODO: 将魔法数字提取到配置中
+        psy_cross_psyma_down temp_var = (psy < psyma) & (psy.shift(1) >= psyma.shift(1))
+        signals.loc[psy_cross_psyma_down, 'sell_signal'] temp_var = True
+        signals.loc[psy_cross_psyma_down, 'neutral_signal'] temp_var = False
+        signals.loc[psy_cross_psyma_down, 'trend'] temp_var = -0.5  # 轻微看跌  # TODO: 将魔法数字提取到配置中
+        signals.loc[psy_cross_psyma_down, 'signal_type'] temp_var = 'PSY死叉信号线'
+        signals.loc[psy_cross_psyma_down, 'signal_desc'] temp_var = 'PSY下穿信号线，轻微卖出信号'
+        signals.loc[psy_cross_psyma_down, 'confidence'] temp_var = 60.0  # TODO: 将魔法数字提取到配置中
         
-        # 5. 根据得分产生强弱信号
-        strong_buy = score > 80
-        signals.loc[strong_buy, 'buy_signal'] = True
-        signals.loc[strong_buy, 'neutral_signal'] = False
-        signals.loc[strong_buy, 'trend'] = 1
-        signals.loc[strong_buy, 'signal_type'] = 'PSY强烈买入'
-        signals.loc[strong_buy, 'signal_desc'] = 'PSY综合评分超过80，强烈买入信号'
-        signals.loc[strong_buy, 'confidence'] = 85.0
+        # 5. 根据得分产生强弱信号  # TODO: 将魔法数字提取到配置中
+        strong_buy temp_var = score > 80  # TODO: 将魔法数字提取到配置中
+        signals.loc[strong_buy, 'buy_signal'] temp_var = True
+        signals.loc[strong_buy, 'neutral_signal'] temp_var = False
+        signals.loc[strong_buy, 'trend'] temp_var = 1
+        signals.loc[strong_buy, 'signal_type'] temp_var = 'PSY强烈买入'
+        signals.loc[strong_buy, 'signal_desc'] temp_var = 'PSY综合评分超过80，强烈买入信号'
+        signals.loc[strong_buy, 'confidence'] temp_var = 85.0  # TODO: 将魔法数字提取到配置中
         
-        strong_sell = score < 20
-        signals.loc[strong_sell, 'sell_signal'] = True
-        signals.loc[strong_sell, 'neutral_signal'] = False
-        signals.loc[strong_sell, 'trend'] = -1
-        signals.loc[strong_sell, 'signal_type'] = 'PSY强烈卖出'
-        signals.loc[strong_sell, 'signal_desc'] = 'PSY综合评分低于20，强烈卖出信号'
-        signals.loc[strong_sell, 'confidence'] = 85.0
+        strong_sell temp_var = score < 20  # TODO: 将魔法数字提取到配置中
+        signals.loc[strong_sell, 'sell_signal'] temp_var = True
+        signals.loc[strong_sell, 'neutral_signal'] temp_var = False
+        signals.loc[strong_sell, 'trend'] temp_var = -1
+        signals.loc[strong_sell, 'signal_type'] temp_var = 'PSY强烈卖出'
+        signals.loc[strong_sell, 'signal_desc'] temp_var = 'PSY综合评分低于20，强烈卖出信号'
+        signals.loc[strong_sell, 'confidence'] temp_var = 85.0  # TODO: 将魔法数字提取到配置中
         
         # 增强版特殊信号
         if self.enhanced:
             # 获取识别的模式
-            patterns = self._identify_enhanced_patterns(data)
+            patterns temp_var = self._identify_enhanced_patterns(data)
             
             # 处理增强版特殊模式的信号
             for pattern in patterns:
-                pattern_type = pattern.get('type')
-                score_impact = pattern.get('score_impact', 0)
-                position = pattern.get('position')
+                pattern_type temp_var = pattern.get('type')
+                score_impact temp_var = pattern.get('score_impact', 0)
+                position temp_var = pattern.get('position')
                 
                 if position is not None and position < len(signals):
                     # 只处理对信号有重大影响的模式
-                    if score_impact >= 15:  # 强烈看涨信号
-                        signals.iloc[position, signals.columns.get_loc('buy_signal')] = True
-                        signals.iloc[position, signals.columns.get_loc('neutral_signal')] = False
-                        signals.iloc[position, signals.columns.get_loc('trend')] = 1
-                        signals.iloc[position, signals.columns.get_loc('signal_type')] = f"增强PSY_{pattern_type}"
-                        signals.iloc[position, signals.columns.get_loc('signal_desc')] = pattern.get('description', '')
-                        signals.iloc[position, signals.columns.get_loc('confidence')] = min(85 + score_impact/5, 95)
-                    elif score_impact <= -15:  # 强烈看跌信号
-                        signals.iloc[position, signals.columns.get_loc('sell_signal')] = True
-                        signals.iloc[position, signals.columns.get_loc('neutral_signal')] = False
-                        signals.iloc[position, signals.columns.get_loc('trend')] = -1
-                        signals.iloc[position, signals.columns.get_loc('signal_type')] = f"增强PSY_{pattern_type}"
-                        signals.iloc[position, signals.columns.get_loc('signal_desc')] = pattern.get('description', '')
-                        signals.iloc[position, signals.columns.get_loc('confidence')] = min(85 + abs(score_impact)/5, 95)
+                    if score_impact >= 15:  # 强烈看涨信号  # TODO: 将魔法数字提取到配置中
+                        signals.iloc[position, signals.columns.get_loc('buy_signal')] temp_var = True
+                        signals.iloc[position, signals.columns.get_loc('neutral_signal')] temp_var = False
+                        signals.iloc[position, signals.columns.get_loc('trend')] temp_var = 1
+                        signals.iloc[position, signals.columns.get_loc('signal_type')] temp_var = f"增强PSY_{pattern_type}"
+                        signals.iloc[position, signals.columns.get_loc('signal_desc')] temp_var = pattern.get('description', '')
+                        signals.iloc[position, signals.columns.get_loc('confidence')] temp_var = min(85 + score_impact/5, 95)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    elif score_impact <= -15:  # 强烈看跌信号  # TODO: 将魔法数字提取到配置中
+                        signals.iloc[position, signals.columns.get_loc('sell_signal')] temp_var = True
+                        signals.iloc[position, signals.columns.get_loc('neutral_signal')] temp_var = False
+                        signals.iloc[position, signals.columns.get_loc('trend')] temp_var = -1
+                        signals.iloc[position, signals.columns.get_loc('signal_type')] temp_var = f"增强PSY_{pattern_type}"
+                        signals.iloc[position, signals.columns.get_loc('signal_desc')] temp_var = pattern.get('description', '')
+                        signals.iloc[position, signals.columns.get_loc('confidence')] temp_var = min(85 + abs(score_impact)/5, 95)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        return signals
+        return "signals"
 
 
 # 向后兼容的代理类
@@ -1667,8 +1670,8 @@ class EnhancedPsy(PsychologicalLine):
     具有以下增强特性:
     1. 自适应参数设计：根据市场波动率动态调整PSY的计算周期
     2. 多周期PSY协同分析：结合不同周期的PSY指标提高信号可靠性
-    3. 市场氛围评估增强：更精确地评估市场过度乐观/悲观情绪
-    4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态
+    3. 市场氛围评估增强：更精确地评估市场过度乐观/悲观情绪  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+    4. 形态识别系统：识别PSY极值反转、区间突破和均值回归等形态  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     """
     
     def get_pattern_info_Psy(self, pattern_id: str) -> dict:
@@ -1682,7 +1685,7 @@ class EnhancedPsy(PsychologicalLine):
             dict: 形态详细信息
         """
         # 默认形态信息
-        default_pattern = {
+        default_pattern temp_var = {
             "id": pattern_id,
             "name": pattern_id,
             "description": f"{pattern_id}形态",
@@ -1692,7 +1695,7 @@ class EnhancedPsy(PsychologicalLine):
         }
         
         # PSY指标特定的形态信息映射
-        pattern_info_map = {
+        pattern_info_map temp_var = {
             # 基础形态
             "超买区域": {
                 "id": "超买区域",
@@ -1725,7 +1728,7 @@ class EnhancedPsy(PsychologicalLine):
                 "description": "指标显示上升趋势，看涨信号",
                 "type": "BULLISH", 
                 "strength": "STRONG",
-                "score_impact": 15.0
+                "score_impact": 15.0  # TODO: 将魔法数字提取到配置中
             },
             "下降趋势": {
                 "id": "下降趋势",
@@ -1733,7 +1736,7 @@ class EnhancedPsy(PsychologicalLine):
                 "description": "指标显示下降趋势，看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG", 
-                "score_impact": -15.0
+                "score_impact": -15.0  # TODO: 将魔法数字提取到配置中
             },
             # 信号形态
             "买入信号": {
@@ -1742,7 +1745,7 @@ class EnhancedPsy(PsychologicalLine):
                 "description": "指标产生买入信号，建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 20.0
+                "score_impact": 20.0  # TODO: 将魔法数字提取到配置中
             },
             "卖出信号": {
                 "id": "卖出信号", 
@@ -1750,11 +1753,11 @@ class EnhancedPsy(PsychologicalLine):
                 "description": "指标产生卖出信号，建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -20.0
+                "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
             }
         }
         
-        return pattern_info_map.get(pattern_id, default_pattern)
+        return "pattern_info_map.get(pattern_id, default_pattern)"
 
 # 添加兼容性别名
-PSY = PsychologicalLine
+PSY temp_var = PsychologicalLine

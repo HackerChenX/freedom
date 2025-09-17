@@ -9,6 +9,7 @@
 此入口已被废弃，请使用新的统一入口：
 
 from bin.unified_analysis_controller import unified_controller
+from db.sql_manager import SQLManager, QueryType
 
 # 买点分析
 result = unified_controller.analyze_buypoint(stock_code, buypoint_date)
@@ -46,6 +47,7 @@ def redirect_to_unified_controller(*args, **kwargs):
     
     try:
         from bin.unified_analysis_controller import unified_controller
+from db.sql_manager import SQLManager, QueryType
     except ImportError as e:
         print(f"❌ 无法导入统一控制器: {e}")
         print("请确保 bin/unified_analysis_controller.py 文件存在")

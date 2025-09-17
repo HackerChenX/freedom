@@ -18,6 +18,7 @@ from utils.logger import get_logger
 from utils.exception_handler import exception_handler
 from utils.performance_monitor import performance_monitor
 from utils.unified_container import get_container
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -179,8 +180,8 @@ class WebSocketMessageHandler:
             await self._send_error(websocket, "Topic is required for subscription")
             return
         
-        await self.connection_manager.subscribe(websocket, topic)
-        await self.connection_manager.send_to_connection(websocket, {
+        await self.get_connection_pool().subscribe(websocket, topic)
+        await self.get_connection_pool().send_to_connection(websocket, {
             'type': 'subscription_confirmed',
             'topic': topic,
             'timestamp': datetime.now().isoformat()
@@ -193,8 +194,8 @@ class WebSocketMessageHandler:
             await self._send_error(websocket, "Topic is required for unsubscription")
             return
         
-        await self.connection_manager.unsubscribe(websocket, topic)
-        await self.connection_manager.send_to_connection(websocket, {
+        await self.get_connection_pool().unsubscribe(websocket, topic)
+        await self.get_connection_pool().send_to_connection(websocket, {
             'type': 'unsubscription_confirmed',
             'topic': topic,
             'timestamp': datetime.now().isoformat()
@@ -202,18 +203,18 @@ class WebSocketMessageHandler:
     
     async def _handle_ping(self, websocket: WebSocketServerProtocol, data: Dict[str, Any]):
         """处理心跳请求"""
-        if websocket in self.connection_manager.connection_info:
-            self.connection_manager.connection_info[websocket]['last_ping'] = datetime.now()
+        if websocket in self.get_connection_pool().connection_info:
+            self.get_connection_pool().connection_info[websocket]['last_ping'] = datetime.now()
         
-        await self.connection_manager.send_to_connection(websocket, {
+        await self.get_connection_pool().send_to_connection(websocket, {
             'type': 'pong',
             'timestamp': datetime.now().isoformat()
         })
     
     async def _handle_get_stats(self, websocket: WebSocketServerProtocol, data: Dict[str, Any]):
         """处理获取统计信息请求"""
-        stats = self.connection_manager.get_connection_stats()
-        await self.connection_manager.send_to_connection(websocket, {
+        stats = self.get_connection_pool().get_connection_stats()
+        await self.get_connection_pool().send_to_connection(websocket, {
             'type': 'stats',
             'data': stats,
             'timestamp': datetime.now().isoformat()
@@ -226,7 +227,7 @@ class WebSocketMessageHandler:
     
     async def _send_error(self, websocket: WebSocketServerProtocol, error_message: str):
         """发送错误消息"""
-        await self.connection_manager.send_to_connection(websocket, {
+        await self.get_connection_pool().send_to_connection(websocket, {
             'type': 'error',
             'message': error_message,
             'timestamp': datetime.now().isoformat()
@@ -239,7 +240,7 @@ class WebSocketServer:
         """初始化WebSocket服务器"""
         self.host = host
         self.port = port
-        self.connection_manager = WebSocketConnectionManager()
+        self.connection_manager = WebSocketget_connection_pool()
         self.message_handler = WebSocketMessageHandler(self.connection_manager)
         self.server = None
         logger.info(f"WebSocket服务器初始化完成: {host}:{port}")
@@ -247,11 +248,11 @@ class WebSocketServer:
     @exception_handler(reraise=True)
     async def handle_client(self, websocket: WebSocketServerProtocol, path: str):
         """处理客户端连接"""
-        await self.connection_manager.register_connection(websocket, path)
+        await self.get_connection_pool().register_connection(websocket, path)
         
         try:
             # 发送欢迎消息
-            await self.connection_manager.send_to_connection(websocket, {
+            await self.get_connection_pool().send_to_connection(websocket, {
                 'type': 'welcome',
                 'message': '欢迎连接到股票分析系统WebSocket服务器',
                 'server_time': datetime.now().isoformat(),
@@ -273,7 +274,7 @@ class WebSocketServer:
         except Exception as e:
             logger.error(f"处理客户端连接时出错: {e}")
         finally:
-            await self.connection_manager.unregister_connection(websocket)
+            await self.get_connection_pool().unregister_connection(websocket)
     
     @exception_handler(reraise=True)
     async def start_server(self):

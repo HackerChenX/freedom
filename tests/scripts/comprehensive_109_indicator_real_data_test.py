@@ -74,7 +74,7 @@ class RealDataIndicatorTester:
             'ATR', 'KC', 'VIX', 'STDDEV',
             
             # ZXM专业选股指标(35个)
-            'ZXM_DAILY_MACD', 'ZXM_TURNOVER', 'ZXM_VOLUME_SHRINK', 
+            'ZXM_DAILY_MACD', 'ZXM_turnover_rate', 'ZXM_VOLUME_SHRINK', 
             'ZXM_MA_CALLBACK', 'ZXM_BS_ABSORB', 'ZXM_DAILY_TREND_UP',
             'ZXM_WEEKLY_TREND_UP', 'ZXM_MONTHLY_KDJ_TREND_UP',
             'ZXM_WEEKLY_MACD', 'ZXM_MONTHLY_MACD', 'ZXM_AMPLITUDE_ELASTICITY',
@@ -335,6 +335,7 @@ class RealDataIndicatorTester:
         # 使用基础计算函数
         try:
             from indicators.common import ma, macd, kdj, rsi, boll
+from db.sql_manager import SQLManager, QueryType
             
             if indicator_name.upper() == 'MA':
                 return ma(real_data['close'], 20)

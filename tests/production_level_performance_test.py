@@ -27,6 +27,7 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -189,8 +190,7 @@ class ProductionPerformanceTest:
             with self.connection_pool.get_connection() as conn:
                 result = conn.query("""
                     SELECT DISTINCT code 
-                    FROM stock_info 
-                    WHERE level = '日线'
+                    FROM stock_info WHERE code = %(code)s AND level = '日线'
                     ORDER BY code
                 """)
                 
@@ -218,8 +218,7 @@ class ProductionPerformanceTest:
                 # 分步查询以避免大结果集
                 result = conn.query(f"""
                     SELECT code, name, date, open, high, low, close, volume
-                    FROM stock_info 
-                    WHERE code IN ('{codes_str}') 
+                    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{codes_str}') 
                       AND level = '日线'
                       AND date >= '2024-01-01'
                     ORDER BY code, date DESC

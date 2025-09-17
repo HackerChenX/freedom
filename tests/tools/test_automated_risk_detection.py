@@ -1,4 +1,4 @@
-from config.config import get_config\n"""
+from config.unified_config_manager import get_config\n"""
 自动化风险检测机制测试
 
 验证自动化风险检测工具的功能和准确性

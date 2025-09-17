@@ -14,6 +14,7 @@
 import os
 import re
 from typing import Dict, List, Tuple
+from db.sql_manager import SQLManager, QueryType
 
 class SQLCleanupProcessor:
     """SQL清理处理器"""
@@ -42,9 +43,9 @@ class SQLCleanupProcessor:
         """处理debug_stock_count.py文件"""
         # 移除降级处理中的直接SQL查询，使用注释说明
         patterns = [
-            (r'result = conn\.query_dataframe\("SELECT COUNT\(\*\) as total FROM stock_info WHERE date >= \'2020-01-01\'"\)',
+            (r'result = conn\.query_dataframe\("SELECT COUNT\(\*\) as total FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= \'2020-01-01\'"\)',
              '# 使用统一查询接口替代直接SQL查询\n                    result = query_executor.get_stock_count(date_filter="2020-01-01")'),
-            (r'result2 = conn\.query_dataframe\("SELECT COUNT\(DISTINCT code\) as unique_stocks FROM stock_info WHERE date >= \'2020-01-01\'"\)',
+            (r'result2 = conn\.query_dataframe\("SELECT COUNT\(DISTINCT code\) as unique_stocks FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= \'2020-01-01\'"\)',
              '# 使用统一查询接口替代直接SQL查询\n                    result2 = query_executor.get_distinct_stock_count(date_filter="2020-01-01")'),
             (r'result3 = conn\.query_dataframe\("""[\s\S]*?"""\)',
              '# 使用统一查询接口替代直接SQL查询\n                    result3 = query_executor.get_recent_stock_stats(date_filter="2020-01-01", limit=5)')

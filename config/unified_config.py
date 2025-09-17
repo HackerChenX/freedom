@@ -13,6 +13,7 @@ import json
 import yaml
 import logging
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -20,7 +21,7 @@ logger = get_logger(__name__)
 class DatabaseConfig:
     """数据库配置"""
     host: str = 'localhost'
-    port: int = 8123
+    port: int = 9000
     database: str = 'stock_data'
     username: str = 'default'
     password: str = ''
@@ -32,7 +33,7 @@ class DatabaseConfig:
         """从环境变量创建配置"""
         return cls(
             host=os.getenv(f'{prefix}HOST', 'localhost'),
-            port=int(os.getenv(f'{prefix}PORT', '8123')),
+            port=int(os.getenv(f'{prefix}PORT', '9000')),
             database=os.getenv(f'{prefix}DATABASE', 'stock_data'),
             username=os.getenv(f'{prefix}USERNAME', 'default'),
             password=os.getenv(f'{prefix}PASSWORD', ''),
@@ -105,7 +106,7 @@ class TestConfig:
     """测试配置"""
     # 测试数据库配置
     test_db_host: str = 'localhost'
-    test_db_port: int = 8123
+    test_db_port: int = 9000
     test_db_database: str = 'test_stock_data'
     test_db_username: str = 'default'
     test_db_password: str = ''
@@ -120,7 +121,7 @@ class TestConfig:
         """从环境变量创建配置"""
         return cls(
             test_db_host=os.getenv(f'{prefix}DB_HOST', 'localhost'),
-            test_db_port=int(os.getenv(f'{prefix}DB_PORT', '8123')),
+            test_db_port=int(os.getenv(f'{prefix}DB_PORT', '9000')),
             test_db_database=os.getenv(f'{prefix}DB_DATABASE', 'test_stock_data'),
             test_db_username=os.getenv(f'{prefix}DB_USERNAME', 'default'),
             test_db_password=os.getenv(f'{prefix}DB_PASSWORD', ''),

@@ -25,6 +25,7 @@ sys.path.append(root_dir)
 
 from components.buypoint_analyzer import BuypointAnalyzer
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

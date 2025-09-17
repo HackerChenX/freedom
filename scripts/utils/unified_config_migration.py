@@ -208,7 +208,7 @@ class UnifiedConfigMigrator:
         lines = content.split('\n')
         
         # 检查是否已有配置导入
-        has_config_import = any('from config import get_config' in line for line in lines)
+        has_config_import = any('from config.unified_config_manager import get_config' in line for line in lines)
         
         if not has_config_import:
             # 找到导入区域
@@ -223,7 +223,7 @@ class UnifiedConfigMigrator:
                     break
             
             # 添加配置导入
-            lines.insert(import_end_idx + 1, 'from config import get_config')
+            lines.insert(import_end_idx + 1, 'from config.unified_config_manager import get_config')
         
         return '\n'.join(lines)
     
@@ -282,6 +282,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Optional
 from functools import lru_cache
+from db.sql_manager import SQLManager, QueryType
 
 
 class ConfigManager:

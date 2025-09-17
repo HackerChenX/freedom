@@ -18,7 +18,7 @@ root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
 from indicators.complete_indicator_registry import complete_registry
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from enums.period import Period  # 使用新的统一周期枚举
 from utils.logger import get_logger
 

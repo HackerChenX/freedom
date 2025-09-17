@@ -21,6 +21,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from enums.kline_period import Kline_period
 from .error_handler import get_error_handler, ErrorCategory, with_error_handling
 from .cache_manager import get_cache_manager
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

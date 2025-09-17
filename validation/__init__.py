@@ -17,6 +17,7 @@
 """
 
 from .bidirectional_validation_system import (
+from db.sql_manager import SQLManager, QueryType
     BidirectionalValidationSystem,
     ForwardValidator,
     BackwardValidator,

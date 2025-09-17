@@ -908,6 +908,7 @@ def main():
     
     # 创建测试配置
     from .test_config_manager import TestConfigManager
+from db.sql_manager import SQLManager, QueryType
     config_manager = TestConfigManager()
     config = config_manager.get_config()
     

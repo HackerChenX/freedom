@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -39,7 +40,7 @@ from strategy.historical_buypoint_strategy_generator import (
 from strategy.strategy_bidirectional_validation_engine import (
     StrategyBidirectionalValidationEngine, StrategyValidationReport
 )
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 
 logger = get_logger(__name__)

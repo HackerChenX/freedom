@@ -13,6 +13,7 @@ import numpy as np
 from datetime import datetime, timedelta
 
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 
 class TestBOLLBandwidth(unittest.TestCase):

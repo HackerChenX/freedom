@@ -6,15 +6,29 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional, Union
+from datetime import datetime, date
 import pandas as pd
-from datetime import datetime
 
 
 class DataAccessInterface(ABC):
+    """
+    数据访问接口设计说明:
+    
+    设计原则:
+    1. 简洁明了: 使用简单的类型注解
+    2. 功能完整: 提供完整的数据访问接口
+    3. 易于实现: 接口方法易于理解和实现
+    4. 高性能: 支持批量操作和缓存
+    
+    接口分组:
+    - 基础查询: get_stock_data, get_stock_list, get_market_data
+    - 指标数据: get_indicator_data
+    - 数据处理: validate_data, format_data
+    """
     """统一数据访问接口"""
     
     @abstractmethod
-    def get_stock_data_data_access_interface(self, code: str, start_date: str, end_date: str, 
+    def get_stock_data_data_access_interface(self, code: str, start_date: str, end_date: str,
                       columns: Optional[List[str]] = None) -> pd.DataFrame:
         """
         获取股票数据
@@ -84,41 +98,15 @@ class DataAccessInterface(ABC):
         pass
     
     @abstractmethod
-    def get_stock_list_data_access_interface(self, industry: Optional[str] = None, 
-                      market: Optional[str] = None) -> List[str]:
+    def get_stock_list_data_access_interface(self, market: Optional[str] = None) -> List[str]:
         """
         获取股票列表
-        
+
         Args:
-            industry: 行业筛选
-            market: 市场筛选
-            
+            market: 市场类型，可选
+
         Returns:
             股票代码列表
-        """
-        pass
-    
-    @abstractmethod
-    def get_industry_list_data_access_interface(self) -> List[str]:
-        """
-        获取行业列表
-        
-        Returns:
-            行业列表
-        """
-        pass
-    
-    @abstractmethod
-    def execute_query_data_access_interface(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
-        """
-        执行查询
-        
-        Args:
-            query: SQL查询语句
-            params: 查询参数
-            
-        Returns:
-            查询结果DataFrame
         """
         pass
     
@@ -174,36 +162,49 @@ class ClickHouseDataAccess(DataAccessInterface):
         """初始化默认连接"""
         try:
             from clickhouse_driver import Client
+            from config.unified_database_config import get_unified_database_config
+
+            # 使用统一配置管理
+            db_config = get_unified_database_config()
+            clickhouse_config = db_config.get('clickhouse', {})
+
             self.client = Client(
-                host='localhost',
-                port=9000,
-                database='stock',
-                user='default',
-                password='123456'
+                host=clickhouse_config.get('host', 'localhost'),
+                port=clickhouse_config.get('port', 9000),
+                database=clickhouse_config.get('database', 'stock'),
+                user=clickhouse_config.get('user', 'default'),
+                password=clickhouse_config.get('password', '123456')
             )
         except Exception as e:
             raise DataAccessError(f"初始化ClickHouse连接失败: {e}")
 
     def get_stock_data_data_access_interface(self, code: str, start_date: str, end_date: str,
-                      columns: Optional[List[str]] = None) -> pd.DataFrame:
+                      columns: Optional[List[str]] = None, level: str = '日线') -> pd.DataFrame:
         """获取股票数据"""
         try:
-            # 构建查询SQL
+            # 验证和清理列名防止SQL注入
             if columns:
-                columns_str = ', '.join(columns)
+                safe_columns = []
+                for col in columns:
+                    if col.replace('_', '').isalnum():
+                        safe_columns.append(col)
+                    else:
+                        raise ValueError(f"无效的列名: {col}")
+                columns_str = ', '.join(safe_columns)
             else:
                 columns_str = 'date, open, high, low, close, volume'
 
+            # 使用参数化查询
             query = f"""
                 SELECT {columns_str}
                 FROM stock_info
-                WHERE code = '{code}'
-                AND level = '日线'
-                AND date BETWEEN '{start_date}' AND '{end_date}'
+                WHERE code = %s
+                AND level = %s
+                AND date BETWEEN %s AND %s
                 ORDER BY date ASC
             """
 
-            result = self.client.execute(query)
+            result = self.client.execute(query, [code, level, start_date, end_date])
 
             if result:
                 column_names = columns if columns else ['date', 'open', 'high', 'low', 'close', 'volume']
@@ -217,7 +218,7 @@ class ClickHouseDataAccess(DataAccessInterface):
             raise DataAccessError(f"获取股票{code}数据失败: {e}")
 
     def get_stocks_data_batch_data_access_interface(self, codes: List[str], start_date: str, end_date: str,
-                             columns: Optional[List[str]] = None) -> pd.DataFrame:
+                             columns: Optional[List[str]] = None, level: str = '日线') -> pd.DataFrame:
         """批量获取多只股票数据"""
         try:
             if columns:
@@ -228,9 +229,8 @@ class ClickHouseDataAccess(DataAccessInterface):
             codes_str = "', '".join(codes)
             query = f"""
                 SELECT {columns_str}
-                FROM stock_info
-                WHERE code IN ('{codes_str}')
-                AND level = '日线'
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{codes_str}')
+                AND level = '{level}'
                 AND date BETWEEN '{start_date}' AND '{end_date}'
                 ORDER BY code, date ASC
             """
@@ -257,14 +257,12 @@ class ClickHouseDataAccess(DataAccessInterface):
         except Exception as e:
             raise DataAccessError(f"获取指标{indicator}数据失败: {e}")
 
-    def get_stock_list_data_access_interface(self, industry: Optional[str] = None,
-                      market: Optional[str] = None) -> List[str]:
+    def get_stock_list_data_access_interface(self, market: Optional[str] = None, level: str = '日线') -> List[str]:
         """获取股票列表"""
         try:
-            query = """
+            query = f"""
                 SELECT DISTINCT code
-                FROM stock_info
-                WHERE level = '日线'
+                FROM stock_info WHERE code = %(code)s AND level = '{level}'
                 AND close > 5.0
                 LIMIT 50
             """
@@ -279,7 +277,7 @@ class ClickHouseDataAccess(DataAccessInterface):
         except Exception as e:
             raise DataAccessError(f"获取股票列表失败: {e}")
 
-    def get_industry_list_data_access_interface(self) -> List[str]:
+    def get__list_data_access_interface(self) -> List[str]:
         """获取行业列表"""
         try:
             # 暂时返回空列表，需要行业数据表

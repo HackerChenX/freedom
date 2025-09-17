@@ -1,3 +1,5 @@
+from typing import Dict, Any
+from utils.container import container
 """
 ZXM体系买点指标模块
 
@@ -11,7 +13,7 @@ from typing import Dict, List, Union, Optional, Any, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -20,13 +22,16 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
     """
     ZXM买点-日MACD指标
     
-    判断日线MACD指标是否小于0.9
+    判断日线MACD指标是否小于0.9  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-日MACD指标"""
-        super().__init__(name="ZXMDailyMACD", description="ZXM买点-日MACD指标，判断日线MACD值是否小于0.9")
+        super().__init__(name="ZXMDailyMACD", description="ZXM买点-日MACD指标，判断日线MACD值是否小于0.9")  # TODO: 将魔法数字提取到配置中
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -39,10 +44,10 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);
-        DEA:=EMA(DIFF,9);
+        DIFF:=EMA(CLOSE,12)-EMA(CLOSE,26);  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        DEA:=EMA(DIFF,9);  # TODO: 将魔法数字提取到配置中
         MACD:=2*(DIFF-DEA);
-        xg:MACD<0.9
+        xg:MACD<0.9  # TODO: 将魔法数字提取到配置中
         """
         # 确保数据包含必需的列
         if 'close' not in data.columns:
@@ -52,14 +57,14 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
         result = data.copy()
         
         # 计算MACD指标
-        ema12 = data["close"].ewm(span=12, adjust=False).mean()
-        ema26 = data["close"].ewm(span=26, adjust=False).mean()
+        ema12 = data["close"].ewm(span=12, adjust=False).mean()  # TODO: 将魔法数字提取到配置中
+        ema26 = data["close"].ewm(span=26, adjust=False).mean()  # TODO: 将魔法数字提取到配置中
         diff = ema12 - ema26
-        dea = diff.ewm(span=9, adjust=False).mean()
+        dea = diff.ewm(span=9, adjust=False).mean()  # TODO: 将魔法数字提取到配置中
         macd = 2 * (diff - dea)
         
         # 计算买点信号
-        xg = macd < 0.9
+        xg = macd < 0.9  # TODO: 将魔法数字提取到配置中
         
         # 添加计算结果到数据框
         result.loc[:, "EMA12"] = ema12
@@ -91,27 +96,27 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 主要信号评分规则
         # 1. MACD小于0.9的买点信号：+30分
-        score[result["XG"]] += 30
+        score[result["XG"]] += 30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. MACD为正值加分
         macd_positive = result["MACD"] > 0
-        score[macd_positive] += 15
+        score[macd_positive] += 15  # TODO: 将魔法数字提取到配置中
 
-        # 3. MACD上升趋势加分
+        # 3. MACD上升趋势加分  # TODO: 将魔法数字提取到配置中
         macd_rising = result["MACD"] > result["MACD"].shift(1)
-        score[macd_rising] += 15
+        score[macd_rising] += 15  # TODO: 将魔法数字提取到配置中
 
-        # 4. DIFF和DEA都为正值且DIFF>DEA（多头排列）
+        # 4. DIFF和DEA都为正值且DIFF>DEA（多头排列）  # TODO: 将魔法数字提取到配置中
         bullish_alignment = (result["DIFF"] > 0) & (result["DEA"] > 0) & (result["DIFF"] > result["DEA"])
         score[bullish_alignment] += 10
 
-        # 5. MACD金叉信号
+        # 5. MACD金叉信号  # TODO: 将魔法数字提取到配置中
         golden_cross = (result["DIFF"] > result["DEA"]) & (result["DIFF"].shift(1) <= result["DEA"].shift(1))
-        score[golden_cross] += 20
+        score[golden_cross] += 20  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -178,7 +183,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
                         patterns.append("日线MACD死叉形成")
 
             # MACD值区间判断
-            if abs(macd_value) < 0.5:
+            if abs(macd_value) < 0.5:  # TODO: 将魔法数字提取到配置中
                 patterns.append("日线MACD接近零轴")
             elif macd_value < -2:
                 patterns.append("日线MACD严重超卖")
@@ -245,19 +250,19 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "日线MACD买点信号" in patterns:
             pattern_boost += 0.2
         if "日线MACD金叉形成" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "日线MACD多头排列" in patterns:
             pattern_boost += 0.1
         if "日线MACD上升趋势" in patterns:
@@ -303,7 +308,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
         patterns_df.loc[:, "ZXM_DAILY_MACD_DEATH_CROSS"] = diff_cross_below_dea
 
         # MACD值区间形态 - 使用注册的pattern_id
-        patterns_df.loc[:, "ZXM_DAILY_MACD_NEAR_ZERO"] = abs(result["MACD"]) < 0.5
+        patterns_df.loc[:, "ZXM_DAILY_MACD_NEAR_ZERO"] = abs(result["MACD"]) < 0.5  # TODO: 将魔法数字提取到配置中
         patterns_df.loc[:, "ZXM_DAILY_MACD_OVERSOLD"] = result["MACD"] < -2
         patterns_df.loc[:, "ZXM_DAILY_MACD_OVERBOUGHT"] = result["MACD"] > 2
 
@@ -317,10 +322,10 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
         self.register_pattern_to_registry(
             pattern_id="ZXM_DAILY_MACD_BUY_POINT",
             display_name="ZXM日线MACD买点信号",
-            description="日线MACD值小于0.9，ZXM体系买点信号",
+            description="日线MACD值小于0.9，ZXM体系买点信号",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -331,7 +336,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="日线MACD值为正，表明多头力量占优",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -341,7 +346,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="日线MACD值为负，表明空头力量占优",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -352,7 +357,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="日线MACD呈上升趋势，动能增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -362,7 +367,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="日线MACD呈下降趋势，动能减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -394,7 +399,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="DIFF上穿DEA，金叉形成",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -404,7 +409,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="DIFF下穿DEA，死叉形成",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -425,7 +430,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="MACD值严重超卖，可能反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -435,7 +440,7 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
             description="MACD值严重超买，可能回调",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -448,12 +453,12 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
                 - fast_period: 快线周期，默认12
                 - slow_period: 慢线周期，默认26
                 - signal_period: 信号线周期，默认9
-                - threshold: MACD阈值，默认0.9
+                - threshold: MACD阈值，默认0.9  # TODO: 将魔法数字提取到配置中
         """
-        self.fast_period = kwargs.get('fast_period', 12)
-        self.slow_period = kwargs.get('slow_period', 26)
-        self.signal_period = kwargs.get('signal_period', 9)
-        self.threshold = kwargs.get('threshold', 0.9)
+        self.fast_period = kwargs.get('fast_period', 12)  # TODO: 将魔法数字提取到配置中
+        self.slow_period = kwargs.get('slow_period', 26)  # TODO: 将魔法数字提取到配置中
+        self.signal_period = kwargs.get('signal_period', 9)  # TODO: 将魔法数字提取到配置中
+        self.threshold = kwargs.get('threshold', 0.9)  # TODO: 将魔法数字提取到配置中
 
     @property
     def minimum_periods(self) -> int:
@@ -465,19 +470,22 @@ class ZXMDailyMACDBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixi
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中
 
 class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin):
     """
     ZXM买点-换手率指标
 
-    判断日线换手率是否大于0.7%
+    判断日线换手率是否大于0.7%  # TODO: 将魔法数字提取到配置中
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-换手率指标"""
-        super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%")
+        super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%  # TODO: 将魔法数字提取到配置中")
     
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -490,7 +498,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        换手率>0.7;
+        换手率>0.7;  # TODO: 将魔法数字提取到配置中
         xg:换手;
         """
         # 确保数据包含必需的列（支持turnover_rate或turnover列）
@@ -507,7 +515,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             turnover = data["turnover"]
         
         # 计算买点信号
-        xg = turnover > 0.7
+        xg = turnover > 0.7  # TODO: 将魔法数字提取到配置中
         
         # 添加计算结果到数据框
         result.loc[:, "Turnover"] = turnover
@@ -540,28 +548,28 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 主要信号评分规则
-        # 1. 换手率大于0.7%的买点信号：+30分
-        score[result["XG"]] += 30
+        # 1. 换手率大于0.7%的买点信号：+30分  # TODO: 将魔法数字提取到配置中
+        score[result["XG"]] += 30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. 换手率活跃度评分
         turnover = result["Turnover"]
 
         # 换手率越高，活跃度越高
-        score[turnover > 1.0] += 15  # 换手率>1%，非常活跃
-        score[(turnover > 0.7) & (turnover <= 1.0)] += 10  # 换手率0.7%-1%，活跃
-        score[(turnover > 0.5) & (turnover <= 0.7)] += 5   # 换手率0.5%-0.7%，一般活跃
+        score[turnover > 1.0] += 15  # 换手率>1%，非常活跃  # TODO: 将魔法数字提取到配置中
+        score[(turnover > 0.7) & (turnover <= 1.0)] += 10  # 换手率0.7%-1%，活跃  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(turnover > 0.5) & (turnover <= 0.7)] += 5   # 换手率0.5%-0.7%，一般活跃  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 相对换手率评分（与历史平均比较）
-        if len(turnover) >= 20:
-            avg_turnover_20 = turnover.rolling(window=20).mean()
-            relative_active = turnover > avg_turnover_20 * 1.5
+        # 3. 相对换手率评分（与历史平均比较）  # TODO: 将魔法数字提取到配置中
+        if len(turnover) >= 20:  # TODO: 将魔法数字提取到配置中
+            avg_turnover_20 = turnover.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            relative_active = turnover > avg_turnover_20 * 1.5  # TODO: 将魔法数字提取到配置中
             score[relative_active] += 10
 
-        # 4. 换手率过高风险评分
-        score[turnover > 5.0] -= 10  # 换手率过高可能是炒作
+        # 4. 换手率过高风险评分  # TODO: 将魔法数字提取到配置中
+        score[turnover > 5.0] -= 10  # 换手率过高可能是炒作  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -593,33 +601,33 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
 
             # 换手率活跃度判断
             turnover = last_row["Turnover"]
-            if turnover > 5.0:
+            if turnover > 5.0:  # TODO: 将魔法数字提取到配置中
                 patterns.append("换手率极度活跃")
             elif turnover > 2.0:
                 patterns.append("换手率非常活跃")
             elif turnover > 1.0:
                 patterns.append("换手率活跃")
-            elif turnover > 0.7:
+            elif turnover > 0.7:  # TODO: 将魔法数字提取到配置中
                 patterns.append("换手率一般活跃")
             else:
                 patterns.append("换手率低迷")
 
             # 相对活跃度判断
-            if len(result) >= 20:
-                avg_turnover_20 = result["Turnover"].rolling(window=20).mean().iloc[-1]
+            if len(result) >= 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                avg_turnover_20 = result["Turnover"].rolling(window=20).mean().iloc[-1]  # TODO: 将魔法数字提取到配置中
                 if turnover > avg_turnover_20 * 2:
                     patterns.append("换手率相对历史极度活跃")
-                elif turnover > avg_turnover_20 * 1.5:
+                elif turnover > avg_turnover_20 * 1.5:  # TODO: 将魔法数字提取到配置中
                     patterns.append("换手率相对历史活跃")
-                elif turnover < avg_turnover_20 * 0.5:
+                elif turnover < avg_turnover_20 * 0.5:  # TODO: 将魔法数字提取到配置中
                     patterns.append("换手率相对历史低迷")
 
             # 换手率趋势判断
-            if len(result) >= 5:
-                recent_trend = result["Turnover"].iloc[-5:].mean()
-                if turnover > recent_trend * 1.3:
+            if len(result) >= 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                recent_trend = result["Turnover"].iloc[-5:].mean()  # TODO: 将魔法数字提取到配置中
+                if turnover > recent_trend * 1.3:  # TODO: 将魔法数字提取到配置中
                     patterns.append("换手率突然放大")
-                elif turnover < recent_trend * 0.7:
+                elif turnover < recent_trend * 0.7:  # TODO: 将魔法数字提取到配置中
                     patterns.append("换手率突然缩小")
 
         return patterns
@@ -637,17 +645,17 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "换手率买点信号" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "换手率相对历史活跃" in patterns:
             pattern_boost += 0.1
         if "换手率突然放大" in patterns:
@@ -681,24 +689,24 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
 
         # 换手率活跃度形态 - 使用注册的pattern_id
         turnover = result["Turnover"]
-        patterns_df.loc[:, "ZXM_TURNOVER_EXTREMELY_ACTIVE"] = turnover > 5.0
-        patterns_df.loc[:, "ZXM_TURNOVER_VERY_ACTIVE"] = (turnover > 2.0) & (turnover <= 5.0)
+        patterns_df.loc[:, "ZXM_TURNOVER_EXTREMELY_ACTIVE"] = turnover > 5.0  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_TURNOVER_VERY_ACTIVE"] = (turnover > 2.0) & (turnover <= 5.0)  # TODO: 将魔法数字提取到配置中
         patterns_df.loc[:, "ZXM_TURNOVER_ACTIVE"] = (turnover > 1.0) & (turnover <= 2.0)
-        patterns_df.loc[:, "ZXM_TURNOVER_NORMAL_ACTIVE"] = (turnover > 0.7) & (turnover <= 1.0)
-        patterns_df.loc[:, "ZXM_TURNOVER_LOW"] = turnover <= 0.7
+        patterns_df.loc[:, "ZXM_TURNOVER_NORMAL_ACTIVE"] = (turnover > 0.7) & (turnover <= 1.0)  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_TURNOVER_LOW"] = turnover <= 0.7  # TODO: 将魔法数字提取到配置中
 
         # 相对活跃度形态 - 使用注册的pattern_id
-        if len(result) >= 20:
-            avg_turnover_20 = turnover.rolling(window=20).mean()
+        if len(result) >= 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            avg_turnover_20 = turnover.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_EXTREMELY_ACTIVE"] = turnover > avg_turnover_20 * 2
-            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_ACTIVE"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)
-            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_LOW"] = turnover < avg_turnover_20 * 0.5
+            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_ACTIVE"] = (turnover > avg_turnover_20 * 1.5) & (turnover <= avg_turnover_20 * 2)  # TODO: 将魔法数字提取到配置中
+            patterns_df.loc[:, "ZXM_TURNOVER_RELATIVE_LOW"] = turnover < avg_turnover_20 * 0.5  # TODO: 将魔法数字提取到配置中
 
         # 换手率趋势形态 - 使用注册的pattern_id
-        if len(result) >= 5:
-            recent_trend = turnover.rolling(window=5).mean()
-            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_INCREASE"] = turnover > recent_trend * 1.3
-            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_DECREASE"] = turnover < recent_trend * 0.7
+        if len(result) >= 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            recent_trend = turnover.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
+            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_INCREASE"] = turnover > recent_trend * 1.3  # TODO: 将魔法数字提取到配置中
+            patterns_df.loc[:, "ZXM_TURNOVER_SUDDEN_DECREASE"] = turnover < recent_trend * 0.7  # TODO: 将魔法数字提取到配置中
 
         return patterns_df
 
@@ -710,10 +718,10 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_BUY_POINT",
             display_name="ZXM换手率买点信号",
-            description="换手率大于0.7%，ZXM体系买点信号",
+            description="换手率大于0.7%，ZXM体系买点信号",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -721,7 +729,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_EXTREMELY_ACTIVE",
             display_name="ZXM_换手率极度活跃",
-            description="换手率超过历史平均水平3倍，换手率>5%，极度活跃，需要谨慎",
+            description="换手率超过历史平均水平3倍，换手率>5%，极度活跃，需要谨慎",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
             score_impact=0.0,
@@ -731,7 +739,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_VERY_ACTIVE",
             display_name="ZXM_换手率非常活跃",
-            description="换手率处于高活跃区间，换手率2%-5%，非常活跃",
+            description="换手率处于高活跃区间，换手率2%-5%，非常活跃",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=10.0,
@@ -744,27 +752,27 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="换手率处于活跃区间，换手率1%-2%，活跃",
             pattern_type="BULLISH",
             default_strength="WEAK",
-            score_impact=8.0,
+            score_impact=8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_NORMAL_ACTIVE",
             display_name="ZXM_换手率适度活跃",
-            description="换手率处于正常活跃区间，换手率0.7%-1%，适度活跃",
+            description="换手率处于正常活跃区间，换手率0.7%-1%，适度活跃",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="WEAK",
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_TURNOVER_LOW",
             display_name="ZXM换手率低迷",
-            description="换手率≤0.7%，低迷",
+            description="换手率≤0.7%，低迷",  # TODO: 将魔法数字提取到配置中
             pattern_type="BEARISH",
             default_strength="WEAK",
-            score_impact=-5.0,
+            score_impact=-5.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -775,7 +783,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="换手率相对20日均值极度活跃",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -795,7 +803,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="换手率相对20日均值低迷",
             pattern_type="BEARISH",
             default_strength="WEAK",
-            score_impact=-8.0,
+            score_impact=-8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -806,7 +814,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="换手率较前日增长超过100%，换手率突然放大，关注资金流入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0,
+            score_impact=12.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -816,7 +824,7 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="换手率较前日下降超过50%，换手率突然缩小，关注资金流出",
             pattern_type="BEARISH",
             default_strength="WEAK",
-            score_impact=-8.0,
+            score_impact=-8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -826,9 +834,9 @@ class ZXMTurnoverBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
 
         Args:
             **kwargs: 参数字典，可包含：
-                - threshold: 换手率阈值，默认0.7
+                - threshold: 换手率阈值，默认0.7  # TODO: 将魔法数字提取到配置中
         """
-        self.threshold = kwargs.get('threshold', 0.7)
+        self.threshold = kwargs.get('threshold', 0.7)  # TODO: 将魔法数字提取到配置中
 
 
 class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin):
@@ -839,6 +847,9 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-缩量指标"""
         super().__init__(name="ZXMVolumeShrink", description="ZXM买点-缩量指标，判断成交量是否明显缩量")
@@ -854,7 +865,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        VOL/MA(VOL,2)<0.9;
+        VOL/MA(VOL,2)<0.9;  # TODO: 将魔法数字提取到配置中
         """
         # 确保数据包含必需的列
         if 'volume' not in data.columns:
@@ -870,7 +881,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
         vol_ratio = data["volume"] / ma_vol_2
         
         # 计算买点信号
-        xg = vol_ratio < 0.9
+        xg = vol_ratio < 0.9  # TODO: 将魔法数字提取到配置中
         
         # 添加计算结果到数据框
         result.loc[:, "MA_VOL_2"] = ma_vol_2
@@ -904,31 +915,31 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 主要信号评分规则
         # 1. 缩量买点信号：+30分
-        score[result["XG"]] += 30
+        score[result["XG"]] += 30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. 缩量程度评分
         vol_ratio = result["VOL_RATIO"]
 
         # 缩量越明显，评分越高
-        score[vol_ratio < 0.7] += 15  # 严重缩量
-        score[(vol_ratio >= 0.7) & (vol_ratio < 0.8)] += 10  # 明显缩量
-        score[(vol_ratio >= 0.8) & (vol_ratio < 0.9)] += 5   # 轻微缩量
+        score[vol_ratio < 0.7] += 15  # 严重缩量  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(vol_ratio >= 0.7) & (vol_ratio < 0.8)] += 10  # 明显缩量  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(vol_ratio >= 0.8) & (vol_ratio < 0.9)] += 5   # 轻微缩量  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 连续缩量评分
-        if len(result) >= 3:
+        # 3. 连续缩量评分  # TODO: 将魔法数字提取到配置中
+        if len(result) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             consecutive_shrink = pd.Series(False, index=data.index)
             for i in range(2, len(result)):
                 if all(result["XG"].iloc[i-2:i+1]):
                     consecutive_shrink.iloc[i] = True
-            score[consecutive_shrink] += 15
+            score[consecutive_shrink] += 15  # TODO: 将魔法数字提取到配置中
 
-        # 4. 缩量配合价格稳定评分
-        if 'close' in data.columns and len(data) >= 3:
-            price_stable = abs(data['close'].pct_change(3)) < 0.05  # 3日内价格变化小于5%
+        # 4. 缩量配合价格稳定评分  # TODO: 将魔法数字提取到配置中
+        if 'close' in data.columns and len(data) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            price_stable = abs(data['close'].pct_change(3)) < 0.05  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # 3日内价格变化小于5%  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             volume_shrink_with_stable_price = result["XG"] & price_stable
             score[volume_shrink_with_stable_price] += 10
         
@@ -962,24 +973,24 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
 
             # 缩量程度判断
             vol_ratio = last_row["VOL_RATIO"]
-            if vol_ratio < 0.5:
+            if vol_ratio < 0.5:  # TODO: 将魔法数字提取到配置中
                 patterns.append("严重缩量")
-            elif vol_ratio < 0.7:
+            elif vol_ratio < 0.7:  # TODO: 将魔法数字提取到配置中
                 patterns.append("明显缩量")
-            elif vol_ratio < 0.9:
+            elif vol_ratio < 0.9:  # TODO: 将魔法数字提取到配置中
                 patterns.append("轻微缩量")
             else:
                 patterns.append("成交量正常")
 
             # 连续缩量判断
-            if len(result) >= 3:
-                if all(result["XG"].iloc[-3:]):
+            if len(result) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                if all(result["XG"].iloc[-3:]):  # TODO: 将魔法数字提取到配置中
                     patterns.append("连续缩量")
 
             # 缩量配合价格稳定判断
-            if 'close' in data.columns and len(data) >= 3:
-                price_change = abs(data['close'].iloc[-1] / data['close'].iloc[-4] - 1)
-                if last_row["XG"] and price_change < 0.05:
+            if 'close' in data.columns and len(data) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                = abs(data['close'].iloc[-1] / data['close'].iloc[-4] - 1)  # TODO: 将魔法数字提取到配置中
+                if last_row["XG"] and < 0.05:  # TODO: 将魔法数字提取到配置中
                     patterns.append("缩量整理")
 
         return patterns
@@ -997,19 +1008,19 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "缩量买点信号" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "严重缩量" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "连续缩量" in patterns:
             pattern_boost += 0.1
         if "缩量整理" in patterns:
@@ -1041,13 +1052,13 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
 
         # 缩量程度形态 - 使用注册的pattern_id
         vol_ratio = result["VOL_RATIO"]
-        patterns_df.loc[:, "ZXM_VOLUME_SEVERE_SHRINK"] = vol_ratio < 0.5
-        patterns_df.loc[:, "ZXM_VOLUME_OBVIOUS_SHRINK"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)
-        patterns_df.loc[:, "ZXM_VOLUME_SLIGHT_SHRINK"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)
-        patterns_df.loc[:, "ZXM_VOLUME_NORMAL"] = vol_ratio >= 0.9
+        patterns_df.loc[:, "ZXM_VOLUME_SEVERE_SHRINK"] = vol_ratio < 0.5  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_VOLUME_OBVIOUS_SHRINK"] = (vol_ratio >= 0.5) & (vol_ratio < 0.7)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_VOLUME_SLIGHT_SHRINK"] = (vol_ratio >= 0.7) & (vol_ratio < 0.9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_VOLUME_NORMAL"] = vol_ratio >= 0.9  # TODO: 将魔法数字提取到配置中
 
         # 连续缩量形态 - 使用注册的pattern_id
-        if len(result) >= 3:
+        if len(result) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             consecutive_shrink = pd.Series(False, index=data.index)
             for i in range(2, len(result)):
                 if all(result["XG"].iloc[i-2:i+1]):
@@ -1055,8 +1066,8 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             patterns_df.loc[:, "ZXM_VOLUME_CONSECUTIVE_SHRINK"] = consecutive_shrink
 
         # 缩量整理形态 - 使用注册的pattern_id
-        if 'close' in data.columns and len(data) >= 3:
-            price_stable = abs(data['close'].pct_change(3)) < 0.05
+        if 'close' in data.columns and len(data) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            price_stable = abs(data['close'].pct_change(3)) < 0.05  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             patterns_df.loc[:, "ZXM_VOLUME_SHRINK_CONSOLIDATION"] = result["XG"] & price_stable
 
         return patterns_df
@@ -1072,7 +1083,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             description="缩量过程中形成的买入点位，成交量明显缩量，ZXM体系买点信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1080,27 +1091,27 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SEVERE_SHRINK",
             display_name="ZXM_成交量严重缩量",
-            description="成交量严重缩量，量比<0.5，市场观望情绪极强",
+            description="成交量严重缩量，量比<0.5，市场观望情绪极强",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_OBVIOUS_SHRINK",
             display_name="ZXM_成交量明显缩量",
-            description="成交量明显缩量，量比0.5-0.7，市场交投清淡",
+            description="成交量明显缩量，量比0.5-0.7，市场交投清淡",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=3.0,
+            score_impact=3.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_SLIGHT_SHRINK",
             display_name="ZXM_成交量轻微缩量",
-            description="成交量较前期下降10-30%，量比0.7-0.9，轻微缩量",
+            description="成交量较前期下降10-30%，量比0.7-0.9，轻微缩量",  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=1.0,
@@ -1110,7 +1121,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
         self.register_pattern_to_registry(
             pattern_id="ZXM_VOLUME_NORMAL",
             display_name="ZXM_成交量正常",
-            description="成交量处于正常水平区间，量比≥0.9",
+            description="成交量处于正常水平区间，量比≥0.9",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -1124,7 +1135,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             description="成交量连续3日以上缩量，市场观望情绪浓厚",
             pattern_type="NEUTRAL",
             default_strength="MEDIUM",
-            score_impact=8.0,
+            score_impact=8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
@@ -1135,7 +1146,7 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
             description="缩量配合价格整理，蓄势待发，为后续上涨积蓄能量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0,
+            score_impact=12.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1146,10 +1157,10 @@ class ZXMVolumeShrinkBuy_Point_Indicators_Original(BaseIndicator, PatternSignalM
         Args:
             **kwargs: 参数字典，可包含：
                 - ma_period: 均量计算周期，默认2
-                - shrink_threshold: 缩量阈值，默认0.9
+                - shrink_threshold: 缩量阈值，默认0.9  # TODO: 将魔法数字提取到配置中
         """
         self.ma_period = kwargs.get('ma_period', 2)
-        self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)
+        self.shrink_threshold = kwargs.get('shrink_threshold', 0.9)  # TODO: 将魔法数字提取到配置中
 
 
 class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin):
@@ -1159,7 +1170,10 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
     判断收盘价是否回踩至20日、30日、60日或120日均线的N%以内
     """
     
-    def __init__(self, callback_percent: float = 4.0):
+    def __init__(self, callback_percent: float = 4.0):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化ZXM买点-回踩均线指标
@@ -1181,10 +1195,10 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        A20:=ABS((C/MA(C,20)-1)*100)<= N;
-        A30:=ABS((C/MA(C,30)-1)*100)<= N;
-        A60:=ABS((C/MA(C,60)-1)*100)<= N;
-        A120:=ABS((C/MA(C,120)-1)*100)<= N;
+        A20:=ABS((C/MA(C,20)-1)*100)<= N;  # TODO: 将魔法数字提取到配置中
+        A30:=ABS((C/MA(C,30)-1)*100)<= N;  # TODO: 将魔法数字提取到配置中
+        A60:=ABS((C/MA(C,60)-1)*100)<= N;  # TODO: 将魔法数字提取到配置中
+        A120:=ABS((C/MA(C,120)-1)*100)<= N;  # TODO: 将魔法数字提取到配置中
         XG:A20 OR A30 OR A60 OR A120;
         """
         # 确保数据包含必需的列
@@ -1195,10 +1209,10 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
         result = data.copy()
         
         # 计算各均线
-        ma20 = data["close"].rolling(window=20).mean()
-        ma30 = data["close"].rolling(window=30).mean()
-        ma60 = data["close"].rolling(window=60).mean()
-        ma120 = data["close"].rolling(window=120).mean()
+        ma20 = data["close"].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        ma30 = data["close"].rolling(window=30).mean()  # TODO: 将魔法数字提取到配置中
+        ma60 = data["close"].rolling(window=60).mean()  # TODO: 将魔法数字提取到配置中
+        ma120 = data["close"].rolling(window=120).mean()  # TODO: 将魔法数字提取到配置中
         
         # 计算收盘价与各均线的偏离百分比
         a20 = abs((data["close"] / ma20 - 1) * 100) <= self.callback_percent
@@ -1247,24 +1261,24 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 主要信号评分规则
         # 1. 回踩均线买点信号：+30分
-        score[result["XG"]] += 30
+        score[result["XG"]] += 30  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. 回踩到不同均线的评分
-        score[result["A20"]] += 5   # 回踩20日线
-        score[result["A30"]] += 8   # 回踩30日线
-        score[result["A60"]] += 12  # 回踩60日线
-        score[result["A120"]] += 15 # 回踩120日线
+        score[result["A20"]] += 5   # 回踩20日线  # TODO: 将魔法数字提取到配置中
+        score[result["A30"]] += 8   # 回踩30日线  # TODO: 将魔法数字提取到配置中
+        score[result["A60"]] += 12  # 回踩60日线  # TODO: 将魔法数字提取到配置中
+        score[result["A120"]] += 15 # 回踩120日线  # TODO: 将魔法数字提取到配置中
 
-        # 3. 多条均线同时回踩加分
+        # 3. 多条均线同时回踩加分  # TODO: 将魔法数字提取到配置中
         ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
         score[ma_count >= 2] += 10  # 同时回踩2条以上均线
-        score[ma_count >= 3] += 15  # 同时回踩3条以上均线
+        score[ma_count >= 3] += 15  # 同时回踩3条以上均线  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 4. 均线支撑强度评分
+        # 4. 均线支撑强度评分  # TODO: 将魔法数字提取到配置中
         if 'close' in data.columns:
             close_price = data['close']
             # 价格在均线上方但接近均线（支撑有效）
@@ -1273,7 +1287,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
                     above_ma = close_price > result[ma_col]
                     near_ma = result[a_col]
                     valid_support = above_ma & near_ma
-                    score[valid_support] += 5
+                    score[valid_support] += 5  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -1315,7 +1329,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
 
             # 多重回调判断
             ma_count = sum([last_row["A20"], last_row["A30"], last_row["A60"], last_row["A120"]])
-            if ma_count >= 3:
+            if ma_count >= 3:  # TODO: 将魔法数字提取到配置中
                 patterns.append("多重均线回调")
             elif ma_count >= 2:
                 patterns.append("双重均线回调")
@@ -1349,25 +1363,25 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "均线回调买点信号" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "多重均线回调" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "双重均线回调" in patterns:
             pattern_boost += 0.1
 
         # 长期均线支撑更可靠
         if "120日线有效支撑" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "60日线有效支撑" in patterns:
             pattern_boost += 0.1
 
@@ -1405,7 +1419,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
 
         # 多重回调形态 - 使用注册的pattern_id
         ma_count = result["A20"].astype(int) + result["A30"].astype(int) + result["A60"].astype(int) + result["A120"].astype(int)
-        patterns_df.loc[:, "ZXM_MULTIPLE_MA_CALLBACK"] = ma_count >= 3
+        patterns_df.loc[:, "ZXM_MULTIPLE_MA_CALLBACK"] = ma_count >= 3  # TODO: 将魔法数字提取到配置中
         patterns_df.loc[:, "ZXM_DOUBLE_MA_CALLBACK"] = ma_count == 2
         patterns_df.loc[:, "ZXM_SINGLE_MA_CALLBACK"] = ma_count == 1
 
@@ -1432,7 +1446,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="均线回调形成的标准买入点位，价格回踩至关键均线附近，ZXM体系买点信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1443,7 +1457,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格回调至MA20均线获得支撑确认，回踩至20日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="WEAK",
-            score_impact=8.0,
+            score_impact=8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1453,7 +1467,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格回调至MA30均线获得支撑确认，回踩至30日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0,
+            score_impact=12.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1463,7 +1477,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格回调至MA60均线获得支撑确认，回踩至60日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0,
+            score_impact=18.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1473,7 +1487,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格回调至MA120均线获得支撑确认，回踩至120日均线4%范围内",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1484,7 +1498,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格同时获得多条均线支撑确认，多重支撑共振效应",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1494,7 +1508,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="价格同时获得两条均线支撑确认，双重支撑效应",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1515,7 +1529,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="MA20均线提供强力支撑作用，价格在20日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="WEAK",
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1525,7 +1539,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="MA30均线提供强力支撑作用，价格在30日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=8.0,
+            score_impact=8.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1535,7 +1549,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="MA60均线提供强力支撑作用，价格在60日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1545,7 +1559,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             description="MA120均线提供强力支撑作用，价格在120日均线上方获得支撑",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1557,7 +1571,7 @@ class ZXMMACallbackBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMix
             **kwargs: 参数字典，可包含：
                 - callback_percent: 回踩百分比，默认4.0
         """
-        self.callback_percent = kwargs.get('callback_percent', 4.0)
+        self.callback_percent = kwargs.get('callback_percent', 4.0)  # TODO: 将魔法数字提取到配置中
     
     
 class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin):
@@ -1568,6 +1582,9 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点-BS吸筹指标"""
         super().__init__(name="ZXMBSAbsorb", description="ZXM买点-BS吸筹指标，判断60分钟级别是否存在低位吸筹特征")
@@ -1583,11 +1600,11 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             pd.DataFrame: 计算结果，包含买点信号
             
         公式说明：
-        V11:=3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1)-2*SMA(SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1),3,1);
-        V12:=(EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100;
-        AA:=(EMA(V11,3)<=13) AND FILTER((EMA(V11,3)<=13),15);
-        BB:=(EMA(V11,3)<=13 AND V12>13) AND FILTER((EMA(V11,3)<=13 AND V12>13),10);
-        XG:COUNT(AA OR BB,6)
+        V11:=3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1)-2*SMA(SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1),3,1);  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        V12:=(EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100;  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        AA:=(EMA(V11,3)<=13) AND FILTER((EMA(V11,3)<=13),15);  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        BB:=(EMA(V11,3)<=13 AND V12>13) AND FILTER((EMA(V11,3)<=13 AND V12>13),10);  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        XG:COUNT(AA OR BB,6)  # TODO: 将魔法数字提取到配置中
         
         注意：这里的FILTER函数表示在过去N周期内至少出现一次该条件
         """
@@ -1601,8 +1618,8 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         result = data.copy()
         
         # 计算LLV和HHV
-        llv_55 = data["low"].rolling(window=55).min()
-        hhv_55 = data["high"].rolling(window=55).max()
+        llv_55 = data["low"].rolling(window=55).min()  # TODO: 将魔法数字提取到配置中
+        hhv_55 = data["high"].rolling(window=55).max()  # TODO: 将魔法数字提取到配置中
         
         # 计算RSV变种
         rsv_55 = pd.Series(np.zeros(len(data)), index=data.index)
@@ -1611,12 +1628,12 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         rsv_55[valid_idx] = ((data["close"] - llv_55) / divisor * 100)[valid_idx]
         
         # 计算V11
-        sma_rsv_5 = self._sma(rsv_55, 5, 1)
-        sma_sma_3 = self._sma(sma_rsv_5, 3, 1)
-        v11 = 3 * sma_rsv_5 - 2 * sma_sma_3
+        sma_rsv_5 = self._sma(rsv_55, 5, 1)  # TODO: 将魔法数字提取到配置中
+        sma_sma_3 = self._sma(sma_rsv_5, 3, 1)  # TODO: 将魔法数字提取到配置中
+        v11 = 3 * sma_rsv_5 - 2 * sma_sma_3  # TODO: 将魔法数字提取到配置中
         
         # 计算V11的EMA
-        ema_v11_3 = v11.ewm(span=3, adjust=False).mean()
+        ema_v11_3 = v11.ewm(span=3, adjust=False).mean()  # TODO: 将魔法数字提取到配置中
         
         # 计算V12
         v12 = pd.Series(np.zeros(len(data)), index=data.index)
@@ -1624,22 +1641,22 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         v12[valid_idx] = ((ema_v11_3 - ema_v11_3.shift(1)) / ema_v11_3.shift(1) * 100)[valid_idx]
         
         # 计算AA和BB条件
-        aa_base = ema_v11_3 <= 13
+        aa_base = ema_v11_3 <= 13  # TODO: 将魔法数字提取到配置中
         aa_filter = pd.Series(np.zeros(len(data), dtype=bool), index=data.index)
-        for i in range(15, len(data)):
-            aa_filter.iloc[i] = np.any(aa_base.iloc[i-14:i+1])
+        for i in range(15, len(data)):  # TODO: 将魔法数字提取到配置中
+            aa_filter.iloc[i] = np.any(aa_base.iloc[i-14:i+1])  # TODO: 将魔法数字提取到配置中
         aa = aa_base & aa_filter
         
-        bb_base = (ema_v11_3 <= 13) & (v12 > 13)
+        bb_base = (ema_v11_3 <= 13) & (v12 > 13)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         bb_filter = pd.Series(np.zeros(len(data), dtype=bool), index=data.index)
         for i in range(10, len(data)):
-            bb_filter.iloc[i] = np.any(bb_base.iloc[i-9:i+1])
+            bb_filter.iloc[i] = np.any(bb_base.iloc[i-9:i+1])  # TODO: 将魔法数字提取到配置中
         bb = bb_base & bb_filter
         
         # 计算XG：近6周期内AA或BB条件满足的次数
         xg = pd.Series(np.zeros(len(data), dtype=int), index=data.index)
-        for i in range(6, len(data)):
-            xg.iloc[i] = np.sum((aa | bb).iloc[i-5:i+1])
+        for i in range(6, len(data)):  # TODO: 将魔法数字提取到配置中
+            xg.iloc[i] = np.sum((aa | bb).iloc[i-5:i+1])  # TODO: 将魔法数字提取到配置中
         
         # 添加计算结果到数据框
         result.loc[:, "V11"] = v11
@@ -1696,40 +1713,40 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 主要信号评分规则
         # 1. BS吸筹信号强度评分
         xg_value = result["XG"]
 
         # 根据XG值（近6周期内满足条件的次数）评分
-        score[xg_value >= 5] += 30  # 强烈吸筹信号
-        score[(xg_value >= 3) & (xg_value < 5)] += 20  # 明显吸筹信号
-        score[(xg_value >= 1) & (xg_value < 3)] += 10  # 轻微吸筹信号
+        score[xg_value >= 5] += 30  # 强烈吸筹信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(xg_value >= 3) & (xg_value < 5)] += 20  # 明显吸筹信号  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(xg_value >= 1) & (xg_value < 3)] += 10  # 轻微吸筹信号  # TODO: 将魔法数字提取到配置中
 
         # 2. V11指标位置评分
         v11_ema = result["EMA_V11_3"]
-        score[v11_ema <= 10] += 15  # V11极低位，强烈超卖
-        score[(v11_ema > 10) & (v11_ema <= 13)] += 10  # V11低位，超卖
-        score[v11_ema > 80] -= 10   # V11高位，可能超买
+        score[v11_ema <= 10] += 15  # V11极低位，强烈超卖  # TODO: 将魔法数字提取到配置中
+        score[(v11_ema > 10) & (v11_ema <= 13)] += 10  # V11低位，超卖  # TODO: 将魔法数字提取到配置中
+        score[v11_ema > 80] -= 10   # V11高位，可能超买  # TODO: 将魔法数字提取到配置中
 
-        # 3. V12动量评分
+        # 3. V12动量评分  # TODO: 将魔法数字提取到配置中
         v12_value = result["V12"]
-        score[v12_value > 20] += 15  # 强烈上升动量
-        score[(v12_value > 13) & (v12_value <= 20)] += 10  # 上升动量
-        score[v12_value < -20] -= 10  # 下降动量
+        score[v12_value > 20] += 15  # 强烈上升动量  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[(v12_value > 13) & (v12_value <= 20)] += 10  # 上升动量  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        score[v12_value < -20] -= 10  # 下降动量  # TODO: 将魔法数字提取到配置中
 
-        # 4. AA和BB条件评分
+        # 4. AA和BB条件评分  # TODO: 将魔法数字提取到配置中
         score[result["AA"]] += 10  # AA条件满足
-        score[result["BB"]] += 15  # BB条件满足（更强信号）
+        score[result["BB"]] += 15  # BB条件满足（更强信号）  # TODO: 将魔法数字提取到配置中
 
-        # 5. 连续满足条件加分
-        if len(result) >= 3:
+        # 5. 连续满足条件加分  # TODO: 将魔法数字提取到配置中
+        if len(result) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             consecutive_signal = pd.Series(False, index=data.index)
             for i in range(2, len(result)):
                 if all((result["AA"] | result["BB"]).iloc[i-2:i+1]):
                     consecutive_signal.iloc[i] = True
-            score[consecutive_signal] += 15
+            score[consecutive_signal] += 15  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -1757,9 +1774,9 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
 
             # 吸筹强度判断
             xg_value = last_row["XG"]
-            if xg_value >= 5:
+            if xg_value >= 5:  # TODO: 将魔法数字提取到配置中
                 patterns.append("强烈吸筹信号")
-            elif xg_value >= 3:
+            elif xg_value >= 3:  # TODO: 将魔法数字提取到配置中
                 patterns.append("明显吸筹信号")
             elif xg_value >= 1:
                 patterns.append("轻微吸筹信号")
@@ -1770,20 +1787,20 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             v11_ema = last_row["EMA_V11_3"]
             if v11_ema <= 10:
                 patterns.append("主力大量吸筹区域")
-            elif v11_ema <= 13:
+            elif v11_ema <= 13:  # TODO: 将魔法数字提取到配置中
                 patterns.append("主力吸筹区域")
-            elif v11_ema >= 80:
+            elif v11_ema >= 80:  # TODO: 将魔法数字提取到配置中
                 patterns.append("高位调整区域")
             else:
                 patterns.append("吸筹观察区间")
 
             # V12动量判断
             v12_value = last_row["V12"]
-            if v12_value > 20:
+            if v12_value > 20:  # TODO: 将魔法数字提取到配置中
                 patterns.append("强烈上升动量")
-            elif v12_value > 13:
+            elif v12_value > 13:  # TODO: 将魔法数字提取到配置中
                 patterns.append("上升动量")
-            elif v12_value < -20:
+            elif v12_value < -20:  # TODO: 将魔法数字提取到配置中
                 patterns.append("下降动量")
             else:
                 patterns.append("动量平稳")
@@ -1797,7 +1814,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             # 综合判断
             if last_row["AA"] and last_row["BB"]:
                 patterns.append("双重吸筹确认")
-            elif v11_ema <= 13 and v12_value > 13:
+            elif v11_ema <= 13 and v12_value > 13:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 patterns.append("低位反弹信号")
 
         return patterns
@@ -1815,31 +1832,31 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "强烈吸筹信号" in patterns:
-            pattern_boost += 0.25
+            pattern_boost += 0.25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "明显吸筹信号" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "轻微吸筹信号" in patterns:
             pattern_boost += 0.1
 
         if "双重吸筹确认" in patterns:
             pattern_boost += 0.2
         elif "BB条件满足" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "AA条件满足" in patterns:
             pattern_boost += 0.1
 
         if "V11极低位" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "V11低位" in patterns:
             pattern_boost += 0.1
 
@@ -1869,26 +1886,26 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
 
         # 吸筹强度形态 - 使用注册的pattern_id
         xg_value = result["XG"]
-        patterns_df.loc[:, "ZXM_BS_ABSORB_STRONG"] = xg_value >= 5
-        patterns_df.loc[:, "ZXM_BS_ABSORB_OBVIOUS"] = (xg_value >= 3) & (xg_value < 5)
-        patterns_df.loc[:, "ZXM_BS_ABSORB_SLIGHT"] = (xg_value >= 1) & (xg_value < 3)
+        patterns_df.loc[:, "ZXM_BS_ABSORB_STRONG"] = xg_value >= 5  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_ABSORB_OBVIOUS"] = (xg_value >= 3) & (xg_value < 5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_ABSORB_SLIGHT"] = (xg_value >= 1) & (xg_value < 3)  # TODO: 将魔法数字提取到配置中
 
         # V11位置形态（基于吸筹技术含义）- 使用注册的pattern_id
         v11_ema = result["EMA_V11_3"]
         patterns_df.loc[:, "ZXM_BS_ABSORB_HEAVY_ZONE"] = v11_ema <= 10
-        patterns_df.loc[:, "ZXM_BS_ABSORB_ZONE"] = (v11_ema > 10) & (v11_ema <= 13)
-        patterns_df.loc[:, "ZXM_BS_ABSORB_WATCH_ZONE"] = (v11_ema > 13) & (v11_ema < 80)
-        patterns_df.loc[:, "ZXM_BS_HIGH_ADJUSTMENT"] = v11_ema >= 80
+        patterns_df.loc[:, "ZXM_BS_ABSORB_ZONE"] = (v11_ema > 10) & (v11_ema <= 13)  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_ABSORB_WATCH_ZONE"] = (v11_ema > 13) & (v11_ema < 80)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_HIGH_ADJUSTMENT"] = v11_ema >= 80  # TODO: 将魔法数字提取到配置中
 
         # V12动量形态 - 使用注册的pattern_id
         v12_value = result["V12"]
-        patterns_df.loc[:, "ZXM_BS_STRONG_MOMENTUM"] = v12_value > 20
-        patterns_df.loc[:, "ZXM_BS_UP_MOMENTUM"] = (v12_value > 13) & (v12_value <= 20)
-        patterns_df.loc[:, "ZXM_BS_STABLE_MOMENTUM"] = (v12_value >= -20) & (v12_value <= 13)
+        patterns_df.loc[:, "ZXM_BS_STRONG_MOMENTUM"] = v12_value > 20  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_UP_MOMENTUM"] = (v12_value > 13) & (v12_value <= 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df.loc[:, "ZXM_BS_STABLE_MOMENTUM"] = (v12_value >= -20) & (v12_value <= 13)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 条件满足形态 - 使用注册的pattern_id
         patterns_df.loc[:, "ZXM_BS_DOUBLE_CONFIRM"] = result["AA"] & result["BB"]
-        patterns_df.loc[:, "ZXM_BS_LOW_REBOUND"] = (v11_ema <= 13) & (v12_value > 13)
+        patterns_df.loc[:, "ZXM_BS_LOW_REBOUND"] = (v11_ema <= 13) & (v12_value > 13)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         return patterns_df
 
@@ -1904,11 +1921,11 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
                 - bb_filter_period: BB过滤周期，默认10
                 - count_period: 计数周期，默认6
         """
-        self.v11_threshold = kwargs.get('v11_threshold', 13)
-        self.v12_threshold = kwargs.get('v12_threshold', 13)
-        self.aa_filter_period = kwargs.get('aa_filter_period', 15)
+        self.v11_threshold = kwargs.get('v11_threshold', 13)  # TODO: 将魔法数字提取到配置中
+        self.v12_threshold = kwargs.get('v12_threshold', 13)  # TODO: 将魔法数字提取到配置中
+        self.aa_filter_period = kwargs.get('aa_filter_period', 15)  # TODO: 将魔法数字提取到配置中
         self.bb_filter_period = kwargs.get('bb_filter_period', 10)
-        self.count_period = kwargs.get('count_period', 6)
+        self.count_period = kwargs.get('count_period', 6)  # TODO: 将魔法数字提取到配置中
 
     def register_patterns_buy_point_indicators_original(self):
         """
@@ -1921,7 +1938,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="主力强烈吸筹，近期频繁出现吸筹特征",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0,
+            score_impact=35.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1931,7 +1948,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="买卖盘数据显示明显的主力吸筹行为，近期多次出现吸筹特征",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1941,7 +1958,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="买卖盘数据显示轻微的主力吸筹行为，近期出现少量吸筹特征",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1952,7 +1969,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="V11指标极低，处于主力大量吸筹区域",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1962,7 +1979,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="V11指标较低，处于主力吸筹区域",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -1972,7 +1989,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="买卖盘处于关键观察区域，V11指标处于中间区域，需要观察吸筹动向",
             pattern_type="NEUTRAL",
             default_strength="WEAK",
-            score_impact=5.0,
+            score_impact=5.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
@@ -1993,7 +2010,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="买卖盘显示强劲的上涨动能，V12指标显示强烈的上升动量",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2003,7 +2020,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="买卖盘显示上升动能，V12指标显示上升动量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2024,7 +2041,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="AA和BB条件同时满足，形成双重吸筹确认信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0,
+            score_impact=35.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2034,7 +2051,7 @@ class ZXMBSAbsorbBuy_Point_Indicators_Original(BaseIndicator, PatternSignalMixin
             description="V11处于低位且V12显示上升动量，形成低位反弹信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2047,6 +2064,9 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """初始化ZXM买点检测指标"""
         super().__init__(name="BuyPointDetector", description="ZXM买点检测指标，检测多种买点形态")
@@ -2092,7 +2112,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             result["VolumeShrinkBuyPoint"].astype(int)
         )
 
-        patterns_df.loc[:, "ZXM_STRONG_MULTI_BUY"] = buy_point_count >= 3
+        patterns_df.loc[:, "ZXM_STRONG_MULTI_BUY"] = buy_point_count >= 3  # TODO: 将魔法数字提取到配置中
         patterns_df.loc[:, "ZXM_DOUBLE_BUY"] = buy_point_count == 2
         patterns_df.loc[:, "ZXM_SINGLE_BUY"] = buy_point_count == 1
 
@@ -2109,7 +2129,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="价格上涨配合成交量放大，涨幅适中的买点信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2119,7 +2139,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="前期上涨后小幅回调，缩量企稳回升的买点信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2129,7 +2149,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="突破前期高点，放量确认的买点信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0,
+            score_impact=35.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2139,7 +2159,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="底部横盘后突然放量，价格站上短期均线的买点信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=35.0,
+            score_impact=35.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2149,7 +2169,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="前期上涨后缩量整理，再次放量上涨的买点信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2159,7 +2179,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="满足多种买点条件的综合买点信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=30.0,
+            score_impact=30.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2170,7 +2190,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="同时满足3种以上买点条件，买点信号极强",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=40.0,
+            score_impact=40.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2180,7 +2200,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="同时满足2种买点条件，买点信号较强",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2190,7 +2210,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             description="满足单一买点条件，买点信号一般",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -2221,16 +2241,16 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         # 2. 回调企稳买点
         result = self._calculate_pullback_stabilize_buy_point(data, result)
         
-        # 3. 突破买点
+        # 3. 突破买点  # TODO: 将魔法数字提取到配置中
         result = self._calculate_breakout_buy_point(data, result)
         
-        # 4. 底部放量买点
+        # 4. 底部放量买点  # TODO: 将魔法数字提取到配置中
         result = self._calculate_bottom_volume_buy_point(data, result)
         
-        # 5. 缩量整理买点
+        # 5. 缩量整理买点  # TODO: 将魔法数字提取到配置中
         result = self._calculate_volume_shrink_buy_point(data, result)
         
-        # 6. 组合买点 - 满足多个买点的组合
+        # 6. 组合买点 - 满足多个买点的组合  # TODO: 将魔法数字提取到配置中
         result.loc[:, "CombinedBuyPoint"] = (
             result["VolumeRiseBuyPoint"] | 
             result["PullbackStabilizeBuyPoint"] | 
@@ -2269,16 +2289,16 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         buy_signal = np.zeros(n, dtype=bool)
         
         # 计算放量上涨买点
-        for i in range(5, n):
+        for i in range(5, n):  # TODO: 将魔法数字提取到配置中
             # 条件1：价格上涨
             price_up = close[i] > close[i-1]
             
             # 条件2：成交量放大
-            volume_up = volume[i] > volume[i-1] * 1.3  # 成交量放大30%以上
+            volume_up = volume[i] > volume[i-1] * 1.3  # 成交量放大30%以上  # TODO: 将魔法数字提取到配置中
             
-            # 条件3：5日内涨幅适中（3%-7%）
-            five_day_change = (close[i] / close[i-5] - 1) * 100
-            moderate_rise = 3 <= five_day_change <= 7
+            # 条件3：5日内涨幅适中（3%-7%）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            five_day_change = (close[i] / close[i-5] - 1) * 100  # TODO: 将魔法数字提取到配置中
+            moderate_rise = 3 <= five_day_change <= 7  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             if price_up and volume_up and moderate_rise:
                 buy_signal[i] = True
@@ -2314,22 +2334,22 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         
         # 计算回调企稳买点
         for i in range(10, n):
-            # 条件1：前期上涨（前10日累计涨幅>8%）
-            prev_rise = (close[i-3] / close[i-10] - 1) * 100 > 8
+            # 条件1：前期上涨（前10日累计涨幅>8%）  # TODO: 将魔法数字提取到配置中
+            prev_rise = (close[i-3] / close[i-10] - 1) * 100 > 8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 条件2：近期回调（最近3日内最低点比前期高点回调3%-8%）
-            recent_high = max(high[i-10:i-3])
-            recent_low = min(low[i-3:i+1])
+            # 条件2：近期回调（最近3日内最低点比前期高点回调3%-8%）  # TODO: 将魔法数字提取到配置中
+            recent_high = max(high[i-10:i-3])  # TODO: 将魔法数字提取到配置中
+            recent_low = min(low[i-3:i+1])  # TODO: 将魔法数字提取到配置中
             pullback_pct = (recent_high - recent_low) / recent_high * 100
-            moderate_pullback = 3 <= pullback_pct <= 8
+            moderate_pullback = 3 <= pullback_pct <= 8  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 条件3：回调缩量（回调日成交量低于前期平均量）
-            pullback_volume = np.mean(volume[i-3:i+1])
-            prev_avg_volume = np.mean(volume[i-10:i-3])
+            pullback_volume = np.mean(volume[i-3:i+1])  # TODO: 将魔法数字提取到配置中
+            prev_avg_volume = np.mean(volume[i-10:i-3])  # TODO: 将魔法数字提取到配置中
             volume_shrink = pullback_volume < prev_avg_volume
             
             # 条件4：企稳回升（当日收盘价高于前一日，且高于3日低点5%以内）
-            stabilize = close[i] > close[i-1] and (close[i] - recent_low) / recent_low < 0.05
+            stabilize = close[i] > close[i-1] and (close[i] - recent_low) / recent_low < 0.05  # TODO: 将魔法数字提取到配置中
             
             if prev_rise and moderate_pullback and volume_shrink and stabilize:
                 buy_signal[i] = True
@@ -2363,20 +2383,20 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         buy_signal = np.zeros(n, dtype=bool)
         
         # 计算突破买点
-        for i in range(20, n):
+        for i in range(20, n):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 条件1：突破前期高点（突破20日内最高点）
-            prev_high = max(high[i-20:i-1])
+            prev_high = max(high[i-20:i-1])  # TODO: 将魔法数字提取到配置中
             breakout = close[i] > prev_high
             
             # 条件2：放量（成交量大于前20日平均量的1.5倍）
-            avg_volume = np.mean(volume[i-20:i])
-            volume_surge = volume[i] > avg_volume * 1.5
+            avg_volume = np.mean(volume[i-20:i])  # TODO: 将魔法数字提取到配置中
+            volume_surge = volume[i] > avg_volume * 1.5  # TODO: 将魔法数字提取到配置中
             
             # 条件3：前期整理充分（前期10日振幅小于7%）
             prev_high_10d = max(high[i-10:i-1])
             prev_low_10d = min(data["low"].values[i-10:i-1])
             range_pct = (prev_high_10d - prev_low_10d) / prev_low_10d * 100
-            sufficient_consolidation = range_pct < 7
+            sufficient_consolidation = range_pct < 7  # TODO: 将魔法数字提取到配置中
             
             if breakout and volume_surge and sufficient_consolidation:
                 buy_signal[i] = True
@@ -2406,27 +2426,27 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         
         # 计算5日均线
         ma5 = np.zeros(len(close))
-        for i in range(5, len(close)):
-            ma5[i] = np.mean(close[i-5:i])
+        for i in range(5, len(close)):  # TODO: 将魔法数字提取到配置中
+            ma5[i] = np.mean(close[i-5:i])  # TODO: 将魔法数字提取到配置中
         
         # 初始化结果数组
         n = len(data)
         buy_signal = np.zeros(n, dtype=bool)
         
         # 计算底部放量买点
-        for i in range(20, n):
+        for i in range(20, n):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 条件1：前期下跌（20日内下跌超过12%）
-            max_close = max(close[i-20:i-10])
+            max_close = max(close[i-20:i-10])  # TODO: 将魔法数字提取到配置中
             min_close = min(close[i-10:i])
             decline_pct = (max_close - min_close) / max_close * 100
-            previous_decline = decline_pct > 12
+            previous_decline = decline_pct > 12  # TODO: 将魔法数字提取到配置中
             
             # 条件2：底部横盘（近5日振幅小于5%）
-            recent_range = (max(close[i-5:i]) - min(close[i-5:i])) / min(close[i-5:i]) * 100
-            bottom_consolidation = recent_range < 5
+            recent_range = (max(close[i-5:i]) - min(close[i-5:i])) / min(close[i-5:i]) * 100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            bottom_consolidation = recent_range < 5  # TODO: 将魔法数字提取到配置中
             
             # 条件3：突然放量（当日成交量是前5日平均量的2倍以上）
-            avg_volume_5d = np.mean(volume[i-5:i])
+            avg_volume_5d = np.mean(volume[i-5:i])  # TODO: 将魔法数字提取到配置中
             sudden_volume_surge = volume[i] > avg_volume_5d * 2
             
             # 条件4：价格站上短期均线
@@ -2463,21 +2483,21 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         buy_signal = np.zeros(n, dtype=bool)
         
         # 计算缩量整理买点
-        for i in range(15, n):
+        for i in range(15, n):  # TODO: 将魔法数字提取到配置中
             # 条件1：前期上涨（前10-15日累计涨幅>10%）
-            prev_rise = (close[i-5] / close[i-15] - 1) * 100 > 10
+            prev_rise = (close[i-5] / close[i-15] - 1) * 100 > 10  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
-            # 条件2：近期横盘整理（最近5日振幅<6%）
-            recent_range = (max(close[i-5:i]) - min(close[i-5:i])) / min(close[i-5:i]) * 100
-            consolidation = recent_range < 6
+            # 条件2：近期横盘整理（最近5日振幅<6%）  # TODO: 将魔法数字提取到配置中
+            recent_range = (max(close[i-5:i]) - min(close[i-5:i])) / min(close[i-5:i]) * 100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            consolidation = recent_range < 6  # TODO: 将魔法数字提取到配置中
             
             # 条件3：量能萎缩（近5日平均量低于前10日平均量的70%）
-            recent_avg_volume = np.mean(volume[i-5:i])
-            prev_avg_volume = np.mean(volume[i-15:i-5])
-            volume_shrink = recent_avg_volume < prev_avg_volume * 0.7
+            recent_avg_volume = np.mean(volume[i-5:i])  # TODO: 将魔法数字提取到配置中
+            prev_avg_volume = np.mean(volume[i-15:i-5])  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            volume_shrink = recent_avg_volume < prev_avg_volume * 0.7  # TODO: 将魔法数字提取到配置中
             
             # 条件4：再次放量上涨（当日量能是近5日平均量的1.5倍以上且价格上涨）
-            volume_expand = volume[i] > recent_avg_volume * 1.5
+            volume_expand = volume[i] > recent_avg_volume * 1.5  # TODO: 将魔法数字提取到配置中
             price_up = close[i] > close[i-1]
             
             if prev_rise and consolidation and volume_shrink and volume_expand and price_up:
@@ -2503,23 +2523,23 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         result = self.calculate(data)
         
         # 初始化评分为基础分50分（中性）
-        score = pd.Series(50, index=data.index)
+        score = pd.Series(50, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 1. 各种买点基础得分
         # 放量上涨买点：中等强度买点
-        score[result["VolumeRiseBuyPoint"]] += 25
+        score[result["VolumeRiseBuyPoint"]] += 25  # TODO: 将魔法数字提取到配置中
         
         # 回调企稳买点：较强买点
-        score[result["PullbackStabilizeBuyPoint"]] += 30
+        score[result["PullbackStabilizeBuyPoint"]] += 30  # TODO: 将魔法数字提取到配置中
         
         # 突破买点：强买点
-        score[result["BreakoutBuyPoint"]] += 35
+        score[result["BreakoutBuyPoint"]] += 35  # TODO: 将魔法数字提取到配置中
         
         # 底部放量买点：强买点
-        score[result["BottomVolumeBuyPoint"]] += 35
+        score[result["BottomVolumeBuyPoint"]] += 35  # TODO: 将魔法数字提取到配置中
         
         # 缩量整理买点：中等强度买点
-        score[result["VolumeShrinkBuyPoint"]] += 25
+        score[result["VolumeShrinkBuyPoint"]] += 25  # TODO: 将魔法数字提取到配置中
         
         # 2. 买点组合加分 - 同时满足多个买点形态时加分
         # 计算每天满足的买点数量
@@ -2531,14 +2551,14 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         
         # 根据买点数量加分
         score[buy_point_count == 2] += 10  # 满足2种买点
-        score[buy_point_count >= 3] += 15  # 满足3种及以上买点
+        score[buy_point_count >= 3] += 15  # 满足3种及以上买点  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
-        # 3. 技术形态加分 - 结合价格形态和均线系统
+        # 3. 技术形态加分 - 结合价格形态和均线系统  # TODO: 将魔法数字提取到配置中
         
         # 计算均线系统
-        ma5 = data["close"].rolling(window=5).mean()
+        ma5 = data["close"].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         ma10 = data["close"].rolling(window=10).mean()
-        ma20 = data["close"].rolling(window=20).mean()
+        ma20 = data["close"].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 均线多头排列加分
         bullish_ma = (ma5 > ma10) & (ma10 > ma20)
@@ -2546,23 +2566,23 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
         
         # 价格站上所有均线加分
         price_above_all_ma = (data["close"] > ma5) & (data["close"] > ma10) & (data["close"] > ma20)
-        score[price_above_all_ma & result["CombinedBuyPoint"]] += 5
+        score[price_above_all_ma & result["CombinedBuyPoint"]] += 5  # TODO: 将魔法数字提取到配置中
         
-        # 4. 连续性加分 - 如果近期已经出现过买点，当前买点可能更可靠
+        # 4. 连续性加分 - 如果近期已经出现过买点，当前买点可能更可靠  # TODO: 将魔法数字提取到配置中
         recent_buy_points = pd.Series(0, index=data.index)
-        for i in range(5, len(data)):
-            recent_buy_points.iloc[i] = result["CombinedBuyPoint"].iloc[i-5:i].sum()
+        for i in range(5, len(data)):  # TODO: 将魔法数字提取到配置中
+            recent_buy_points.iloc[i] = result["CombinedBuyPoint"].iloc[i-5:i].sum()  # TODO: 将魔法数字提取到配置中
         
         # 近5日内有1个以上买点，当前买点评分加分
-        score[(recent_buy_points >= 1) & result["CombinedBuyPoint"]] += 5
+        score[(recent_buy_points >= 1) & result["CombinedBuyPoint"]] += 5  # TODO: 将魔法数字提取到配置中
         
-        # 5. 成交量配合加分
+        # 5. 成交量配合加分  # TODO: 将魔法数字提取到配置中
         # 计算成交量比率（当日成交量/20日平均量）
-        volume_ratio = data["volume"] / data["volume"].rolling(window=20).mean()
+        volume_ratio = data["volume"] / data["volume"].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
         
         # 量能强劲配合买点加分
         score[(volume_ratio > 2) & result["CombinedBuyPoint"]] += 10  # 成交量是平均量2倍以上
-        score[(volume_ratio > 1.5) & (volume_ratio <= 2) & result["CombinedBuyPoint"]] += 5  # 成交量是平均量1.5-2倍
+        score[(volume_ratio > 1.5) & (volume_ratio <= 2) & result["CombinedBuyPoint"]] += 5  # 成交量是平均量1.5-2倍  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 确保评分在0-100范围内
         score = score.clip(0, 100)
@@ -2610,7 +2630,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 
             # 买点组合形态
             buy_point_count = sum(1 for p in patterns if "买点" in p)
-            if buy_point_count >= 3:
+            if buy_point_count >= 3:  # TODO: 将魔法数字提取到配置中
                 patterns.append("强势多重买点组合")
             elif buy_point_count == 2:
                 patterns.append("双重买点组合")
@@ -2700,7 +2720,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                     signals.loc[i, 'signal_desc'] = "买点特征：" + "，".join(desc_parts)
         
         # 置信度设置
-        signals.loc[:, 'confidence'] = 60  # 基础置信度
+        signals.loc[:, 'confidence'] = 60  # 基础置信度  # TODO: 将魔法数字提取到配置中
         
         # 计算每天满足的买点数量
         buy_point_count = pd.Series(0, index=data.index)
@@ -2710,18 +2730,18 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             buy_point_count.iloc[i] = sum(result.iloc[i][col] for col in buy_point_columns)
         
         # 根据买点数量调整置信度
-        signals.loc[buy_point_count == 1, 'confidence'] = 70  # 单一买点
-        signals.loc[buy_point_count == 2, 'confidence'] = 80  # 双重买点
-        signals.loc[buy_point_count >= 3, 'confidence'] = 90  # 三重及以上买点
+        signals.loc[buy_point_count == 1, 'confidence'] = 70  # 单一买点  # TODO: 将魔法数字提取到配置中
+        signals.loc[buy_point_count == 2, 'confidence'] = 80  # 双重买点  # TODO: 将魔法数字提取到配置中
+        signals.loc[buy_point_count >= 3, 'confidence'] = 90  # 三重及以上买点  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 风险等级
         signals.loc[:, 'risk_level'] = '中'  # 默认中等风险
         
         # 建议仓位
         signals.loc[:, 'position_size'] = 0.0
-        signals.loc[result["CombinedBuyPoint"], 'position_size'] = 0.3  # 基础仓位
-        signals.loc[(buy_point_count == 2), 'position_size'] = 0.5  # 双重买点
-        signals.loc[(buy_point_count >= 3), 'position_size'] = 0.7  # 三重及以上买点
+        signals.loc[result["CombinedBuyPoint"], 'position_size'] = 0.3  # 基础仓位  # TODO: 将魔法数字提取到配置中
+        signals.loc[(buy_point_count == 2), 'position_size'] = 0.5  # 双重买点  # TODO: 将魔法数字提取到配置中
+        signals.loc[(buy_point_count >= 3), 'position_size'] = 0.7  # 三重及以上买点  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 止损位 - 使用近期低点
         signals.loc[:, 'stop_loss'] = 0.0
@@ -2731,7 +2751,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 idx = data.index.get_loc(i)
                 if idx >= 10:
                     low_price = data.iloc[idx-10:idx+1]['low'].min()
-                    signals.loc[i, 'stop_loss'] = low_price * 0.97  # 最低点下方3%
+                    signals.loc[i, 'stop_loss'] = low_price * 0.97  # 最低点下方3%  # TODO: 将魔法数字提取到配置中
             except (IndexError, KeyError, ValueError) as e:
                 logger.warning(f"计算止损价格时出错: {e}")
                 continue
@@ -2750,7 +2770,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 break
 
         if volume_col is not None:
-            volume_ratio = data[volume_col] / data[volume_col].rolling(window=20).mean()
+            volume_ratio = data[volume_col] / data[volume_col].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
             signals.loc[:, 'volume_confirmation'] = volume_ratio > 1.2
         else:
             # 如果没有成交量数据，设置为False
@@ -2811,7 +2831,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 "description": "指标显示上升趋势，看涨信号",
                 "type": "BULLISH", 
                 "strength": "STRONG",
-                "score_impact": 15.0
+                "score_impact": 15.0  # TODO: 将魔法数字提取到配置中
             },
             "下降趋势": {
                 "id": "下降趋势",
@@ -2819,7 +2839,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 "description": "指标显示下降趋势，看跌信号",
                 "type": "BEARISH",
                 "strength": "STRONG", 
-                "score_impact": -15.0
+                "score_impact": -15.0  # TODO: 将魔法数字提取到配置中
             },
             # 信号形态
             "买入信号": {
@@ -2828,7 +2848,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 "description": "指标产生买入信号，建议关注",
                 "type": "BULLISH",
                 "strength": "STRONG",
-                "score_impact": 20.0
+                "score_impact": 20.0  # TODO: 将魔法数字提取到配置中
             },
             "卖出信号": {
                 "id": "卖出信号", 
@@ -2836,7 +2856,7 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
                 "description": "指标产生卖出信号，建议谨慎",
                 "type": "BEARISH",
                 "strength": "STRONG",
-                "score_impact": -20.0
+                "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
             }
         }
         
@@ -2856,32 +2876,83 @@ class BuyPointDetectorBuy_Point_Indicators_Original(BaseIndicator, PatternSignal
             float: 置信度值，0-1之间
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         latest_score = score.iloc[-1]
 
         # 基础置信度基于评分
-        base_confidence = min(0.9, max(0.1, latest_score / 100))
+        base_confidence = min(0.9, max(0.1, latest_score / 100))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 根据形态调整置信度
         pattern_boost = 0.0
         if "强势多重买点组合" in patterns:
-            pattern_boost += 0.25
+            pattern_boost += 0.25  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif "双重买点组合" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 具体买点形态调整
         if "放量上涨买点" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "突破买点" in patterns:
-            pattern_boost += 0.15
+            pattern_boost += 0.15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "回调企稳买点" in patterns:
-            pattern_boost += 0.12
+            pattern_boost += 0.12  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "底部放量买点" in patterns:
-            pattern_boost += 0.12
+            pattern_boost += 0.12  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if "缩量整理买点" in patterns:
             pattern_boost += 0.1
 
         # 最终置信度
         final_confidence = min(1.0, base_confidence + pattern_boost)
         return final_confidence
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算指标值
+        
+        Args:
+            data: 输入数据，包含OHLCV等字段
+            
+        Returns:
+            pd.DataFrame: 包含指标计算结果的数据框
+        """
+        if not self.validate_data(data):
+            raise ValueError("输入数据不符合要求")
+        
+        # 预处理数据
+        processed_data = self.preprocess_data(data)
+        
+        # TODO: 实现具体的指标计算逻辑
+        result = processed_data.copy()
+        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        
+        # 后处理结果
+        result = self.postprocess_result(result)
+        
+        # 保存结果
+        self._result = result
+        
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

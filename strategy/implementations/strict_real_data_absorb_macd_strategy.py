@@ -1,4 +1,5 @@
-from utils.dependency_injection import get_logger
+from strategy.unified_base_strategy import UnifiedBaseStrategy
+from utils.logger import get_logger
 #!/usr/bin/env python3
 """
 严格禁止模拟数据的30分钟吸筹信号+MACD上移选股策略
@@ -221,8 +222,7 @@ class StrictRealDataAbsorbMACDStrategy:
             # 检查数据库中是否存在30分钟数据
             query = """
             SELECT COUNT(*) as count 
-            FROM stock_info 
-            WHERE level = '30分钟' OR level = '30min' OR level = 'MIN_30'
+            FROM stock_info WHERE code = %(code)s AND level = '30分钟' OR level = '30min' OR level = 'MIN_30'
             LIMIT 1
             """
             result = self.data_access.execute_query(query)
@@ -275,10 +275,8 @@ class StrictRealDataAbsorbMACDStrategy:
                     
                     # 构建查询
                     query = """
-                    SELECT code, name, date, level, open, close, high, low, volume, 
-                           turnover_rate, price_change, price_range, industry
-                    FROM stock_info 
-                    WHERE code = %(code)s 
+                    SELECT code, name, date, level, open, close, high, low, volume,
+                           turnover_rate FROM stock_info WHERE level = %(level)s AND code = %(code)s 
                       AND level = %(level)s 
                       AND date >= %(start_date)s 
                       AND date <= %(end_date)s
@@ -367,8 +365,8 @@ class StrictRealDataAbsorbMACDStrategy:
             volume_ratio = volume / volume_ma5  # 成交量比率
             
             # 2. 价量关系分析
-            price_change = np.diff(close, prepend=close[0])
-            volume_price_corr = np.corrcoef(price_change[1:], volume[1:])[0, 1] if len(price_change) > 1 else 0
+            = np.diff(close, prepend=close[0])
+            volume_price_corr = np.corrcoef([1:], volume[1:])[0, 1] if len() > 1 else 0
             
             # 3. 计算WVAD指标（量价趋势指标）
             wvad = self._calculate_wvad(close, high, low, volume)
@@ -502,6 +500,7 @@ class StrictRealDataAbsorbMACDStrategy:
         """计算MACD指标"""
         try:
             from indicators.common import macd
+from db.sql_manager import SQLManager, QueryType
             return macd(close, fast, slow, signal)
         except:
             # 简化MACD计算

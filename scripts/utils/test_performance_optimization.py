@@ -18,11 +18,12 @@ from datetime import datetime, timedelta
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from db.performance_optimizer import Performance_optimizer, Optimization_config
+from db.services.integrated.performance_optimizer import Performance_optimizer, Optimization_config
 from config.container_config import configure_container
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.cache_interface import ICacheService
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

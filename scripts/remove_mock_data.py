@@ -27,7 +27,7 @@ class MockDataRemovalTool:
         self.mock_keywords = [
             '_create_mock_data',
             'MockDataAccess',
-            'MockDataManager',
+            'MockDataAccessManager',
             'mock_data',
             'simulate_data',
             'fake_data',

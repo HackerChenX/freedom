@@ -143,6 +143,7 @@ class ClickHouseConnection:
         try:
             # 直接使用增强连接池
             from db.enhanced_connection_pool import get_connection_pool
+from db.sql_manager import SQLManager, QueryType
 
             self.connection_pool = get_connection_pool()
 
@@ -213,7 +214,7 @@ class ClickHouseConnection:
             ]
         elif 'system.processes' in query.lower():
             return [
-                ('query1', 'SELECT * FROM stock_info', 2.5, 125000000, 1000000),
+                ('query1', 'SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info', 2.5, 125000000, 1000000),
                 ('query2', 'INSERT INTO indicators', 0.8, 25000000, 500000),
             ]
         elif 'system.clusters' in query.lower():

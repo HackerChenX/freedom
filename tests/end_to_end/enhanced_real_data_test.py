@@ -27,6 +27,7 @@ sys.path.append(project_root)
 
 from utils.logger import get_logger
 from config.unified_config import get_config_value
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -82,7 +83,7 @@ class Enhanced_real_data_test:
             query_start = time.time()
             result = self.client.query(f"""
                 SELECT DISTINCT code, name 
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE date >= '2024-01-01' 
                 LIMIT {stock_limit}
             """)
@@ -94,7 +95,7 @@ class Enhanced_real_data_test:
                 'query_type': 'stock_list',
                 'duration': query_time,
                 'records': len(stock_list),
-                'query': 'SELECT DISTINCT code, name FROM stock_info WHERE date >= 2020-01-01'
+                'query': 'SELECT DISTINCT code, name FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= 2020-01-01'
             })
             
             logger.info(f"股票列表查询完成: {len(stock_list)}只股票，耗时: {query_time:.3f}秒")
@@ -103,7 +104,7 @@ class Enhanced_real_data_test:
             query_start = time.time()
             recent_data_query = f"""
                 SELECT code, date, open, high, low, close, volume
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE date >= '2024-06-01'
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:100]])})
                 ORDER BY code, date DESC
@@ -132,7 +133,7 @@ class Enhanced_real_data_test:
                     MAX(high) as max_price,
                     MIN(low) as min_price,
                     SUM(volume) as total_volume
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE date >= '2024-01-01' 
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:200]])})
                 GROUP BY code
@@ -159,7 +160,7 @@ class Enhanced_real_data_test:
                     code, date, close, volume,
                     (close - open) / open as daily_change,
                     volume / 1000000 as volume_millions
-                FROM stock_info WHERE 1=1
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                 WHERE date >= '2024-05-01'
                 AND code IN ({','.join([f"'{code}'" for code, _ in stock_list[:50]])})
                 AND close > 10
@@ -267,7 +268,7 @@ class Enhanced_real_data_test:
                 if query_id % 3 == 0:
                     query = f"""
                         SELECT code, close, volume 
-                        FROM stock_info WHERE 1=1
+                        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                         WHERE date = '2024-06-20' 
                         AND close > {10 + query_id}
                         LIMIT 100
@@ -275,7 +276,7 @@ class Enhanced_real_data_test:
                 elif query_id % 3 == 1:
                     query = f"""
                         SELECT code, AVG(close) as avg_price
-                        FROM stock_info WHERE 1=1
+                        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                         WHERE date >= '2024-06-{10 + query_id % 10:02d}'
                         GROUP BY code
                         LIMIT 50
@@ -283,7 +284,7 @@ class Enhanced_real_data_test:
                 else:
                     query = f"""
                         SELECT COUNT(*) as count
-                        FROM stock_info WHERE 1=1
+                        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                         WHERE volume > {1000000 * (query_id + 1)}
                         AND date >= '2024-06-01'
                     """

@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 增强策略配置引擎
 
@@ -13,11 +14,12 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from enums.pattern_types import Candle_pattern_type
 from enums.signal_strength import Signal_strength
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

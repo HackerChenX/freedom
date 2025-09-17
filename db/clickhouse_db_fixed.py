@@ -25,10 +25,11 @@ from models.stock_info import Stock_info
 import json
 
 # 导入配置
-from config import get_config
+from config.unified_config_manager import get_config
 try:
     from config.database_config_manager import get_clickhouse_connection_config
     from utils.dependency_injection import get_service_Clickhouse_Db
+from db.sql_manager import SQLManager, QueryType
     HAS_CONFIG_MANAGER = True
 except ImportError:
     HAS_CONFIG_MANAGER = False
@@ -429,16 +430,15 @@ class ClickHouseDbFixed:
                 params['price_max'] = price['max']
 
         # 行业过滤
-        if 'industry' in filters and filters['industry']:
-            industries = filters['industry']
+        if in filters and filters[]:
+            industries = filters[]
             if isinstance(industries, list) and industries:
-                industry_placeholders = ", ".join([f"%(industry_{i})s" for i in range(len(industries))])
-                conditions.append(f"industry IN ({industry_placeholders})")
-                for i, industry in enumerate(industries):
-                    params[f'industry_{i}'] = industry
-            elif isinstance(industries, str):
-                conditions.append("industry = %(industry)s")
-                params['industry'] = industries
+                _placeholders = ", ".join([f"%(_{i})s" for i in range(len(industries))])
+                conditions.append(fIN ({_placeholders})")
+                for i, in enumerate(industries):
+                    params[f_{i}'] = elif isinstance(industries, str):
+                conditions.append(= %()s")
+                params[] = industries
 
     def _validate_result_data(self, result: pd.DataFrame):
         """验证查询结果的真实性"""
@@ -494,7 +494,6 @@ class ClickHouseDbFixed:
             return False
 
     def get_stock_list(self, market: Optional[str] = None,
-                      industry: Optional[str] = None,
                       limit: Optional[int] = None) -> pd.DataFrame:
         """
         获取股票列表
@@ -505,14 +504,7 @@ class ClickHouseDbFixed:
             conditions = ["level = '日线'"]  # 只查询日线数据
             params = {}
 
-            if industry:
-                conditions.append("industry = %(industry)s")
-                params['industry'] = industry
-
-            # 修正SQL语法
-            query = f"""
-            SELECT DISTINCT code, name, industry
-            FROM stock.stock_info
+            if name, FROM stock.stock_info
             WHERE {' AND '.join(conditions)}
             ORDER BY code
             """
@@ -530,7 +522,7 @@ class ClickHouseDbFixed:
 
         except Exception as e:
             logger.error(f"获取股票列表失败: {e}")
-            return pd.DataFrame(columns=['code', 'name', 'industry'])
+            return pd.DataFrame(columns=['code', 'name', ])
 
     def get_latest_trading_date(self) -> str:
         """获取最新交易日期"""

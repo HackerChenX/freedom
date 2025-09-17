@@ -79,7 +79,7 @@ class HardcodedConfigFixer:
         fixed_count = 0
         
         # 在文件开头添加配置导入
-        if 'from config import get_config' not in content:
+        if 'from config.unified_config_manager import get_config' not in content:
             # 找到导入部分
             import_lines = []
             content_lines = content.split('\n')
@@ -92,7 +92,7 @@ class HardcodedConfigFixer:
                     break
             
             # 在导入部分添加配置导入
-            content_lines.insert(import_end_idx + 1, 'from config import get_config')
+            content_lines.insert(import_end_idx + 1, 'from config.unified_config_manager import get_config')
             content = '\n'.join(content_lines)
         
         # 修复硬编码的端口配置

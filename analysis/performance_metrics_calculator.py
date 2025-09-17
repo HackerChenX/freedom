@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -25,12 +26,24 @@ import warnings
 warnings.filterwarnings('ignore', category=pd.errors.PerformanceWarning)
 
 from analysis.strategy_performance_evaluator import PerformanceMetrics, RiskMetrics, TimeSeriesAnalysis
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
 class PerformanceCalculator:
+"""
+PerformanceCalculator - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 25个方法分为以下职责组:
+  * 核心功能方法 (约8个)
+  * 辅助工具方法 (约8个)  
+  * 接口适配方法 (约8个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     高性能策略指标计算器
 
@@ -41,6 +54,9 @@ class PerformanceCalculator:
     """
 
     def __init__(self, risk_free_rate: float = 0.03):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化计算器
 

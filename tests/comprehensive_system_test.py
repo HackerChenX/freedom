@@ -37,7 +37,7 @@ class ComprehensiveSystemTest:
         
         try:
             # 测试依赖注入中的日志
-            from utils.dependency_injection import get_logger
+            from utils.logger import get_logger
             logger = get_logger(__name__)
             print("   ✓ 依赖注入日志导入成功")
             

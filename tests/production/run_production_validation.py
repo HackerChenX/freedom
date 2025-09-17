@@ -15,6 +15,7 @@ sys.path.insert(0, root_dir)
 
 from scripts.production_indicator_validator import Production_indicator_validator
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -62,7 +63,7 @@ def test_multiple_indicators():
     validator = Production_indicator_validator(max_stocks=30)
     
     # 验证多个ZXM指标
-    zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover']
+    zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover_rate']
     results = validator.run_validation(zxm_indicators)
     
     if results:
@@ -132,7 +133,7 @@ def list_available_indicators():
     validator = Production_indicator_validator()
     
     print("ZXM系列指标:")
-    zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover', 'price_volume_trend', 'breakthrough']
+    zxm_indicators = ['volume_shrink', 'bs_absorb', 'turnover_rate', 'price_volume_trend', 'breakthrough']
     for indicator in zxm_indicators:
         if indicator in validator.indicators:
             print(f"  ✓ {indicator}")

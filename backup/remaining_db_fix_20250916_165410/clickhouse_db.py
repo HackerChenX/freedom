@@ -1,0 +1,1763 @@
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+import pandas as pd
+from clickhouse_driver import Client
+import datetime
+import logging
+from typing import Dict, Optional, List, Any, Union
+import threading
+import time
+import os
+import atexit
+import numpy as np
+from enums.period import Period  # 添加 Period 枚举的导入
+from models.stock_info import Stock_info  # 导入Stock_info类
+import json
+
+# 导入KlinePeriod枚举，但使用try-except避免循环导入问题
+from config import get_config
+try:
+    from enums.kline_period import Kline_period
+
+    HAS_KLINE_PERIOD = True
+except ImportError:
+    HAS_KLINE_PERIOD = False
+
+# 配置日志
+logger = logging.getLogger('clickhouse_db')
+
+# 导入统一配置管理器
+try:
+    from config.database_config_manager import get_clickhouse_connection_config
+    from utils.dependency_injection import get_service_Clickhouse_Db
+    HAS_CONFIG_MANAGER = True
+except ImportError:
+    HAS_CONFIG_MANAGER = False
+    # 备用默认配置
+    DEFAULT_CONFIG = {
+        'host': get_config('database.host', 'localhost'),
+        'port': get_config('database.port', 9000),
+        'user': get_config('database.user', 'default'),
+        'password': get_config('database.password', '123456'),
+        'database': get_config('database.name', 'stock')
+    }
+
+
+def get_default_config() -> Dict[str, Any]:
+    """
+    获取默认Click_house配置
+
+    Returns:
+        Dict[str, Any]: 配置字典
+    """
+    if HAS_CONFIG_MANAGER:
+        try:
+            return get_clickhouse_connection_config()
+        except Exception as e:
+            logger.warning(f"使用统一配置管理器失败，使用备用配置: {e}")
+
+    # 备用配置
+    return DEFAULT_CONFIG.copy() if not HAS_CONFIG_MANAGER else {
+        'host': get_config('database.host', 'localhost'),
+        'port': get_config('database.port', 9000),
+        'user': get_config('database.user', 'default'),
+        'password': get_config('database.password', '123456'),
+        'database': get_config('database.name', 'stock')
+    }
+
+
+class ClickHouseDbmanager:
+    """
+    ClickHouse数据库连接管理器
+    支持连接池和依赖注入
+    """
+    
+    def __init__(self):
+        """初始化连接管理器"""
+        self._connections: Dict[str, Dict[str, Any]] = {}  # 连接池
+        self._lock = threading.RLock()  # 添加可重入锁，保护连接池
+        self._max_idle_time = 300  # 连接最大空闲时间（秒），缩短到5分钟
+        self._cleanup_interval = 60  # 清理间隔（秒），缩短到1分钟
+        self._cleanup_thread = None  # 清理线程
+        self._shutting_down = False  # 关闭标志
+        self._cleanup_registered = False  # 防止重复注册清理函数
+
+        # 启动清理线程
+        self._start_cleanup_thread()
+
+        # 只注册一次清理函数
+        if not hasattr(ClickHouseDbmanager, '_global_cleanup_registered'):
+            atexit.register(self._cleanup_all_connections)
+            ClickHouseDbmanager._global_cleanup_registered = True
+            self._cleanup_registered = True
+
+    def _start_cleanup_thread(self) -> None:
+        """启动连接池清理线程"""
+        if self._cleanup_thread is None:
+            self._cleanup_thread = threading.Thread(
+                target=self._connection_cleanup_task,
+                daemon=True
+            )
+            self._cleanup_thread.start()
+
+    def _connection_cleanup_task(self) -> None:
+        """定期清理空闲连接的任务"""
+        while not self._shutting_down:
+            time.sleep(self._cleanup_interval)
+            try:
+                self._cleanup_idle_connections_Clickhouse_Db()
+            except Exception as e:
+                logger.error(f"清理空闲连接时出错: {e}")
+
+    def _cleanup_idle_connections_Clickhouse_Db(self) -> None:
+        """清理空闲连接"""
+        if self._shutting_down:
+            return
+
+        with self._lock:
+            current_time = time.time()
+            keys_to_remove = []
+
+            for key, conn_info in list(self._connections.items()):
+                if conn_info.get('in_use', False):
+                    continue
+
+                # 检查连接是否超过空闲时间
+                idle_time = current_time - conn_info.get('last_used', 0)
+                if idle_time > self._max_idle_time:
+                    try:
+                        # 尝试健康检查
+                        client = conn_info.get('client')
+                        if client:
+                            try:
+                                client.ping()
+                                logger.debug(f"连接健康检查通过: {key}")
+                                continue  # 连接正常，不清理
+                            except Exception:
+                                logger.debug(f"连接健康检查失败，准备清理: {key}")
+
+                        # 关闭连接
+                        if client:
+                            try:
+                                client.disconnect()
+                            except Exception as e:
+                                logger.debug(f"断开连接时出错: {e}")
+
+                        logger.debug(f"关闭空闲连接: {key} (空闲时间: {idle_time:.1f}秒)")
+                    except Exception as e:
+                        logger.warning(f"处理连接时出错: {key}, 错误: {e}")
+
+                    keys_to_remove.append(key)
+
+            # 移除已关闭的连接
+            for key in keys_to_remove:
+                if key in self._connections:
+                    del self._connections[key]
+
+            if keys_to_remove:
+                logger.info(f"清理了 {len(keys_to_remove)} 个空闲连接，当前连接数: {len(self._connections)}")
+
+    def _cleanup_all_connections(self) -> None:
+        """清理所有连接（程序退出时调用）"""
+        if self._shutting_down:
+            return  # 避免重复清理
+
+        logger.info("正在关闭所有数据库连接...")
+        self._shutting_down = True
+
+        # 停止清理线程
+        if self._cleanup_thread and self._cleanup_thread.is_alive():
+            try:
+                self._cleanup_thread.join(timeout=2)
+            except Exception as e:
+                logger.warning(f"停止清理线程失败: {e}")
+
+        with self._lock:
+            connection_count = len(self._connections)
+            for key, conn_info in list(self._connections.items()):
+                try:
+                    if 'client' in conn_info and conn_info['client']:
+                        conn_info['client'].disconnect()
+                        logger.debug(f"关闭连接: {key}")
+                except Exception as e:
+                    logger.warning(f"关闭连接时出错: {key}, 错误: {e}")
+
+            self._connections.clear()
+            logger.info(f"已关闭 {connection_count} 个数据库连接")
+
+    def get_connection_Db(self, config: Optional[Dict[str, Any]] = None) -> 'ClickHouseDbConnection':
+        """
+        获取数据库连接
+        
+        Args:
+            config: 连接配置，如果为None则使用默认配置
+            
+        Returns:
+            ClickHouseDbConnection: 数据库连接对象
+            
+        Raises:
+            Exception: 连接失败时抛出
+        """
+        if config is None:
+            config = get_default_config()
+
+        # 生成连接键
+        conn_key = f"{config['host']}:{config['port']}:{config['database']}:{config['user']}"
+
+        with self._lock:
+            # 检查连接池中是否有可用连接
+            if conn_key in self._connections:
+                conn_info = self._connections[conn_key]
+
+                # 如果连接正在使用，创建新连接
+                if conn_info['in_use']:
+                    client = Client(**config)
+                    new_conn_key = f"{conn_key}_{id(client)}"
+                    self._connections[new_conn_key] = {
+                        'client': client,
+                        'in_use': True,
+                        'last_used': time.time(),
+                        'config': config
+                    }
+                    return ClickHouseDbconnection(self, new_conn_key)
+
+                # 标记连接为使用中并返回
+                conn_info['in_use'] = True
+                conn_info['last_used'] = time.time()
+                return ClickHouseDbconnection(self, conn_key)
+
+            # 创建新连接
+            try:
+                client = Client(**config)
+                self._connections[conn_key] = {
+                    'client': client,
+                    'in_use': True,
+                    'last_used': time.time(),
+                    'config': config
+                }
+                return ClickHouseDbconnection(self, conn_key)
+            except Exception as e:
+                logger.error(f"创建ClickHouse连接失败: {e}")
+                raise
+
+    def release_connection(self, conn_key: str) -> None:
+        """
+        释放连接（标记为未使用）
+
+        Args:
+            conn_key: 连接键
+        """
+        with self._lock:
+            if conn_key in self._connections:
+                conn_info = self._connections[conn_key]
+                conn_info['in_use'] = False
+                conn_info['last_used'] = time.time()
+
+                # 增加查询计数
+                if 'query_count' not in conn_info:
+                    conn_info['query_count'] = 0
+                conn_info['query_count'] += 1
+
+                # 如果查询次数过多，关闭连接
+                if conn_info['query_count'] > 100:
+                    logger.debug(f"连接 {conn_key} 查询次数过多，关闭连接")
+                    self._remove_connection(conn_key)
+                else:
+                    logger.debug(f"释放连接: {conn_key}, 查询次数: {conn_info['query_count']}")
+            else:
+                logger.warning(f"尝试释放不存在的连接: {conn_key}")
+
+    def _remove_connection(self, conn_key: str) -> None:
+        """移除并关闭连接"""
+        with self._lock:
+            if conn_key in self._connections:
+                conn_info = self._connections[conn_key]
+                try:
+                    client = conn_info.get('client')
+                    if client:
+                        client.disconnect()
+                    logger.debug(f"移除连接: {conn_key}")
+                except Exception as e:
+                    logger.warning(f"关闭连接时出错: {conn_key}, 错误: {e}")
+                finally:
+                    del self._connections[conn_key]
+
+
+# ===== 兼容性接口 =====
+
+def get_clickhouse_db_manager() -> ClickHouseDbmanager:
+    """
+    获取ClickHouse数据库管理器实例（兼容性方法）
+    
+    Returns:
+        ClickHouseDbmanager: 管理器实例
+    """
+    return ClickHouseDbmanager()
+
+
+# 为了向后兼容，保留原有的类方法接口
+ClickHouseDbmanager.get_instance_Db = staticmethod(get_clickhouse_db_manager)
+
+
+class ClickHouseDbconnection:
+    """
+    Click_house数据库连接包装类，支持上下文管理器模式
+    """
+
+    def __init__(self, manager: 'ClickHouseDatabaseManager', conn_key: str):
+        """
+        初始化连接对象
+        
+        Args:
+            manager: 连接管理器
+            conn_key: 连接键
+        """
+        self.manager = manager
+        self.conn_key = conn_key
+        self.client = manager._connections[conn_key]['client']
+        self._database_created = False # 用于确保数据库只创建一次
+
+    def __enter__(self) -> 'ClickHouseDbconnection':
+        """
+        上下文管理器入口
+        
+        Returns:
+            ClickHouseDbconnection: 连接对象自身
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """
+        上下文管理器退出，自动释放连接
+        """
+        self.manager.release_connection(self.conn_key)
+
+    def execute(self, query: str, params: Optional[Dict[str, Any]] = None) -> None:
+        """
+        执行SQL语句
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Raises:
+            Exception: 执行失败时抛出
+        """
+        try:
+            self.client.execute(query, params or {})
+        except Exception as e:
+            logger.error(f"执行SQL失败: {query}, 错误: {e}")
+            raise
+
+    def query_Db_Clickhouse_Db_Clickhouse_Db(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行查询并返回结果
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+            
+        Raises:
+            Exception: 执行失败时抛出
+        """
+        try:
+            # 直接使用execute方法获取结果
+            result = self.client.execute(query, params or {})
+            if not result:
+                return pd.DataFrame()
+
+            # 尝试从查询语句中提取列名
+            column_names = self._extract_column_names_from_query(query)
+            
+            # 如果无法从查询中提取列名，使用默认列名
+            if not column_names and result:
+                column_names = [f"col_{i}" for i in range(len(result[0]))]
+
+            # 创建DataFrame
+            return pd.DataFrame(result, columns=column_names or [])
+        except Exception as e:
+            logger.error("执行查询失败: %s, 错误: %s", query, e)
+            return pd.DataFrame()
+
+    def _extract_column_names_from_query(self, query: str) -> List[str]:
+        """
+        从查询语句中提取列名
+        
+        Args:
+            query: SQL查询语句
+            
+        Returns:
+            List[str]: 列名列表
+        """
+        try:
+            import re
+            # 移除注释和多余空格
+            clean_query = re.sub(r'/\*.*?\*/', '', query, flags=re.DOTALL)
+            clean_query = re.sub(r'--.*', '', clean_query)
+            clean_query = ' '.join(clean_query.split())
+            
+            # 查找SELECT和FROM之间的内容
+            select_match = re.search(r'SELECT\s+(.*?)\s+FROM', clean_query, re.IGNORECASE | re.DOTALL)
+            if not select_match:
+                return []
+            
+            select_part = select_match.group(1).strip()
+            
+            # 如果是SELECT code, name, date, level, open, close, high, low, volume，返回空列表（无法确定列名）
+            if select_part.strip() == '*':
+                return []
+            
+            # 分割字段
+            fields = [field.strip() for field in select_part.split(',')]
+            column_names = []
+            
+            for field in fields:
+                # 处理别名（AS关键字）
+                if ' AS ' in field.upper():
+                    alias = field.upper().split(' AS ')[-1].strip()
+                    column_names.append(alias.strip('"').strip("'"))
+                # 处理没有AS的别名（空格分隔）
+                elif ' ' in field and not any(func in field.upper() for func in ['(', ')', 'CASE', 'WHEN']):
+                    parts = field.split()
+                    if len(parts) >= 2:
+                        column_names.append(parts[-1].strip('"').strip("'"))
+                    else:
+                        # 提取字段名（去掉表前缀）
+                        clean_field = field.split('.')[-1].strip()
+                        column_names.append(clean_field)
+                else:
+                    # 提取字段名（去掉表前缀）
+                    clean_field = field.split('.')[-1].strip()
+                    column_names.append(clean_field)
+            
+            return column_names
+        except Exception as e:
+            logger.warning(f"从查询中提取列名失败: {e}")
+            return []
+
+    def query_dataframe_Db(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行查询并返回Pandas Data_frame
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        try:
+            return self.client.query_dataframe_Db(query, params)
+        except Exception as e:
+            logger.error(f"查询DataFrame失败: {query}, 错误: {e}")
+            # 返回一个空的DataFrame以保持类型一致性
+            return pd.DataFrame()
+
+
+class ClickHouseDb:
+    """
+    Click_house数据库操作类，提供SQL执行和数据查询功能
+    """
+    
+    def __init__(self, config=None):
+        """
+        初始化ClickHouseDb实例
+        
+        Args:
+            config: 数据库连接配置，如果为None则使用默认配置
+        """
+        self.config = config or get_default_config()
+        self._manager = ClickHouseDbmanager()
+        
+    def execute(self, query: str, params: Optional[Dict[str, Any]] = None):
+        """
+        执行SQL语句
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            查询结果
+        """
+        with self._manager.get_connection_Db(self.config) as conn:
+            return conn.execute(query, params)
+    
+    def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> pd.DataFrame:
+        """
+        执行查询并返回DataFrame
+        
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+            
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        with self._manager.get_connection_Db(self.config) as conn:
+            return conn.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+    def get_stock_info_Db(self,
+                       stock_code: Union[str, List[str]] = None,
+                       level: Union[str, Period] = None,
+                       start_date: Union[str, datetime.datetime, None] = None,
+                       end_date: Union[str, datetime.datetime, None] = None,
+                       filters: Optional[Dict[str, Any]] = None,
+                       limit: Optional[int] = None,
+                       order_by: str = "date DESC",
+                       group_by: Optional[str] = None) -> Stock_info:
+        """
+        统一的股票数据查询方法，替代 get_kline_data, get_stock_list 和原有的 get_stock_info WHERE 1=1 方法
+        
+        Args:
+            stock_code: 股票代码或股票代码列表，如果为None则查询所有股票
+            level: K线周期，可以是 Period 枚举值或字符串 ('day', 'week', 'month', '15min', '30min', '60min')
+            start_date: 开始日期，格式可以是 'YYYY-MM-DD', 'YYYYMMDD' 或 datetime 对象
+            end_date: 结束日期，格式可以是 'YYYY-MM-DD', 'YYYYMMDD' 或 datetime 对象
+            filters: 过滤条件字典，可包含 price, industry, market 等字段
+            limit: 限制返回的记录数量
+            order_by: 排序规则
+            group_by: 分组字段
+            
+        Returns:
+            Stock_info 对象
+            
+        Raises:
+            ValueError: 参数无效时抛出
+            Exception: 查询失败时抛出
+        """
+        try:
+            # 标准化周期
+            db_level = None
+            if level is not None:
+                if isinstance(level, str):
+                    # 字符串转换为标准周期格式
+                    level_map = {
+                        'day': '日线',
+                        'daily': '日线',
+                        'week': '周线',
+                        'weekly': '周线',
+                        'month': '月线',
+                        'monthly': '月线',
+                        '60min': '60分钟',
+                        '30min': '30分钟',
+                        '15min': '15分钟',
+                        '5min': '5分钟'
+                    }
+                    db_level = level_map.get(level.lower(), level)
+                elif isinstance(level, Period):
+                    # Period枚举转换为字符串
+                    period_map = {
+                        Period.DAILY: '日线',
+                        Period.WEEKLY: '周线',
+                        Period.MONTHLY: '月线',
+                        Period.MIN_60: '60分钟',
+                        Period.MIN_30: '30分钟',
+                        Period.MIN_15: '15分钟',
+                        Period.MIN_5: '5分钟'
+                    }
+                    db_level = period_map.get(level, '日线')
+
+            # 处理日期格式
+            formatted_start_date = self._format_date_param(start_date) if start_date else None
+            formatted_end_date = self._format_date_param(end_date) if end_date else None
+
+            # 使用固定的完整字段列表
+            # 字段直接从 stockInfo 对象字段保持一致，从stockInfo对象中获取
+            fields = Stock_info.get_fields()
+            # 构建SQL查询
+            field_str = ", ".join(fields)
+
+            # 构建WHERE子句
+            conditions = []
+            params = {}
+
+            # 添加股票代码条件
+            if stock_code is not None:
+                if isinstance(stock_code, list):
+                    if len(stock_code) == 1:
+                        conditions.append("code = %(stock_code)s")
+                        params['stock_code'] = stock_code[0]
+                    elif len(stock_code) > 1:
+                        placeholders = ", ".join([f"%(stock_code_{i})s" for i in range(len(stock_code))])
+                        conditions.append(f"code IN ({placeholders})")
+                        for i, code in enumerate(stock_code):
+                            params[f'stock_code_{i}'] = code
+                else:
+                    conditions.append("code = %(stock_code)s")
+                    params['stock_code'] = stock_code
+
+            # 添加级别条件
+            if db_level:
+                conditions.append("level = %(level)s")
+                params['level'] = db_level
+
+            # 添加日期条件
+            if formatted_start_date:
+                conditions.append("date >= %(start_date)s")
+                params['start_date'] = formatted_start_date
+
+            if formatted_end_date:
+                conditions.append("date <= %(end_date)s")
+                params['end_date'] = formatted_end_date
+
+            # 添加过滤条件
+            if filters:
+                # 价格过滤
+                if 'price' in filters and isinstance(filters['price'], dict):
+                    price = filters['price']
+                    if 'min' in price and price['min'] > 0:
+                        conditions.append("close >= %(price_min)s")
+                        params['price_min'] = price['min']
+                    if 'max' in price and price['max'] > 0:
+                        conditions.append("close <= %(price_max)s")
+                        params['price_max'] = price['max']
+
+                # 行业过滤
+                if 'industry' in filters and filters['industry']:
+                    industries = filters['industry']
+                    if isinstance(industries, list) and industries:
+                        industry_placeholders = ", ".join([f"%(industry_{i})s" for i in range(len(industries))])
+                        conditions.append(f"industry IN ({industry_placeholders})")
+                        for i, industry in enumerate(industries):
+                            params[f'industry_{i}'] = industry
+                    elif isinstance(industries, str):
+                        conditions.append("industry = %(industry)s")
+                        params['industry'] = industries
+
+                # 市场过滤
+                if 'market' in filters and filters['market']:
+                    markets = filters['market']
+                    if isinstance(markets, list) and markets:
+                        market_placeholders = ", ".join([f"%(market_{i})s" for i in range(len(markets))])
+                        conditions.append(f"market IN ({market_placeholders})")
+                        for i, market in enumerate(markets):
+                            params[f'market_{i}'] = market
+                    elif isinstance(markets, str):
+                        conditions.append("market = %(market)s")
+                        params['market'] = markets
+
+            # 调整GROUP BY子句，确保所有非聚合字段都包含在内
+            group_by_fields = set()
+            if group_by:
+                # 分割并添加已有的分组字段
+                group_by_fields = set(field.strip() for field in group_by.split(','))
+
+                # 检查fields中是否有非聚合字段需要添加到GROUP BY中
+                for field in fields:
+                    # 如果字段不是聚合函数(不含min, max, sum, avg, count等)
+                    if not any(agg_func in field.lower() for agg_func in ['min(', 'max(', 'sum(', 'avg(', 'count(']):
+                        # 提取字段名（处理类似"code as stock_code"的情况）
+                        if ' as ' in field.lower():
+                            field_name = field.split(' as ')[0].strip()
+                        else:
+                            field_name = field.strip()
+                        # 排除常量字段（如 '0 as market_cap'）
+                        if not field_name.startswith("'") and not field_name.startswith(
+                                '"') and not field_name.isdigit():
+                            group_by_fields.add(field_name)
+
+            # 处理多股票查询的情况 - 确保查询中始终保留原始的code字段
+            if isinstance(stock_code, list) and len(
+                    stock_code) > 1 and not formatted_start_date and not formatted_end_date:
+                # 添加ORDER BY子句，确保每个股票按日期倒序排序
+                if not order_by:
+                    order_by = "code, date DESC"
+
+                # 添加限制每个股票只返回最新的一条记录
+                need_latest_by_code = True
+            else:
+                need_latest_by_code = False
+
+            # 构建完整查询
+            query = f"SELECT {field_str} FROM stock_info WHERE date >= '2020-01-01'"
+
+            if conditions:
+                query += " WHERE " + " AND ".join(conditions)
+
+            # 添加GROUP BY子句
+            if group_by_fields:
+                query += f" GROUP BY {', '.join(group_by_fields)}"
+
+            # 如果在GROUP BY查询中，ORDER BY子句只能引用分组字段或聚合字段
+            if order_by:
+                # 分析ORDER BY中的字段
+                order_parts = []
+                for part in order_by.split(','):
+                    part = part.strip()
+                    field_name = part.split()[0].strip()  # 提取字段名（忽略ASC/DESC）
+
+                    # 检查是否是聚合字段或分组字段
+                    is_aggregate = any(
+                        agg_func in field_name.lower() for agg_func in ['min(', 'max(', 'sum(', 'avg(', 'count('])
+
+                    if is_aggregate or field_name in group_by_fields:
+                        order_parts.append(part)
+                    else:
+                        # 如果不是聚合字段或分组字段，默认按第一个分组字段排序
+                        if group_by_fields:
+                            default_field = next(iter(group_by_fields))
+                            order_parts.append(f"{default_field} DESC")
+                            logger.warning(
+                                f"ORDER BY引用了非分组字段 '{field_name}'，已替换为分组字段 '{default_field}'")
+                        break  # 一旦发现不兼容的排序字段，停止处理其他排序字段
+
+                if order_parts:
+                    order_by = ', '.join(order_parts)
+                else:
+                    order_by = None
+
+            # 添加ORDER BY子句
+            if order_by:
+                query += f" ORDER BY {order_by}"
+
+            # 添加LIMIT子句
+            if limit:
+                query += f" LIMIT {limit}"
+            # 对于多股票查询，添加额外的查询包装以获取每个股票的最新记录
+            elif need_latest_by_code:
+                # 使用简单的LIMIT BY子句
+                query += " LIMIT 1 BY code"
+                logger.debug(f"使用LIMIT BY子句为每个股票获取最新记录: {query}")
+
+            # 执行查询
+            logger.debug(f"执行SQL查询: {query}, 参数: {params}")
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            # 处理结果
+            if result.empty:
+                # 返回空Stock_info对象
+                empty_stock = Stock_info()
+                if isinstance(stock_code, str):
+                    empty_stock.code = stock_code
+                empty_stock.level = level if isinstance(level, str) else (level.value if level else None)
+                return empty_stock
+
+            # 标准化列名（处理col_0, col_1等通用列名）
+            column_mapping = {}
+            if 'col_0' in result.columns:
+                for i, field in enumerate(fields):
+                    if f'col_{i}' in result.columns:
+                        # 从field中提取列名（处理类似"code as stock_code"的情况）
+                        if ' as ' in field:
+                            col_name = field.split(' as ')[1].strip()
+                        else:
+                            col_name = field.strip()
+                        column_mapping[f'col_{i}'] = col_name
+
+            if column_mapping:
+                result = result.rename(columns=column_mapping)
+
+            # 始终返回Stock_info对象
+            return Stock_info(result)
+
+        except Exception as e:
+            logger.error(f"查询股票数据失败: {e}")
+            # 返回空Stock_info对象
+            empty_stock = Stock_info()
+            if isinstance(stock_code, str):
+                empty_stock.code = stock_code
+            empty_stock.level = level if isinstance(level, str) else (level.value if level else None)
+            return empty_stock
+
+
+
+    def get_industry_info(self, symbol: str, start_date: Union[str, datetime.datetime],
+                          end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
+        """
+        获取行业指数数据
+        
+        Args:
+            symbol: 行业代码
+            start_date: 开始日期
+            end_date: 结束日期
+            
+        Returns:
+            pd.DataFrame: 行业指数数据
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        # 转换日期格式
+        if isinstance(start_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(start_date) == 8:  # 20220101格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将开始日期 {start_date} 转换为日期格式，使用原始字符串")
+
+        if isinstance(end_date, str):
+            try:
+                # 尝试转换为日期格式
+                if len(end_date) == 8:  # 20220101格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y%m%d').date()
+                else:  # 其他格式
+                    end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+            except ValueError:
+                logger.warning(f"无法将结束日期 {end_date} 转换为日期格式，使用原始字符串")
+
+        try:
+            # 构建查询 - 查询两种情况：行业代码匹配或者industry字段匹配
+            query = """
+            SELECT 
+                date, code, name, open, high, low, close, volume, turnover
+            FROM stock_info WHERE 1=1
+            WHERE 
+                (code = %(symbol)s OR industry = %(symbol)s) AND 
+                (level = '行业' OR level = '日线') AND
+                date BETWEEN %(start_date)s AND %(end_date)s
+            ORDER BY 
+                date
+            """
+
+            params = {
+                'symbol': symbol,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            # 使用DataFrame.empty属性判断结果是否为空
+            if result.empty:
+                logger.warning(f"未找到行业 {symbol} 的数据")
+                return pd.DataFrame()
+
+            # 重命名列
+            column_map = {
+                'col_0': 'date',
+                'col_1': 'code',
+                'col_2': 'name',
+                'col_3': 'open',
+                'col_4': 'high',
+                'col_5': 'low',
+                'col_6': 'close',
+                'col_7': 'volume',
+                'col_8': 'turnover'
+            }
+
+            result.rename(columns=column_map, inplace=True)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"从数据库加载行业 {symbol} 数据失败: {e}")
+            return pd.DataFrame()
+
+    def get_industry_stock(self, industry: str) -> List[str]:
+        """
+        获取行业股票代码列表（注意：当前数据库中行业信息可能不完整）
+
+        Args:
+            industry: 行业名称
+
+        Returns:
+            List[str]: 股票代码列表
+        """
+        logger.warning(f"get_industry_stock方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+
+        try:
+            # 直接查询stock_info表中的行业信息
+            query = """
+            SELECT DISTINCT code
+            FROM stock_info WHERE 1=1
+            WHERE level = '日线' AND industry = %(industry)s
+            ORDER BY code
+            """
+
+            params = {'industry': industry}
+            df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            if df.empty:
+                logger.warning(f"未找到行业 {industry} 的股票，返回空列表")
+                return []
+
+            # 标准化列名
+            if 'col_0' in df.columns:
+                df = df.rename(columns={'col_0': 'code'})
+
+            return df['code'].tolist()
+
+        except Exception as e:
+            logger.error(f"获取行业 {industry} 股票代码列表失败: {e}")
+            return []
+
+    def get_stock_min_date(self, stock_code: str, level: Optional[Union[str, Period]] = None) -> Optional[str]:
+        """
+        获取股票在特定周期下的最早日期
+        
+        Args:
+            stock_code: 股票代码
+            level: K线周期，可选
+            
+        Returns:
+            str: 最早日期，格式YYYY-MM-DD，如果未找到返回None
+        """
+        try:
+            # 标准化周期
+            db_level = None
+            if level is not None:
+                if isinstance(level, str):
+                    # 字符串转换为标准周期格式
+                    level_map = {
+                        'day': '日线',
+                        'daily': '日线',
+                        'week': '周线',
+                        'weekly': '周线',
+                        'month': '月线',
+                        'monthly': '月线',
+                        '60min': '60分钟线',
+                        '30min': '30分钟线',
+                        '15min': '15分钟线',
+                        '5min': '5分钟线'
+                    }
+                    db_level = level_map.get(level.lower(), level)
+                elif isinstance(level, Period):
+                    # Period枚举转换为字符串
+                    period_map = {
+                        Period.DAILY: '日线',
+                        Period.WEEKLY: '周线',
+                        Period.MONTHLY: '月线',
+                        Period.MIN_60: '60分钟线',
+                        Period.MIN_30: '30分钟线',
+                        Period.MIN_15: '15分钟线',
+                        Period.MIN_5: '5分钟线'
+                    }
+                    db_level = period_map.get(level, '日线')
+
+            # 构建查询条件
+            conditions = ["code = %(stock_code)s"]
+            params = {'stock_code': stock_code}
+
+            if db_level:
+                conditions.append("level = %(level)s")
+                params['level'] = db_level
+
+            # 构建查询
+            query = f"""
+            SELECT MIN(date) as min_date
+            FROM stock_info WHERE 1=1
+            WHERE {" AND ".join(conditions)}
+            """
+
+            # 执行查询
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            if not result.empty and 'min_date' in result.columns and not pd.isna(result.iloc[0]['min_date']):
+                min_date = result.iloc[0]['min_date']
+                return min_date.strftime('%Y-%m-%d') if isinstance(min_date, datetime.datetime) else str(min_date)
+
+            return None
+        except Exception as e:
+            logger.error(f"获取股票最早日期时出错: {e}")
+            return None
+
+    def get_stock_max_date(self, stock_code: Optional[str] = None, level: Optional[Union[str, Period]] = None) -> \
+    Optional[str]:
+        """
+        获取股票在特定周期下的最新日期
+        
+        Args:
+            stock_code: 股票代码，如果为None则查询所有股票
+            level: K线周期，可选
+            
+        Returns:
+            str: 最新日期，格式YYYY-MM-DD，如果未找到返回None
+        """
+        try:
+            # 标准化周期
+            db_level = None
+            if level is not None:
+                if isinstance(level, str):
+                    level_map = {
+                        'day': '日线',
+                        'daily': '日线',
+                        'week': '周线',
+                        'weekly': '周线',
+                        'month': '月线',
+                        'monthly': '月线',
+                        '60min': '60分钟线',
+                        '30min': '30分钟线',
+                        '15min': '15分钟线',
+                        '5min': '5分钟线'
+                    }
+                    db_level = level_map.get(level.lower(), level)
+                elif isinstance(level, Period):
+                    period_map = {
+                        Period.DAILY: '日线',
+                        Period.WEEKLY: '周线',
+                        Period.MONTHLY: '月线',
+                        Period.MIN_60: '60分钟线',
+                        Period.MIN_30: '30分钟线',
+                        Period.MIN_15: '15分钟线',
+                        Period.MIN_5: '5分钟线'
+                    }
+                    db_level = period_map.get(level, '日线')
+
+            # 构建查询条件
+            conditions = []
+            params = {}
+
+            if stock_code:
+                conditions.append("code = %(stock_code)s")
+                params['stock_code'] = stock_code
+
+            if db_level:
+                conditions.append("level = %(level)s")
+                params['level'] = db_level
+
+            # 构建查询
+            query = "SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01'"
+            if conditions:
+                query += f" WHERE {' AND '.join(conditions)}"
+
+            # 执行查询
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            if not result.empty and 'max_date' in result.columns and not pd.isna(result.iloc[0]['max_date']):
+                max_date = result.iloc[0]['max_date']
+                return max_date.strftime('%Y-%m-%d') if isinstance(max_date, datetime.datetime) else str(max_date)
+
+            return None
+        except Exception as e:
+            logger.error(f"获取股票最新日期时出错: {e}")
+            return None
+
+    def get_industry_list_Db(self) -> pd.DataFrame:
+        """
+        获取行业列表
+        
+        Returns:
+            pd.DataFrame: 行业列表，包含行业名称和代码
+        """
+        try:
+            # 构建查询
+            query = """
+            SELECT DISTINCT industry as name, '' as code
+            FROM stock_info WHERE 1=1
+            WHERE industry != ''
+            ORDER BY industry
+            """
+
+            # 执行查询
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
+
+            # 处理列名
+            if 'col_0' in result.columns:
+                result = result.rename(columns={'col_0': 'name', 'col_1': 'code'})
+
+            return result
+        except Exception as e:
+            logger.error(f"获取行业列表时出错: {e}")
+            return pd.DataFrame(columns=['name', 'code'])
+
+    def save_selection_result_Db(self, result: pd.DataFrame, strategy_id: str,
+                              selection_date: Optional[str] = None) -> bool:
+        """
+        保存选股结果（注意：当前数据库中没有stock_selection_result表）
+
+        Args:
+            result: 选股结果Data_frame
+            strategy_id: 策略ID
+            selection_date: 选股日期，默认为当前日期
+
+        Returns:
+            bool: 保存成功返回True，否则返回False
+        """
+        logger.warning("save_selection_result方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
+        if result is None or result.empty:
+            logger.warning("选股结果为空，不保存")
+            return True
+
+        # 暂时将结果保存到文件系统而不是数据库
+        try:
+            import os
+            result_dir = "results/selection"
+            os.makedirs(result_dir, exist_ok=True)
+
+            # 处理日期参数
+            if selection_date is None:
+                selection_date = datetime.datetime.now().strftime("%Y-%m-%d")
+
+            # 保存到CSV文件
+            filename = f"{result_dir}/selection_{strategy_id}_{selection_date}.csv"
+            result.to_csv(filename, index=False)
+            logger.info(f"选股结果已保存到文件: {filename}")
+            return True
+
+        except Exception as e:
+            logger.error(f"保存选股结果到文件时出错: {e}")
+            return False
+
+    def get_selection_history(self, strategy_id: Optional[str] = None,
+                              start_date: Optional[str] = None,
+                              end_date: Optional[str] = None,
+                              limit: int = 100) -> pd.DataFrame:
+        """
+        获取选股历史记录（注意：当前数据库中没有stock_selection_result表）
+
+        Args:
+            strategy_id: 策略ID，None表示所有策略
+            start_date: 开始日期，None表示不限制
+            end_date: 结束日期，None表示当前日期
+            limit: 返回记录数限制
+
+        Returns:
+            pd.DataFrame: 选股历史记录
+        """
+        logger.warning("get_selection_history方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
+        try:
+            # 尝试从文件系统读取历史记录
+            import os
+            import glob
+
+            result_dir = "results/selection"
+            if not os.path.exists(result_dir):
+                return pd.DataFrame(columns=['strategy_id', 'selection_date', 'stock_count'])
+
+            # 查找匹配的CSV文件
+            pattern = f"{result_dir}/selection_*.csv"
+            files = glob.glob(pattern)
+
+            history_data = []
+            for file_path in files:
+                try:
+                    filename = os.path.basename(file_path)
+                    # 解析文件名: selection_{strategy_id}_{date}.csv
+                    parts = filename.replace('.csv', '').split('_')
+                    if len(parts) >= 3:
+                        file_strategy_id = parts[1]
+                        file_date = parts[2]
+
+                        # 应用过滤条件
+                        if strategy_id and file_strategy_id != strategy_id:
+                            continue
+                        if start_date and file_date < start_date:
+                            continue
+                        if end_date and file_date > end_date:
+                            continue
+
+                        # 读取文件获取股票数量
+                        df = pd.read_csv(file_path)
+                        stock_count = len(df)
+
+                        history_data.append({
+                            'strategy_id': file_strategy_id,
+                            'selection_date': file_date,
+                            'stock_count': stock_count
+                        })
+                except Exception as e:
+                    logger.warning(f"读取选股历史文件 {file_path} 失败: {e}")
+                    continue
+
+            # 转换为DataFrame并排序
+            result = pd.DataFrame(history_data)
+            if not result.empty:
+                result = result.sort_values('selection_date', ascending=False)
+                if limit:
+                    result = result.head(limit)
+
+            return result
+
+        except Exception as e:
+            logger.error(f"获取选股历史记录时出错: {e}")
+            return pd.DataFrame(columns=['strategy_id', 'selection_date', 'stock_count'])
+
+    def get_selection_result(self, strategy_id: str, selection_date: str) -> pd.DataFrame:
+        """
+        获取指定日期的选股结果（注意：当前数据库中没有stock_selection_result表）
+
+        Args:
+            strategy_id: 策略ID
+            selection_date: 选股日期
+
+        Returns:
+            pd.DataFrame: 选股结果
+        """
+        logger.warning("get_selection_result方法调用了不存在的表stock_selection_result，当前数据库只有stock_info表")
+
+        try:
+            # 尝试从文件系统读取选股结果
+            import os
+
+            result_dir = "results/selection"
+            filename = f"{result_dir}/selection_{strategy_id}_{selection_date}.csv"
+
+            if os.path.exists(filename):
+                result = pd.read_csv(filename)
+                logger.info(f"从文件读取选股结果: {filename}")
+                return result
+            else:
+                logger.warning(f"选股结果文件不存在: {filename}")
+                return pd.DataFrame()
+
+        except Exception as e:
+            logger.error(f"获取选股结果时出错: {e}")
+            return pd.DataFrame()
+
+    def get_industry_max_date(self) -> datetime.datetime:
+        """
+        获取行业数据最新日期
+        
+        Returns:
+            datetime.datetime: 最新日期
+            
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        query = """
+        SELECT 
+            MAX(date) as max_date
+        FROM stock_info WHERE 1=1
+        WHERE
+            industry != ''
+        """
+
+        result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
+        if result.empty or pd.isna(result.iloc[0, 0]):
+            return datetime.datetime.now()
+        return result.iloc[0, 0]
+
+    def get_avg_price(self, code: str, start_date: Union[str, datetime.datetime]) -> float:
+        """
+        获取股票平均价格
+
+        Args:
+            code: 股票代码
+            start_date: 开始日期
+
+        Returns:
+            float: 平均价格
+
+        Raises:
+            Exception: 查询失败时抛出
+        """
+        # 使用统一的日期格式化方法
+        formatted_date = self._format_date_param(start_date)
+
+        # 构建查询
+        query = """
+        SELECT
+            AVG(close) as avg_price
+        FROM stock_info WHERE 1=1
+        WHERE
+            code = %(code)s AND
+            date >= %(start_date)s
+        """
+
+        params = {
+            'code': code,
+            'start_date': formatted_date
+        }
+
+        result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+        if result.empty or pd.isna(result.iloc[0, 0]):
+            return 0.0
+        return float(result.iloc[0, 0])
+
+    def save_stock_info(self, data: pd.DataFrame, level: str) -> None:
+        """
+        保存股票K线数据
+        
+        Args:
+            data: 股票数据Data_frame
+            level: K线周期
+            
+        Raises:
+            Exception: 保存失败时抛出
+        """
+        if data.empty:
+            logger.warning("股票数据为空，不保存")
+            return
+
+        # 映射周期到level值
+        period_map = {
+            'day': 'day',
+            'week': 'week',
+            'month': 'month',
+            '60min': '60min',
+            '30min': '30min',
+            '15min': '15min',
+            '5min': '5min',
+            # 支持大写格式
+            'DAILY': 'day',
+            'WEEKLY': 'week',
+            'MONTHLY': 'month',
+            'MIN60': '60min',
+            'MIN30': '30min',
+            'MIN15': '15min',
+            'MIN5': '5min'
+        }
+
+        level_value = period_map.get(level, 'day')
+
+        # 确保列名小写
+        data.columns = [col.lower() for col in data.columns]
+
+        # 添加level字段（如果不存在）
+        if 'level' not in data.columns:
+            data['level'] = level_value
+
+        # 构建插入字段和值
+        fields = ", ".join(data.columns)
+
+        # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
+        with self._manager.get_connection_Db(self.config) as conn:
+            for _, row in data.iterrows():
+                values = ", ".join([f"%(f{i})s" for i in range(len(row))])
+
+                query = f"""
+                INSERT INTO stock_info WHERE 1=1 ({fields})
+                VALUES ({values})
+                """
+
+                params = {f"f{i}": val for i, val in enumerate(row)}
+                try:
+                    conn.execute(query, params)
+                except Exception as e:
+                    logger.error(f"保存股票数据失败: {e}")
+
+        logger.info(f"已保存{len(data)}条{level}周期股票数据")
+
+    def save_industry_info(self, data: pd.DataFrame) -> None:
+        """
+        保存行业指数数据
+        
+        Args:
+            data: 行业数据Data_frame
+            
+        Raises:
+            Exception: 保存失败时抛出
+        """
+        if data.empty:
+            logger.warning("行业数据为空，不保存")
+            return
+
+        # 确保列名小写
+        data.columns = [col.lower() for col in data.columns]
+
+        # 添加level字段（如果不存在）
+        if 'level' not in data.columns:
+            data['level'] = 'industry'
+
+        # 构建插入字段和值
+        fields = ", ".join(data.columns)
+
+        # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
+        with self._manager.get_connection_Db(self.config) as conn:
+            for _, row in data.iterrows():
+                values = ", ".join([f"%(f{i})s" for i in range(len(row))])
+
+                query = f"""
+                INSERT INTO stock_info WHERE 1=1 ({fields})
+                VALUES ({values})
+                """
+
+                params = {f"f{i}": val for i, val in enumerate(row)}
+                try:
+                    conn.execute(query, params)
+                except Exception as e:
+                    logger.error(f"保存行业数据失败: {e}")
+
+        logger.info(f"已保存{len(data)}条行业指数数据")
+
+    def save_result(self,
+                    result_type: str,
+                    result_data: pd.DataFrame,
+                    strategy_id: Optional[str] = None) -> None:
+        """
+        保存结果数据（注意：当前数据库中没有analysis_results表）
+
+        Args:
+            result_type: 结果类型
+            result_data: 结果数据
+            strategy_id: 策略ID
+
+        Raises:
+            Exception: 保存失败时抛出
+        """
+        logger.warning("save_result方法调用了不存在的表analysis_results，当前数据库只有stock_info表")
+
+        if result_data.empty:
+            logger.warning("结果数据为空，不保存")
+            return
+
+        try:
+            import os
+
+            # 创建结果目录
+            result_dir = f"results/{result_type}"
+            os.makedirs(result_dir, exist_ok=True)
+
+            # 添加结果时间和策略ID
+            result_copy = result_data.copy()
+            result_copy['result_time'] = datetime.datetime.now()
+            if strategy_id:
+                result_copy['strategy_id'] = strategy_id
+            result_copy['result_type'] = result_type
+
+            # 生成文件名
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"{result_dir}/{result_type}_{timestamp}"
+            if strategy_id:
+                filename += f"_{strategy_id}"
+            filename += ".csv"
+
+            # 保存到CSV文件
+            result_copy.to_csv(filename, index=False)
+            logger.info(f"已保存{len(result_data)}条{result_type}结果数据到文件: {filename}")
+
+        except Exception as e:
+            logger.error(f"保存结果数据到文件时出错: {e}")
+            raise
+
+    def get_stock_list_Db(self, market: Optional[str] = None,
+                      industry: Optional[str] = None,
+                      limit: Optional[int] = None) -> pd.DataFrame:
+        """
+        获取股票列表
+
+        Args:
+            market: 市场过滤条件（暂未使用，为兼容性保留）
+            industry: 行业过滤条件
+            limit: 限制返回的记录数量
+
+        Returns:
+            pd.DataFrame: 股票列表，包含code, name, industry等字段
+        """
+        try:
+            # 构建查询条件
+            conditions = ["level = '日线'"]  # 只查询日线数据获取股票基本信息
+            params = {}
+
+            if industry:
+                conditions.append("industry = %(industry)s")
+                params['industry'] = industry
+
+            # 构建查询
+            query = f"""
+            SELECT DISTINCT code, name, industry
+            FROM stock_info WHERE 1=1
+            WHERE {' AND '.join(conditions)}
+            ORDER BY code
+            """
+
+            if limit:
+                query += f" LIMIT {limit}"
+
+            # 执行查询
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            # 标准化列名
+            if not result.empty and 'col_0' in result.columns:
+                result = result.rename(columns={
+                    'col_0': 'code',
+                    'col_1': 'name',
+                    'col_2': 'industry'
+                })
+
+            return result
+
+        except Exception as e:
+            logger.error(f"获取股票列表失败: {e}")
+            return pd.DataFrame(columns=['code', 'name', 'industry'])
+
+    def get_kline_data_Db(self, stock_code: Union[str, List[str]],
+                      start_date: Optional[str] = None,
+                      end_date: Optional[str] = None,
+                      level: str = 'day',
+                      **kwargs) -> Stock_info:
+        """
+        获取K线数据（兼容性方法）
+
+        Args:
+            stock_code: 股票代码或股票代码列表
+            start_date: 开始日期
+            end_date: 结束日期
+            level: K线周期
+            **kwargs: 其他参数
+
+        Returns:
+            Stock_info: 股票数据对象
+        """
+        logger.warning("方法 get_kline_data 已被弃用，建议使用 get_stock_info WHERE 1=1 方法")
+
+        # 调用统一的get_stock_info方法
+        return self.get_stock_info_Db(
+            stock_code=stock_code,
+            level=level,
+            start_date=start_date,
+            end_date=end_date,
+            **kwargs
+        )
+
+    def get_stocks_by_industry_Db(self, industry: str) -> List[Dict[str, str]]:
+        """
+        根据行业获取股票列表（注意：当前数据库中行业信息可能不完整）
+
+        Args:
+            industry: 行业名称
+
+        Returns:
+            List[Dict]: 股票列表，每个元素包含stock_code和stock_name
+        """
+        logger.warning(f"get_stocks_by_industry方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+
+        try:
+            # 直接查询stock_info表中的行业信息
+            query = """
+            SELECT DISTINCT code, name, industry
+            FROM stock_info WHERE 1=1
+            WHERE level = '日线' AND industry = %(industry)s
+            ORDER BY code
+            """
+
+            params = {'industry': industry}
+            stocks_df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+
+            if stocks_df.empty:
+                logger.warning(f"未找到行业 {industry} 的股票，返回示例股票")
+                # 返回一些示例股票
+                stocks_df = self.get_stock_list_Db(limit=10)
+
+            # 标准化列名
+            if 'col_0' in stocks_df.columns:
+                stocks_df = stocks_df.rename(columns={
+                    'col_0': 'code',
+                    'col_1': 'name',
+                    'col_2': 'industry'
+                })
+
+            # 转换为字典列表
+            result = []
+            for _, row in stocks_df.iterrows():
+                result.append({
+                    'stock_code': row['code'],
+                    'stock_name': row['name']
+                })
+
+            return result
+
+        except Exception as e:
+            logger.error(f"根据行业 {industry} 获取股票列表失败: {e}")
+            return []
+
+    def get_index_stocks_Db(self, index_code: str) -> List[Dict[str, str]]:
+        """
+        根据指数代码获取成分股列表（注意：当前数据库中没有指数成分股数据）
+
+        Args:
+            index_code: 指数代码
+
+        Returns:
+            List[Dict]: 股票列表，每个元素包含stock_code和stock_name
+        """
+        logger.warning(f"get_index_stocks方法被调用，但当前数据库中没有指数成分股数据，指数代码: {index_code}")
+
+        # 返回一些示例股票作为替代
+        try:
+            # 获取前50只股票作为示例
+            stocks_df = self.get_stock_list_Db(limit=50)
+            if stocks_df.empty:
+                return []
+
+            # 转换为字典列表
+            result = []
+            for _, row in stocks_df.iterrows():
+                result.append({
+                    'stock_code': row['code'],
+                    'stock_name': row['name']
+                })
+
+            logger.info(f"返回 {len(result)} 只示例股票代替指数 {index_code} 的成分股")
+            return result
+
+        except Exception as e:
+            logger.error(f"获取指数 {index_code} 成分股失败: {e}")
+            return []
+
+    def get_stock_name_Db(self, stock_code: str) -> str:
+        """
+        获取股票名称
+        Args:
+            stock_code: 股票代码
+        Returns:
+            str: 股票名称，如果未找到则返回股票代码
+        """
+        try:
+            query = """
+            SELECT code, name FROM stock_info WHERE code = %(stock_code)s AND level = '日线' LIMIT 1
+            """
+            params = {'stock_code': stock_code}
+            result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
+            # 标准化列名
+            if not result.empty:
+                if 'col_0' in result.columns:
+                    result = result.rename(columns={'col_0': 'code', 'col_1': 'name'})
+                elif 'stock_code' in result.columns and 'stock_name' in result.columns:
+                    result = result.rename(columns={'stock_code': 'code', 'stock_name': 'name'})
+                # 取第一行的name
+                return result.iloc[0]['name']
+            return stock_code
+        except Exception as e:
+            logger.error(f"获取股票 {stock_code} 名称失败: {e}")
+            return stock_code
+
+    def _format_date_param(self, date_param: Union[str, datetime.datetime, None]) -> Optional[str]:
+        """
+        格式化日期参数为数据库可接受的格式
+        
+        Args:
+            date_param: 日期参数，可以是字符串、datetime对象或None
+            
+        Returns:
+            str: 格式化后的日期字符串 (YYYY-MM-DD)，如果输入为None则返回None
+        """
+        if date_param is None:
+            return None
+
+        if isinstance(date_param, datetime.datetime) or isinstance(date_param, datetime.date):
+            return date_param.strftime('%Y-%m-%d')
+
+        if isinstance(date_param, str):
+            # 尝试处理不同格式的日期字符串
+            if len(date_param) == 8 and date_param.isdigit():
+                # 20220101 格式
+                return f"{date_param[:4]}-{date_param[4:6]}-{date_param[6:8]}"
+            elif len(date_param) == 10 and date_param[4] == '-' and date_param[7] == '-':
+                # 2022-01-01 格式，已正确
+                return date_param
+            else:
+                # 尝试解析其他格式
+                try:
+                    dt = pd.to_datetime(date_param)
+                    return dt.strftime('%Y-%m-%d')
+                except:
+                    logger.warning(f"无法解析日期格式: {date_param}，使用原值")
+                    return date_param
+
+        # 其他类型，尝试转换为字符串
+        return str(date_param)
+
+    def init_database_Db(self):
+        """
+        初始化数据库和表
+        """
+        logger.info("开始数据库初始化...")
+        try:
+            self._create_database()
+            self._run_ddl_scripts()
+            logger.info("数据库初始化成功完成。")
+            return True
+        except Exception as e:
+            logger.error(f"数据库初始化过程中发生错误: {e}", exc_info=True)
+            return False
+
+    def _create_database(self):
+        """
+        如果数据库不存在，则创建它
+        """
+        database_name = self.config['database'] # 使用self.config获取数据库名称
+        if not database_name:
+            logger.warning("未配置数据库名称，跳过数据库创建。")
+            return
+            
+        try:
+            logger.info(f"检查并创建数据库: {database_name}")
+            self.execute(f"CREATE DATABASE IF NOT EXISTS {database_name}")
+            logger.info(f"数据库 {database_name} 已存在或已成功创建。")
+        except Exception as e:
+            logger.error(f"创建数据库 {database_name} 失败: {e}")
+            raise
+
+    def _execute_sql_from_file(self, file_path: str):
+        """
+        执行单个SQL文件中的所有语句
+        
+        Args:
+            file_path: SQL文件的路径
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                sql_script = f.read()
+            
+            # ClickHouse客户端可以一次执行多个语句
+            if sql_script.strip():
+                logger.info(f"正在执行SQL文件: {os.path.basename(file_path)}")
+                self.execute(sql_script)
+                logger.info(f"成功执行SQL文件: {os.path.basename(file_path)}")
+        except FileNotFoundError:
+            logger.error(f"SQL文件未找到: {file_path}")
+            raise
+        except Exception as e:
+            logger.error(f"执行SQL文件 {file_path} 失败: {e}")
+            raise
+
+    def _run_ddl_scripts(self):
+        """
+        运行 `sql/ddl` 目录中的所有SQL脚本
+        """
+        # 获取项目根目录
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        ddl_dir = os.path.join(project_root, 'sql', 'ddl')
+        
+        if not os.path.isdir(ddl_dir):
+            logger.warning(f"DDL目录不存在，跳过脚本执行: {ddl_dir}")
+            return
+            
+        logger.info(f"开始从目录执行DDL脚本: {ddl_dir}")
+        
+        # 获取所有.sql文件并排序
+        try:
+            sql_files = sorted([f for f in os.listdir(ddl_dir) if f.endswith('.sql')])
+        except FileNotFoundError:
+            logger.warning(f"DDL目录不存在或无法访问: {ddl_dir}")
+            return
+            
+        if not sql_files:
+            logger.info("在DDL目录中未找到可执行的SQL脚本。")
+            return
+            
+        for sql_file in sql_files:
+            file_path = os.path.join(ddl_dir, sql_file)
+            self._execute_sql_from_file(file_path)
+
+
+def get_service_Clickhouse_Db(config=None) -> ClickHouseDb:
+    """
+    获取ClickHouseDb实例
+    
+    Args:
+        config: 数据库连接配置，如果为None则使用默认配置
+        
+    Returns:
+        ClickHouseDb: 数据库操作对象
+    """
+    return ClickHouseDb(config)
+
+# 注意：ClickHouseDb现在通过依赖注入容器管理
+# 可以在应用启动时预注册：
+# container.register_singleton(ClickHouseDb, ClickHouseDb)
+
+
+def get_clickhouse_db(config=None) -> ClickHouseDb:
+    """
+    获取ClickHouse数据库实例
+    
+    Args:
+        config: 数据库连接配置，如果为None则使用默认配置
+        
+    Returns:
+        ClickHouseDb: 数据库操作对象
+    """
+    return ClickHouseDb(config)
+

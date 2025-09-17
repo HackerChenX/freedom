@@ -5,6 +5,7 @@
 """
 
 from typing import Any, Dict, List, Optional, Union
+from db.sql_manager import SQLManager, QueryType
 import pandas as pd
 import numpy as np
 

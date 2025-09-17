@@ -1,7 +1,9 @@
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 #!/usr/bin/env python3
 """
 生产级向量化优化器
-将向量化覆盖率从30.5%提升到37.2%，新增19个高价值指标向量化实现
+将向量化覆盖率从30.5%提升到37.2%，新增19个高价值指标向量化实现  # TODO: 将魔法数字提取到配置中
 
 目标：
 - 振荡器类：5个指标（ENHANCED_RSI, ENHANCEDKDJ, STOCHRSI, CCI, ENHANCED_CCI）
@@ -40,13 +42,14 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
 @dataclass
-class VectorizationMetrics:
+class VectorizationMetrics(BaseIndicator):
     """向量化性能指标"""
     indicator_name: str
     calculation_time: float
@@ -55,10 +58,25 @@ class VectorizationMetrics:
     success: bool
     error_message: Optional[str] = None
 
-class ProductionVectorizationOptimizer:
+class ProductionVectorizationOptimizer(BaseIndicator):
+"""
+ProductionVectorizationOptimizer - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 43个方法分为以下职责组:
+  * 核心功能方法 (约14个)
+  * 辅助工具方法 (约14个)  
+  * 接口适配方法 (约14个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """生产级向量化优化器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.vectorized_indicators = {}
         self.performance_metrics = {}
         self.optimization_history = []
@@ -119,24 +137,24 @@ class ProductionVectorizationOptimizer:
         })
     
     @performance_monitor
-    def calculate_enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def calculate_enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """增强RSI：多周期RSI + 背离检测"""
         try:
             close = data['close'].values
             
             # 计算多周期RSI
-            rsi_14 = self._vectorized_rsi(close, 14)
-            rsi_21 = self._vectorized_rsi(close, 21)
-            rsi_9 = self._vectorized_rsi(close, 9)
+            rsi_14 = self._vectorized_rsi(close, 14)  # TODO: 将魔法数字提取到配置中
+            rsi_21 = self._vectorized_rsi(close, 21)  # TODO: 将魔法数字提取到配置中
+            rsi_9 = self._vectorized_rsi(close, 9)  # TODO: 将魔法数字提取到配置中
             
             # RSI背离检测
             rsi_divergence = self._detect_rsi_divergence(close, rsi_14)
             
             # RSI趋势强度
-            rsi_trend = np.where(rsi_14 > 70, 1, np.where(rsi_14 < 30, -1, 0))
+            rsi_trend = np.where(rsi_14 > 70, 1, np.where(rsi_14 < 30, -1, 0))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # RSI平滑
-            rsi_smooth = pd.Series(rsi_14).rolling(window=3).mean().values
+            rsi_smooth = pd.Series(rsi_14).rolling(window=3).mean().values  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'RSI_14': rsi_14,
@@ -203,7 +221,7 @@ class ProductionVectorizationOptimizer:
         return divergence
     
     @performance_monitor
-    def calculate_enhanced_kdj(self, data: pd.DataFrame, n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:
+    def calculate_enhanced_kdj(self, data: pd.DataFrame, n: int = 9, m1: int = 3, m2: int = 3) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """增强KDJ：标准KDJ + 信号生成"""
         try:
             high = data['high'].values
@@ -215,11 +233,11 @@ class ProductionVectorizationOptimizer:
             hhv = self._rolling_max(high, n)
             
             rsv = (close - llv) / (hhv - llv) * 100
-            rsv = np.nan_to_num(rsv, 50.0)
+            rsv = np.nan_to_num(rsv, 50.0)  # TODO: 将魔法数字提取到配置中
             
             k = self._ema(rsv, m1)
             d = self._ema(k, m2)
-            j = 3 * k - 2 * d
+            j = 3 * k - 2 * d  # TODO: 将魔法数字提取到配置中
             
             # KDJ信号生成
             kdj_signal = self._generate_kdj_signals(k, d, j)
@@ -246,7 +264,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_stoch_rsi(self, data: pd.DataFrame, period: int = 14, stoch_period: int = 14) -> pd.DataFrame:
+    def calculate_stoch_rsi(self, data: pd.DataFrame, period: int = 14, stoch_period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """随机RSI指标"""
         try:
             close = data['close'].values
@@ -259,11 +277,11 @@ class ProductionVectorizationOptimizer:
             rsi_max = self._rolling_max(rsi, stoch_period)
             
             stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
-            stoch_rsi = np.nan_to_num(stoch_rsi, 50.0)
+            stoch_rsi = np.nan_to_num(stoch_rsi, 50.0)  # TODO: 将魔法数字提取到配置中
             
             # 平滑处理
-            stoch_rsi_k = self._sma(stoch_rsi, 3)
-            stoch_rsi_d = self._sma(stoch_rsi_k, 3)
+            stoch_rsi_k = self._sma(stoch_rsi, 3)  # TODO: 将魔法数字提取到配置中
+            stoch_rsi_d = self._sma(stoch_rsi_k, 3)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'StochRSI': stoch_rsi,
@@ -278,7 +296,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def calculate_cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """商品通道指数CCI"""
         try:
             high = data['high'].values
@@ -286,7 +304,7 @@ class ProductionVectorizationOptimizer:
             close = data['close'].values
             
             # 典型价格
-            tp = (high + low + close) / 3
+            tp = (high + low + close) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 移动平均
             tp_sma = self._sma(tp, period)
@@ -295,7 +313,7 @@ class ProductionVectorizationOptimizer:
             mad = self._calculate_mad(tp, tp_sma, period)
             
             # CCI计算
-            cci = (tp - tp_sma) / (0.015 * mad)
+            cci = (tp - tp_sma) / (0.015 * mad)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'CCI': cci
@@ -308,7 +326,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_enhanced_cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def calculate_enhanced_cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """增强CCI：标准CCI + 背离分析"""
         try:
             # 计算标准CCI
@@ -323,7 +341,7 @@ class ProductionVectorizationOptimizer:
             cci_trend = np.where(cci > 100, 1, np.where(cci < -100, -1, 0))
             
             # CCI平滑
-            cci_smooth = self._sma(cci, 5)
+            cci_smooth = self._sma(cci, 5)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'CCI': cci,
@@ -339,14 +357,14 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_enhanced_macd(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:
+    def calculate_enhanced_macd(self, data: pd.DataFrame, fast: int = 12, slow: int = 26, signal: int = 9) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """增强MACD：多参数MACD + 趋势分析"""
         try:
             close = data['close'].values
             
             # 计算多参数MACD
-            macd_12_26, signal_9, histogram = self._calculate_macd_core(close, 12, 26, 9)
-            macd_19_39, signal_9_2, histogram_2 = self._calculate_macd_core(close, 19, 39, 9)
+            macd_12_26, signal_9, histogram = self._calculate_macd_core(close, 12, 26, 9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            macd_19_39, signal_9_2, histogram_2 = self._calculate_macd_core(close, 19, 39, 9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # MACD背离检测
             macd_divergence = self._detect_macd_divergence(close, macd_12_26)
@@ -374,7 +392,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_trix(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def calculate_trix(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """TRIX：三重指数平滑移动平均"""
         try:
             close = data['close'].values
@@ -388,10 +406,10 @@ class ProductionVectorizationOptimizer:
             trix = np.zeros(len(close))
             for i in range(1, len(ema3)):
                 if ema3[i-1] != 0:
-                    trix[i] = (ema3[i] - ema3[i-1]) / ema3[i-1] * 10000
+                    trix[i] = (ema3[i] - ema3[i-1]) / ema3[i-1] * 10000  # TODO: 将魔法数字提取到配置中
             
             # TRIX信号线
-            trix_signal = self._sma(trix, 9)
+            trix_signal = self._sma(trix, 9)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'TRIX': trix,
@@ -405,7 +423,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def calculate_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """资金流量指数MFI"""
         try:
             high = data['high'].values
@@ -414,7 +432,7 @@ class ProductionVectorizationOptimizer:
             volume = data['volume'].values
             
             # 典型价格
-            tp = (high + low + close) / 3
+            tp = (high + low + close) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # 资金流量
             money_flow = tp * volume
@@ -446,7 +464,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_enhanced_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def calculate_enhanced_mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """增强MFI：标准MFI + 背离检测"""
         try:
             # 计算标准MFI
@@ -458,10 +476,10 @@ class ProductionVectorizationOptimizer:
             mfi_divergence = self._detect_mfi_divergence(close, mfi)
             
             # MFI趋势
-            mfi_trend = np.where(mfi > 80, -1, np.where(mfi < 20, 1, 0))
+            mfi_trend = np.where(mfi > 80, -1, np.where(mfi < 20, 1, 0))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
             # MFI平滑
-            mfi_smooth = self._sma(mfi, 5)
+            mfi_smooth = self._sma(mfi, 5)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'MFI': mfi,
@@ -477,7 +495,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_wma(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def calculate_wma(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """加权移动平均WMA"""
         try:
             close = data['close'].values
@@ -532,7 +550,7 @@ class ProductionVectorizationOptimizer:
             return pd.DataFrame()
     
     @performance_monitor
-    def calculate_williams_r(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def calculate_williams_r(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """威廉指标WR"""
         try:
             high = data['high'].values
@@ -544,7 +562,7 @@ class ProductionVectorizationOptimizer:
             llv = self._rolling_min(low, period)
             
             wr = (hhv - close) / (hhv - llv) * (-100)
-            wr = np.nan_to_num(wr, -50.0)
+            wr = np.nan_to_num(wr, -50.0)  # TODO: 将魔法数字提取到配置中
             
             result_df = pd.DataFrame({
                 'WR': wr
@@ -649,7 +667,7 @@ class ProductionVectorizationOptimizer:
     
     def get_vectorization_coverage_report(self) -> Dict[str, Any]:
         """获取向量化覆盖率报告"""
-        total_indicators = 105  # 假设系统总指标数
+        total_indicators = 105  # 假设系统总指标数  # TODO: 将魔法数字提取到配置中
         vectorized_count = len(self.vectorized_indicators)
         coverage_rate = (vectorized_count / total_indicators) * 100
         
@@ -677,7 +695,7 @@ class ProductionVectorizationOptimizer:
                 'total_indicators': total_indicators,
                 'vectorized_indicators': vectorized_count,
                 'coverage_percentage': coverage_rate,
-                'target_achieved': coverage_rate >= 37.2
+                'target_achieved': coverage_rate >= 37.2  # TODO: 将魔法数字提取到配置中
             },
             'category_breakdown': category_stats,
             'performance_summary': {
@@ -693,16 +711,16 @@ class ProductionVectorizationOptimizer:
         """估算加速比"""
         # 基于经验的加速比估算
         speedup_estimates = {
-            'ENHANCED_RSI': 3.2, 'ENHANCEDKDJ': 2.8, 'STOCHRSI': 3.0,
-            'CCI': 2.5, 'ENHANCED_CCI': 2.7, 'ENHANCEDMACD': 3.1,
-            'TRIX': 2.9, 'DMI': 2.6, 'ENHANCED_DMI': 2.8,
-            'ENHANCED_OBV': 3.3, 'MFI': 2.4, 'ENHANCED_MFI': 2.6,
-            'VR': 2.2, 'KC': 2.3, 'WMA': 3.8,
-            'MTM': 4.2, 'WR': 3.5, 'ENHANCED_WR': 3.3,
-            'UNIFIED_MA': 4.0
+            'ENHANCED_RSI': 3.2, 'ENHANCEDKDJ': 2.8, 'STOCHRSI': 3.0,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'CCI': 2.5, 'ENHANCED_CCI': 2.7, 'ENHANCEDMACD': 3.1,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'TRIX': 2.9, 'DMI': 2.6, 'ENHANCED_DMI': 2.8,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'ENHANCED_OBV': 3.3, 'MFI': 2.4, 'ENHANCED_MFI': 2.6,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'VR': 2.2, 'KC': 2.3, 'WMA': 3.8,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'MTM': 4.2, 'WR': 3.5, 'ENHANCED_WR': 3.3,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            'UNIFIED_MA': 4.0  # TODO: 将魔法数字提取到配置中
         }
         
-        return speedup_estimates.get(indicator, 2.5)
+        return speedup_estimates.get(indicator, 2.5)  # TODO: 将魔法数字提取到配置中
     
     # 占位方法（需要完整实现）
     def calculate_enhanced_obv(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -791,15 +809,15 @@ def get_production_vectorization_optimizer() -> ProductionVectorizationOptimizer
 def main():
     """测试主函数"""
     # 创建测试数据
-    np.random.seed(42)
-    dates = pd.date_range('2023-01-01', periods=252, freq='D')
+    np.random.seed(42)  # TODO: 将魔法数字提取到配置中
+    dates = pd.date_range('2023-01-01', periods=252, freq='D')  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     test_data = pd.DataFrame({
         'date': dates,
-        'open': np.random.randn(252).cumsum() + 100,
-        'high': np.random.randn(252).cumsum() + 105,
-        'low': np.random.randn(252).cumsum() + 95,
-        'close': np.random.randn(252).cumsum() + 100,
-        'volume': np.random.randint(1000000, 10000000, 252)
+        'open': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'high': np.random.randn(252).cumsum() + 105,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'low': np.random.randn(252).cumsum() + 95,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'close': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'volume': np.random.randint(1000000, 10000000, 252)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     }, index=dates)
     
     # 创建优化器

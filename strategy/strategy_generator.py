@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -16,7 +18,7 @@ from typing import Dict, List, Any, Optional
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -24,6 +26,9 @@ class StrategyGenerator:
     """策略生成器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化策略生成器"""
         pass
     

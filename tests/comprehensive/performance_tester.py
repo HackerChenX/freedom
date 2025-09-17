@@ -39,6 +39,7 @@ from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from .config_manager import get_config_manager
 from .logging_config import get_test_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_test_logger('performance_tester')
 

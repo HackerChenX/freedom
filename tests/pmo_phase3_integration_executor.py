@@ -553,6 +553,7 @@ class PMOPhase3IntegrationExecutor:
             # 尝试导入双向验证系统
             try:
                 from validation.bidirectional_validation_system import BidirectionalValidationSystem
+from db.sql_manager import SQLManager, QueryType
                 validation_system = BidirectionalValidationSystem()
 
                 # 模拟验证测试

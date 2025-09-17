@@ -54,6 +54,7 @@ class RemainingSQLViolationFixer:
             import_pattern = r'(import logging\n)'
             if re.search(import_pattern, content):
                 content = re.sub(import_pattern, r'\1from db.query_executor import get_query_executor\n', content)
+from db.sql_manager import SQLManager, QueryType
                 fixed_count += 1
         
         # 修复连接测试中的SQL查询
@@ -185,6 +186,7 @@ class RemainingSQLViolationFixer:
             import_pattern = r'(from typing import.*?\n)'
             if re.search(import_pattern, content):
                 content = re.sub(import_pattern, r'\1from db.query_executor import get_query_executor\n', content)
+from db.sql_manager import SQLManager, QueryType
                 fixed_count += 1
         
         # 修复监控中的SQL查询
@@ -341,7 +343,7 @@ class RemainingSQLViolationFixer:
         report.append("### 查询接口映射")
         report.append("- `SELECT 1` → `query_executor.test_connection()`")
         report.append("- `SELECT COUNT(*) FROM stock_info` → `query_executor.get_stock_count()`")
-        report.append("- `SELECT * FROM stock_info LIMIT n` → `query_executor.get_stock_data({\"limit\": n})`")
+        report.append("- `SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info LIMIT n` → `query_executor.get_stock_data({\"limit\": n})`")
         report.append("- `SELECT version()` → `query_executor.get_database_version()`")
         report.append("- 系统查询 → `query_executor.get_system_info()`")
         

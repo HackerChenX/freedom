@@ -22,7 +22,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from utils.logger import get_logger
-from config.config import get_config
+from config.unified_config_manager import get_config
 from enums.test_status import TestStatus
 from utils.decorators import exception_handler, performance_monitor
 
@@ -421,7 +421,7 @@ class StrategyUnitTests(UnitTestBase):
                                           "相同数据多次执行策略评分应一致")
 
 
-class DataManagerUnitTests(UnitTestBase):
+class DataAccessManagerUnitTests(UnitTestBase):
     """数据管理器单元测试"""
     
     def setup_test_environment(self):
@@ -465,6 +465,7 @@ class DataManagerUnitTests(UnitTestBase):
     def test_data_retrieval(self):
         """测试数据检索"""
         from db.managers.unified_query_executor import UnifiedQueryExecutor
+from db.sql_manager import SQLManager, QueryType
         
         # 使用模拟对象
         with patch('db.managers.unified_query_executor.get_clickhouse_db') as mock_db:
@@ -473,7 +474,7 @@ class DataManagerUnitTests(UnitTestBase):
             executor = UnifiedQueryExecutor()
             
             # 测试数据检索
-            query = "SELECT * FROM stock_info WHERE code IN ('000001', '000002')"
+            query = "SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('000001', '000002')"
             result = executor.execute_query(query)
             
             # 验证结果
@@ -506,6 +507,7 @@ class DataManagerUnitTests(UnitTestBase):
     def test_error_handling(self):
         """测试错误处理"""
         from db.managers.unified_query_executor import UnifiedQueryExecutor
+from db.sql_manager import SQLManager, QueryType
         
         # 模拟数据库连接错误
         with patch('db.managers.unified_query_executor.get_clickhouse_db') as mock_db:
@@ -515,7 +517,7 @@ class DataManagerUnitTests(UnitTestBase):
             
             # 验证异常处理
             with self.assertRaises(Exception):
-                executor.execute_query("SELECT * FROM stock_info")
+                executor.execute_query("SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info")
 
 
 class UnitTestFramework:
@@ -531,7 +533,7 @@ class UnitTestFramework:
         self.test_suites = {
             'indicator_tests': IndicatorUnitTests,
             'strategy_tests': StrategyUnitTests,
-            'data_manager_tests': DataManagerUnitTests
+            'data_manager_tests': DataAccessManagerUnitTests
         }
     
     @exception_handler(reraise=True)

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from config import get_config
+# 延迟导入避免循环依赖
 """
 增强的ClickHouse连接池管理器 - 任务5性能优化版本
 
@@ -224,7 +224,7 @@ class PoolStatistics:
     last_optimization_time: float = 0.0
 
 
-class IntelligentQueryCache:
+class IntelligentCacheService:
     """智能查询缓存系统 - 任务5.2核心组件"""
 
     def __init__(self,
@@ -1057,11 +1057,11 @@ class ClickHouseConnectionPool:
     """
 
     def __init__(self,
-                 host: str = 'localhost',
-                 port: int = 9000,
-                 database: str = 'stock',
-                 user: str = 'default',
-                 password: str = '',
+                 host: str = None,
+                 port: int = None,
+                 database: str = None,
+                 user: str = None,
+                 password: str = None,
                  max_connections: int = 50,  # 任务5优化：增加默认最大连接数
                  min_connections: int = 5,
                  max_idle_time: int = 300,
@@ -1073,11 +1073,11 @@ class ClickHouseConnectionPool:
         初始化连接池 - 任务5性能优化版本
 
         Args:
-            host: ClickHouse主机地址
-            port: ClickHouse端口
-            database: 数据库名
-            user: 用户名
-            password: 密码
+            host: ClickHouse主机地址（None时从配置文件读取）
+            port: ClickHouse端口（None时从配置文件读取）
+            database: 数据库名（None时从配置文件读取）
+            user: 用户名（None时从配置文件读取）
+            password: 密码（None时从配置文件读取）
             max_connections: 最大连接数
             min_connections: 最小连接数
             max_idle_time: 最大空闲时间（秒）
@@ -1086,6 +1086,27 @@ class ClickHouseConnectionPool:
             enable_query_cache: 启用查询缓存
             enable_load_balancing: 启用负载均衡
         """
+        # 如果没有提供配置参数，从配置文件读取
+        if any(param is None for param in [host, port, database, user, password]):
+            try:
+                from config.database_config_manager import get_clickhouse_connection_config
+                file_config = get_clickhouse_connection_config()
+
+                host = host or file_config.get('host', 'localhost')
+                port = port or file_config.get('port', 9000)
+                database = database or file_config.get('database', 'stock')
+                user = user or file_config.get('username', 'default')  # 配置文件使用username
+                password = password or file_config.get('password', '')
+
+                logger.info(f"连接池已从配置文件初始化: {host}:{port}, 密码: {'已设置' if password else '未设置'}")
+            except Exception as e:
+                logger.warning(f"从配置文件读取失败，使用默认配置: {e}")
+                host = host or 'localhost'
+                port = port or 9000
+                database = database or 'stock'
+                user = user or 'default'
+                password = password or ''
+
         self.config = {
             'host': host,
             'port': port,
@@ -1121,11 +1142,12 @@ class ClickHouseConnectionPool:
             try:
                 # 从配置文件读取缓存配置
                 from config.database_config_manager import DatabaseConfigManager
+                from db.sql_manager import SQLManager, QueryType
                 config_manager = DatabaseConfigManager()
-                db_config = config_manager.get_config_Manager()
+                db_config = config_manager.get_database_config()
                 cache_config = db_config.get('cache', {})
 
-                self.query_cache = IntelligentQueryCache(
+                self.query_cache = IntelligentCacheService(
                     max_memory_size=cache_config.get('max_size', 1000),
                     default_ttl=cache_config.get('ttl', 3600),
                     enable_disk_cache=cache_config.get('enabled', True),
@@ -1134,7 +1156,7 @@ class ClickHouseConnectionPool:
                 logger.info("智能查询缓存已启用")
             except Exception as e:
                 logger.warning(f"查询缓存初始化失败，使用默认配置: {e}")
-                self.query_cache = IntelligentQueryCache()
+                self.query_cache = IntelligentCacheService()
 
         # 任务5.3新增：智能线程池管理器
         self.thread_pool_manager = None
@@ -1225,6 +1247,7 @@ class ClickHouseConnectionPool:
     def _create_connection(self) -> 'PooledConnection':
         """创建新的数据库连接"""
         try:
+            # clickhouse_driver.Client使用user参数，不需要转换
             client = Client(**self.config)
             
             # 测试连接
@@ -1255,8 +1278,17 @@ class ClickHouseConnectionPool:
         except Exception as e:
             with self.lock:
                 self.stats['total_errors'] += 1
-            logger.error(f"创建数据库连接失败: {e}")
-            raise
+
+            error_msg = str(e)
+            logger.error(f"创建数据库连接失败: {error_msg}")
+
+            # 强制要求：不允许降级到模拟数据，必须修复真实连接问题
+            if "Authentication failed" in error_msg or "516" in error_msg:
+                raise ConnectionError(f"ClickHouse认证失败，请检查用户名和密码配置。当前配置: host={self.config.get('host')}, user={self.config.get('username')}, database={self.config.get('database')}")
+            elif "Connection refused" in error_msg:
+                raise ConnectionError(f"ClickHouse连接被拒绝，请检查服务是否启动。当前配置: host={self.config.get('host')}, port={self.config.get('port')}")
+            else:
+                raise ConnectionError(f"ClickHouse连接失败: {error_msg}")
     
     def _start_health_check_thread(self):
         """启动健康检查线程"""
@@ -1349,7 +1381,7 @@ class ClickHouseConnectionPool:
                     logger.debug(f"创建新连接: {connection.connection_id}")
                 else:
                     # 达到最大连接数，等待可用连接
-                    timeout = get_config('performance.timeout') or 30  # 🔧 Ultra Think修复：添加默认30秒超时
+                    timeout = 30  # 默认30秒超时
                     connection = self.available_connections.get(timeout)
                     logger.debug(f"等待获取连接: {connection.connection_id}")
             
@@ -1479,6 +1511,24 @@ class ClickHouseConnectionPool:
                 'connection_pool_stats': self.get_stats()
             }
 
+    def query_dataframe(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
+        """
+        执行查询并返回DataFrame - 连接池级别的便捷方法
+
+        Args:
+            query: SQL查询语句
+            params: 查询参数
+
+        Returns:
+            pd.DataFrame: 查询结果
+        """
+        try:
+            with self.get_connection() as conn:
+                return conn.query_dataframe(query, params)
+        except Exception as e:
+            logger.error(f"连接池DataFrame查询失败: {e}")
+            return pd.DataFrame()
+
     def query_dataframe_optimized(self, query: str, params: Optional[Dict] = None) -> pd.DataFrame:
         """
         内存优化的DataFrame查询 - 任务5.4新增
@@ -1602,6 +1652,10 @@ class ClickHouseConnectionPool:
         """关闭连接池"""
         if self.is_closed:
             return
+
+    def close(self):
+        """关闭连接池（别名方法）"""
+        return self.close_Pool()
         
         logger.info("正在关闭ClickHouse连接池...")
         self.is_closed = True
@@ -1776,6 +1830,28 @@ class ClickHouseConnectionPool:
 
             return stats
 
+    def get_pool_status(self) -> Dict[str, Any]:
+        """获取连接池状态信息 - L2层测试验证需要的方法"""
+        with self.lock:
+            return {
+                'active_connections': self.stats['current_active'],
+                'total_connections': len(self.all_connections),
+                'idle_connections': self.available_connections.qsize(),
+                'max_connections': self.max_connections,
+                'min_connections': self.min_connections,
+                'total_requests': self.stats['total_requests'],
+                'total_errors': self.stats['total_errors'],
+                'success_rate': (
+                    (self.stats['total_requests'] - self.stats['total_errors']) /
+                    max(self.stats['total_requests'], 1) * 100
+                ),
+                'pool_health': 'healthy' if not self.is_closed else 'closed'
+            }
+
+    def get_stats(self) -> Dict[str, Any]:
+        """获取统计信息 - get_statistics的简化版本"""
+        return self.get_pool_status()
+
 
 class PooledConnection:
     """池化连接包装器"""
@@ -1894,8 +1970,9 @@ def get_connection_pool() -> ClickHouseConnectionPool:
                 # 从配置文件加载数据库配置
                 try:
                     from config.database_config_manager import DatabaseConfigManager
+                    from db.sql_manager import SQLManager, QueryType
                     config_manager = DatabaseConfigManager()
-                    db_config = config_manager.get_config_Manager()  # 修复方法名
+                    db_config = config_manager.get_database_config()  # 修复方法名
 
                     _connection_pool = ClickHouseConnectionPool(
                         host=db_config.get('host', 'localhost'),

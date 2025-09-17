@@ -26,6 +26,7 @@ sys.path.insert(0, root_dir)
 
 from utils.logger import get_logger
 from utils.path_utils import get_project_root
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -261,13 +262,13 @@ class CodeQualityFixer:
                 )
                 
                 # 修复stock_info表查询缺少WHERE条件
-                # 查找FROM stock_info WHERE date >= '2020-01-01'但没有WHERE的情况
+                # 查找FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2020-01-01'但没有WHERE的情况
                 pattern = r'FROM\s+stock_info(?!\s+WHERE)'
                 if re.search(pattern, content, re.IGNORECASE):
                     # 添加基本WHERE条件
                     content = re.sub(
                         pattern,
-                        "FROM stock_info WHERE date >= '2020-01-01'",
+                        "FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2020-01-01'",
                         content,
                         flags=re.IGNORECASE
                     )

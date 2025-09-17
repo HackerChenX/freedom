@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -32,6 +34,7 @@ sys.path.insert(0, str(project_root))
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -40,6 +43,9 @@ class PatternStrategyGenerator:
     """形态策略生成器"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化策略生成器
         

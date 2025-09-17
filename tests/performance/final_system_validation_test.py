@@ -25,6 +25,7 @@ sys.path.insert(0, '/Users/hacker/PycharmProjects/freedom')
 
 from db.enhanced_connection_pool import get_connection_pool
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 import pandas as pd
 
 logger = getLogger(__name__)
@@ -55,7 +56,7 @@ class FinalSystemValidator:
             # 1. 连接池功能验证
             print("  📦 1.1 连接池功能验证")
             with self.pool.get_connection() as conn:
-                test_result = conn.query_dataframe("SELECT COUNT(*) as count FROM stock_info WHERE level = '日线' LIMIT 1")
+                test_result = conn.query_dataframe("SELECT COUNT(*) as count FROM stock_info WHERE code = %(code)s AND level = '日线' LIMIT 1")
                 if len(test_result) > 0:
                     results['connection_pool'] = True
                     print("    ✅ 连接池功能正常")
@@ -141,7 +142,7 @@ class FinalSystemValidator:
             
             # 2. 数据完整性验证
             print("  📦 2.2 数据完整性验证")
-            query2 = "SELECT COUNT(*) as total_count FROM stock_info WHERE level = '日线'"
+            query2 = "SELECT COUNT(*) as total_count FROM stock_info WHERE code = %(code)s AND level = '日线'"
             with self.pool.get_connection() as conn:
                 data2 = conn.query_dataframe(query2)
                 if len(data2) > 0 and data2['total_count'].iloc[0] > 1000000:  # 至少100万条记录
@@ -428,7 +429,7 @@ class FinalSystemValidator:
                 
                 # 操作1: 基本查询
                 with self.pool.get_connection() as conn:
-                    result1 = conn.query_dataframe("SELECT COUNT(*) as count FROM stock_info WHERE level = '日线' LIMIT 1")
+                    result1 = conn.query_dataframe("SELECT COUNT(*) as count FROM stock_info WHERE code = %(code)s AND level = '日线' LIMIT 1")
                     if len(result1) > 0:
                         operations_completed += 1
                 

@@ -35,13 +35,14 @@ from .test_result_models import (
     StockSelection, VerificationResult, TestResultSummary
 )
 from .enhanced_report_generator import EnhancedReportGenerator
-from .performance_monitor import PerformanceMonitor, PerformanceOptimizer, PerformanceConfig
+from .performance_monitor import PerformanceMonitor, PerformanceOptimizationService, PerformanceConfig
 from .stock_selection_reporter import StockSelectionReporter
 from .cache_manager import get_cache_manager
 from .query_optimizer import ClickHouseOptimizer
 from .config_manager import get_config_manager, TestConfig
 from .error_handler import TestErrorHandler, ErrorCategory, with_error_handling, get_error_handler
 from .system_integration import get_system_integrator
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -131,7 +132,7 @@ class ComprehensiveStockSelectionTester:
             enable_performance_optimization=True
         )
         self.performance_monitor = PerformanceMonitor(performance_config)
-        self.performance_optimizer = PerformanceOptimizer(self.performance_monitor)
+        self.performance_optimizer = PerformanceOptimizationService(self.performance_monitor)
         
         # 注册早停回调
         self.performance_monitor.register_early_stop_callback(self._handle_early_stop)

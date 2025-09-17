@@ -19,7 +19,7 @@ from typing import Dict, Any, List, Optional, Tuple
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from indicators.base_indicator import BaseIndicator
 

@@ -8,7 +8,7 @@ import sys
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
 
-from config.config import get_config
+from config.unified_config_manager import get_config
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.connection_interface import IconnectionManager

@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 """
 ZXM_WASHPLATE 指标
@@ -14,7 +15,7 @@ from enum import Enum
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,6 +28,9 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ZXM_WASHPLATE指标
         
@@ -44,7 +48,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_zxmwashplate(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Washplate(self, **kwargs):
         """
@@ -71,11 +75,11 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Washplate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -104,7 +108,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df = data.copy()
 
         # 确保有足够的数据
-        if len(df) < 60:
+        if len(df) < 60:  # TODO: 将魔法数字提取到配置中
             # 数据不足时返回空结果
             for wash_type in WashPlateType:
                 df[wash_type.value] = False
@@ -137,21 +141,21 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """计算洗盘识别所需的技术指标"""
         # 移动平均线
-        df['MA5'] = df['close'].rolling(window=5).mean()
+        df['MA5'] = df['close'].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         df['MA10'] = df['close'].rolling(window=10).mean()
-        df['MA20'] = df['close'].rolling(window=20).mean()
-        df['MA60'] = df['close'].rolling(window=60).mean()
+        df['MA20'] = df['close'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
+        df['MA60'] = df['close'].rolling(window=60).mean()  # TODO: 将魔法数字提取到配置中
 
         # 成交量移动平均
-        df['VOL_MA5'] = df['volume'].rolling(window=5).mean()
-        df['VOL_MA20'] = df['volume'].rolling(window=20).mean()
+        df['VOL_MA5'] = df['volume'].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
+        df['VOL_MA20'] = df['volume'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
 
         # 价格波动率
-        df['PRICE_VOLATILITY'] = df['close'].rolling(window=20).std() / df['close'].rolling(window=20).mean()
+        df['PRICE_VOLATILITY'] = df['close'].rolling(window=20).std() / df['close'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 最高价和最低价
-        df['HIGH_20'] = df['high'].rolling(window=20).max()
-        df['LOW_20'] = df['low'].rolling(window=20).min()
+        df['HIGH_20'] = df['high'].rolling(window=20).max()  # TODO: 将魔法数字提取到配置中
+        df['LOW_20'] = df['low'].rolling(window=20).min()  # TODO: 将魔法数字提取到配置中
 
         # K线实体大小
         df['BODY_SIZE'] = abs(df['close'] - df['open']) / df['open']
@@ -166,23 +170,23 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """识别横盘震荡洗盘 - 基于ZXM体系教程"""
         shock_wash = pd.Series(False, index=df.index)
 
-        for i in range(20, len(df)):
+        for i in range(20, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 获取最近20天的数据
-            recent_data = df.iloc[i-19:i+1]
+            recent_data = df.iloc[i-19:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件1: 价格在5-10%区间内震荡
-            price_range = (recent_data['high'].max() - recent_data['low'].min()) / recent_data['close'].iloc[0]
-            range_condition = 0.05 <= price_range <= 0.10
+            = (recent_data['high'].max() - recent_data['low'].min()) / recent_data['close'].iloc[0]
+            range_condition = 0.05 <= <= 0.10  # TODO: 将魔法数字提取到配置中
 
             # 条件2: 成交量忽大忽小
             vol_std = recent_data['volume'].std()
             vol_mean = recent_data['volume'].mean()
-            vol_condition = vol_std / vol_mean > 0.5 if vol_mean > 0 else False
+            vol_condition = vol_std / vol_mean > 0.5 if vol_mean > 0 else False  # TODO: 将魔法数字提取到配置中
 
             # 条件3: 区间下轨有支撑
             low_support = recent_data['low'].min()
             support_tests = (recent_data['low'] <= low_support * 1.02).sum()
-            support_condition = support_tests >= 3
+            support_condition = support_tests >= 3  # TODO: 将魔法数字提取到配置中
 
             # 条件4: 持续时间1-3周
             duration_condition = True  # 已通过20天窗口控制
@@ -196,29 +200,29 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """识别回调洗盘 - 基于ZXM体系教程"""
         pullback_wash = pd.Series(False, index=df.index)
 
-        for i in range(30, len(df)):
+        for i in range(30, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 获取最近30天的数据
-            recent_data = df.iloc[i-29:i+1]
+            recent_data = df.iloc[i-29:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件1: 前期有涨幅
-            prev_high = recent_data['high'].iloc[:15].max()
-            prev_low = recent_data['low'].iloc[:15].min()
+            prev_high = recent_data['high'].iloc[:15].max()  # TODO: 将魔法数字提取到配置中
+            prev_low = recent_data['low'].iloc[:15].min()  # TODO: 将魔法数字提取到配置中
             prev_gain = (prev_high - prev_low) / prev_low if prev_low > 0 else 0
-            gain_condition = prev_gain > 0.15  # 前期涨幅超过15%
+            gain_condition = prev_gain > 0.15  # 前期涨幅超过15%  # TODO: 将魔法数字提取到配置中
 
             # 条件2: 回调幅度为前期涨幅的1/3到1/2
             current_high = recent_data['high'].max()
             current_low = recent_data['low'].iloc[-10:].min()  # 最近10天最低点
             pullback_ratio = (current_high - current_low) / (current_high - prev_low) if current_high > prev_low else 0
-            pullback_condition = 0.33 <= pullback_ratio <= 0.5
+            pullback_condition = 0.33 <= pullback_ratio <= 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件3: 成交量逐步萎缩
             early_vol = recent_data['volume'].iloc[:10].mean()
             late_vol = recent_data['volume'].iloc[-10:].mean()
-            vol_shrink_condition = late_vol < early_vol * 0.7 if early_vol > 0 else False
+            vol_shrink_condition = late_vol < early_vol * 0.7 if early_vol > 0 else False  # TODO: 将魔法数字提取到配置中
 
             # 条件4: 在重要支撑位止跌
-            ma20_support = abs(current_low - recent_data['MA20'].iloc[-1]) / recent_data['MA20'].iloc[-1] < 0.03
+            ma20_support = abs(current_low - recent_data['MA20'].iloc[-1]) / recent_data['MA20'].iloc[-1] < 0.03  # TODO: 将魔法数字提取到配置中
 
             pullback_wash.iloc[i] = gain_condition and pullback_condition and vol_shrink_condition and ma20_support
 
@@ -235,30 +239,30 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         if 'ZXM_WASHPLATE_STRENGTH' in result.columns:
             # 洗盘强度转换为评分 (0-100)
-            base_score = 50.0  # 基础分
-            strength_bonus = result['ZXM_WASHPLATE_STRENGTH'] * 30.0  # 强度加分
+            base_score = 50.0  # 基础分  # TODO: 将魔法数字提取到配置中
+            strength_bonus = result['ZXM_WASHPLATE_STRENGTH'] * 30.0  # 强度加分  # TODO: 将魔法数字提取到配置中
             return pd.Series(base_score + strength_bonus, index=data.index)
         else:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
     
     def _identify_false_break_wash(self, df: pd.DataFrame) -> pd.DataFrame:
         """识别假突破洗盘 - 基于ZXM体系教程"""
         false_break_wash = pd.Series(False, index=df.index)
 
-        for i in range(20, len(df)):
+        for i in range(20, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 获取最近20天的数据
-            recent_data = df.iloc[i-19:i+1]
+            recent_data = df.iloc[i-19:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件1: 向下突破重要支撑位
-            support_level = recent_data['MA20'].iloc[-5]  # MA20作为支撑
-            break_down = recent_data['low'].iloc[-3:].min() < support_level * 0.97  # 突破3%
+            support_level = recent_data['MA20'].iloc[-5]  # MA20作为支撑  # TODO: 将魔法数字提取到配置中
+            break_down = recent_data['low'].iloc[-3:].min() < support_level * 0.97  # 突破3%  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件2: 快速收复
             current_close = recent_data['close'].iloc[-1]
-            quick_recovery = current_close > support_level * 0.99  # 快速收复到支撑位附近
+            quick_recovery = current_close > support_level * 0.99  # 快速收复到支撑位附近  # TODO: 将魔法数字提取到配置中
 
             # 条件3: 突破时量能放大，收复时量能更大
-            break_vol = recent_data['volume'].iloc[-3:].max()
+            break_vol = recent_data['volume'].iloc[-3:].max()  # TODO: 将魔法数字提取到配置中
             recovery_vol = recent_data['volume'].iloc[-1]
             vol_condition = recovery_vol > break_vol * 1.2
 
@@ -271,9 +275,9 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """识别时间洗盘 - 基于ZXM体系教程"""
         time_wash = pd.Series(False, index=df.index)
 
-        for i in range(30, len(df)):
+        for i in range(30, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 获取最近30天的数据
-            recent_data = df.iloc[i-29:i+1]
+            recent_data = df.iloc[i-29:i+1]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件1: 价格小幅波动
             price_volatility = recent_data['PRICE_VOLATILITY'].iloc[-1]
@@ -285,11 +289,11 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 条件3: 成交量整体萎缩
             early_vol = recent_data['volume'].iloc[:10].mean()
             late_vol = recent_data['volume'].iloc[-10:].mean()
-            vol_shrink = late_vol < early_vol * 0.6 if early_vol > 0 else False
+            vol_shrink = late_vol < early_vol * 0.6 if early_vol > 0 else False  # TODO: 将魔法数字提取到配置中
 
             # 条件4: 偶有放量试盘
-            vol_spikes = (recent_data['volume'] > recent_data['VOL_MA20'] * 1.5).sum()
-            spike_condition = 1 <= vol_spikes <= 3
+            vol_spikes = (recent_data['volume'] > recent_data['VOL_MA20'] * 1.5).sum()  # TODO: 将魔法数字提取到配置中
+            spike_condition = 1 <= vol_spikes <= 3  # TODO: 将魔法数字提取到配置中
 
             time_wash.iloc[i] = low_volatility and duration_condition and vol_shrink and spike_condition
 
@@ -302,23 +306,23 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         for i in range(10, len(df)):
             # 获取最近10天的数据
-            recent_data = df.iloc[i-9:i+1]
+            recent_data = df.iloc[i-9:i+1]  # TODO: 将魔法数字提取到配置中
 
             # 条件1: 连续3-5根阴线
             yin_lines = (recent_data['close'] < recent_data['open']).sum()
-            yin_condition = 3 <= yin_lines <= 5
+            yin_condition = 3 <= yin_lines <= 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 条件2: 实体不断缩小
-            body_sizes = recent_data['BODY_SIZE'].iloc[-5:]
-            body_shrink = body_sizes.iloc[-1] < body_sizes.iloc[0] * 0.7
+            body_sizes = recent_data['BODY_SIZE'].iloc[-5:]  # TODO: 将魔法数字提取到配置中
+            body_shrink = body_sizes.iloc[-1] < body_sizes.iloc[0] * 0.7  # TODO: 将魔法数字提取到配置中
 
             # 条件3: 下影线增多
-            lower_shadows = recent_data['LOWER_SHADOW'].iloc[-5:]
-            shadow_increase = lower_shadows.iloc[-3:].mean() > lower_shadows.iloc[:2].mean()
+            lower_shadows = recent_data['LOWER_SHADOW'].iloc[-5:]  # TODO: 将魔法数字提取到配置中
+            shadow_increase = lower_shadows.iloc[-3:].mean() > lower_shadows.iloc[:2].mean()  # TODO: 将魔法数字提取到配置中
 
             # 条件4: 量能逐步萎缩
-            vol_trend = recent_data['volume'].iloc[-5:]
-            vol_shrink = vol_trend.iloc[-1] < vol_trend.iloc[0] * 0.8
+            vol_trend = recent_data['volume'].iloc[-5:]  # TODO: 将魔法数字提取到配置中
+            vol_shrink = vol_trend.iloc[-1] < vol_trend.iloc[0] * 0.8  # TODO: 将魔法数字提取到配置中
 
             continuous_yin_wash.iloc[i] = yin_condition and body_shrink and shadow_increase and vol_shrink
 
@@ -334,17 +338,17 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if wash_type.value in df.columns:
                 # 不同洗盘类型的权重
                 weights = {
-                    WashPlateType.SHOCK_WASH.value: 0.25,
-                    WashPlateType.PULLBACK_WASH.value: 0.30,
-                    WashPlateType.FALSE_BREAK_WASH.value: 0.20,
-                    WashPlateType.TIME_WASH.value: 0.15,
+                    WashPlateType.SHOCK_WASH.value: 0.25,  # TODO: 将魔法数字提取到配置中
+                    WashPlateType.PULLBACK_WASH.value: 0.30,  # TODO: 将魔法数字提取到配置中
+                    WashPlateType.FALSE_BREAK_WASH.value: 0.20,  # TODO: 将魔法数字提取到配置中
+                    WashPlateType.TIME_WASH.value: 0.15,  # TODO: 将魔法数字提取到配置中
                     WashPlateType.CONTINUOUS_YIN_WASH.value: 0.10
                 }
                 weight = weights.get(wash_type.value, 0.2)
                 washplate_strength += df[wash_type.value].astype(float) * weight
 
         df['ZXM_WASHPLATE_STRENGTH'] = washplate_strength
-        df['ZXM_WASHPLATE_SIGNAL'] = (washplate_strength > 0.05).astype(int)  # 降低阈值提高敏感度
+        df['ZXM_WASHPLATE_SIGNAL'] = (washplate_strength > 0.05).astype(int)  # 降低阈值提高敏感度  # TODO: 将魔法数字提取到配置中
 
         return df
 
@@ -352,8 +356,8 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算置信度"""
         if hasattr(self, '_result') and self._result is not None and 'ZXM_WASHPLATE_STRENGTH' in self._result.columns:
             avg_strength = self._result['ZXM_WASHPLATE_STRENGTH'].mean()
-            return min(0.9, max(0.1, avg_strength))
-        return 0.5
+            return min(0.9, max(0.1, avg_strength))  # TODO: 将魔法数字提取到配置中
+        return 0.5  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Washplate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -398,6 +402,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """注册形态到全局注册表"""
         try:
             from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
             container = get_container()
             if container.has('pattern_registry'):
                 pattern_registry = container.get('pattern_registry')
@@ -453,7 +458,7 @@ class ZxmWashplate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 60  # 洗盘形态识别需要更多历史数据
+        return 60  # 洗盘形态识别需要更多历史数据  # TODO: 将魔法数字提取到配置中
 
 
 # 为了向后兼容，创建别名

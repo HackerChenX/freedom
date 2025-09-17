@@ -23,6 +23,7 @@ from utils.logger import getLogger
 from .test_infrastructure import TestRunner, TestResult, TestStatus, TestPriority
 from .performance_monitor import get_performance_monitor
 from .error_handler import get_error_handler, ErrorCategory
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -51,7 +52,8 @@ def calculate_kdj(data: pd.DataFrame, k_period: int = 9, d_period: int = 3) -> D
 
 def analyze_sample_stocks():
     """分析样本股票的KDJ情况"""
-    from db.clickhouse_db import get_clickhouse_db
+    # from db.clickhouse_db  # 修复跨层调用违规 import get_clickhouse_db
+from db.sql_manager import SQLManager, QueryType
     
     target_date = '2025-05-12'
     start_date = '2025-03-01'  # 更长的历史数据

@@ -237,6 +237,7 @@ class MarketRiskAssessor:
         # 尝试获取数据访问接口
         try:
             from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
             self.data_access = self.container.resolve(DataAccessInterface)
         except Exception as e:
             logger.warning(f"无法获取数据访问接口: {e}")
@@ -310,8 +311,7 @@ class MarketRiskAssessor:
             # 使用真实数据访问接口
             query = f"""
             SELECT date, open, high, low, close, volume
-            FROM stock_info 
-            WHERE code = '{stock_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             ORDER BY date ASC
@@ -415,6 +415,7 @@ class StockRiskMonitor:
         # 尝试获取数据访问接口
         try:
             from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
             self.data_access = self.container.resolve(DataAccessInterface)
         except Exception as e:
             logger.warning(f"无法获取数据访问接口: {e}")
@@ -501,8 +502,7 @@ class StockRiskMonitor:
         try:
             query = f"""
             SELECT date, open, high, low, close, volume, turnover_rate
-            FROM stock_info
-            WHERE code = '{stock_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             ORDER BY date ASC
@@ -601,8 +601,8 @@ class StockRiskMonitor:
     def _assess_liquidity(self, stock_data: pd.DataFrame) -> float:
         """评估流动性评分"""
         if 'turnover_rate' in stock_data.columns:
-            avg_turnover = stock_data['turnover_rate'].mean()
-            return min(avg_turnover / 5.0 * 100, 100)  # 5%换手率为满分
+            avg_turnover_rate = stock_data['turnover_rate'].mean()
+            return min(avg_turnover_rate / 5.0 * 100, 100)  # 5%换手率为满分
         else:
             avg_volume = stock_data['volume'].mean()
             return min(avg_volume / 1000000 * 20, 100)  # 100万成交量对应20分

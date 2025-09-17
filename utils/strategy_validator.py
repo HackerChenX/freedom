@@ -24,7 +24,7 @@ import re
 from utils.logger import getLogger
 from utils.decorators import performance_monitor, time_it
 from utils.path_utils import get_backtest_result_dir
-from config import get_config
+from config.unified_config_manager import get_config
 
 logger = getLogger(__name__)
 

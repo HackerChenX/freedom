@@ -240,6 +240,7 @@ class TestDataGenerator(unittest.TestCase):
     def test_basic_data_generation(self):
         """测试基础数据生成"""
         from tests.unified_indicator_testing.unified_indicator_tester import StockInfoCompatibleDataGenerator
+from db.sql_manager import SQLManager, QueryType
 
         generator = StockInfoCompatibleDataGenerator()
 
@@ -256,6 +257,7 @@ class TestDataGenerator(unittest.TestCase):
     def test_stockinfo_compatible_data(self):
         """测试StockInfo兼容数据生成"""
         from tests.unified_indicator_testing.unified_indicator_tester import StockInfoCompatibleDataGenerator
+from db.sql_manager import SQLManager, QueryType
         
         generator = StockInfoCompatibleDataGenerator()
         

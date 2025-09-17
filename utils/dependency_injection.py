@@ -7,37 +7,26 @@
 import logging
 from typing import Any, Optional
 
+# 导入标准日志函数
+from utils.logger import get_logger
+
 # 全局服务实例缓存
 _services = {}
-
-
-def get_logger(name: str = None) -> logging.Logger:
-    """获取日志器"""
-    if 'logger' not in _services:
-        if name is None:
-            name = __name__
-        logger = logging.getLogger(name)
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            logger.setLevel(logging.INFO)
-        _services['logger'] = logger
-    return _services['logger']
 
 
 def get_config():
     """获取配置"""
     if 'config' not in _services:
         try:
-            from config.config import Config
-            _services['config'] = Config()
+            from config.unified_config_manager import get_config_manager
+            _services['config'] = get_config_manager()
         except ImportError:
             # 如果配置模块不存在，返回空配置
             class EmptyConfig:
                 def __getattr__(self, name):
                     return None
+                def get(self, key, default=None):
+                    return default
             _services['config'] = EmptyConfig()
     return _services['config']
 
@@ -61,14 +50,14 @@ def get_data_manager():
     """获取数据管理器"""
     if 'data_manager' not in _services:
         try:
-            from db.data_manager import DataManager
-            _services['data_manager'] = DataManager()
+            from db.managers.data_access_manager import DataAccessManager
+            _services['data_manager'] = DataAccessManager()
         except ImportError:
             # 如果数据管理器不存在，返回空实现
-            class EmptyDataManager:
+            class EmptyDataAccessManager:
                 def __getattr__(self, name):
                     return lambda *args, **kwargs: None
-            _services['data_manager'] = EmptyDataManager()
+            _services['data_manager'] = EmptyDataAccessManager()
     return _services['data_manager']
 
 

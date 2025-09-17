@@ -90,6 +90,7 @@ def run_example_workflow():
         print("-" * 30)
 
         from strategy.historical_buypoint_strategy_system import HistoricalBuyPointStrategySystem
+from db.sql_manager import SQLManager, QueryType
 
         system = HistoricalBuyPointStrategySystem()
         print("系统初始化完成")
@@ -216,6 +217,7 @@ def run_optimization_example():
 
     try:
         from strategy.historical_buypoint_strategy_system import HistoricalBuyPointStrategySystem
+from db.sql_manager import SQLManager, QueryType
 
         # 创建更多测试数据用于优化
         buypoint_df = create_sample_buypoint_data(num_stocks=25, num_buypoints_per_stock=5)

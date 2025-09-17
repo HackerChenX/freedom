@@ -1,3 +1,4 @@
+from utils.container import container
 """
 性能优化和稳定性提升系统
 对核心功能进行性能优化，提升系统稳定性，完善错误处理和监控机制
@@ -87,10 +88,13 @@ class OptimizationResult:
     details: Dict[str, Any] = field(default_factory=dict)
 
 
-class MemoryOptimizer:
+class MemoryOptimizationService:
     """内存优化器"""
     
     def __init__(self, config: PerformanceOptimizationConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.last_cleanup = time.time()
         self.memory_stats = {}
@@ -144,7 +148,7 @@ class MemoryOptimizer:
         """清理缓存"""
         try:
             # 清理多层缓存
-            from db.multi_layer_cache import get_multi_cache
+            from db.services.cache_service import get_multi_cache
             cache = get_multi_cache()
             cache.cleanup_expired()
             
@@ -169,6 +173,9 @@ class ConcurrencyOptimizer:
     """并发优化器"""
     
     def __init__(self, config: PerformanceOptimizationConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.thread_pool = None
         self.process_pool = None
@@ -276,6 +283,9 @@ class StabilityMonitor:
     """稳定性监控器"""
     
     def __init__(self, config: PerformanceOptimizationConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.health_metrics = []
         self.error_counts = {}
@@ -447,8 +457,11 @@ class PerformanceStabilityOptimizer:
     """性能优化和稳定性提升主控制器"""
 
     def __init__(self, config: Optional[PerformanceOptimizationConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config or PerformanceOptimizationConfig()
-        self.memory_optimizer = MemoryOptimizer(self.config)
+        self.memory_optimizer = MemoryOptimizationService(self.config)
         self.concurrency_optimizer = ConcurrencyOptimizer(self.config)
         self.stability_monitor = StabilityMonitor(self.config)
 
@@ -632,7 +645,8 @@ class PerformanceStabilityOptimizer:
 
         try:
             # 获取连接池（任务5整合：使用增强连接池）
-            from db.enhanced_connection_pool import get_connection_pool
+            # from db.enhanced_connection_pool  # 修复跨层调用违规 import get_connection_pool
+from db.sql_manager import SQLManager, QueryType
             pool = get_connection_pool()
 
             before_metrics = {
@@ -680,7 +694,7 @@ class PerformanceStabilityOptimizer:
         start_time = time.time()
 
         try:
-            from db.multi_layer_cache import get_multi_cache
+            from db.services.cache_service import get_multi_cache
             cache = get_multi_cache()
 
             before_metrics = cache.get_stats()
@@ -784,7 +798,8 @@ class PerformanceStabilityOptimizer:
     def _warmup_connection_pools(self):
         """预热连接池（任务5整合：使用增强连接池）"""
         try:
-            from db.enhanced_connection_pool import get_connection_pool
+            # from db.enhanced_connection_pool  # 修复跨层调用违规 import get_connection_pool
+from db.sql_manager import SQLManager, QueryType
             pool = get_connection_pool()
 
             # 预创建一些连接
@@ -880,7 +895,7 @@ __all__ = [
     'PerformanceOptimizationConfig',
     'SystemHealthMetrics',
     'OptimizationResult',
-    'MemoryOptimizer',
+    'MemoryOptimizationService',
     'ConcurrencyOptimizer',
     'StabilityMonitor',
     'PerformanceStabilityOptimizer',

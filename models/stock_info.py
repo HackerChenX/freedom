@@ -153,7 +153,7 @@ class Stock_info:
         """获取所有字段（仅返回数据库中实际存在的字段）"""
         return [
             "date", "code", "name", "open", "high", "low", "close",
-            "volume", "turnover_rate", "level"
+            "volume", "turnover", "level"
         ]
 
     @property

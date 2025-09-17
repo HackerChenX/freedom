@@ -39,13 +39,13 @@ sys.path.insert(0, str(project_root))
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.date_utils import get_latest_trading_date
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_executor import UnifiedStrategyExecutor as UnifiedStrategyExecutor
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from pattern_strategy_generator import PatternStrategyGenerator
-from performance_optimizer import PerformanceOptimizer
+from performance_optimizer import PerformanceOptimizationService
 from closed_loop_validator import ClosedLoopValidator
 from test_report_generator import TestReportGenerator
 
@@ -70,7 +70,7 @@ class ComprehensiveIndicatorPatternStrategyTester:
 
         # 初始化专用组件
         self.strategy_generator = PatternStrategyGenerator()
-        self.performance_optimizer = PerformanceOptimizer()
+        self.performance_optimizer = PerformanceOptimizationService()
         self.closed_loop_validator = ClosedLoopValidator()
         self.report_generator = TestReportGenerator()
         
@@ -568,6 +568,7 @@ class ComprehensiveIndicatorPatternStrategyTester:
 
             # 使用真实指标注册系统获取指标
             from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
             registry = get_indicator_registry()
 
             try:

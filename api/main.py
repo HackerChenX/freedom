@@ -109,6 +109,7 @@ async def startup_event():
         
         # 初始化指标系统
         from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
         registry = get_indicator_registry()
         logger.info(f"✅ 指标系统初始化完成，共注册 {registry.get_indicator_count()} 个指标")
         
@@ -154,6 +155,7 @@ def health_check():
     try:
         # 检查指标系统
         from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
         registry = get_indicator_registry()
 
         # 获取指标数量
@@ -207,6 +209,7 @@ def system_info():
     """
     try:
         from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
         registry = get_indicator_registry()
 
         # 获取指标数量

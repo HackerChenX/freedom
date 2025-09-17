@@ -395,6 +395,7 @@ class MarketMonitoringAdapter(MarketMonitoringInterface):
         try:
             from monitoring.market_monitor import MarketMonitor
             from monitoring.alert_manager import AlertManager
+from db.sql_manager import SQLManager, QueryType
 
             self.market_monitor = MarketMonitor()
             self.alert_manager = AlertManager()

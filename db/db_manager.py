@@ -8,7 +8,7 @@ from db.sql_manager import QueryType
 """
 
 from utils.dependency_injection import get_container
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 import pandas as pd
 
 class DBManager:
@@ -171,27 +171,8 @@ class DBManager:
         self._ensure_data_access()
         return self._data_access.get_index_stocks(index_code)
     
-    def get_stocks_by_industry(self, industry: str):
-        """按行业获取股票"""
-        self._ensure_data_access()
-        return self._data_access.get_stocks_by_industry(industry)
-
-
-# ===== 依赖注入和兼容性接口 =====
-
-def get_db_manager() -> DBManager:
-    """
-    获取数据库管理器实例（依赖注入方式）
-    
-    Returns:
-        DBManager: 数据库管理器实例
-    """
-    try:
-        container = get_container()
-        return container.resolve(DBManager)
-    except Exception as e:
-        logger = get_logger(__name__)
-        logger.warning(f"从依赖注入容器获取DBManager失败，创建新实例: {e}")
+    def get_db_manager(self):
+        """获取数据库管理器实例"""
         return DBManager()
 
 

@@ -16,6 +16,7 @@ from .stock_selection_tester import ComprehensiveStockSelectionTester as StockSe
 from .performance_tester import PerformanceBenchmarkTester
 from .data_consistency_validator import DataConsistencyValidator as RealDataValidator
 from .architecture_checker import ArchitectureComplianceChecker
+from db.sql_manager import SQLManager, QueryType
 
 __all__ = [
     'StockSelectionTester',

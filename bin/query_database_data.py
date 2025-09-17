@@ -13,8 +13,9 @@ import os
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
 
-from db.unified_data_manager import get_unified_data_manager
-from utils.dependency_injection import get_logger
+from db.managers.data_access_manager import get_unified_data_manager
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -35,8 +36,7 @@ def query_available_data():
             MIN(date) as min_date,
             MAX(date) as max_date,
             COUNT(DISTINCT date) as total_days
-        FROM stock_info
-        WHERE level = '日线'
+        FROM stock_info WHERE code = %(code)s AND level = '日线'
         """
 
         date_result = data_manager.query_Manager_Unified_Data_Manager(date_query)
@@ -49,8 +49,7 @@ def query_available_data():
         stock_query = """
         SELECT
             COUNT(DISTINCT code) as total_stocks
-        FROM stock_info
-        WHERE level = '日线'
+        FROM stock_info WHERE code = %(code)s AND level = '日线'
         """
 
         stock_result = data_manager.query_Manager_Unified_Data_Manager(stock_query)
@@ -62,8 +61,7 @@ def query_available_data():
         recent_query = """
         SELECT
             code, name, date, close, volume, turnover_rate
-        FROM stock_info
-        WHERE level = '日线'
+        FROM stock_info WHERE code = %(code)s AND level = '日线'
         ORDER BY date DESC, code
         LIMIT 10
         """
@@ -102,8 +100,7 @@ def query_available_data():
         recent_stocks_query = """
         SELECT
             code, name, MAX(date) as latest_date
-        FROM stock_info
-        WHERE level = '日线'
+        FROM stock_info WHERE code = %(code)s AND level = '日线'
         GROUP BY code, name
         ORDER BY latest_date DESC
         LIMIT 20

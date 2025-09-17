@@ -16,9 +16,10 @@ from enum import Enum
 import datetime
 
 from utils.cache import LRUCache
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from enums.period import Period
 from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -270,19 +271,19 @@ class PeriodManager:
                 else:
                     result['turnover_rate'] = g['turnover_rate'].mean()
 
-            if 'price_change' in g.columns:
-                result['price_change'] = last_row['close'] - first_row['open']
+            if in g.columns:
+                result[] = last_row['close'] - first_row['open']
 
-            if 'price_range' in g.columns:
+            if in g.columns:
                 max_high = g['high'].max()
                 min_low = g['low'].min()
                 if first_row['open'] != 0:
-                    result['price_range'] = (max_high - min_low) / first_row['open'] * 100
+                    result[] = (max_high - min_low) / first_row['open'] * 100
                 else:
-                    result['price_range'] = 0.0
+                    result[] = 0.0
 
-            if 'industry' in g.columns:
-                result['industry'] = last_row['industry']
+            if in g.columns:
+                result[] = last_row[]
 
             return pd.Series(result)
 
@@ -323,8 +324,7 @@ class PeriodManager:
             # 确保字段顺序一致
             expected_cols = [
                 "code", "name", "date", "level", "open", "high", "low", "close",
-                "volume", "turnover_rate", "price_change", "price_range",
-                "industry", "datetime", "seq"
+                "volume", "turnover_rate", "datetime", "seq"
             ]
 
             # 只返回存在的列
@@ -436,6 +436,7 @@ def get_period_manager_period_manager(cache_size: int = 100) -> PeriodManager:
 def get_period_service() -> PeriodManager:
     """通过依赖注入获取周期管理器服务"""
     from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
     return get_service(PeriodManager)
 
 

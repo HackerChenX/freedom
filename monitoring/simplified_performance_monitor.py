@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, asdict
 from collections import defaultdict, deque
+from db.sql_manager import SQLManager, QueryType
 
 @dataclass
 class PerformanceRecord:

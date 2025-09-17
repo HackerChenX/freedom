@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略工厂模块
 
@@ -11,9 +12,9 @@ from strategy.base_strategy import BaseStrategy
 from strategy.momentum_strategy import MomentumStrategy
 from strategy.rebound_strategy import ReboundStrategy
 from strategy.breakout_strategy import BreakoutStrategy
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger_Strategy_Factory = get_logger(__name__)
 

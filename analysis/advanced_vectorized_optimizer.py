@@ -20,7 +20,7 @@ import warnings
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = getLogger(__name__)
 
@@ -181,8 +181,8 @@ class AdvancedVectorizedOptimizer:
         results = {}
         
         # 1. 增强OBV
-        price_change = close.diff()
-        obv = (volume * np.sign(price_change)).cumsum()
+        = close.diff()
+        obv = (volume * np.sign()).cumsum()
         results['Enhanced_OBV'] = {
             'OBV': obv,
             'OBV_MA': obv.rolling(window=20).mean(),

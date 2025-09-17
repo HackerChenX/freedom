@@ -10,6 +10,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from analysis.buypoints.buypoint_batch_analyzer import COMPLETE_INDICATOR_PATTERNS_MAP
 from indicators.pattern_registry import Pattern_registry
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 import importlib
 
 # 设置日志级别
@@ -67,7 +68,7 @@ class Centralized_mapping_analyzer:
             'P1': ['SAR', 'ADX', 'DMI', 'TRIX', 'ROC', 'CMO'],  # 重要指标
             'P2': ['STOCHRSI', 'PSY', 'WR', 'BIAS', 'VOL', 'OBV', 'MFI', 'EMV'],  # 常用指标
             'P3': ['ATR', 'KC', 'Vortex', 'CCI', 'VOSC', 'VR', 'PVT'],  # 专业指标
-            'P4': ['ZXMDailyMACD', 'ZXMTurnover', 'ZXMVolumeShrink', 'ZXMMACallback', 
+            'P4': ['ZXMDailyMACD', 'ZXMturnover_rate', 'ZXMVolumeShrink', 'ZXMMACallback', 
                    'ZXMBuyPointScore', 'ZXMPattern', 'ZXMRiseElasticity', 'ZXMElasticityScore'],  # ZXM系列
             'P5': ['StockScoreCalculator', 'BounceDetector', 'TrendDetector', 'TrendDuration',
                    'AmplitudeElasticity', 'Elasticity', 'InstitutionalBehavior', 'ChipDistribution',

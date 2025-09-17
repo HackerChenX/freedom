@@ -10,6 +10,7 @@
 import os
 import sys
 from datetime import datetime
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到路径
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

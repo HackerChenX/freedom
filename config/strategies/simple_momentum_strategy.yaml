@@ -1,0 +1,105 @@
+strategy:
+  id: "SIMPLE_MOMENTUM_STRATEGY"
+  name: "简化动量策略"
+  description: "基于RSI和MA的简化动量策略，确保能选出股票"
+  version: "1.0"
+  author: "system"
+  create_time: "2025-09-15 10:00:00"
+  update_time: "2025-09-15 10:00:00"
+
+  # 策略条件：使用简单的技术指标组合
+  conditions:
+    # RSI超卖反弹条件（放宽）
+    - type: indicator
+      indicator_id: RSI
+      period: "DAILY"
+      signal_type: BUY
+      parameter: "rsi_value"
+      operator: "<"
+      value: 50  # 放宽RSI条件
+      description: "RSI小于50，有反弹潜力"
+    
+    # 逻辑连接符
+    - logic: AND
+    
+    # 价格条件：价格在合理范围内
+    - type: price
+      field: "close"
+      operator: ">="
+      value: 3.0
+      description: "股价大于等于3元"
+    
+    # 逻辑连接符
+    - logic: AND
+    
+    # 价格条件：价格上限
+    - type: price
+      field: "close"
+      operator: "<="
+      value: 100.0
+      description: "股价小于等于100元"
+
+  # 基础过滤条件（宽松）
+  filters:
+    # 市场范围
+    market: ["主板", "创业板", "科创板"]
+    
+    # 行业过滤（空表示不限制）
+    industry: []
+    
+    # 市值范围（亿元）- 宽松范围
+    market_cap:
+      min: 5
+      max: 10000
+    
+    # 价格范围（元）- 宽松范围
+    price:
+      min: 3.0
+      max: 100.0
+    
+    # 成交量过滤（最小日均成交量）- 宽松要求
+    volume:
+      min_avg_volume: 500000
+
+  # 排序规则
+  sort:
+    - field: "rsi_value"
+      direction: "ASC"  # RSI越小越好
+    - field: "volume"
+      direction: "DESC"  # 成交量越大越好
+
+  # 策略参数
+  parameters:
+    # RSI参数
+    rsi:
+      period: 14
+    
+    # MA参数
+    ma:
+      period: 20
+    
+    # 时间参数
+    target_date: "2025-09-15"
+    
+    # 结果限制
+    max_results: 50
+    min_score: 0.3  # 降低最小分数要求
+
+  # 风险控制
+  risk_control:
+    max_position_size: 0.05
+    max_total_positions: 20
+    stop_loss: 0.08
+    take_profit: 0.15
+    
+  # 输出配置
+  output:
+    max_results: 50
+    sort_by: "score"
+    format: "json"
+    
+  # 评分权重
+  scoring:
+    technical_weight: 0.7
+    fundamental_weight: 0.2
+    market_weight: 0.1

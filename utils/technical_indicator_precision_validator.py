@@ -17,7 +17,7 @@ from utils.technical_utils import (
     calculate_rsi_Utils
 )
 from utils.numerical_stability_manager import get_stability_manager
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

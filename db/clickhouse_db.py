@@ -16,7 +16,7 @@ from models.stock_info import Stock_info  # 导入Stock_info类
 import json
 
 # 导入KlinePeriod枚举，但使用try-except避免循环导入问题
-from config import get_config
+from config.unified_config_manager import get_config
 try:
     from enums.kline_period import Kline_period
 
@@ -31,6 +31,7 @@ logger = logging.getLogger('clickhouse_db')
 try:
     from config.database_config_manager import get_clickhouse_connection_config
     from utils.dependency_injection import get_service_Clickhouse_Db
+from db.sql_manager import SQLManager, QueryType
     HAS_CONFIG_MANAGER = True
 except ImportError:
     HAS_CONFIG_MANAGER = False
@@ -518,7 +519,7 @@ class ClickHouseDb:
             level: K线周期，可以是 Period 枚举值或字符串 ('day', 'week', 'month', '15min', '30min', '60min')
             start_date: 开始日期，格式可以是 'YYYY-MM-DD', 'YYYYMMDD' 或 datetime 对象
             end_date: 结束日期，格式可以是 'YYYY-MM-DD', 'YYYYMMDD' 或 datetime 对象
-            filters: 过滤条件字典，可包含 price, industry, market 等字段
+            filters: 过滤条件字典，可包含 price, market 等字段
             limit: 限制返回的记录数量
             order_by: 排序规则
             group_by: 分组字段
@@ -618,16 +619,15 @@ class ClickHouseDb:
                         params['price_max'] = price['max']
 
                 # 行业过滤
-                if 'industry' in filters and filters['industry']:
-                    industries = filters['industry']
+                if in filters and filters[]:
+                    industries = filters[]
                     if isinstance(industries, list) and industries:
-                        industry_placeholders = ", ".join([f"%(industry_{i})s" for i in range(len(industries))])
-                        conditions.append(f"industry IN ({industry_placeholders})")
-                        for i, industry in enumerate(industries):
-                            params[f'industry_{i}'] = industry
-                    elif isinstance(industries, str):
-                        conditions.append("industry = %(industry)s")
-                        params['industry'] = industries
+                        _placeholders = ", ".join([f"%(_{i})s" for i in range(len(industries))])
+                        conditions.append(fIN ({_placeholders})")
+                        for i, in enumerate(industries):
+                            params[f_{i}'] = elif isinstance(industries, str):
+                        conditions.append(= %()s")
+                        params[] = industries
 
                 # 市场过滤
                 if 'market' in filters and filters['market']:
@@ -674,7 +674,7 @@ class ClickHouseDb:
                 need_latest_by_code = False
 
             # 构建完整查询
-            query = f"SELECT {field_str} FROM stock_info WHERE date >= '2020-01-01'"
+            query = f"SELECT {field_str} FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2020-01-01'"
 
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
@@ -766,7 +766,7 @@ class ClickHouseDb:
 
 
 
-    def get_industry_info(self, symbol: str, start_date: Union[str, datetime.datetime],
+    def get__info(self, symbol: str, start_date: Union[str, datetime.datetime],
                           end_date: Union[str, datetime.datetime]) -> pd.DataFrame:
         """
         获取行业指数数据
@@ -804,13 +804,13 @@ class ClickHouseDb:
                 logger.warning(f"无法将结束日期 {end_date} 转换为日期格式，使用原始字符串")
 
         try:
-            # 构建查询 - 查询两种情况：行业代码匹配或者industry字段匹配
+            # 构建查询 - 查询两种情况：行业代码匹配或者字段匹配
             query = """
             SELECT 
                 date, code, name, open, high, low, close, volume, turnover_rate
-            FROM stock_info WHERE 1=1
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE 
-                (code = %(symbol)s OR industry = %(symbol)s) AND 
+                (code = %(symbol)s OR = %(symbol)s) AND 
                 (level = '行业' OR level = '日线') AND
                 date BETWEEN %(start_date)s AND %(end_date)s
             ORDER BY 
@@ -851,32 +851,22 @@ class ClickHouseDb:
             logger.error(f"从数据库加载行业 {symbol} 数据失败: {e}")
             return pd.DataFrame()
 
-    def get_industry_stock(self, industry: str) -> List[str]:
-        """
-        获取行业股票代码列表（注意：当前数据库中行业信息可能不完整）
-
-        Args:
-            industry: 行业名称
-
-        Returns:
-            List[str]: 股票代码列表
-        """
-        logger.warning(f"get_industry_stock方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+    def get__stock(self, }")
 
         try:
             # 直接查询stock_info表中的行业信息
             query = """
             SELECT DISTINCT code
-            FROM stock_info WHERE 1=1
-            WHERE level = '日线' AND industry = %(industry)s
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
+            WHERE level = '日线' AND = %()s
             ORDER BY code
             """
 
-            params = {'industry': industry}
+            params = {}
             df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if df.empty:
-                logger.warning(f"未找到行业 {industry} 的股票，返回空列表")
+                logger.warning(f"未找到行业 {} 的股票，返回空列表")
                 return []
 
             # 标准化列名
@@ -886,7 +876,7 @@ class ClickHouseDb:
             return df['code'].tolist()
 
         except Exception as e:
-            logger.error(f"获取行业 {industry} 股票代码列表失败: {e}")
+            logger.error(f"获取行业 {} 股票代码列表失败: {e}")
             return []
 
     def get_stock_min_date(self, stock_code: str, level: Optional[Union[str, Period]] = None) -> Optional[str]:
@@ -943,7 +933,7 @@ class ClickHouseDb:
             # 构建查询
             query = f"""
             SELECT MIN(date) as min_date
-            FROM stock_info WHERE 1=1
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE {" AND ".join(conditions)}
             """
 
@@ -1014,7 +1004,7 @@ class ClickHouseDb:
                 params['level'] = db_level
 
             # 构建查询
-            query = "SELECT MAX(date) as max_date FROM stock_info WHERE date >= '2020-01-01'"
+            query = "SELECT MAX(date) as max_date FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2020-01-01'"
             if conditions:
                 query += f" WHERE {' AND '.join(conditions)}"
 
@@ -1030,7 +1020,7 @@ class ClickHouseDb:
             logger.error(f"获取股票最新日期时出错: {e}")
             return None
 
-    def get_industry_list_Db(self) -> pd.DataFrame:
+    def get__list_Db(self) -> pd.DataFrame:
         """
         获取行业列表
         
@@ -1040,11 +1030,10 @@ class ClickHouseDb:
         try:
             # 构建查询
             query = """
-            SELECT DISTINCT industry as name, '' as code
-            FROM stock_info WHERE 1=1
-            WHERE industry != ''
-            ORDER BY industry
-            """
+            SELECT DISTINCT as name, '' as code
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
+            WHERE != ''
+            ORDER BY """
 
             # 执行查询
             result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
@@ -1204,7 +1193,7 @@ class ClickHouseDb:
             logger.error(f"获取选股结果时出错: {e}")
             return pd.DataFrame()
 
-    def get_industry_max_date(self) -> datetime.datetime:
+    def get__max_date(self) -> datetime.datetime:
         """
         获取行业数据最新日期
         
@@ -1217,9 +1206,9 @@ class ClickHouseDb:
         query = """
         SELECT 
             MAX(date) as max_date
-        FROM stock_info WHERE 1=1
+        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
         WHERE
-            industry != ''
+            != ''
         """
 
         result = self.query_Db_Clickhouse_Db_Clickhouse_Db(query)
@@ -1248,7 +1237,7 @@ class ClickHouseDb:
         query = """
         SELECT
             AVG(close) as avg_price
-        FROM stock_info WHERE 1=1
+        FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
         WHERE
             code = %(code)s AND
             date >= %(start_date)s
@@ -1328,7 +1317,7 @@ class ClickHouseDb:
 
         logger.info(f"已保存{len(data)}条{level}周期股票数据")
 
-    def save_industry_info(self, data: pd.DataFrame) -> None:
+    def save__info(self, data: pd.DataFrame) -> None:
         """
         保存行业指数数据
         
@@ -1347,9 +1336,7 @@ class ClickHouseDb:
 
         # 添加level字段（如果不存在）
         if 'level' not in data.columns:
-            data['level'] = 'industry'
-
-        # 构建插入字段和值
+            data['level'] = # 构建插入字段和值
         fields = ", ".join(data.columns)
 
         # 批量插入（ClickHouse使用ReplacingMergeTree引擎，会自动处理重复数据）
@@ -1421,32 +1408,20 @@ class ClickHouseDb:
             raise
 
     def get_stock_list_Db(self, market: Optional[str] = None,
-                      industry: Optional[str] = None,
                       limit: Optional[int] = None) -> pd.DataFrame:
         """
         获取股票列表
 
         Args:
             market: 市场过滤条件（暂未使用，为兼容性保留）
-            industry: 行业过滤条件
-            limit: 限制返回的记录数量
-
-        Returns:
-            pd.DataFrame: 股票列表，包含code, name, industry等字段
+            name, 等字段
         """
         try:
             # 构建查询条件
             conditions = ["level = '日线'"]  # 只查询日线数据获取股票基本信息
             params = {}
 
-            if industry:
-                conditions.append("industry = %(industry)s")
-                params['industry'] = industry
-
-            # 构建查询
-            query = f"""
-            SELECT DISTINCT code, name, industry
-            FROM stock_info WHERE 1=1
+            if name, FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE {' AND '.join(conditions)}
             ORDER BY code
             """
@@ -1462,14 +1437,13 @@ class ClickHouseDb:
                 result = result.rename(columns={
                     'col_0': 'code',
                     'col_1': 'name',
-                    'col_2': 'industry'
-                })
+                    'col_2': })
 
             return result
 
         except Exception as e:
             logger.error(f"获取股票列表失败: {e}")
-            return pd.DataFrame(columns=['code', 'name', 'industry'])
+            return pd.DataFrame(columns=['code', 'name', ])
 
     def get_kline_data_Db(self, stock_code: Union[str, List[str]],
                       start_date: Optional[str] = None,
@@ -1500,32 +1474,26 @@ class ClickHouseDb:
             **kwargs
         )
 
-    def get_stocks_by_industry_Db(self, industry: str) -> List[Dict[str, str]]:
+    def get_stocks_by__Db(self, str]]:
         """
         根据行业获取股票列表（注意：当前数据库中行业信息可能不完整）
 
         Args:
-            industry: 行业名称
-
-        Returns:
-            List[Dict]: 股票列表，每个元素包含stock_code和stock_name
-        """
-        logger.warning(f"get_stocks_by_industry方法被调用，但当前数据库中行业信息可能不完整，行业: {industry}")
+            }")
 
         try:
             # 直接查询stock_info表中的行业信息
             query = """
-            SELECT DISTINCT code, name, industry
-            FROM stock_info WHERE 1=1
-            WHERE level = '日线' AND industry = %(industry)s
+            SELECT DISTINCT code, name, FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
+            WHERE level = '日线' AND = %()s
             ORDER BY code
             """
 
-            params = {'industry': industry}
+            params = {}
             stocks_df = self.query_Db_Clickhouse_Db_Clickhouse_Db(query, params)
 
             if stocks_df.empty:
-                logger.warning(f"未找到行业 {industry} 的股票，返回示例股票")
+                logger.warning(f"未找到行业 {} 的股票，返回示例股票")
                 # 返回一些示例股票
                 stocks_df = self.get_stock_list_Db(limit=10)
 
@@ -1534,8 +1502,7 @@ class ClickHouseDb:
                 stocks_df = stocks_df.rename(columns={
                     'col_0': 'code',
                     'col_1': 'name',
-                    'col_2': 'industry'
-                })
+                    'col_2': })
 
             # 转换为字典列表
             result = []
@@ -1548,7 +1515,7 @@ class ClickHouseDb:
             return result
 
         except Exception as e:
-            logger.error(f"根据行业 {industry} 获取股票列表失败: {e}")
+            logger.error(f"根据行业 {} 获取股票列表失败: {e}")
             return []
 
     def get_index_stocks_Db(self, index_code: str) -> List[Dict[str, str]]:

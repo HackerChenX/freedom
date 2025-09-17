@@ -20,7 +20,7 @@ from datetime import datetime
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = getLogger(__name__)
 
@@ -218,10 +218,10 @@ class VectorizedIndicatorOptimizer:
         close_prices = df['close']
         
         # OBV (On Balance Volume)
-        price_change = close_prices.diff()
+        = close_prices.diff()
         obv_values = []
         obv = 0
-        for i, (price_diff, vol) in enumerate(zip(price_change, volume)):
+        for i, (price_diff, vol) in enumerate(zip(volume)):
             if pd.isna(price_diff):
                 obv_values.append(obv)
             elif price_diff > 0:

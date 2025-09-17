@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -24,7 +25,7 @@ from datetime import datetime
 from dataclasses import dataclass, asdict
 from enum import Enum
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 
 # 导入所有优化组件
@@ -35,7 +36,7 @@ from .parallel_processing_optimizer import (
     ParallelProcessingOptimizer, ProcessorConfig
 )
 from .memory_optimizer import (
-    MemoryOptimizer, MemoryTarget, ChunkConfig
+    MemoryOptimizationService, MemoryTarget, ChunkConfig
 )
 from .intelligent_cache_system import (
     IntelligentCacheSystem, CacheConfig
@@ -110,6 +111,9 @@ class UnifiedHighPerformanceBacktestEngine:
     """
 
     def __init__(self, config: Optional[UnifiedConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化统一引擎"""
         self.config = config or UnifiedConfig()
         self.logger = logger
@@ -147,7 +151,7 @@ class UnifiedHighPerformanceBacktestEngine:
                 warning_threshold=self.config.max_memory_gb * 0.8,
                 critical_threshold=self.config.max_memory_gb * 0.95
             )
-            self.memory_optimizer = MemoryOptimizer(memory_target)
+            self.memory_optimizer = MemoryOptimizationService(memory_target)
 
             # 初始化缓存系统
             if self.config.enable_caching:

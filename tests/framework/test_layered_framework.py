@@ -1,4 +1,4 @@
-from config.config import get_config\n"""
+from config.unified_config_manager import get_config\n"""
 分层测试框架验证测试
 
 验证分层测试框架的功能和性能

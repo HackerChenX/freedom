@@ -8,6 +8,7 @@ import os
 import re
 from pathlib import Path
 from collections import defaultdict
+from db.sql_manager import SQLManager, QueryType
 
 def check_compliance_simple_compliance_check():
     """检查项目合规性"""

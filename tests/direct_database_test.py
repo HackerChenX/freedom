@@ -136,8 +136,7 @@ def test_direct_clickhouse_connection():
         try:
             original_query = f"""
             SELECT date, open, high, low, close, volume
-            FROM stock_info
-            WHERE code = '{test_code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{test_code}'
             AND level = '日线'
             AND date BETWEEN '{start_date}' AND '{end_date}'
             ORDER BY date ASC
@@ -193,6 +192,7 @@ def test_rsi_calculation_with_real_data():
         # 导入RSI计算相关模块
         from utils.technical_utils import calculate_rsi_Utils
         from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
         
         print(f"📊 使用真实数据计算RSI")
         print(f"数据形状: {df.shape}")
@@ -291,6 +291,7 @@ def test_stock_data_service_with_real_data():
                     
                     # 测试RSI计算
                     from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
                     rsi_indicator = RsiRsi()
                     rsi_result = rsi_indicator._calculate_rsi(stock_data)
                     

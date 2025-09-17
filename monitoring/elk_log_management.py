@@ -310,6 +310,7 @@ class ElasticsearchClient:
         # 尝试导入并初始化elasticsearch客户端
         try:
             from elasticsearch import Elasticsearch
+from db.sql_manager import SQLManager, QueryType
 
             self.client = Elasticsearch(
                 hosts=config.hosts,

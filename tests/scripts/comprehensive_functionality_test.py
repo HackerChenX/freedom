@@ -204,6 +204,7 @@ class BuyPointTester:
         try:
             # 初始化数据访问
             from config.service_initializer import initialize_all_services
+from db.sql_manager import SQLManager, QueryType
             container = initialize_all_services()
             
             from utils.dependency_injection import get_service
@@ -285,6 +286,7 @@ class StrategyTester:
         try:
             # 初始化服务
             from config.service_initializer import initialize_all_services
+from db.sql_manager import SQLManager, QueryType
             container = initialize_all_services()
             
             # 创建一个简单的测试策略（避免复杂的导入依赖）

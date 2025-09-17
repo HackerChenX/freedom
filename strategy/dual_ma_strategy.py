@@ -9,12 +9,13 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 
 from strategy.base_strategy import BaseStrategy
 from formula.stock_formula import StockFormula
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from models.stock_info import StockInfo  # 导入Stock_info类
 from indicators.ma import MaMa as MA  # 导入MA指标
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -137,7 +138,6 @@ class DualMAStrategy(BaseStrategy):
                     selected_stocks.append({
                         'code': code,
                         'name': stock_info.name if stock_info else code,
-                        'industry': stock_info.industry if stock_info else '',
                         'breakout_date': recent_data.index[j].strftime('%Y%m%d')
                     })
                     

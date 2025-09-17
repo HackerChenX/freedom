@@ -44,6 +44,7 @@ class MACDRealDataValidator:
         """初始化数据库连接"""
         try:
             from db.db_manager import DBManager
+from db.sql_manager import SQLManager, QueryType
             self.db_manager = DBManager()
             logger.info("✅ 数据库连接初始化成功")
         except Exception as e:

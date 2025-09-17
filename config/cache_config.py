@@ -7,7 +7,7 @@
 from typing import Dict, Any, List
 from enum import Enum
 
-from config import get_config
+from config.unified_config_manager import get_config
 
 
 class CacheStrategy(Enum):

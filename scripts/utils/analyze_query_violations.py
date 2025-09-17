@@ -7,6 +7,7 @@
 import os
 import re
 from pathlib import Path
+from db.sql_manager import SQLManager, QueryType
 
 def analyze_query_violations():
     """分析查询违规问题"""

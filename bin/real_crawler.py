@@ -26,6 +26,7 @@ logger = get_logger(__name__)
 # 尝试导入BeautifulSoup，如果没有则使用简单的HTML解析
 try:
     from bs4 import Beautiful_soup
+from db.sql_manager import SQLManager, QueryType
     HAS_BS4 = True
 except Import_error:
     HAS_BS4 = False

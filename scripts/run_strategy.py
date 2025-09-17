@@ -21,8 +21,9 @@ sys.path.insert(0, str(project_root))
 
 from strategy.strategy_executor import StrategyExecutor
 from strategy.strategy_manager import StrategyManager
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

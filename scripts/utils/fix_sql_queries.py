@@ -160,6 +160,7 @@ class SQLQueryFixer:
                         import_lines = [
                             "from db.query_executor import get_query_executor",
                             "from db.sql_manager import QueryType",
+from db.sql_manager import SQLManager, QueryType
                             ""
                         ]
                         import_text = '\n'.join(import_lines)

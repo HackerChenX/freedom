@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -23,7 +24,7 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 import json
 
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from utils.decorators import performance_monitor, exception_handler
 from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.historical_buypoint_strategy_generator import (
@@ -31,6 +32,7 @@ from strategy.historical_buypoint_strategy_generator import (
     GeneratedStrategy, BuyPointFeature
 )
 from analysis.buypoints.enhanced_buypoint_detector import (
+from db.sql_manager import SQLManager, QueryType
     EnhancedBuyPointDetector, BuyPointSignal, BuyPointType, BuyPointQuality
 )
 
@@ -317,9 +319,9 @@ class StrategyBidirectionalValidationEngine:
 
                 # 简单的买点检测逻辑：放量上涨
                 volume_ratio = current_row['volume'] / prev_row['volume'] if prev_row['volume'] > 0 else 1
-                price_change = (current_row['close'] - prev_row['close']) / prev_row['close']
+                = (current_row['close'] - prev_row['close']) / prev_row['close']
 
-                if volume_ratio > 1.5 and price_change > 0.03:  # 放量上涨3%以上
+                if volume_ratio > 1.5 and > 0.03:  # 放量上涨3%以上
                     buypoint = BuyPointSignal(
                         signal_id=f"bp_{stock_code}_{current_row['date']}",
                         stock_code=stock_code,
@@ -327,12 +329,12 @@ class StrategyBidirectionalValidationEngine:
                         buypoint_type=BuyPointType.VOLUME_BREAKOUT,
                         quality=BuyPointQuality.GOOD,
                         confidence=min(0.9, volume_ratio / 3.0),
-                        score=min(100, 50 + price_change * 1000),
+                        score=min(100, 50 + * 1000),
                         price=current_row['close'],
                         volume=current_row['volume'],
-                        technical_indicators={'volume_ratio': volume_ratio, 'price_change': price_change},
+                        technical_indicators={'volume_ratio': volume_ratio, },
                         pattern_analysis={'pattern': 'volume_breakout'},
-                        risk_assessment={'volatility': abs(price_change)},
+                        risk_assessment={'volatility': abs()},
                         recommendations=['考虑买入', '设置止损']
                     )
                     buypoints.append(buypoint)

@@ -21,6 +21,7 @@ sys.path.append(root_dir)
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

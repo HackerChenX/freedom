@@ -43,6 +43,7 @@ from indicators.rsi import RSI
 from indicators.boll import BOLL
 from utils.dependency_injection import get_service
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

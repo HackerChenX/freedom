@@ -15,6 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from utils.logger import get_logger
 from analysis.universal_bidirectional_validator import UniversalBidirectionalValidator
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

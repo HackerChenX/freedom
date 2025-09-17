@@ -54,7 +54,7 @@ class PriorityComplianceFixer:
         
         # 查询修复模式
         self.query_fixes = {
-            r'SELECT\s+\*\s+FROM\s+stock_info': 'SELECT code, name, industry FROM stock_info WHERE 1=1',
+            r'SELECT\s+\*\s+FROM\s+stock_info': 'SELECT code, name, industry FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1',
             r'SELECT\s+\*\s+FROM\s+(\w+)': r'SELECT code, name, price FROM \1 WHERE 1=1',
             r'stock_info\s+(?!WHERE)': 'stock_info WHERE 1=1 ',
         }
@@ -211,6 +211,7 @@ class PriorityComplianceFixer:
                             return f'from {module} import'
                     elif len(dots) == 2:  # from scripts. import
                         if len(parts) > 1:
+from db.sql_manager import SQLManager, QueryType
                             return f'from {".".join(parts[:-1])}.{module} import'
                         else:
                             return f'from {module} import'

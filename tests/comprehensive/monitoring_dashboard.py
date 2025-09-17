@@ -23,6 +23,7 @@ import urllib.parse
 
 from .monitoring import get_test_monitoring_system
 from .logging_config import get_test_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_test_logger('monitoring')
 

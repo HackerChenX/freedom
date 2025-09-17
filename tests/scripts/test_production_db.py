@@ -15,8 +15,9 @@ root_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, root_dir)
 
 from config.database_config_manager import get_database_config_manager
-from db.unified_data_manager import Unified_data_manager
+from db.managers.data_access_manager import Unified_data_manager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

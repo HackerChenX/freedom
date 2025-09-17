@@ -1,3 +1,4 @@
+from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
@@ -5,7 +6,7 @@ from typing import Dict, Any, List
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,6 +19,9 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化PLATFORM_BREAKOUT指标
         
@@ -35,7 +39,7 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_platformbreakout(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Breakout(self, **kwargs):
         """
@@ -47,6 +51,7 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -64,7 +69,7 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
         
         # 设置参数
-        self.period = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
     
     def calculate_Breakout(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -101,18 +106,18 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df['platform_range'] = df['price_std'] / df['price_ma']  # 相对波动率
         df['is_platform'] = df['platform_range'] < 0.02  # 波动率小于2%认为是平台整理
 
-        # 3. 计算平台的上沿和下沿
+        # 3. 计算平台的上沿和下沿  # TODO: 将魔法数字提取到配置中
         df['platform_upper'] = df['close'].rolling(window=self.period).max()
         df['platform_lower'] = df['close'].rolling(window=self.period).min()
         df['platform_height'] = df['platform_upper'] - df['platform_lower']
 
-        # 4. 识别向上突破
+        # 4. 识别向上突破  # TODO: 将魔法数字提取到配置中
         df['upward_breakout'] = False
         df['downward_breakout'] = False
 
         for i in range(self.period, len(df)):
             # 检查前期是否有平台整理
-            if df['is_platform'].iloc[i-self.period:i].sum() >= self.period * 0.6:  # 60%的时间在平台整理
+            if df['is_platform'].iloc[i-self.period:i].sum() >= self.period * 0.6:  # 60%的时间在平台整理  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 current_close = df['close'].iloc[i]
                 platform_upper = df['platform_upper'].iloc[i-1]
                 platform_lower = df['platform_lower'].iloc[i-1]
@@ -122,23 +127,23 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     df.iloc[i, df.columns.get_loc('upward_breakout')] = True
 
                 # 向下突破：价格跌破平台下沿
-                elif current_close < platform_lower * 0.98:  # 跌破2%以上
+                elif current_close < platform_lower * 0.98:  # 跌破2%以上  # TODO: 将魔法数字提取到配置中
                     df.iloc[i, df.columns.get_loc('downward_breakout')] = True
 
-        # 5. 计算突破强度
+        # 5. 计算突破强度  # TODO: 将魔法数字提取到配置中
         df['breakout_strength'] = 0.0
         df.loc[df['upward_breakout'], 'breakout_strength'] = 1.0  # 看涨信号
         df.loc[df['downward_breakout'], 'breakout_strength'] = -1.0  # 看跌信号
 
-        # 6. 计算突破幅度
+        # 6. 计算突破幅度  # TODO: 将魔法数字提取到配置中
         df['breakout_magnitude'] = 0.0
         df.loc[df['upward_breakout'], 'breakout_magnitude'] = (df['close'] - df['platform_upper']) / df['platform_upper'] * 100
         df.loc[df['downward_breakout'], 'breakout_magnitude'] = (df['platform_lower'] - df['close']) / df['platform_lower'] * 100
 
-        # 7. 平台突破综合信号
+        # 7. 平台突破综合信号  # TODO: 将魔法数字提取到配置中
         df['platform_breakout_signal'] = df['upward_breakout'] | df['downward_breakout']
 
-        # 8. 计算平台持续时间
+        # 8. 计算平台持续时间  # TODO: 将魔法数字提取到配置中
         df['platform_duration'] = 0
         platform_count = 0
         for i in range(len(df)):
@@ -158,11 +163,11 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate_Breakout(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
     
     def calculate_confidence_Breakout(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Breakout(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -206,4 +211,4 @@ class PlatformBreakout(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中

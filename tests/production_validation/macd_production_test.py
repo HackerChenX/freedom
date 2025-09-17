@@ -34,6 +34,7 @@ class MACDProductionTester:
         
         # 导入MACD指标
         from indicators.macd import MacdMacd
+from db.sql_manager import SQLManager, QueryType
         self.macd = MacdMacd()
         
         logger.info("🔧 MACD生产级测试器初始化完成")
@@ -282,6 +283,7 @@ class MACDProductionTester:
             # 1. 导入测试
             try:
                 from indicators.macd import MacdMacd
+from db.sql_manager import SQLManager, QueryType
                 macd = MacdMacd()
                 result['checks']['import_test'] = True
             except Exception as e:

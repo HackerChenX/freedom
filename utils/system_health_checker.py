@@ -295,6 +295,7 @@ class SystemHealthChecker:
         """检查指标注册表"""
         try:
             from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
             
             registry = get_indicator_registry()
             total_indicators = len(registry.get_all_indicators())

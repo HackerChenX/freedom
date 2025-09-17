@@ -31,6 +31,7 @@ except ImportError:
 from utils.advanced_performance_monitor import get_performance_analyzer
 from utils.enhanced_exception_handler import exception_handler, ErrorSeverity, ErrorCategory
 from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 logger = logging.getLogger(__name__)
 

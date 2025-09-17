@@ -14,7 +14,7 @@ from db.interfaces.connection_interface import IconnectionManager
 
 # 具体实现
 from db.managers.data_access_manager import DataAccessManager
-from db.managers.connection_manager import ConnectionManager
+from db.enhanced_connection_pool import get_connection_pool
 
 # 依赖注入容器
 from utils.unified_container import get_container
@@ -34,6 +34,9 @@ def register_data_services(container):
         # 首先注册连接管理器
         from db.enhanced_connection_pool import get_connection_pool
         connection_pool = get_connection_pool()
+
+        # 注册连接管理器服务（按名称注册）
+        container.register("connection_manager", connection_pool)
 
         # 注册数据访问接口，传入连接管理器
         container.register_singleton(

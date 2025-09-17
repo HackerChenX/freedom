@@ -439,6 +439,7 @@ async def main():
     from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
     from utils.dependency_injection import get_service
     from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
     
     # 创建验证引擎
     data_access = get_service(DataAccessInterface)

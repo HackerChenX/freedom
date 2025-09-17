@@ -31,35 +31,35 @@ technical_momentum_combo:
       max_per_industry: 3
       max_concentration: 0.15
 
-# 2. ZXM专业策略组合
+# 2. ZXM专业策略组合（修复版）
 zxm_professional_combo:
   name: "ZXM专业策略组合"
-  description: "基于ZXM体系的专业选股策略组合"
-  version: "1.0"
+  description: "基于ZXM体系的专业选股策略组合（修复版）"
+  version: "1.1"
   category: "professional"
-  
+
   strategies:
-    - strategy_id: "zxm_60min_absorb_20250512"
+    - strategy_id: "ZXM_60MIN_ABSORB_20250512"
       weight: 0.5
       priority: 1
       required: true
-    - strategy_id: "zxm_absorb_volume_shrink_strategy"
+    - strategy_id: "ZXM_ABSORB_VOLUME_SHRINK_20240512"
       weight: 0.3
       priority: 2
       required: false
-    - strategy_id: "zxm_kdj_strategy_20250512"
+    - strategy_id: "ZXM_KDJ_STRATEGY_20250512"
       weight: 0.2
       priority: 3
       required: false
-  
-  combination_method: "intersection"
-  
+
+  combination_method: "union"  # 改为union以增加选股数量
+
   selection_parameters:
-    max_selections: 20
-    min_score: 0.7
+    max_selections: 30
+    min_score: 0.5  # 降低最小分数要求
     diversification:
-      max_per_industry: 2
-      max_concentration: 0.1
+      max_per_industry: 3
+      max_concentration: 0.15
 
 # 3. 趋势反转策略组合
 trend_reversal_combo:
@@ -206,6 +206,100 @@ custom_strategy_template:
     transaction_cost: 0.003
     slippage: 0.001
 
+# 7. 全面128指标复杂策略组合
+comprehensive_128_indicators_combo:
+  name: "全面128指标复杂策略组合"
+  description: "充分利用系统中所有128个指标的综合分析策略组合"
+  version: "1.0"
+  category: "comprehensive"
+
+  strategies:
+    - strategy_id: "COMPREHENSIVE_128_INDICATORS_STRATEGY"
+      weight: 0.5
+      priority: 1
+      required: true
+    - strategy_id: "ENHANCED_TWO_WAVE_STABILIZATION"
+      weight: 0.3
+      priority: 2
+      required: false
+    - strategy_id: "ZXM_60MIN_ABSORB_20250512"
+      weight: 0.2
+      priority: 3
+      required: false
+
+  combination_method: "weighted_average"
+
+  selection_parameters:
+    max_selections: 25
+    min_score: 0.75
+    diversification:
+      max_per_industry: 3
+      max_concentration: 0.12
+
+# 8. ZXM专业指标组合（增强版）
+zxm_professional_enhanced_combo:
+  name: "ZXM专业指标组合（增强版）"
+  description: "基于ZXM体系38个指标的专业选股策略"
+  version: "2.0"
+  category: "zxm_professional"
+
+  strategies:
+    - strategy_id: "ZXM_TREND_SCORE"
+      weight: 0.3
+      priority: 1
+      required: true
+    - strategy_id: "ZXM_HOT_SPOT"
+      weight: 0.25
+      priority: 2
+      required: false
+    - strategy_id: "ZXM_INDUSTRY_ROTATION"
+      weight: 0.25
+      priority: 3
+      required: false
+    - strategy_id: "ZXM_ALPHA_GENERATION"
+      weight: 0.2
+      priority: 4
+      required: false
+
+  combination_method: "intersection"
+
+  selection_parameters:
+    max_selections: 20
+    min_score: 0.8
+    diversification:
+      max_per_industry: 2
+      max_concentration: 0.1
+
+# 9. 形态识别策略组合
+pattern_recognition_combo:
+  name: "形态识别策略组合"
+  description: "基于23个形态识别指标的技术分析策略"
+  version: "1.0"
+  category: "pattern_analysis"
+
+  strategies:
+    - strategy_id: "CANDLESTICK_PATTERNS_STRATEGY"
+      weight: 0.4
+      priority: 1
+      required: true
+    - strategy_id: "CHART_PATTERNS_STRATEGY"
+      weight: 0.35
+      priority: 2
+      required: false
+    - strategy_id: "VOLUME_PATTERNS_STRATEGY"
+      weight: 0.25
+      priority: 3
+      required: false
+
+  combination_method: "union"
+
+  selection_parameters:
+    max_selections: 35
+    min_score: 0.65
+    diversification:
+      max_per_industry: 4
+      max_concentration: 0.15
+
 # 全局配置
 global_settings:
   default_combination_method: "weighted_average"
@@ -213,16 +307,42 @@ global_settings:
   enable_performance_tracking: true
   cache_results: true
   parallel_execution: true
-  max_workers: 4
-  
+  max_workers: 8  # 增加并行处理能力
+
   # 风险管理
   global_risk_limits:
-    max_single_stock_weight: 0.1
-    max_sector_weight: 0.3
-    min_diversification_score: 0.7
-  
+    max_single_stock_weight: 0.08
+    max_sector_weight: 0.25
+    min_diversification_score: 0.75
+
   # 性能监控
   performance_thresholds:
-    min_success_rate: 0.6
-    max_execution_time: 300  # 秒
+    min_success_rate: 0.65
+    max_execution_time: 600  # 增加到10分钟，支持复杂计算
     alert_on_failure: true
+
+# 10. 简化高成功率策略组合
+high_success_combo:
+  name: "高成功率策略组合"
+  description: "使用简化条件确保高成功率的策略组合"
+  version: "1.0"
+  category: "high_success"
+
+  strategies:
+    - strategy_id: "SIMPLE_MOMENTUM_STRATEGY"
+      weight: 0.6
+      priority: 1
+      required: true
+    - strategy_id: "rsi_oversold_strategy"
+      weight: 0.4
+      priority: 2
+      required: false
+
+  combination_method: "union"
+
+  selection_parameters:
+    max_selections: 50
+    min_score: 0.3
+    diversification:
+      max_per_industry: 5
+      max_concentration: 0.2

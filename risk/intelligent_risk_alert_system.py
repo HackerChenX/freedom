@@ -39,6 +39,7 @@ from utils.exception_handler import exception_handler
 from utils.performance_monitor import performance_monitor
 from utils.unified_container import get_container
 from utils.numerical_stability_manager import get_stability_manager
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

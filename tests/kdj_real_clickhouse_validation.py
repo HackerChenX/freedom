@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -165,8 +165,7 @@ class KDJRealClickHouseValidation:
                 low,
                 close,
                 volume
-            FROM stock_info
-            WHERE level = '日线'
+            FROM stock_info WHERE code = %(code)s AND level = '日线'
             AND code IN ('600601', '600602', '000002', '000009', '000012')
             AND date >= '2024-01-01'
             ORDER BY code, date
@@ -233,6 +232,7 @@ class KDJRealClickHouseValidation:
         
         try:
             from indicators.kdj import KdjKdj
+from db.sql_manager import SQLManager, QueryType
             kdj = KdjKdj()
             
             # 测试1: 计算时间测试
@@ -337,6 +337,7 @@ class KDJRealClickHouseValidation:
         
         try:
             from indicators.kdj import KdjKdj
+from db.sql_manager import SQLManager, QueryType
             kdj = KdjKdj()
             
             # 选择一只有足够数据的股票进行详细测试

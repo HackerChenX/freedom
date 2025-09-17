@@ -18,7 +18,8 @@ import threading
 import time
 import os
 from models.stock_info import Stock_info
-from config import get_config
+from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 # 配置日志
 logger = logging.getLogger('clickhouse_db_final_fixed')
@@ -187,7 +188,7 @@ class ClickHouseDatabaseFixed:
             # 构建完整查询 - 修复SQL语法
             query = f"""
             SELECT date, code, name, open, high, low, close, volume,
-                   turnover_rate, price_change, price_range, level
+                   turnover_rate, level
             FROM stock.stock_info
             WHERE {' AND '.join(conditions)}
             ORDER BY date DESC

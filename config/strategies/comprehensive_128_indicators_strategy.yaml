@@ -1,0 +1,319 @@
+# 全面128指标复杂策略配置
+# 充分利用系统中所有128个指标的能力
+
+strategy_id: "COMPREHENSIVE_128_INDICATORS_STRATEGY"
+name: "全面128指标复杂策略"
+description: "利用系统中所有128个指标的综合分析策略，包括ZXM体系、形态识别、波动性分析等"
+version: "1.0"
+category: "comprehensive"
+
+# 策略条件 - 使用多种指标类型
+conditions:
+  # 1. ZXM体系指标条件组 (权重40%)
+  zxm_indicators_group:
+    type: "logic"
+    operator: "AND"
+    weight: 0.4
+    conditions:
+      # ZXM趋势指标
+      - type: "indicator"
+        indicator: "ZXM_DAILY_TREND_UP"
+        field: "signal"
+        operator: ">"
+        value: 0.6
+        weight: 0.3
+      
+      # ZXM买点指标
+      - type: "indicator"
+        indicator: "ZXM_DAILY_MACD"
+        field: "signal"
+        operator: ">"
+        value: 0.5
+        weight: 0.25
+      
+      # ZXM弹性指标
+      - type: "indicator"
+        indicator: "ZXM_AMPLITUDE_ELASTICITY"
+        field: "signal"
+        operator: ">"
+        value: 0.7
+        weight: 0.2
+      
+      # ZXM综合评分
+      - type: "indicator"
+        indicator: "ZXM_BUYPOINT_SCORE"
+        field: "score"
+        operator: ">"
+        value: 0.65
+        weight: 0.25
+
+  # 2. 形态识别指标组 (权重25%)
+  pattern_indicators_group:
+    type: "logic"
+    operator: "OR"
+    weight: 0.25
+    conditions:
+      # 看涨吞没形态
+      - type: "indicator"
+        indicator: "ENGULFING"
+        field: "bullish_signal"
+        operator: "=="
+        value: 1
+        weight: 0.3
+      
+      # 锤子线形态
+      - type: "indicator"
+        indicator: "HAMMER"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.25
+      
+      # 启明星形态
+      - type: "indicator"
+        indicator: "MORNING_STAR"
+        field: "signal"
+        operator: "=="
+        value: 1
+        weight: 0.25
+      
+      # 双底形态
+      - type: "indicator"
+        indicator: "DOUBLE_BOTTOM"
+        field: "signal"
+        operator: ">"
+        value: 0.7
+        weight: 0.2
+
+  # 3. 波动性和风险指标组 (权重20%)
+  volatility_risk_group:
+    type: "logic"
+    operator: "AND"
+    weight: 0.2
+    conditions:
+      # ATR波动性适中
+      - type: "indicator"
+        indicator: "ATR"
+        field: "atr"
+        operator: "BETWEEN"
+        value: [0.02, 0.08]  # 2%-8%的波动性
+        weight: 0.3
+      
+      # 布林带位置
+      - type: "indicator"
+        indicator: "BOLL"
+        field: "bb_position"
+        operator: "BETWEEN"
+        value: [0.2, 0.8]  # 在布林带20%-80%位置
+        weight: 0.25
+      
+      # VIX恐慌指数
+      - type: "indicator"
+        indicator: "VIX"
+        field: "vix_level"
+        operator: "<"
+        value: 30  # 恐慌指数不太高
+        weight: 0.25
+      
+      # 肯特纳通道
+      - type: "indicator"
+        indicator: "KC"
+        field: "kc_position"
+        operator: ">"
+        value: 0.3
+        weight: 0.2
+
+  # 4. 成交量和资金流指标组 (权重15%)
+  volume_flow_group:
+    type: "logic"
+    operator: "AND"
+    weight: 0.15
+    conditions:
+      # OBV能量潮
+      - type: "indicator"
+        indicator: "OBV"
+        field: "obv_trend"
+        operator: ">"
+        value: 0
+        weight: 0.3
+      
+      # MFI资金流向
+      - type: "indicator"
+        indicator: "MFI"
+        field: "mfi"
+        operator: "BETWEEN"
+        value: [20, 80]  # MFI在20-80之间
+        weight: 0.25
+      
+      # 成交量比率
+      - type: "indicator"
+        indicator: "VOLUME_RATIO"
+        field: "volume_ratio"
+        operator: ">"
+        value: 1.2  # 成交量放大
+        weight: 0.25
+      
+      # 价量趋势
+      - type: "indicator"
+        indicator: "PVT"
+        field: "pvt_trend"
+        operator: ">"
+        value: 0
+        weight: 0.2
+
+# 高级筛选条件
+advanced_filters:
+  # 价格条件
+  price_filters:
+    # 价格在合理区间
+    - type: "price"
+      field: "close"
+      operator: "BETWEEN"
+      value: [5, 200]  # 5-200元价格区间
+    
+    # 涨跌幅限制
+    - type: "price"
+      field: "price_change_pct"
+      operator: "BETWEEN"
+      value: [-0.095, 0.095]  # 非一字涨跌停
+
+  # 技术条件
+  technical_filters:
+    # 多周期MACD一致性
+    - type: "technical"
+      condition: "multi_timeframe_macd_alignment"
+      parameters:
+        timeframes: ["daily", "weekly"]
+        min_alignment_score: 0.7
+    
+    # 均线多头排列
+    - type: "technical"
+      condition: "ma_bullish_alignment"
+      parameters:
+        ma_periods: [5, 10, 20, 60]
+        min_alignment_ratio: 0.75
+    
+    # 无放量大跌
+    - type: "technical"
+      condition: "no_volume_crash"
+      parameters:
+        lookback_days: 10
+        max_decline_with_volume: -0.05
+
+  # 基本面筛选
+  fundamental_filters:
+    # 市值要求
+    - type: "fundamental"
+      field: "market_cap"
+      operator: ">"
+      value: 50  # 50亿以上市值
+    
+    # 流通性要求
+    - type: "fundamental"
+      field: "avg_turnover_rate"
+      operator: ">"
+      value: 0.01  # 平均换手率>1%
+
+# 评分系统
+scoring_system:
+  # 综合评分方法
+  method: "weighted_composite"
+  
+  # 各指标组权重
+  weights:
+    zxm_score: 0.4
+    pattern_score: 0.25
+    volatility_score: 0.2
+    volume_score: 0.15
+  
+  # 评分标准化
+  normalization:
+    method: "min_max"
+    range: [0, 1]
+  
+  # 最终筛选
+  final_selection:
+    min_composite_score: 0.7
+    max_selections: 30
+    diversification_required: true
+
+# 风险控制
+risk_management:
+  # 止损设置
+  stop_loss:
+    enable: true
+    method: "atr_based"
+    atr_multiplier: 2.0
+    max_loss_pct: 0.08
+  
+  # 仓位管理
+  position_sizing:
+    method: "volatility_adjusted"
+    base_position: 0.05  # 基础仓位5%
+    max_position: 0.1    # 最大仓位10%
+  
+  # 相关性控制
+  correlation_control:
+    max_correlation: 0.7
+    correlation_window: 60
+
+# 执行参数
+execution_parameters:
+  # 数据要求
+  min_data_points: 120  # 至少120个交易日数据
+  
+  # 更新频率
+  update_frequency: "daily"
+  
+  # 并行处理
+  parallel_processing: true
+  max_workers: 8
+  
+  # 缓存设置
+  cache_results: true
+  cache_ttl: 3600  # 1小时缓存
+
+# 回测配置
+backtest_config:
+  # 回测周期
+  lookback_period: 252  # 一年
+  
+  # 基准指数
+  benchmark: "000300"  # 沪深300
+  
+  # 交易成本
+  transaction_cost: 0.003
+  slippage: 0.001
+  
+  # 再平衡
+  rebalance_frequency: "weekly"
+  
+  # 性能指标
+  performance_metrics:
+    - "total_return"
+    - "sharpe_ratio"
+    - "max_drawdown"
+    - "win_rate"
+    - "profit_factor"
+
+# 监控和报告
+monitoring:
+  # 实时监控
+  real_time_alerts:
+    enable: true
+    alert_conditions:
+      - "new_signal_generated"
+      - "risk_threshold_exceeded"
+      - "performance_deviation"
+  
+  # 报告生成
+  reporting:
+    daily_summary: true
+    weekly_analysis: true
+    monthly_performance: true
+    
+  # 日志记录
+  logging:
+    level: "INFO"
+    include_debug_info: false
+    log_all_calculations: false

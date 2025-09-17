@@ -23,8 +23,7 @@ def example_before_migration():
     with data_manager.connection_pool.get_connection() as conn:
         daily_query = f"""
         SELECT date, open, high, low, close, volume, turnover_rate
-        FROM stock_info 
-        WHERE code = '{stock_code}'
+        FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
         AND date BETWEEN '{start_date}' AND '{end_date}'
         AND level = '日线'
         ORDER BY date
@@ -47,6 +46,7 @@ def example_after_migration():
     try:
         from db.query_executor import get_query_executor
         from db.sql_manager import QueryType
+from db.sql_manager import SQLManager, QueryType
         
         # 获取查询执行器
         query_executor = get_query_executor()
@@ -138,12 +138,13 @@ def show_migration_steps():
     template = '''
 # 迁移模板
 # 原始代码：
-# query = "SELECT * FROM stock_info WHERE code = '%s'" % code
+# query = "SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info WHERE level = %(level)s AND code = '%s'" % code
 # result = conn.execute(query)
 
 # 迁移后：
 from db.query_executor import get_query_executor
 from db.sql_manager import QueryType
+from db.sql_manager import SQLManager, QueryType
 
 query_executor = get_query_executor()
 result = query_executor.execute_query(
@@ -180,7 +181,7 @@ def demonstrate_error_handling():
     print("迁移前的错误处理：")
     before_error = '''
 try:
-    query = f"SELECT * FROM stock_info WHERE code = '{code}'"
+    query = f"SELECT code, name, date, open, high, low, close, volume, turnover_rate FROM stock_info WHERE level = %(level)s AND code = '{code}'"
     result = conn.execute(query)
 except Exception as e:
     print(f"查询失败: {e}")  # 错误信息不够详细

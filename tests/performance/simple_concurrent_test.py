@@ -22,6 +22,7 @@ sys.path.append(project_root)
 
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

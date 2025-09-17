@@ -37,7 +37,7 @@ from analysis.integrated_performance_framework import (
     batch_evaluate_strategies
 )
 from analysis.strategy_performance_evaluator import EvaluationConfig
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

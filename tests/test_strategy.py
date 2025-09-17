@@ -10,7 +10,7 @@ import datetime
 import pandas as pd
 import numpy as np
 
-class MockDataManager:
+class MockDataAccessManager:
     """模拟数据管理器"""
     
     def __init__(self):
@@ -106,7 +106,7 @@ class TestStrategy(unittest.TestCase):
     def setUp(self):
         """测试前准备"""
         # 创建模拟数据管理器
-        self.data_manager = MockDataManager()
+        self.data_manager = MockDataAccessManager()
         
         # 创建模拟指标
         self.ma_cross = MockIndicator('MA_CROSS')

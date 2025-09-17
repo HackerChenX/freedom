@@ -22,6 +22,7 @@ sys.path.insert(0, root_dir)
 from scripts.comprehensive_unified_engine_test import Unified_engine_comprehensive_test
 from scripts.indicator_logic_validator import Indicator_logic_validator
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

@@ -52,6 +52,7 @@ def test_enhanced_connection_pool():
     
     try:
         from db.enhanced_connection_pool import ClickHouseConnectionPool
+from db.sql_manager import SQLManager, QueryType
         
         pool = ClickHouseConnectionPool()
         

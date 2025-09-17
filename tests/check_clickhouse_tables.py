@@ -16,6 +16,7 @@ def check_clickhouse_tables():
     
     try:
         from clickhouse_driver import Client
+from db.sql_manager import SQLManager, QueryType
         
         client = Client(
             host='localhost',

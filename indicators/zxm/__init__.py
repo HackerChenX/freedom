@@ -5,35 +5,35 @@ ZXM体系指标模块
 """
 
 from indicators.zxm.trend_indicators import (
-    ZxmdailyTrendUp as ZXMDailyTrendUp, 
-    ZxmweeklyTrendUp as ZXMWeeklyTrendUp, 
+    ZxmdailyTrendUp as ZXMDailyTrendUp,
+    ZxmweeklyTrendUp as ZXMWeeklyTrendUp,
     ZxmmonthlyKdjtrendUp as ZXMMonthlyKDJTrendUp,
-    ZxmweeklyKdjdorDeatrendUp as ZXMWeeklyKDJDOrDEATrendUp, 
+    ZxmweeklyKdjdorDeatrendUp as ZXMWeeklyKDJDOrDEATrendUp,
     ZxmweeklyKdjdtrendUp as ZXMWeeklyKDJDTrendUp,
     # ZXMMonthlyMACD, ZXMWeeklyMACD, TrendDetector,
     # TrendDuration
 )
 
 from indicators.zxm.elasticity_indicators import (
-    AmplitudeElasticity, 
+    AmplitudeElasticity,
     ZxmriseElasticity as ZXMRiseElasticity,
-    Elasticity, 
+    Elasticity,
     # BounceDetector
 )
 
 from indicators.zxm.buy_point_indicators import (
-    ZXMDailyMACD, 
-    ZXMTurnover, 
+    ZXMDailyMACD,
+    ZXMturnover_rate,
     ZXMVolumeShrink,
-    ZXMMACallback, 
-    ZXMBSAbsorb, 
+    ZXMMACallback,
+    ZXMBSAbsorb,
     # BuyPointDetector
 )
 
 from indicators.zxm.score_indicators import (
-    ZxmelasticityScore as ZXMElasticityScore, 
-    ZxmbuyPointScore as ZXMBuyPointScore, 
-    StockScoreCalculator
+    ZxmelasticityScore as ZXMElasticityScore,
+    ZxmbuyPointScore as ZXMBuyPointScore,
+    StockScoreCalculator,
 )
 
 from indicators.zxm.selection_model import SelectionModel
@@ -45,39 +45,46 @@ from indicators.zxm.market_breadth import ZxmmarketBreadth as ZXMMarketBreadth
 #     MarketSentiment, MarketVolatility, SectorRotation, MarketBreadth
 # )
 # from indicators.zxm.volume_price_indicators import (
+from db.sql_manager import SQLManager, QueryType
+
 #     VolumePriceBreakout, VolumeFlow, PriceVolumeTrend
 # )
 
 __all__ = [
     # 趋势指标
-    'ZXMDailyTrendUp', 'ZXMWeeklyTrendUp', 'ZXMMonthlyKDJTrendUp',
-    'ZXMWeeklyKDJDOrDEATrendUp', 'ZXMWeeklyKDJDTrendUp',
-    'ZXMMonthlyMACD', 'ZXMWeeklyMACD', 'TrendDetector',
-    'TrendDuration',
-    
+    "ZXMDailyTrendUp",
+    "ZXMWeeklyTrendUp",
+    "ZXMMonthlyKDJTrendUp",
+    "ZXMWeeklyKDJDOrDEATrendUp",
+    "ZXMWeeklyKDJDTrendUp",
+    "ZXMMonthlyMACD",
+    "ZXMWeeklyMACD",
+    "TrendDetector",
+    "TrendDuration",
     # 弹性指标
-    'AmplitudeElasticity', 'ZXMRiseElasticity',
-    'Elasticity', 'BounceDetector',
-    
+    "AmplitudeElasticity",
+    "ZXMRiseElasticity",
+    "Elasticity",
+    "BounceDetector",
     # 买点指标
-    'ZXMDailyMACD', 'ZXMTurnover', 'ZXMVolumeShrink',
-    'ZXMMACallback', 'ZXMBSAbsorb', 'BuyPointDetector',
-    
+    "ZXMDailyMACD",
+    "ZXMturnover_rate",
+    "ZXMVolumeShrink",
+    "ZXMMACallback",
+    "ZXMBSAbsorb",
+    "BuyPointDetector",
     # 评分指标
-    'ZXMElasticityScore', 'ZXMBuyPointScore', 'StockScoreCalculator',
-    
+    "ZXMElasticityScore",
+    "ZXMBuyPointScore",
+    "StockScoreCalculator",
     # 选股模型
-    'SelectionModel',
-    
+    "SelectionModel",
     # 诊断指标
-    'ZXMDiagnostics',
-    
+    "ZXMDiagnostics",
     # 市场宽度指标
-    'ZXMMarketBreadth',
-    
+    "ZXMMarketBreadth",
     # # 市场指标
     # 'MarketSentiment', 'MarketVolatility', 'SectorRotation', 'MarketBreadth',
-    
     # # 价格指标
     # 'VolumePriceBreakout', 'VolumeFlow', 'PriceVolumeTrend'
-] 
+]

@@ -85,8 +85,8 @@ def test_vectorization_performance():
     
     start_time = time.time()
     # OBV
-    price_change = close.diff()
-    obv = (volume * np.sign(price_change)).cumsum()
+    = close.diff()
+    obv = (volume * np.sign()).cumsum()
     
     # VR
     up_volume = volume.where(close.diff() > 0, 0)

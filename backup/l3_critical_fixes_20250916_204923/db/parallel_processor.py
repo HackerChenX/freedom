@@ -1,0 +1,493 @@
+"""
+并行处理器
+
+实现高效的并发指标计算和策略执行，解决串行处理瓶颈。
+支持多进程、多线程和异步处理模式。
+
+Author: System
+Date: 2025-01-15
+"""
+
+import pandas as pd
+from typing import List, Dict, Any, Optional, Callable, Union
+from datetime import datetime
+import logging
+import multiprocessing as mp
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
+import asyncio
+import time
+import gc
+from dataclasses import dataclass
+from enum import Enum
+
+from db.interfaces.data_access_interface import DataAccessInterface
+from indicators.unified_calculator import IndicatorResult
+from db.interfaces.cache_interface import ICacheService
+from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
+
+logger = getLogger(__name__)
+
+
+class ProcessingMode(Enum):
+    """处理模式"""
+    THREAD = "thread"      # 线程模式 - 适合I/O密集型
+    PROCESS = "process"    # 进程模式 - 适合CPU密集型
+    ASYNC = "async"        # 异步模式 - 适合高并发I/O
+
+
+@dataclass
+class ProcessingConfig:
+    """并行处理配置"""
+    mode: ProcessingMode = ProcessingMode.THREAD
+    max_workers: int = mp.cpu_count()
+    chunk_size: int = 50
+    timeout_seconds: int = 60
+    memory_limit_mb: int = 2048
+    enable_progress: bool = True
+
+
+@dataclass
+class ProcessingTask:
+    """处理任务"""
+    task_id: str
+    stock_code: str
+    data: pd.DataFrame
+    indicators: List[str]
+    params: Dict[str, Any]
+
+
+@dataclass
+class TaskResult:
+    """任务结果"""
+    task_id: str
+    stock_code: str
+    success: bool
+    results: Dict[str, Any]
+    error: Optional[str] = None
+    processing_time: float = 0.0
+
+
+class ParallelProcessor:
+    """
+    并行处理器
+    
+    提供高性能的并行计算能力，支持：
+    - 多种并行模式（线程、进程、异步）
+    - 动态负载均衡
+    - 内存管理和错误恢复
+    - 进度监控和性能统计
+    """
+    
+    def __init___23(self, data_access: DataAccessInterface, cache_service: ICacheService,
+                 config: Optional[ProcessingConfig] = None):
+        self.data_access = data_access
+        self.cache_service = cache_service
+        self.config = config or ProcessingConfig()
+        self.processing_stats = {
+            'total_tasks': 0,
+            'completed_tasks': 0,
+            'failed_tasks': 0,
+            'total_time': 0.0,
+            'avg_task_time': 0.0
+        }
+        
+    def process_indicators_parallel(self, stock_data: Dict[str, pd.DataFrame],
+                                  indicators: List[str],
+                                  params: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, IndicatorResult]]:
+        """
+        并行计算股票指标
+        
+        Args:
+            stock_data: 股票数据字典 {股票代码: Data_frame}
+            indicators: 指标列表
+            params: 指标参数
+            
+        Returns:
+            Dict[str, Dict[str, IndicatorResult]]: {股票代码: {指标名: 结果}}
+        """
+        start_time = time.time()
+        params = params or {}
+        
+        logger.info(f"开始并行计算指标: {len(stock_data)}只股票, {len(indicators)}个指标")
+        
+        # 创建处理任务
+        tasks = self._create_indicator_tasks(stock_data, indicators, params)
+        
+        # 选择处理模式并执行
+        if self.config.mode == ProcessingMode.THREAD:
+            results = self._process_with_threads(tasks, self._calculate_indicators_task)
+        elif self.config.mode == ProcessingMode.PROCESS:
+            results = self._process_with_processes(tasks, self._calculate_indicators_task)
+        else:  # ASYNC
+            results = asyncio.run(self._process_with_async(tasks, self._calculate_indicators_task_async))
+        
+        # 整理结果
+        organized_results = self._organize_indicator_results(results)
+        
+        # 更新统计信息
+        total_time = time.time() - start_time
+        self._update_stats_Parallel_Processor(len(tasks), total_time)
+        
+        logger.info(f"并行指标计算完成: {len(organized_results)}只股票, 耗时 {total_time:.2f}秒")
+        
+        return organized_results
+    
+    def process_stocks_parallel(self, stock_codes: List[str],
+                               processing_func: Callable,
+                               func_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        并行处理股票列表
+        
+        Args:
+            stock_codes: 股票代码列表
+            processing_func: 处理函数
+            func_params: 函数参数
+            
+        Returns:
+            Dict[str, Any]: 处理结果
+        """
+        start_time = time.time()
+        func_params = func_params or {}
+        
+        logger.info(f"开始并行处理股票: {len(stock_codes)}只股票")
+        
+        # 创建处理任务
+        tasks = []
+        for i, code in enumerate(stock_codes):
+            task = Processing_task(
+                task_id=f"stock_{i}",
+                stock_code=code,
+                data=pd.DataFrame(),  # 空Data_frame，由处理函数获取数据
+                indicators=[],
+                params=func_params
+            )
+            tasks.append(task)
+        
+        # 执行处理
+        if self.config.mode == ProcessingMode.THREAD:
+            results = self._process_with_threads(tasks, processing_func)
+        elif self.config.mode == ProcessingMode.PROCESS:
+            results = self._process_with_processes(tasks, processing_func)
+        else:  # ASYNC
+            results = asyncio.run(self._process_with_async(tasks, processing_func))
+        
+        # 整理结果
+        organized_results = {}
+        for result in results:
+            if result.success:
+                organized_results[result.stock_code] = result.results
+        
+        # 更新统计信息
+        total_time = time.time() - start_time
+        self._update_stats_Parallel_Processor(len(tasks), total_time)
+        
+        logger.info(f"并行股票处理完成: {len(organized_results)}只股票, 耗时 {total_time:.2f}秒")
+        
+        return organized_results
+    
+    def _create_indicator_tasks(self, stock_data: Dict[str, pd.DataFrame],
+                               indicators: List[str],
+                               params: Dict[str, Any]) -> List[Processing_task]:
+        """创建指标计算任务"""
+        tasks = []
+        for i, (code, data) in enumerate(stock_data.items()):
+            task = Processing_task(
+                task_id=f"indicator_{i}",
+                stock_code=code,
+                data=data,
+                indicators=indicators,
+                params=params
+            )
+            tasks.append(task)
+        return tasks
+    
+    def _process_with_threads(self, tasks: List[Processing_task],
+                             processing_func: Callable) -> List[Task_result]:
+        """使用线程池处理任务"""
+        results = []
+        
+        with ThreadPoolExecutor(max_workers=self.config.max_workers) as executor:
+            # 提交任务
+            future_to_task = {
+                executor.submit(self._safe_execute_task, task, processing_func): task
+                for task in tasks
+            }
+            
+            # 收集结果
+            completed = 0
+            for future in as_completed(future_to_task, timeout=self.config.timeout_seconds * len(tasks)):
+                task = future_to_task[future]
+                try:
+                    result = future.result(timeout=self.config.timeout_seconds)
+                    results.append(result)
+                    completed += 1
+                    
+                    if self.config.enable_progress and completed % 100 == 0:
+                        logger.info(f"已完成 {completed}/{len(tasks)} 个任务")
+                        
+                except Exception as e:
+                    logger.error(f"任务执行失败 {task.task_id}: {e}")
+                    results.append(Task_result(
+                        task_id=task.task_id,
+                        stock_code=task.stock_code,
+                        success=False,
+                        results={},
+                        error=str(e)
+                    ))
+        
+        return results
+    
+    def _process_with_processes(self, tasks: List[Processing_task],
+                               processing_func: Callable) -> List[Task_result]:
+        """使用进程池处理任务"""
+        results = []
+        
+        # 将任务分块以减少进程间通信开销
+        task_chunks = [tasks[i:i + self.config.chunk_size] 
+                      for i in range(0, len(tasks), self.config.chunk_size)]
+        
+        with ProcessPoolExecutor(max_workers=self.config.max_workers) as executor:
+            # 提交任务块
+            future_to_chunk = {
+                executor.submit(self._process_task_chunk, chunk, processing_func): chunk
+                for chunk in task_chunks
+            }
+            
+            # 收集结果
+            completed_chunks = 0
+            for future in as_completed(future_to_chunk, timeout=self.config.timeout_seconds * len(task_chunks)):
+                chunk = future_to_chunk[future]
+                try:
+                    chunk_results = future.result(timeout=self.config.timeout_seconds)
+                    results.extend(chunk_results)
+                    completed_chunks += 1
+                    
+                    if self.config.enable_progress:
+                        logger.info(f"已完成 {completed_chunks}/{len(task_chunks)} 个任务块")
+                        
+                except Exception as e:
+                    logger.error(f"任务块执行失败: {e}")
+                    # 为失败的任务块创建错误结果
+                    for task in chunk:
+                        results.append(Task_result(
+                            task_id=task.task_id,
+                            stock_code=task.stock_code,
+                            success=False,
+                            results={},
+                            error=str(e)
+                        ))
+        
+        return results
+    
+    async def _process_with_async(self, tasks: List[Processing_task],
+                                 processing_func: Callable) -> List[Task_result]:
+        """使用异步模式处理任务"""
+        semaphore = asyncio.Semaphore(self.config.max_workers)
+        
+        async def process_task_with_semaphore(task):
+            async with semaphore:
+                return await self._safe_execute_task_async(task, processing_func)
+        
+        # 创建异步任务
+        async_tasks = [process_task_with_semaphore(task) for task in tasks]
+        
+        # 执行所有任务
+        results = await asyncio.gather(*async_tasks, return_exceptions=True)
+        
+        # 处理异常结果
+        processed_results = []
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                processed_results.append(Task_result(
+                    task_id=tasks[i].task_id,
+                    stock_code=tasks[i].stock_code,
+                    success=False,
+                    results={},
+                    error=str(result)
+                ))
+            else:
+                processed_results.append(result)
+        
+        return processed_results
+    
+    def _safe_execute_task(self, task: Processing_task, processing_func: Callable) -> Task_result:
+        """安全执行任务（同步版本）"""
+        start_time = time.time()
+        
+        try:
+            # 执行处理函数
+            if hasattr(processing_func, '__name__') and processing_func.__name__ == '_calculate_indicators_task':
+                results = self._calculate_indicators_task(task)
+            else:
+                results = processing_func(task)
+            
+            processing_time = time.time() - start_time
+            
+            return Task_result(
+                task_id=task.task_id,
+                stock_code=task.stock_code,
+                success=True,
+                results=results,
+                processing_time=processing_time
+            )
+            
+        except Exception as e:
+            processing_time = time.time() - start_time
+            logger.error(f"任务执行异常 {task.task_id}: {e}")
+            
+            return Task_result(
+                task_id=task.task_id,
+                stock_code=task.stock_code,
+                success=False,
+                results={},
+                error=str(e),
+                processing_time=processing_time
+            )
+        finally:
+            # 清理内存
+            gc.collect()
+    
+    async def _safe_execute_task_async(self, task: Processing_task, processing_func: Callable) -> Task_result:
+        """安全执行任务（异步版本）"""
+        start_time = time.time()
+        
+        try:
+            # 如果处理函数不是异步的，在线程池中执行
+            if not asyncio.iscoroutinefunction(processing_func):
+                loop = asyncio.get_event_loop()
+                results = await loop.run_in_executor(None, processing_func, task)
+            else:
+                results = await processing_func(task)
+            
+            processing_time = time.time() - start_time
+            
+            return Task_result(
+                task_id=task.task_id,
+                stock_code=task.stock_code,
+                success=True,
+                results=results,
+                processing_time=processing_time
+            )
+            
+        except Exception as e:
+            processing_time = time.time() - start_time
+            logger.error(f"异步任务执行异常 {task.task_id}: {e}")
+            
+            return Task_result(
+                task_id=task.task_id,
+                stock_code=task.stock_code,
+                success=False,
+                results={},
+                error=str(e),
+                processing_time=processing_time
+            )
+    
+    def _process_task_chunk(self, tasks: List[Processing_task], processing_func: Callable) -> List[Task_result]:
+        """处理任务块（用于进程模式）"""
+        results = []
+        for task in tasks:
+            result = self._safe_execute_task(task, processing_func)
+            results.append(result)
+        return results
+    
+    def _calculate_indicators_task(self, task: Processing_task) -> Dict[str, IndicatorResult]:
+        """计算指标任务"""
+        results = {}
+        
+        for indicator_name in task.indicators:
+            try:
+                # 检查缓存
+                cache_key = f"indicator_{task.stock_code}_{indicator_name}_{hash(str(task.params))}"
+                cached_result = self.cache_service.get(cache_key)
+                
+                if cached_result is not None:
+                    results[indicator_name] = cached_result
+                    continue
+                
+                # 计算指标（这里需要根据实际指标实现调整）
+                indicator_result = self._calculate_single_indicator(
+                    task.data, indicator_name, task.params
+                )
+                
+                results[indicator_name] = indicator_result
+                
+                # 缓存结果
+                self.cache_service.set(cache_key, indicator_result, ttl=get_config('cache.ttl', 1800))  # 30分钟缓存
+                
+            except Exception as e:
+                logger.error(f"指标计算失败 {task.stock_code}.{indicator_name}: {e}")
+                results[indicator_name] = IndicatorResult(
+                    indicator_name=indicator_name,
+                    values={},
+                    signals={},
+                    success=False,
+                    error=str(e)
+                )
+        
+        return results
+    
+    async def _calculate_indicators_task_async(self, task: Processing_task) -> Dict[str, IndicatorResult]:
+        """异步计算指标任务"""
+        # 在线程池中执行计算密集型任务
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._calculate_indicators_task, task)
+    
+    def _calculate_single_indicator(self, data: pd.DataFrame, indicator_name: str,
+                                   params: Dict[str, Any]) -> IndicatorResult:
+        """
+        计算单个指标
+        
+        Args:
+            data: 股票数据
+            indicator_name: 指标名称
+            params: 指标参数
+            
+        Returns:
+            IndicatorResult: 指标结果
+        """
+        # 这里应该根据实际的指标计算逻辑实现
+        # 目前返回一个示例结果
+        return IndicatorResult(
+            indicator_name=indicator_name,
+            values={'value': 0.0},
+            signals={'signal': 'hold'},
+            success=True
+        )
+    
+    def _organize_indicator_results(self, results: List[Task_result]) -> Dict[str, Dict[str, IndicatorResult]]:
+        """整理指标计算结果"""
+        organized = {}
+        
+        for result in results:
+            if result.success:
+                organized[result.stock_code] = result.results
+            else:
+                logger.warning(f"股票 {result.stock_code} 指标计算失败: {result.error}")
+        
+        return organized
+    
+    def _update_stats_Parallel_Processor(self, task_count: int, total_time: float):
+        """更新处理统计信息"""
+        self.processing_stats['total_tasks'] += task_count
+        self.processing_stats['completed_tasks'] += task_count
+        self.processing_stats['total_time'] += total_time
+        
+        if self.processing_stats['total_tasks'] > 0:
+            self.processing_stats['avg_task_time'] = (
+                self.processing_stats['total_time'] / self.processing_stats['total_tasks']
+            )
+    
+    def get_processing_stats(self) -> Dict[str, Any]:
+        """获取处理统计信息"""
+        return self.processing_stats.copy()
+    
+    def reset_stats_Processor(self):
+        """重置统计信息"""
+        self.processing_stats = {
+            'total_tasks': 0,
+            'completed_tasks': 0,
+            'failed_tasks': 0,
+            'total_time': 0.0,
+            'avg_task_time': 0.0
+        } 

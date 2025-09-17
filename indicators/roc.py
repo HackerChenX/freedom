@@ -1,3 +1,4 @@
+from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
@@ -5,7 +6,7 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,6 +19,9 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ROC指标
 
@@ -35,7 +39,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def _get_default_parameters_roc(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Roc(self, **kwargs):
         """
@@ -47,6 +51,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
 
             # 合并默认参数和用户参数
@@ -64,7 +69,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
 
         # 设置参数
-        self.period = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
 
     def calculate_Roc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -164,7 +169,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 信号强度：基于ROC绝对值
         roc_abs = abs(roc_values)
-        max_roc = roc_abs.rolling(window=20, min_periods=1).max()
+        max_roc = roc_abs.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         signals['signal_strength'] = roc_abs / (max_roc + 1e-10)  # 防止除零
         
         return signals
@@ -334,7 +339,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df['ROC_VALUE'] = roc  # 为了向后兼容
         
         # 计算ROC的移动平均（平滑处理）
-        df['roc_ma'] = roc.rolling(window=5).mean()
+        df['roc_ma'] = roc.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -366,8 +371,8 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 基本条件
             roc_positive = roc > 0
             roc_negative = roc < 0
-            roc_strong_positive = roc > 5  # 强正动量
-            roc_strong_negative = roc < -5  # 强负动量
+            roc_strong_positive = roc > 5  # 强正动量  # TODO: 将魔法数字提取到配置中
+            roc_strong_negative = roc < -5  # 强负动量  # TODO: 将魔法数字提取到配置中
             
             # 趋势条件
             roc_rising = roc > roc.shift(1)
@@ -401,73 +406,73 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算ROC原始评分
         
         基于ROC指标的技术分析特点进行评分：
-        1. ROC数值评分 (40%)
-        2. ROC趋势评分 (30%)
-        3. ROC动量强度 (20%)
-        4. ROC稳定性 (10%)
+        1. ROC数值评分 (40%)  # TODO: 将魔法数字提取到配置中
+        2. ROC趋势评分 (30%)  # TODO: 将魔法数字提取到配置中
+        3. ROC动量强度 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        4. ROC稳定性 (10%)  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Roc(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 获取ROC数据
         roc = self._result['roc']
         roc_ma = self._result['roc_ma']
         
         # 初始化评分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
-        # 1. ROC数值评分 (40%)
+        # 1. ROC数值评分 (40%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # ROC > 10: 强上涨动量 (+20分)
-        # ROC 5-10: 中等上涨动量 (+15分)
-        # ROC 0-5: 弱上涨动量 (+5分)
-        # ROC -5-0: 弱下跌动量 (-5分)
-        # ROC -10--5: 中等下跌动量 (-15分)
+        # ROC 5-10: 中等上涨动量 (+15分)  # TODO: 将魔法数字提取到配置中
+        # ROC 0-5: 弱上涨动量 (+5分)  # TODO: 将魔法数字提取到配置中
+        # ROC -5-0: 弱下跌动量 (-5分)  # TODO: 将魔法数字提取到配置中
+        # ROC -10--5: 中等下跌动量 (-15分)  # TODO: 将魔法数字提取到配置中
         # ROC < -10: 强下跌动量 (-20分)
         value_score = pd.Series(0.0, index=data.index)
-        value_score = np.where(roc > 10, 20, value_score)
-        value_score = np.where((roc >= 5) & (roc <= 10), 15, value_score)
-        value_score = np.where((roc > 0) & (roc < 5), 5, value_score)
-        value_score = np.where((roc >= -5) & (roc < 0), -5, value_score)
-        value_score = np.where((roc >= -10) & (roc < -5), -15, value_score)
-        value_score = np.where(roc < -10, -20, value_score)
-        scores += value_score * 0.4
+        value_score = np.where(roc > 10, 20, value_score)  # TODO: 将魔法数字提取到配置中
+        value_score = np.where((roc >= 5) & (roc <= 10), 15, value_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        value_score = np.where((roc > 0) & (roc < 5), 5, value_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        value_score = np.where((roc >= -5) & (roc < 0), -5, value_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        value_score = np.where((roc >= -10) & (roc < -5), -15, value_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        value_score = np.where(roc < -10, -20, value_score)  # TODO: 将魔法数字提取到配置中
+        scores += value_score * 0.4  # TODO: 将魔法数字提取到配置中
         
-        # 2. ROC趋势评分 (30%)
+        # 2. ROC趋势评分 (30%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # ROC上升趋势加分，下降趋势减分
         roc_change = roc - roc.shift(1)
         roc_change_2 = roc.shift(1) - roc.shift(2)
         
         trend_score = pd.Series(0.0, index=data.index)
         # 连续上升
-        trend_score = np.where((roc_change > 0) & (roc_change_2 > 0), 15, trend_score)
+        trend_score = np.where((roc_change > 0) & (roc_change_2 > 0), 15, trend_score)  # TODO: 将魔法数字提取到配置中
         # 单次上升
-        trend_score = np.where((roc_change > 0) & (roc_change_2 <= 0), 8, trend_score)
+        trend_score = np.where((roc_change > 0) & (roc_change_2 <= 0), 8, trend_score)  # TODO: 将魔法数字提取到配置中
         # 连续下降
-        trend_score = np.where((roc_change < 0) & (roc_change_2 < 0), -15, trend_score)
+        trend_score = np.where((roc_change < 0) & (roc_change_2 < 0), -15, trend_score)  # TODO: 将魔法数字提取到配置中
         # 单次下降
-        trend_score = np.where((roc_change < 0) & (roc_change_2 >= 0), -8, trend_score)
-        scores += trend_score * 0.3
+        trend_score = np.where((roc_change < 0) & (roc_change_2 >= 0), -8, trend_score)  # TODO: 将魔法数字提取到配置中
+        scores += trend_score * 0.3  # TODO: 将魔法数字提取到配置中
         
-        # 3. ROC动量强度 (20%)
+        # 3. ROC动量强度 (20%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于ROC的绝对值评估动量强度
         roc_abs = abs(roc)
         momentum_score = pd.Series(0.0, index=data.index)
-        momentum_score = np.where(roc_abs > 15, 10, momentum_score)
-        momentum_score = np.where((roc_abs >= 10) & (roc_abs <= 15), 8, momentum_score)
-        momentum_score = np.where((roc_abs >= 5) & (roc_abs < 10), 5, momentum_score)
-        momentum_score = np.where(roc_abs < 2, -5, momentum_score)  # 动量太弱减分
+        momentum_score = np.where(roc_abs > 15, 10, momentum_score)  # TODO: 将魔法数字提取到配置中
+        momentum_score = np.where((roc_abs >= 10) & (roc_abs <= 15), 8, momentum_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        momentum_score = np.where((roc_abs >= 5) & (roc_abs < 10), 5, momentum_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        momentum_score = np.where(roc_abs < 2, -5, momentum_score)  # 动量太弱减分  # TODO: 将魔法数字提取到配置中
         scores += momentum_score * 0.2
         
-        # 4. ROC稳定性 (10%)
+        # 4. ROC稳定性 (10%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于ROC移动平均的稳定性
         if len(roc_ma.dropna()) > 0:
             roc_stability = abs(roc - roc_ma)
             stability_score = pd.Series(0.0, index=data.index)
-            stability_score = np.where(roc_stability < 2, 5, stability_score)  # 稳定加分
-            stability_score = np.where(roc_stability > 10, -5, stability_score)  # 不稳定减分
+            stability_score = np.where(roc_stability < 2, 5, stability_score)  # 稳定加分  # TODO: 将魔法数字提取到配置中
+            stability_score = np.where(roc_stability > 10, -5, stability_score)  # 不稳定减分  # TODO: 将魔法数字提取到配置中
             scores += stability_score * 0.1
         
         # 确保评分在合理范围内
@@ -478,31 +483,31 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Roc(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if self._result is None:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
         # 基于ROC指标的明确性计算置信度
         roc = self._result['roc'].dropna()
         
         if len(roc) == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算最近的ROC值
         recent_roc = roc.iloc[-1] if len(roc) > 0 else 0
         
         # ROC绝对值越大，置信度越高
-        roc_strength = min(abs(recent_roc) / 20, 1.0)  # 标准化到0-1
+        roc_strength = min(abs(recent_roc) / 20, 1.0)  # 标准化到0-1  # TODO: 将魔法数字提取到配置中
         
         # 趋势一致性提高置信度
         trend_consistency = 0
-        if len(roc) >= 3:
-            recent_trend = roc.iloc[-3:].diff().dropna()
+        if len(roc) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_trend = roc.iloc[-3:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
                 # 如果趋势方向一致，提高置信度
                 if all(recent_trend > 0) or all(recent_trend < 0):
                     trend_consistency = 0.2
         
-        base_confidence = 0.3 + roc_strength * 0.5 + trend_consistency
-        return min(max(base_confidence, 0.2), 0.9)
+        base_confidence = 0.3 + roc_strength * 0.5 + trend_consistency  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        return min(max(base_confidence, 0.2), 0.9)  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Roc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取ROC相关形态 - Ultra Think优化版
@@ -527,26 +532,26 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 1. ROC_POSITIVE_MOMENTUM: 正动量（ROC为正且增强趋势）
         roc_change = roc - roc.shift(1)
-        patterns['ROC_POSITIVE_MOMENTUM'] = (roc > 0) & (roc_change > 0) & (roc > roc.rolling(3).mean())
+        patterns['ROC_POSITIVE_MOMENTUM'] = (roc > 0) & (roc_change > 0) & (roc > roc.rolling(3).mean())  # TODO: 将魔法数字提取到配置中
         
         # 2. ROC_NEGATIVE_MOMENTUM: 负动量（ROC为负且减弱趋势）
-        patterns['ROC_NEGATIVE_MOMENTUM'] = (roc < 0) & (roc_change < 0) & (roc < roc.rolling(3).mean())
+        patterns['ROC_NEGATIVE_MOMENTUM'] = (roc < 0) & (roc_change < 0) & (roc < roc.rolling(3).mean())  # TODO: 将魔法数字提取到配置中
         
-        # 3. ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）
+        # 3. ROC_ZERO_CROSS: 零轴穿越（ROC穿越零轴）  # TODO: 将魔法数字提取到配置中
         patterns['ROC_ZERO_CROSS'] = (
             ((roc > 0) & (roc.shift(1) <= 0)) |  # 上穿零轴
             ((roc < 0) & (roc.shift(1) >= 0))    # 下穿零轴
         )
         
-        # 4. ROC_ACCELERATION: 加速度变化（ROC变化率增大）
+        # 4. ROC_ACCELERATION: 加速度变化（ROC变化率增大）  # TODO: 将魔法数字提取到配置中
         roc_acceleration = roc_change - roc_change.shift(1)
-        patterns['ROC_ACCELERATION'] = roc_acceleration.abs() > roc_acceleration.abs().rolling(5).mean()
+        patterns['ROC_ACCELERATION'] = roc_acceleration.abs() > roc_acceleration.abs().rolling(5).mean()  # TODO: 将魔法数字提取到配置中
         
         # 🎯 Ultra Think完成：保留一些原有形态作为补充
         patterns['ROC_POSITIVE'] = roc > 0
         patterns['ROC_NEGATIVE'] = roc < 0
-        patterns['ROC_EXTREME_HIGH'] = roc > 20
-        patterns['ROC_EXTREME_LOW'] = roc < -20
+        patterns['ROC_EXTREME_HIGH'] = roc > 20  # TODO: 将魔法数字提取到配置中
+        patterns['ROC_EXTREME_LOW'] = roc < -20  # TODO: 将魔法数字提取到配置中
         
         return patterns
 
@@ -621,7 +626,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 return None
 
             roc_values = result[roc_cols[0]].dropna()
-            if len(roc_values) < 3:
+            if len(roc_values) < 3:  # TODO: 将魔法数字提取到配置中
                 return None
 
             current_roc = roc_values.iloc[-1]
@@ -631,10 +636,10 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             signal_type = 'neutral'
             signal_strength = 'medium'
 
-            if current_roc > 5 and prev_roc <= 5:
+            if current_roc > 5 and prev_roc <= 5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signal_type = 'bullish'
                 signal_strength = 'strong'
-            elif current_roc < -5 and prev_roc >= -5:
+            elif current_roc < -5 and prev_roc >= -5:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signal_type = 'bearish'
                 signal_strength = 'strong'
             elif current_roc > 0 and prev_roc <= 0:
@@ -687,18 +692,18 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # ROC评分逻辑：基于ROC值的强度
             # ROC > 10: 强势上涨，评分80-100
-            # ROC 0-10: 温和上涨，评分60-80
-            # ROC -10-0: 温和下跌，评分40-60
-            # ROC < -10: 强势下跌，评分0-40
+            # ROC 0-10: 温和上涨，评分60-80  # TODO: 将魔法数字提取到配置中
+            # ROC -10-0: 温和下跌，评分40-60  # TODO: 将魔法数字提取到配置中
+            # ROC < -10: 强势下跌，评分0-40  # TODO: 将魔法数字提取到配置中
 
             if current_roc > 10:
-                score = 80 + min(20, current_roc - 10)
+                score = 80 + min(20, current_roc - 10)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             elif current_roc > 0:
-                score = 60 + current_roc * 2
+                score = 60 + current_roc * 2  # TODO: 将魔法数字提取到配置中
             elif current_roc > -10:
-                score = 40 + (current_roc + 10) * 2
+                score = 40 + (current_roc + 10) * 2  # TODO: 将魔法数字提取到配置中
             else:
-                score = max(0, 40 + current_roc + 10)
+                score = max(0, 40 + current_roc + 10)  # TODO: 将魔法数字提取到配置中
 
             return min(100, max(0, score))
 
@@ -716,7 +721,7 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 15
+        return 15  # TODO: 将魔法数字提取到配置中
 
     # ==================== BaseIndicator抽象方法实现 ====================
 
@@ -748,44 +753,44 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """BaseIndicator抽象方法实现：计算置信度"""
         try:
             # 基础置信度
-            base_confidence = 0.6
+            base_confidence = 0.6  # TODO: 将魔法数字提取到配置中
 
             # 根据数据量调整置信度
             data_length = len(score)
-            if data_length >= 252:  # 一年数据
-                data_confidence = 0.9
-            elif data_length >= 60:  # 两个月数据
-                data_confidence = 0.8
-            elif data_length >= 30:  # 一个月数据
-                data_confidence = 0.7
+            if data_length >= 252:  # 一年数据  # TODO: 将魔法数字提取到配置中
+                data_confidence = 0.9  # TODO: 将魔法数字提取到配置中
+            elif data_length >= 60:  # 两个月数据  # TODO: 将魔法数字提取到配置中
+                data_confidence = 0.8  # TODO: 将魔法数字提取到配置中
+            elif data_length >= 30:  # 一个月数据  # TODO: 将魔法数字提取到配置中
+                data_confidence = 0.7  # TODO: 将魔法数字提取到配置中
             else:
-                data_confidence = 0.5
+                data_confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
             # 根据ROC值的稳定性调整置信度
-            roc_confidence = 0.7
+            roc_confidence = 0.7  # TODO: 将魔法数字提取到配置中
             if hasattr(self, '_result') and self._result is not None and 'roc' in self._result.columns:
                 roc_values = self._result['roc'].dropna()
                 if len(roc_values) > 0:
                     # ROC绝对值越大，置信度越高
                     recent_roc = abs(roc_values.iloc[-1]) if len(roc_values) > 0 else 0
-                    roc_strength = min(recent_roc / 20, 1.0)  # 标准化到0-1
-                    roc_confidence = 0.5 + roc_strength * 0.4
+                    roc_strength = min(recent_roc / 20, 1.0)  # 标准化到0-1  # TODO: 将魔法数字提取到配置中
+                    roc_confidence = 0.5 + roc_strength * 0.4  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 根据形态数量调整置信度
-            pattern_confidence = 0.7
+            pattern_confidence = 0.7  # TODO: 将魔法数字提取到配置中
             if isinstance(patterns, pd.DataFrame) and not patterns.empty:
                 pattern_count = patterns.sum().sum()
                 if pattern_count > 0:
-                    pattern_confidence = min(0.9, 0.6 + pattern_count * 0.01)
+                    pattern_confidence = min(0.9, 0.6 + pattern_count * 0.01)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 综合置信度
-            final_confidence = (base_confidence + data_confidence + roc_confidence + pattern_confidence) / 4
+            final_confidence = (base_confidence + data_confidence + roc_confidence + pattern_confidence) / 4  # TODO: 将魔法数字提取到配置中
 
             return max(0.0, min(1.0, final_confidence))
 
         except Exception as e:
             logger.error(f"ROC计算置信度失败: {e}")
-            return 0.6
+            return 0.6  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """BaseIndicator抽象方法实现：设置参数"""

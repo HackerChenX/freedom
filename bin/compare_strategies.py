@@ -14,6 +14,7 @@ sys.path.insert(0, root_dir)
 from utils.logger import get_logger
 from utils.path_utils import get_result_dir
 from analysis.strategy_comparison import Strategy_comparison
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = get_logger(__name__)

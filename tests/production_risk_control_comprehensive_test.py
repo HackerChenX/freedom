@@ -48,6 +48,7 @@ from monitoring.intelligent_alert_system import (
     IntelligentAlertSystem, SignalType, SignalStrength, TradingSignal
 )
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 from utils.performance_monitor import performance_monitor
 from utils.exception_handler import exception_handler
 
@@ -785,6 +786,7 @@ class ProductionRiskControlComprehensiveTest:
             # 检查日志系统
             try:
                 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
                 test_logger = get_logger("test")
                 dependencies_status['logging_system'] = 'OK'
             except Exception as e:

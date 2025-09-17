@@ -16,7 +16,7 @@ sys.path.insert(0, root_dir)
 from db.interfaces.data_access_interface import DataAccessInterface
 from db.interfaces.cache_interface import ICache_manager
 from db.interfaces.connection_interface import IconnectionManager
-from db.container import Service_container, Lifecycle_type, get_container, reset_container
+from utils.unified_container import UnifiedServiceContainer, ServiceLifecycle
 
 
 class Test_service_container(unittest.TestCase):
@@ -193,7 +193,7 @@ class Test_cache_interface(unittest.TestCase):
         
         for method_name in required_methods:
             self.assert_true(hasattr(ICache_manager, method_name), 
-                          f"ICacheManager接口缺少方法: {method_name}")
+                          f"ICacheService接口缺少方法: {method_name}")
 
 
 class Test_connection_interface(unittest.TestCase):

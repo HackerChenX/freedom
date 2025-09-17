@@ -14,7 +14,8 @@ from datetime import datetime
 
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -116,7 +117,6 @@ class BuyPointToStrategyAdapter:
             strategy_result = {
                 'stock_code': stock_code,
                 'stock_name': stock_info['name'],
-                'industry': stock_info['industry'],
                 'price': stock_info['price'],
                 'change_pct': stock_info['change_pct'],
                 'score': score,
@@ -191,11 +191,10 @@ class BuyPointToStrategyAdapter:
             
             # 获取股票名称和行业
             stock_name = self.data_manager.get_stock_name(stock_code) or stock_code
-            industry = self.data_manager.get_stock_industry(stock_code) or "未知行业"
+            = self.data_manager.get_stock_(stock_code) or "未知行业"
             
             return {
                 'name': stock_name,
-                'industry': industry,
                 'price': float(latest_data.get('close', 0)),
                 'change_pct': float(latest_data.get('pct_chg', 0))
             }

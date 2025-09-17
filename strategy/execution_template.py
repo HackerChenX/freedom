@@ -1,3 +1,4 @@
+from utils.container import container
 """
 策略执行模板模块
 
@@ -17,10 +18,11 @@ from enum import Enum
 import pandas as pd
 import numpy as np
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.common_utils import DataProcessor, ValidationUtils, CacheUtils, merge_dicts
 from utils.decorators import exception_handler, performance_monitor
 from strategy.unified_base_strategy import UnifiedBaseStrategy
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -107,6 +109,9 @@ class StrategyExecutionTemplate(abc.ABC):
     """
     
     def __init__(self, name: str):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.name = name
         self.hooks = {}  # 执行钩子
         self.validators = []  # 验证器
@@ -341,6 +346,9 @@ class StandardStrategyExecutionTemplate(StrategyExecutionTemplate):
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__("StandardTemplate")
     
     def _execute_initialization(self, context: ExecutionContext) -> None:
@@ -505,6 +513,9 @@ class BatchStrategyExecutionTemplate(StrategyExecutionTemplate):
     """
     
     def __init__(self, batch_size: int = 100):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__("BatchTemplate")
         self.batch_size = batch_size
     

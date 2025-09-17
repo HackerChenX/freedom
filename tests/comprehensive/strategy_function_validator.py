@@ -33,6 +33,7 @@ from strategy.momentum_strategy import MomentumStrategy
 from strategy.breakout_strategy import BreakoutStrategy
 from strategy.rebound_strategy import ReboundStrategy
 from enums.period import Period
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -137,8 +138,7 @@ class StrategyFunctionValidator:
             # 获取活跃股票作为测试样本
             query = """
             SELECT DISTINCT code 
-            FROM stock_info 
-            WHERE date >= '2024-01-01' 
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND date >= '2024-01-01' 
             AND level = '日线'
             AND volume > 1000000
             ORDER BY code
@@ -264,8 +264,7 @@ class StrategyFunctionValidator:
             query = f"""
             SELECT code, COUNT(*) as cnt, 
                    MIN(date) as min_date, MAX(date) as max_date
-            FROM stock_info 
-            WHERE code IN ('{stock_codes_str}')
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{stock_codes_str}')
             AND level = '日线'
             GROUP BY code
             ORDER BY cnt DESC
@@ -370,8 +369,7 @@ class StrategyFunctionValidator:
                     # 使用正确的字段名查询
                     query = f"""
                     SELECT code, name, date, open, high, low, close, volume
-                    FROM stock_info 
-                    WHERE code = '{code}'
+                    FROM stock_info WHERE level = %(level)s AND code = '{code}'
                     AND date >= '{start_date}' AND date <= '{end_date}'
                     AND level = '日线'
                     ORDER BY date ASC

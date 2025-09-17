@@ -25,7 +25,7 @@ sys.path.append(project_root)
 
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import Strategy_manager
-# DataManager将在运行时动态导入
+# DataAccessManager将在运行时动态导入
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,7 +39,8 @@ class Comprehensive_stock_selection_test:
         try:
             self.strategy_executor = Strategy_executor(max_workers=8, cache_enabled=True)
             self.strategy_manager = Strategy_manager()
-            from db.unified_data_manager import get_unified_data_manager
+            from db.managers.data_access_manager import get_unified_data_manager
+from db.sql_manager import SQLManager, QueryType
             self.data_manager = get_unified_data_manager()
             self.use_mock_data = False
         except Exception as e:

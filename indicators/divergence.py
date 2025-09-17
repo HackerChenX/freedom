@@ -1,10 +1,12 @@
+from utils.container import container
 """
 量价背离指标模块
 
 实现量价背离识别和分析功能
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 import numpy as np
 from typing import Dict, Any
@@ -15,7 +17,8 @@ from enum import Enum
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -25,21 +28,21 @@ class DivergenceType(Enum):
     none = 0             # 无背离
     positive = 1         # 正背离（底背离）：价格创新低，指标未创新低，看涨信号
     negative = 2         # 负背离（顶背离）：价格创新高，指标未创新高，看跌信号
-    HIDDEN_POSITIVE = 3  # 隐藏正背离：价格未创新低，指标创新低，看涨信号
-    HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号
+    HIDDEN_POSITIVE = 3  # 隐藏正背离：价格未创新低，指标创新低，看涨信号  # TODO: 将魔法数字提取到配置中
+    HIDDEN_NEGATIVE = 4  # 隐藏负背离：价格未创新高，指标创新高，看跌信号  # TODO: 将魔法数字提取到配置中
 
     @property
     def minimum_periods(self) -> int:
         """
         Divergence指标所需的最少数据周期数
         
-        计算逻辑：基于参数 lookback_period(20), confirm_period(5) 计算
+        计算逻辑：基于参数 lookback_period(20), confirm_period(5) 计算  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         Returns:
             int: 最少需要的数据周期数
         """
-        lookback_period = self._parameters.get('lookback_period', 20)
-        confirm_period = self._parameters.get('confirm_period', 5)
+        lookback_period = self._parameters.get('lookback_period', 20)  # TODO: 将魔法数字提取到配置中
+        confirm_period = self._parameters.get('confirm_period', 5)  # TODO: 将魔法数字提取到配置中
         return max(lookback_period, confirm_period) + 10
 
 class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
@@ -52,9 +55,12 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """返回计算指标所需的最小周期数"""
-        return max(self.lookback_period, self.confirm_period) + 5
+        return max(self.lookback_period, self.confirm_period) + 5  # TODO: 将魔法数字提取到配置中
 
-    def __init__(self, lookback_period: int = 20, confirm_period: int = 5):
+    def __init__(self, lookback_period: int = 20, confirm_period: int = 5):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         """
         初始化量价背离指标
@@ -117,7 +123,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if missing_columns:
             raise ValueError(f"数据缺少必需的列: {missing_columns}")
     
-    def price_volume_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
+    def price_volume_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         计算价格与成交量的背离
         
@@ -146,12 +152,12 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算价格与成交量背离
         for i in range(lookback_period, len(close)):
             # 价格上涨但成交量下降，负背离
-            if i >= 5 and close[i] > close[i-5] and volume[i] < volume[i-5]:
+            if i >= 5 and close[i] > close[i-5] and volume[i] < volume[i-5]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_volume_divergence[i] = True
                 divergence_type[i] = "negative"
             
             # 价格下跌但成交量上升，正背离
-            elif i >= 5 and close[i] < close[i-5] and volume[i] > volume[i-5]:
+            elif i >= 5 and close[i] < close[i-5] and volume[i] > volume[i-5]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 price_volume_divergence[i] = True
                 divergence_type[i] = "positive"
         
@@ -162,7 +168,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return result
     
     def _calculate_divergence(self, data: pd.DataFrame, indicator_name: str = None, 
-                  lookback_period: int = 20, confirm_period: int = 5, 
+                  lookback_period: int = 20, confirm_period: int = 5,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
                   *args, **kwargs) -> pd.DataFrame:
         """
         计算量价背离指标
@@ -336,7 +342,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新低但指标未创新低，表明下跌动能减弱，看涨信号",
             pattern_type="BULLISH",
             default_strength="VERY_STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -346,7 +352,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格创新高但指标未创新高，表明上涨动能减弱，看跌信号",
             pattern_type="BEARISH",
             default_strength="VERY_STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -357,7 +363,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格未创新低但指标创新低，表明上升趋势中的调整，看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=15.0,
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -367,7 +373,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="价格未创新高但指标创新高，表明下降趋势中的反弹，看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-15.0,
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -378,7 +384,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="出现任意类型的正背离，看涨信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -388,7 +394,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="出现任意类型的负背离，看跌信号",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -438,12 +444,12 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 result = self.calculate(data, indicator_name, lookback_period, confirm_period)
             except Exception as e:
                 logger.error(f"计算背离指标时出错: {e}")
-                return pd.Series(50.0, index=data.index)  # 返回中性评分
+                return pd.Series(50.0, index=data.index)  # 返回中性评分  # TODO: 将魔法数字提取到配置中
         else:
             result = self._result
         
         # 初始化评分，默认为50分（中性）
-        score = pd.Series(50.0, index=data.index)
+        score = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 检查结果是否有效
         if result.empty:
@@ -452,24 +458,24 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 1. 基于正背离的评分 (看涨信号，加分)
         if "positive_divergence" in result.columns:
             # 正背离（底背离）加分较多
-            score[result["positive_divergence"]] += 25
+            score[result["positive_divergence"]] += 25  # TODO: 将魔法数字提取到配置中
         
         if "hidden_positive_divergence" in result.columns:
             # 隐藏正背离加分较少
-            score[result["hidden_positive_divergence"]] += 15
+            score[result["hidden_positive_divergence"]] += 15  # TODO: 将魔法数字提取到配置中
         
         # 2. 基于负背离的评分 (看跌信号，减分)
         if "negative_divergence" in result.columns:
             # 负背离（顶背离）减分较多
-            score[result["negative_divergence"]] -= 25
+            score[result["negative_divergence"]] -= 25  # TODO: 将魔法数字提取到配置中
         
         if "hidden_negative_divergence" in result.columns:
             # 隐藏负背离减分较少
-            score[result["hidden_negative_divergence"]] -= 15
+            score[result["hidden_negative_divergence"]] -= 15  # TODO: 将魔法数字提取到配置中
         
-        # 3. 背离持续性评分
+        # 3. 背离持续性评分  # TODO: 将魔法数字提取到配置中
         # 检查最近N天内是否有连续背离信号
-        window_size = min(5, len(score))
+        window_size = min(5, len(score))  # TODO: 将魔法数字提取到配置中
         if window_size > 0:
             for i in range(window_size, len(score)):
                 # 获取最近窗口的背离数据
@@ -503,7 +509,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return score
     
-    def macd_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
+    def macd_divergence(self, data: pd.DataFrame, lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         计算MACD与价格的背离
         
@@ -521,8 +527,8 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 调用通用背离计算方法
         return self.calculate(data, "macd", lookback_period, confirm_period)
     
-    def rsi_divergence(self, data: pd.DataFrame, period: int = 14, 
-                      lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
+    def rsi_divergence(self, data: pd.DataFrame, period: int = 14,  # TODO: 将魔法数字提取到配置中 
+                      lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         计算RSI与价格的背离
         
@@ -578,7 +584,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return self.calculate(data_with_rsi, f"RSI_{period}", lookback_period, confirm_period)
     
     def obv_divergence(self, data: pd.DataFrame, 
-                      lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:
+                      lookback_period: int = 20, confirm_period: int = 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
         计算OBV与价格的背离
         
@@ -656,10 +662,10 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals['sell_signal'] = False
         signals['neutral_signal'] = True  # 默认为中性信号
         signals['trend'] = 0  # 0表示中性
-        signals['score'] = 50.0  # 默认评分50分
+        signals['score'] = 50.0  # 默认评分50分  # TODO: 将魔法数字提取到配置中
         signals['signal_type'] = None
         signals['signal_desc'] = None
-        signals['confidence'] = 50.0
+        signals['confidence'] = 50.0  # TODO: 将魔法数字提取到配置中
         signals['risk_level'] = '中'
         signals['position_size'] = 0.0
         signals['stop_loss'] = None
@@ -683,7 +689,7 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 使用RSI背离
             if 'rsi' not in data.columns:
                 # 如果没有RSI列，则计算RSI背离
-                divergence_result = self.rsi_divergence(data, 14, lookback_period, confirm_period)
+                divergence_result = self.rsi_divergence(data, 14, lookback_period, confirm_period)  # TODO: 将魔法数字提取到配置中
             else:
                 # 如果有RSI列，则直接使用RSI背离
                 divergence_result = self.calculate(data, 'rsi', lookback_period, confirm_period)
@@ -735,82 +741,82 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if positive_divergence.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '正背离(底背离)'
                 signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标正背离：价格创新低，指标未创新低，看涨信号'
-                signals.loc[signals.index[i], 'confidence'] = 75
+                signals.loc[signals.index[i], 'confidence'] = 75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
-                signals.loc[signals.index[i], 'score'] = 75
+                signals.loc[signals.index[i], 'score'] = 75  # TODO: 将魔法数字提取到配置中
             
             elif negative_divergence.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '负背离(顶背离)'
                 signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标负背离：价格创新高，指标未创新高，看跌信号'
-                signals.loc[signals.index[i], 'confidence'] = 75
+                signals.loc[signals.index[i], 'confidence'] = 75  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'reversal_market'
-                signals.loc[signals.index[i], 'score'] = 25
+                signals.loc[signals.index[i], 'score'] = 25  # TODO: 将魔法数字提取到配置中
             
             elif hidden_positive.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '隐藏正背离'
                 signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏正背离：价格未创新低，指标创新低，看涨信号'
-                signals.loc[signals.index[i], 'confidence'] = 65
+                signals.loc[signals.index[i], 'confidence'] = 65  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
-                signals.loc[signals.index[i], 'score'] = 70
+                signals.loc[signals.index[i], 'score'] = 70  # TODO: 将魔法数字提取到配置中
             
             elif hidden_negative.iloc[i]:
                 signals.loc[signals.index[i], 'signal_type'] = '隐藏负背离'
                 signals.loc[signals.index[i], 'signal_desc'] = f'{indicator_name}指标隐藏负背离：价格未创新高，指标创新高，看跌信号'
-                signals.loc[signals.index[i], 'confidence'] = 65
+                signals.loc[signals.index[i], 'confidence'] = 65  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'market_env'] = 'trend_continuation'
-                signals.loc[signals.index[i], 'score'] = 30
+                signals.loc[signals.index[i], 'score'] = 30  # TODO: 将魔法数字提取到配置中
         
         # 成交量确认
         if 'volume' in data.columns:
             volume = data['volume']
-            vol_ma5 = volume.rolling(window=5).mean()
+            vol_ma5 = volume.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
             vol_ratio = volume / vol_ma5
             
             # 成交量放大确认
-            high_volume = vol_ratio > 1.5
+            high_volume = vol_ratio > 1.5  # TODO: 将魔法数字提取到配置中
             signals.loc[high_volume, 'volume_confirmation'] = True
             
             # 成交量确认增强信号可靠性
             for i in range(len(signals)):
                 if (signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]) and high_volume.iloc[i]:
                     current_confidence = signals['confidence'].iloc[i]
-                    signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)
+                    signals.loc[signals.index[i], 'confidence'] = min(90, current_confidence + 10)  # TODO: 将魔法数字提取到配置中
         
         # 更新风险等级和仓位建议
         for i in range(len(signals)):
             confidence = signals['confidence'].iloc[i]
             
             # 根据信号强度和置信度设置风险等级
-            if confidence >= 80:
+            if confidence >= 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'risk_level'] = '低'
-            elif confidence >= 65:
+            elif confidence >= 65:  # TODO: 将魔法数字提取到配置中
                 signals.loc[signals.index[i], 'risk_level'] = '中'
             else:
                 signals.loc[signals.index[i], 'risk_level'] = '高'
             
             # 设置建议仓位
             if signals['buy_signal'].iloc[i] or signals['sell_signal'].iloc[i]:
-                if confidence >= 80:
+                if confidence >= 80:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'position_size'] = 0.1  # 10%仓位
-                elif confidence >= 70:
-                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位
-                elif confidence >= 60:
-                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位
+                elif confidence >= 70:  # TODO: 将魔法数字提取到配置中
+                    signals.loc[signals.index[i], 'position_size'] = 0.07  # 7%仓位  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                elif confidence >= 60:  # TODO: 将魔法数字提取到配置中
+                    signals.loc[signals.index[i], 'position_size'] = 0.05  # 5%仓位  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算动态止损
         for i in range(len(signals)):
             if signals['buy_signal'].iloc[i]:
                 # 买入信号的止损
-                if i >= 5 and i < len(data):
+                if i >= 5 and i < len(data):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     # 使用前5个交易日的最低价作为止损参考
-                    stop_level = data['low'].iloc[i-5:i].min() * 0.98
+                    stop_level = data['low'].iloc[i-5:i].min() * 0.98  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'stop_loss'] = stop_level
             
             elif signals['sell_signal'].iloc[i]:
                 # 卖出信号的止损
-                if i >= 5 and i < len(data):
+                if i >= 5 and i < len(data):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     # 使用前5个交易日的最高价作为止损参考
-                    stop_level = data['high'].iloc[i-5:i].max() * 1.02
+                    stop_level = data['high'].iloc[i-5:i].max() * 1.02  # TODO: 将魔法数字提取到配置中
                     signals.loc[signals.index[i], 'stop_loss'] = stop_level
         
         return signals 
@@ -871,7 +877,8 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DIVERGENCE', params)
             if not is_valid:
-                from utils.dependency_injection import get_logger
+                from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"DIVERGENCE参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
@@ -888,4 +895,4 @@ class Divergence(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def calculate_confidence_Divergence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中

@@ -29,7 +29,7 @@ from enums.period import Period
 logger = get_logger(__name__)
 
 
-class BacktestDataManager:
+class BacktestDataAccessManager:
     """
     回测数据管理器
     

@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 TECHNICAL_INDICATORS 指标
 
@@ -13,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,6 +27,9 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化TECHNICAL_INDICATORS指标
         
@@ -43,7 +47,7 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
     
     def _get_default_parameters_technicalindicators(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Indicators(self, **kwargs):
         """
@@ -55,6 +59,7 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -70,11 +75,11 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -116,11 +121,11 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         """计算原始评分"""
         if not self.has_result():
             self.calculate_Indicators(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
     
     def calculate_confidence_Indicators(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Indicators(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -136,4 +141,55 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算指标值
+        
+        Args:
+            data: 输入数据，包含OHLCV等字段
+            
+        Returns:
+            pd.DataFrame: 包含指标计算结果的数据框
+        """
+        if not self.validate_data(data):
+            raise ValueError("输入数据不符合要求")
+        
+        # 预处理数据
+        processed_data = self.preprocess_data(data)
+        
+        # TODO: 实现具体的指标计算逻辑
+        result = processed_data.copy()
+        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        
+        # 后处理结果
+        result = self.postprocess_result(result)
+        
+        # 保存结果
+        self._result = result
+        
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

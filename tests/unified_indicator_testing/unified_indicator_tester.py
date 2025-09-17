@@ -1144,6 +1144,7 @@ except ImportError as e:
 # 导入真实的SelectionStrategyTester
 try:
     from tests.unified_indicator_testing.components.selection_strategy_tester import SelectionStrategyTester
+from db.sql_manager import SQLManager, QueryType
     logger.info("成功导入SelectionStrategyTester")
 except ImportError as e:
     logger.warning(f"导入SelectionStrategyTester失败: {e}，使用占位符实现")

@@ -1,28 +1,46 @@
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 #!/usr/bin/env python3
 """
 向量化性能提升器
-专注于将向量化覆盖率从30.5%提升到37.2%
+专注于将向量化覆盖率从30.5%提升到37.2%  # TODO: 将魔法数字提取到配置中
 
 实现19个高价值指标的向量化：
 1. 振荡器类：5个
 2. 趋势指标类：4个
-3. 成交量指标类：4个
-4. 波动率指标类：2个
-5. 动量指标类：2个
-6. 统计指标类：2个
+3. 成交量指标类：4个  # TODO: 将魔法数字提取到配置中
+4. 波动率指标类：2个  # TODO: 将魔法数字提取到配置中
+5. 动量指标类：2个  # TODO: 将魔法数字提取到配置中
+6. 统计指标类：2个  # TODO: 将魔法数字提取到配置中
 """
 
 import numpy as np
 import pandas as pd
 import time
 from typing import Dict, List, Any, Optional
+from db.sql_manager import SQLManager, QueryType
 import warnings
 warnings.filterwarnings('ignore')
 
-class VectorizationPerformanceBoost:
+class VectorizationPerformanceBoost(BaseIndicator):
+"""
+VectorizationPerformanceBoost - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 25个方法分为以下职责组:
+  * 核心功能方法 (约8个)
+  * 辅助工具方法 (约8个)  
+  * 接口适配方法 (约8个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """向量化性能提升器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.vectorized_indicators = {}
         self.performance_stats = {}
         self._register_indicators()
@@ -76,17 +94,17 @@ class VectorizationPerformanceBoost:
             'UNIFIED_MA': self.unified_ma,
         })
     
-    def enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def enhanced_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """增强RSI：多周期RSI + 信号检测"""
         close = data['close'].values
         
         # 计算多周期RSI
-        rsi_14 = self._rsi_vectorized(close, 14)
-        rsi_21 = self._rsi_vectorized(close, 21)
-        rsi_9 = self._rsi_vectorized(close, 9)
+        rsi_14 = self._rsi_vectorized(close, 14)  # TODO: 将魔法数字提取到配置中
+        rsi_21 = self._rsi_vectorized(close, 21)  # TODO: 将魔法数字提取到配置中
+        rsi_9 = self._rsi_vectorized(close, 9)  # TODO: 将魔法数字提取到配置中
         
         # RSI信号
-        rsi_signal = np.where(rsi_14 > 70, -1, np.where(rsi_14 < 30, 1, 0))
+        rsi_signal = np.where(rsi_14 > 70, -1, np.where(rsi_14 < 30, 1, 0))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'RSI_14': rsi_14,
@@ -95,7 +113,7 @@ class VectorizationPerformanceBoost:
             'RSI_Signal': rsi_signal
         }, index=data.index)
     
-    def enhanced_kdj(self, data: pd.DataFrame, n: int = 9) -> pd.DataFrame:
+    def enhanced_kdj(self, data: pd.DataFrame, n: int = 9) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """增强KDJ：标准KDJ + 信号生成"""
         high = data['high'].values
         low = data['low'].values
@@ -106,16 +124,16 @@ class VectorizationPerformanceBoost:
         hhv = pd.Series(high).rolling(window=n).max().values
         
         rsv = (close - llv) / (hhv - llv) * 100
-        rsv = np.nan_to_num(rsv, 50.0)
+        rsv = np.nan_to_num(rsv, 50.0)  # TODO: 将魔法数字提取到配置中
         
         # 指数平滑
-        k = self._ema_vectorized(rsv, 3)
-        d = self._ema_vectorized(k, 3)
-        j = 3 * k - 2 * d
+        k = self._ema_vectorized(rsv, 3)  # TODO: 将魔法数字提取到配置中
+        d = self._ema_vectorized(k, 3)  # TODO: 将魔法数字提取到配置中
+        j = 3 * k - 2 * d  # TODO: 将魔法数字提取到配置中
         
         # KDJ信号
-        kdj_signal = np.where((k > d) & (j > 80), 1, 
-                     np.where((k < d) & (j < 20), -1, 0))
+        kdj_signal = np.where((k > d) & (j > 80), 1,  # TODO: 将魔法数字提取到配置中 
+                     np.where((k < d) & (j < 20), -1, 0))  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'K': k,
@@ -124,7 +142,7 @@ class VectorizationPerformanceBoost:
             'KDJ_Signal': kdj_signal
         }, index=data.index)
     
-    def stoch_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def stoch_rsi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """随机RSI"""
         close = data['close'].values
         
@@ -136,25 +154,25 @@ class VectorizationPerformanceBoost:
         rsi_max = pd.Series(rsi).rolling(window=period).max().values
         
         stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
-        stoch_rsi = np.nan_to_num(stoch_rsi, 50.0)
+        stoch_rsi = np.nan_to_num(stoch_rsi, 50.0)  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'StochRSI': stoch_rsi
         }, index=data.index)
     
-    def cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def cci(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """商品通道指数"""
         high = data['high'].values
         low = data['low'].values
         close = data['close'].values
         
         # 典型价格
-        tp = (high + low + close) / 3
+        tp = (high + low + close) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         tp_sma = pd.Series(tp).rolling(window=period).mean().values
         mad = pd.Series(tp).rolling(window=period).apply(
             lambda x: np.mean(np.abs(x - x.mean()))).values
         
-        cci = (tp - tp_sma) / (0.015 * mad)
+        cci = (tp - tp_sma) / (0.015 * mad)  # TODO: 将魔法数字提取到配置中
         cci = np.nan_to_num(cci, 0.0)
         
         return pd.DataFrame({
@@ -171,7 +189,7 @@ class VectorizationPerformanceBoost:
                      np.where(cci_values < -100, 1, 0))
         
         # CCI平滑
-        cci_smooth = pd.Series(cci_values).rolling(window=5).mean().values
+        cci_smooth = pd.Series(cci_values).rolling(window=5).mean().values  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'CCI': cci_values,
@@ -183,16 +201,16 @@ class VectorizationPerformanceBoost:
         """增强MACD：多参数MACD"""
         close = data['close'].values
         
-        # 标准MACD (12, 26, 9)
-        ema12 = self._ema_vectorized(close, 12)
-        ema26 = self._ema_vectorized(close, 26)
+        # 标准MACD (12, 26, 9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        ema12 = self._ema_vectorized(close, 12)  # TODO: 将魔法数字提取到配置中
+        ema26 = self._ema_vectorized(close, 26)  # TODO: 将魔法数字提取到配置中
         macd = ema12 - ema26
-        signal = self._ema_vectorized(macd, 9)
+        signal = self._ema_vectorized(macd, 9)  # TODO: 将魔法数字提取到配置中
         histogram = macd - signal
         
-        # 长期MACD (19, 39, 9)
-        ema19 = self._ema_vectorized(close, 19)
-        ema39 = self._ema_vectorized(close, 39)
+        # 长期MACD (19, 39, 9)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        ema19 = self._ema_vectorized(close, 19)  # TODO: 将魔法数字提取到配置中
+        ema39 = self._ema_vectorized(close, 39)  # TODO: 将魔法数字提取到配置中
         macd_long = ema19 - ema39
         
         # MACD信号
@@ -207,7 +225,7 @@ class VectorizationPerformanceBoost:
             'MACD_Signal': macd_signal
         }, index=data.index)
     
-    def trix(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def trix(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """TRIX三重指数平滑"""
         close = data['close'].values
         
@@ -220,13 +238,13 @@ class VectorizationPerformanceBoost:
         trix = np.zeros(len(close))
         for i in range(1, len(ema3)):
             if ema3[i-1] != 0:
-                trix[i] = (ema3[i] - ema3[i-1]) / ema3[i-1] * 10000
+                trix[i] = (ema3[i] - ema3[i-1]) / ema3[i-1] * 10000  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'TRIX': trix
         }, index=data.index)
     
-    def dmi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def dmi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """趋向指标DMI"""
         high = data['high'].values
         low = data['low'].values
@@ -268,13 +286,13 @@ class VectorizationPerformanceBoost:
         adx = dmi_result['ADX'].values
         
         # DMI信号
-        dmi_signal = np.where((di_plus > di_minus) & (adx > 25), 1,
-                     np.where((di_plus < di_minus) & (adx > 25), -1, 0))
+        dmi_signal = np.where((di_plus > di_minus) & (adx > 25), 1,  # TODO: 将魔法数字提取到配置中
+                     np.where((di_plus < di_minus) & (adx > 25), -1, 0))  # TODO: 将魔法数字提取到配置中
         
         # 趋势强度
-        trend_strength = np.where(adx > 50, 3,  # 极强
-                         np.where(adx > 25, 2,  # 强
-                         np.where(adx > 20, 1, 0)))  # 弱
+        trend_strength = np.where(adx > 50, 3,  # 极强  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                         np.where(adx > 25, 2,  # 强  # TODO: 将魔法数字提取到配置中
+                         np.where(adx > 20, 1, 0)))  # 弱  # TODO: 将魔法数字提取到配置中
         
         result = dmi_result.copy()
         result['DMI_Signal'] = dmi_signal
@@ -282,7 +300,7 @@ class VectorizationPerformanceBoost:
         
         return result
     
-    def mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def mfi(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """资金流量指数"""
         high = data['high'].values
         low = data['low'].values
@@ -290,7 +308,7 @@ class VectorizationPerformanceBoost:
         volume = data['volume'].values
         
         # 典型价格
-        tp = (high + low + close) / 3
+        tp = (high + low + close) / 3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         money_flow = tp * volume
         
         # 正负资金流量
@@ -313,8 +331,8 @@ class VectorizationPerformanceBoost:
         mfi_values = mfi_result['MFI'].values
         
         # MFI信号
-        mfi_signal = np.where(mfi_values > 80, -1,
-                     np.where(mfi_values < 20, 1, 0))
+        mfi_signal = np.where(mfi_values > 80, -1,  # TODO: 将魔法数字提取到配置中
+                     np.where(mfi_values < 20, 1, 0))  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'MFI': mfi_values,
@@ -344,7 +362,7 @@ class VectorizationPerformanceBoost:
             'OBV_MA': obv_ma
         }, index=data.index)
     
-    def vr(self, data: pd.DataFrame, period: int = 26) -> pd.DataFrame:
+    def vr(self, data: pd.DataFrame, period: int = 26) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """成交量比率VR"""
         close = data['close'].values
         volume = data['volume'].values
@@ -365,7 +383,7 @@ class VectorizationPerformanceBoost:
             'VR': vr
         }, index=data.index)
     
-    def keltner_channel(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def keltner_channel(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """Keltner通道"""
         high = data['high'].values
         low = data['low'].values
@@ -391,7 +409,7 @@ class VectorizationPerformanceBoost:
             'KC_Lower': lower
         }, index=data.index)
     
-    def wma(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:
+    def wma(self, data: pd.DataFrame, period: int = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """加权移动平均"""
         close = data['close'].values
         
@@ -414,7 +432,7 @@ class VectorizationPerformanceBoost:
             'Momentum': momentum
         }, index=data.index)
     
-    def williams_r(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:
+    def williams_r(self, data: pd.DataFrame, period: int = 14) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """威廉指标"""
         high = data['high'].values
         low = data['low'].values
@@ -424,7 +442,7 @@ class VectorizationPerformanceBoost:
         llv = pd.Series(low).rolling(window=period).min().values
         
         wr = (hhv - close) / (hhv - llv) * (-100)
-        wr = np.nan_to_num(wr, -50.0)
+        wr = np.nan_to_num(wr, -50.0)  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'WR': wr
@@ -436,8 +454,8 @@ class VectorizationPerformanceBoost:
         wr_values = wr_result['WR'].values
         
         # WR信号
-        wr_signal = np.where(wr_values > -20, -1,
-                    np.where(wr_values < -80, 1, 0))
+        wr_signal = np.where(wr_values > -20, -1,  # TODO: 将魔法数字提取到配置中
+                    np.where(wr_values < -80, 1, 0))  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'WR': wr_values,
@@ -448,10 +466,10 @@ class VectorizationPerformanceBoost:
         """统一移动平均（多周期）"""
         close = data['close'].values
         
-        ma5 = pd.Series(close).rolling(window=5).mean().values
+        ma5 = pd.Series(close).rolling(window=5).mean().values  # TODO: 将魔法数字提取到配置中
         ma10 = pd.Series(close).rolling(window=10).mean().values
-        ma20 = pd.Series(close).rolling(window=20).mean().values
-        ma60 = pd.Series(close).rolling(window=60).mean().values
+        ma20 = pd.Series(close).rolling(window=20).mean().values  # TODO: 将魔法数字提取到配置中
+        ma60 = pd.Series(close).rolling(window=60).mean().values  # TODO: 将魔法数字提取到配置中
         
         return pd.DataFrame({
             'MA5': ma5,
@@ -474,7 +492,7 @@ class VectorizationPerformanceBoost:
         rsi = 100 - (100 / (1 + rs))
         
         # 补齐第一个值
-        rsi = np.concatenate([[50], rsi])
+        rsi = np.concatenate([[50], rsi])  # TODO: 将魔法数字提取到配置中
         
         return rsi
     
@@ -515,7 +533,7 @@ class VectorizationPerformanceBoost:
     
     def get_coverage_report(self) -> Dict[str, Any]:
         """获取覆盖率报告"""
-        total_indicators = 105  # 系统总指标数
+        total_indicators = 105  # 系统总指标数  # TODO: 将魔法数字提取到配置中
         vectorized_count = len(self.vectorized_indicators)
         coverage_rate = (vectorized_count / total_indicators) * 100
         
@@ -542,7 +560,7 @@ class VectorizationPerformanceBoost:
             'overall_coverage': coverage_rate,
             'vectorized_count': vectorized_count,
             'total_indicators': total_indicators,
-            'target_achieved': coverage_rate >= 37.2,
+            'target_achieved': coverage_rate >= 37.2,  # TODO: 将魔法数字提取到配置中
             'category_breakdown': category_stats
         }
 
@@ -552,14 +570,14 @@ def main():
     print("🚀 开始向量化性能提升测试...")
     
     # 创建测试数据
-    np.random.seed(42)
-    dates = pd.date_range('2023-01-01', periods=252, freq='D')
+    np.random.seed(42)  # TODO: 将魔法数字提取到配置中
+    dates = pd.date_range('2023-01-01', periods=252, freq='D')  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     test_data = pd.DataFrame({
-        'open': np.random.randn(252).cumsum() + 100,
-        'high': np.random.randn(252).cumsum() + 105,
-        'low': np.random.randn(252).cumsum() + 95,
-        'close': np.random.randn(252).cumsum() + 100,
-        'volume': np.random.randint(1000000, 10000000, 252)
+        'open': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'high': np.random.randn(252).cumsum() + 105,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'low': np.random.randn(252).cumsum() + 95,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        'close': np.random.randn(252).cumsum() + 100,  # TODO: 将魔法数字提取到配置中
+        'volume': np.random.randint(1000000, 10000000, 252)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     }, index=dates)
     
     # 创建向量化器

@@ -23,9 +23,9 @@ import pandas as pd
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(project_root)
 
-from config import get_config
+from config.unified_config_manager import get_config
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from monitoring.production_performance_monitor import ProductionPerformanceMonitor
 from utils.logger import get_logger
 

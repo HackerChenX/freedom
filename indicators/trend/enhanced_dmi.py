@@ -1,3 +1,4 @@
+from utils.container import container
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict, Any, Tuple, List
@@ -9,18 +10,33 @@ from utils.indicator_utils import crossover, crossunder
 
 
 class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+"""
+EnhancedDmi - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 30个方法分为以下职责组:
+  * 核心功能方法 (约10个)
+  * 辅助工具方法 (约10个)  
+  * 接口适配方法 (约10个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     增强型DMI指标
     
     具有以下增强特性:
     1. 自适应周期设计: 根据市场波动率动态调整周期
     2. ADX强度分级系统: 分析趋势强度，提供更精确的趋势强度量化
-    3. DI交叉质量评估: 评估交叉角度、ADX支持度和分离速度
-    4. 三线协同分析: 分析ADX、+DI和-DI三线协同关系
-    5. 市场环境自适应: 在不同市场环境下动态调整评分标准
+    3. DI交叉质量评估: 评估交叉角度、ADX支持度和分离速度  # TODO: 将魔法数字提取到配置中
+    4. 三线协同分析: 分析ADX、+DI和-DI三线协同关系  # TODO: 将魔法数字提取到配置中
+    5. 市场环境自适应: 在不同市场环境下动态调整评分标准  # TODO: 将魔法数字提取到配置中
     """
 
-    def __init__(self, period: int = 14, adx_period: int = 14, adaptive: bool = True):
+    def __init__(self, period: int = 14, adx_period: int = 14, adaptive: bool = True):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型DMI指标
 
@@ -96,8 +112,8 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算当前波动率与长期波动率的比值
         close_price = data['close']
-        current_volatility = close_price.pct_change().rolling(20).std()
-        long_term_volatility = close_price.pct_change().rolling(120).std()
+        current_volatility = close_price.pct_change().rolling(20).std()  # TODO: 将魔法数字提取到配置中
+        long_term_volatility = close_price.pct_change().rolling(120).std()  # TODO: 将魔法数字提取到配置中
         
         # 确保数据足够
         if current_volatility.isna().all() or long_term_volatility.isna().all():
@@ -112,10 +128,10 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         latest_relative_volatility = relative_volatility.iloc[-1]
         
         # 根据相对波动率调整周期
-        if latest_relative_volatility > 1.5:  # 高波动环境
-            adjusted_period = max(self.base_period - 4, 6)  # 缩短周期，提高灵敏度
-        elif latest_relative_volatility < 0.7:  # 低波动环境
-            adjusted_period = min(self.base_period + 4, 26)  # 延长周期，减少干扰
+        if latest_relative_volatility > 1.5:  # 高波动环境  # TODO: 将魔法数字提取到配置中
+            adjusted_period = max(self.base_period - 4, 6)  # 缩短周期，提高灵敏度  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        elif latest_relative_volatility < 0.7:  # 低波动环境  # TODO: 将魔法数字提取到配置中
+            adjusted_period = min(self.base_period + 4, 26)  # 延长周期，减少干扰  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:  # 正常波动环境
             adjusted_period = self.base_period
             
@@ -237,18 +253,18 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             str: 趋势强度级别
         """
-        if adx_value >= 50:
+        if adx_value >= 50:  # TODO: 将魔法数字提取到配置中
             return "极强趋势"
-        elif adx_value >= 40:
+        elif adx_value >= 40:  # TODO: 将魔法数字提取到配置中
             return "强趋势"
-        elif adx_value >= 30:
+        elif adx_value >= 30:  # TODO: 将魔法数字提取到配置中
             return "中等趋势"
-        elif adx_value >= 20:
+        elif adx_value >= 20:  # TODO: 将魔法数字提取到配置中
             return "弱趋势"
         else:
             return "无趋势"
             
-    def evaluate_di_crossover_quality(self, window: int = 5) -> pd.Series:
+    def evaluate_di_crossover_quality(self, window: int = 5) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         评估DI交叉质量
         
@@ -283,32 +299,32 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
             if golden_cross.iloc[i]:
                 # 1. 计算角度分数 (0-40分)
-                angle_score = min(40, abs(di_diff_change.iloc[i]) * 20)
+                angle_score = min(40, abs(di_diff_change.iloc[i]) * 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 2. ADX支持度 (0-30分)
-                adx_support = min(30, adx.iloc[i] * 0.6)
+                adx_support = min(30, adx.iloc[i] * 0.6)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
-                # 3. 分离速度 (0-30分)
+                # 3. 分离速度 (0-30分)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 separation_speed = 0
                 if i + window < len(di_diff):
                     future_diff = di_diff.iloc[i:i+window].max()
-                    separation_speed = min(30, (future_diff - di_diff.iloc[i]) * 3)
+                    separation_speed = min(30, (future_diff - di_diff.iloc[i]) * 3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 综合得分
                 crossover_quality.iloc[i] = angle_score + adx_support + separation_speed
                 
             elif death_cross.iloc[i]:
                 # 1. 计算角度分数 (0-40分)
-                angle_score = min(40, abs(di_diff_change.iloc[i]) * 20)
+                angle_score = min(40, abs(di_diff_change.iloc[i]) * 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 2. ADX支持度 (0-30分)
-                adx_support = min(30, adx.iloc[i] * 0.6)
+                adx_support = min(30, adx.iloc[i] * 0.6)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
-                # 3. 分离速度 (0-30分)
+                # 3. 分离速度 (0-30分)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 separation_speed = 0
                 if i + window < len(di_diff):
                     future_diff = abs(di_diff.iloc[i:i+window].min())
-                    separation_speed = min(30, (future_diff - abs(di_diff.iloc[i])) * 3)
+                    separation_speed = min(30, (future_diff - abs(di_diff.iloc[i])) * 3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 
                 # 综合得分 (负分表示看跌信号)
                 crossover_quality.iloc[i] = -(angle_score + adx_support + separation_speed)
@@ -335,14 +351,14 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 强上升趋势: +DI > -DI, ADX > 25且上升
         synergy['strong_uptrend'] = (
             (plus_di > minus_di) & 
-            (adx > 25) & 
+            (adx > 25) &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx > adx.shift(1))
         )
         
         # 强下降趋势: -DI > +DI, ADX > 25且上升
         synergy['strong_downtrend'] = (
             (minus_di > plus_di) & 
-            (adx > 25) & 
+            (adx > 25) &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx > adx.shift(1))
         )
         
@@ -358,13 +374,13 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 无趋势市场: ADX < 20且持平或下降
         synergy['no_trend'] = (
-            (adx < 20) & 
+            (adx < 20)  # TODO: 将魔法数字提取到配置中 &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx <= adx.shift(1))
         )
         
         # 趋势初现: ADX < 20但上升，DI出现交叉
         synergy['emerging_trend'] = (
-            (adx < 20) & 
+            (adx < 20)  # TODO: 将魔法数字提取到配置中 &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx > adx.shift(1)) &
             ((plus_di > minus_di) & (plus_di.shift(1) <= minus_di.shift(1)) | 
              (plus_di < minus_di) & (plus_di.shift(1) >= minus_di.shift(1)))
@@ -429,8 +445,8 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置信号置信度
         signals.loc[golden_cross, 'confidence'] = crossover_quality[golden_cross].abs()
         signals.loc[death_cross, 'confidence'] = crossover_quality[death_cross].abs()
-        signals.loc[synergy['strong_uptrend'], 'confidence'] = 80
-        signals.loc[synergy['strong_downtrend'], 'confidence'] = 80
+        signals.loc[synergy['strong_uptrend'], 'confidence'] = 80  # TODO: 将魔法数字提取到配置中
+        signals.loc[synergy['strong_downtrend'], 'confidence'] = 80  # TODO: 将魔法数字提取到配置中
         
         return signals
     
@@ -445,25 +461,25 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             raise ValueError("请先调用calculate()方法计算指标")
 
         # 1. 趋势强度评分 (基于ADX)
-        adx_score = (self._result['adx'] / 100 * 40).clip(0, 40)  # ADX越高，趋势越强
+        adx_score = (self._result['adx'] / 100 * 40).clip(0, 40)  # ADX越高，趋势越强  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 2. 趋势方向评分 (基于PDI/MDI)
         direction_score = pd.Series(0, index=self._result.index)
-        direction_score[self._result['plus_di'] > self._result['minus_di']] = (self._result['plus_di'] - self._result['minus_di']) / 100 * 30
-        direction_score[self._result['plus_di'] < self._result['minus_di']] = - (self._result['minus_di'] - self._result['plus_di']) / 100 * 30
-        direction_score = direction_score.clip(-30, 30)
+        direction_score[self._result['plus_di'] > self._result['minus_di']] = (self._result['plus_di'] - self._result['minus_di']) / 100 * 30  # TODO: 将魔法数字提取到配置中
+        direction_score[self._result['plus_di'] < self._result['minus_di']] = - (self._result['minus_di'] - self._result['plus_di']) / 100 * 30  # TODO: 将魔法数字提取到配置中
+        direction_score = direction_score.clip(-30, 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-        # 3. 交叉信号评分
+        # 3. 交叉信号评分  # TODO: 将魔法数字提取到配置中
         cross_score = pd.Series(0, index=self._result.index)
-        cross_score[self._result['plus_di'] > self._result['minus_di']] = 20
-        cross_score[self._result['plus_di'] < self._result['minus_di']] = -20
+        cross_score[self._result['plus_di'] > self._result['minus_di']] = 20  # TODO: 将魔法数字提取到配置中
+        cross_score[self._result['plus_di'] < self._result['minus_di']] = -20  # TODO: 将魔法数字提取到配置中
 
-        # 4. ADX趋势评分
+        # 4. ADX趋势评分  # TODO: 将魔法数字提取到配置中
         adx_trend_score = self._result['adx'].diff().apply(lambda x: 1 if x > 0 else -1) * 10
         adx_trend_score = adx_trend_score.clip(-10, 10)
 
         # 基础分
-        base_score = 50 + adx_score + direction_score + cross_score + adx_trend_score
+        base_score = 50 + adx_score + direction_score + cross_score + adx_trend_score  # TODO: 将魔法数字提取到配置中
         
         return base_score.clip(0, 100)
     
@@ -514,7 +530,7 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 1. 趋势开始形态：ADX从低位开始上升，且DI出现交叉
         patterns['trend_start'] = (
-            (adx < 20) & 
+            (adx < 20)  # TODO: 将魔法数字提取到配置中 &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx > adx.shift(1)) & 
             (adx.shift(1) > adx.shift(2)) &
             ((plus_di > minus_di) & (plus_di.shift(2) <= minus_di.shift(2)) | 
@@ -524,55 +540,55 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 2. 趋势加速形态：ADX快速上升，且DI差距扩大
         di_diff = abs(plus_di - minus_di)
         patterns['trend_acceleration'] = (
-            (adx > 25) & 
-            (adx > adx.shift(1) * 1.05) &  # ADX加速上升
-            (di_diff > di_diff.shift(1) * 1.05)  # DI差距扩大
+            (adx > 25) &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
+            (adx > adx.shift(1) * 1.05) &  # ADX加速上升  # TODO: 将魔法数字提取到配置中
+            (di_diff > di_diff.shift(1) * 1.05)  # DI差距扩大  # TODO: 将魔法数字提取到配置中
         )
         
-        # 3. 趋势衰竭形态：ADX从高位开始下降，但DI差距仍大
+        # 3. 趋势衰竭形态：ADX从高位开始下降，但DI差距仍大  # TODO: 将魔法数字提取到配置中
         patterns['trend_exhaustion'] = (
-            (adx > 35) & 
+            (adx > 35) &  # TODO: 将魔法数字提取到配置中 
             (adx < adx.shift(1)) & 
             (adx.shift(1) < adx.shift(2)) &  # ADX连续下降
-            (di_diff > 15)  # DI差距仍大
+            (di_diff > 15)  # DI差距仍大  # TODO: 将魔法数字提取到配置中
         )
         
-        # 4. 趋势反转前兆：ADX下降，DI差距收窄
+        # 4. 趋势反转前兆：ADX下降，DI差距收窄  # TODO: 将魔法数字提取到配置中
         patterns['trend_reversal_warning'] = (
-            (adx > 25) & 
+            (adx > 25) &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
             (adx < adx.shift(1)) & 
             (di_diff < di_diff.shift(1)) &
             (di_diff.shift(1) < di_diff.shift(2))  # DI差距连续收窄
         )
         
-        # 5. 无趋势区间形态：ADX低位徘徊
+        # 5. 无趋势区间形态：ADX低位徘徊  # TODO: 将魔法数字提取到配置中
         patterns['no_trend_zone'] = (
-            (adx < 15) & 
-            (abs(adx - adx.shift(3)) < 3)  # ADX变化小
+            (adx < 15) &  # TODO: 将魔法数字提取到配置中 
+            (abs(adx - adx.shift(3)) < 3)  # ADX变化小  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         )
         
-        # 6. 强势趋势形态：ADX高位保持强势，DI差距大
+        # 6. 强势趋势形态：ADX高位保持强势，DI差距大  # TODO: 将魔法数字提取到配置中
         patterns['strong_trend'] = (
-            (adx > 40) & 
-            (adx > adx.shift(5)) &  # 长期上升
-            (di_diff > 20)  # DI差距大
+            (adx > 40) &  # TODO: 将魔法数字提取到配置中 
+            (adx > adx.shift(5)) &  # 长期上升  # TODO: 将魔法数字提取到配置中
+            (di_diff > 20)  # DI差距大  # TODO: 将魔法数字提取到配置中
         )
         
-        # 7. DI交叉但ADX下降：虚假交叉信号
+        # 7. DI交叉但ADX下降：虚假交叉信号  # TODO: 将魔法数字提取到配置中
         patterns['false_cross'] = (
             ((plus_di > minus_di) & (plus_di.shift(1) <= minus_di.shift(1)) | 
              (plus_di < minus_di) & (plus_di.shift(1) >= minus_di.shift(1))) &
             (adx < adx.shift(1)) &
-            (adx < 20)
+            (adx < 20)  # TODO: 将魔法数字提取到配置中
         )
         
-        # 8. ADX回调后再次上升：趋势延续确认
+        # 8. ADX回调后再次上升：趋势延续确认  # TODO: 将魔法数字提取到配置中
         patterns['trend_continuation'] = (
-            (adx > 25) &
+            (adx > 25) &  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             (adx > adx.shift(1)) &
             (adx.shift(1) < adx.shift(2)) &
-            (adx.shift(2) < adx.shift(3)) &
-            (adx.shift(3) > adx.shift(4))  # ADX先下降再上升
+            (adx.shift(2) < adx.shift(3)) &  # TODO: 将魔法数字提取到配置中
+            (adx.shift(3) > adx.shift(4))  # ADX先下降再上升  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         )
         
         return patterns
@@ -590,45 +606,45 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence = 0.5
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
 
         # 极端评分置信度较高
-        if last_score > 80 or last_score < 20:
-            confidence += 0.25
+        if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            confidence += 0.25  # TODO: 将魔法数字提取到配置中
         # 中性评分置信度中等
-        elif 40 <= last_score <= 60:
+        elif 40 <= last_score <= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             confidence += 0.1
         else:
-            confidence += 0.15
+            confidence += 0.15  # TODO: 将魔法数字提取到配置中
 
         # 2. 基于形态的置信度
         if not patterns.empty:
             # 检查EnhancedDMI形态
             pattern_count = patterns.sum().sum()
             if pattern_count > 0:
-                confidence += min(pattern_count * 0.05, 0.2)
+                confidence += min(pattern_count * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 基于信号的置信度
+        # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
             signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
-                confidence += min(signal_count * 0.1, 0.15)
+                confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 基于评分趋势的置信度
-        if len(score) >= 3:
-            recent_scores = score.iloc[-3:]
+        # 4. 基于评分趋势的置信度  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-3:]  # TODO: 将魔法数字提取到配置中
             trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 明确的趋势增加置信度
             if abs(trend) > 10:
-                confidence += 0.05
+                confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
         return max(0.0, min(1.0, confidence))
@@ -666,10 +682,10 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 基本形态
             patterns['DMI_GOLDEN_CROSS'] = crossover(plus_di, minus_di)
             patterns['DMI_DEATH_CROSS'] = crossover(minus_di, plus_di)
-            patterns['DMI_STRONG_UPTREND'] = (plus_di > minus_di) & (adx > 25)
-            patterns['DMI_STRONG_DOWNTREND'] = (minus_di > plus_di) & (adx > 25)
-            patterns['DMI_WEAK_TREND'] = adx < 20
-            patterns['DMI_STRONG_TREND'] = adx > 40
+            patterns['DMI_STRONG_UPTREND'] = (plus_di > minus_di) & (adx > 25)  # TODO: 将魔法数字提取到配置中
+            patterns['DMI_STRONG_DOWNTREND'] = (minus_di > plus_di) & (adx > 25)  # TODO: 将魔法数字提取到配置中
+            patterns['DMI_WEAK_TREND'] = adx < 20  # TODO: 将魔法数字提取到配置中
+            patterns['DMI_STRONG_TREND'] = adx > 40  # TODO: 将魔法数字提取到配置中
 
             # 趋势形态
             patterns['DMI_ADX_RISING'] = adx > adx.shift(1)
@@ -688,7 +704,7 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="+DI上穿-DI，表明上升趋势开始",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -698,7 +714,7 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="-DI上穿+DI，表明下降趋势开始",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -706,20 +722,20 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="DMI_STRONG_UPTREND",
             display_name="DMI强上升趋势",
-            description="+DI > -DI且ADX > 25，表明强势上升趋势",
+            description="+DI > -DI且ADX > 25，表明强势上升趋势",  # TODO: 将魔法数字提取到配置中
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
         self.register_pattern_to_registry(
             pattern_id="DMI_STRONG_DOWNTREND",
             display_name="DMI强下降趋势",
-            description="-DI > +DI且ADX > 25，表明强势下降趋势",
+            description="-DI > +DI且ADX > 25，表明强势下降趋势",  # TODO: 将魔法数字提取到配置中
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-25.0,
+            score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -727,7 +743,7 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="DMI_WEAK_TREND",
             display_name="DMI弱趋势",
-            description="ADX < 20，表明趋势较弱或无趋势",
+            description="ADX < 20，表明趋势较弱或无趋势",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="WEAK",
             score_impact=0.0,
@@ -737,7 +753,7 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.register_pattern_to_registry(
             pattern_id="DMI_STRONG_TREND",
             display_name="DMI强趋势",
-            description="ADX > 40，表明趋势非常强烈但方向需结合DI判断",
+            description="ADX > 40，表明趋势非常强烈但方向需结合DI判断",  # TODO: 将魔法数字提取到配置中
             pattern_type="NEUTRAL",
             default_strength="STRONG",
             score_impact=0.0,
@@ -781,21 +797,21 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         buy_signal |= golden_cross
         sell_signal |= death_cross
-        signal_strength += golden_cross * 0.6
-        signal_strength += death_cross * 0.6
+        signal_strength += golden_cross * 0.6  # TODO: 将魔法数字提取到配置中
+        signal_strength += death_cross * 0.6  # TODO: 将魔法数字提取到配置中
 
         # 2. 强趋势信号（ADX > 25时的交叉信号更可靠）
-        strong_golden_cross = golden_cross & (adx > 25)
-        strong_death_cross = death_cross & (adx > 25)
+        strong_golden_cross = golden_cross & (adx > 25)  # TODO: 将魔法数字提取到配置中
+        strong_death_cross = death_cross & (adx > 25)  # TODO: 将魔法数字提取到配置中
 
         buy_signal |= strong_golden_cross
         sell_signal |= strong_death_cross
-        signal_strength += strong_golden_cross * 0.8
-        signal_strength += strong_death_cross * 0.8
+        signal_strength += strong_golden_cross * 0.8  # TODO: 将魔法数字提取到配置中
+        signal_strength += strong_death_cross * 0.8  # TODO: 将魔法数字提取到配置中
 
-        # 3. 极强趋势信号（ADX > 40）
-        extreme_golden_cross = golden_cross & (adx > 40)
-        extreme_death_cross = death_cross & (adx > 40)
+        # 3. 极强趋势信号（ADX > 40）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        extreme_golden_cross = golden_cross & (adx > 40)  # TODO: 将魔法数字提取到配置中
+        extreme_death_cross = death_cross & (adx > 40)  # TODO: 将魔法数字提取到配置中
 
         buy_signal |= extreme_golden_cross
         sell_signal |= extreme_death_cross
@@ -846,13 +862,13 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         Enhanced DMI指标所需的最少数据周期数
 
-        计算逻辑：基于参数 period(14), adx_period(14) 计算
+        计算逻辑：基于参数 period(14), adx_period(14) 计算  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         Returns:
             int: 最少需要的数据周期数
         """
-        period = getattr(self, 'period', 14)
-        adx_period = getattr(self, 'adx_period', 14)
+        period = getattr(self, 'period', 14)  # TODO: 将魔法数字提取到配置中
+        adx_period = getattr(self, 'adx_period', 14)  # TODO: 将魔法数字提取到配置中
         return max(period, adx_period) + 10
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -876,8 +892,8 @@ class EnhancedDmi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 默认参数字典
         """
         return {
-            'period': 14,
-            'adx_period': 14,
+            'period': 14,  # TODO: 将魔法数字提取到配置中
+            'adx_period': 14,  # TODO: 将魔法数字提取到配置中
             'adaptive': True
         }
 

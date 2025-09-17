@@ -8,6 +8,7 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import IndicatorTestMixin
 from tests.helper.data_generator import TestDataGenerator
 from tests.helper.log_capture import LogCaptureMixin
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_enhanced_oBV(unittest.TestCase, IndicatorTestMixin, LogCaptureMixin):

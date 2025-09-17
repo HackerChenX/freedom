@@ -246,6 +246,7 @@ def test_individual_components():
 
     try:
         from validation.bidirectional_validation_system import (
+from db.sql_manager import SQLManager, QueryType
             ForwardValidator, BackwardValidator, ValidationReportGenerator
         )
 

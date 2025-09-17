@@ -6,10 +6,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional, Any, Union, Tuple
-import pandas as pd
-import numpy as np
 
-from enums.indicator_types import Indicatortype_indicator_types as IndicatorType
 
 
 class IindicatorCalculator(ABC):

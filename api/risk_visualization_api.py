@@ -60,6 +60,7 @@ from risk.post_trade_analysis_system import (
     AnalysisPeriod
 )
 from risk.intelligent_risk_alert_system import (
+from db.sql_manager import SQLManager, QueryType
     get_intelligent_alert_system,
     AlertEvent,
     AlertRule,
@@ -117,7 +118,7 @@ class ConnectionManager:
                 logger.error(f"WebSocket广播失败: {e}")
                 self.disconnect(connection)
 
-manager = ConnectionManager()
+manager = get_connection_pool()
 
 # Pydantic模型定义
 

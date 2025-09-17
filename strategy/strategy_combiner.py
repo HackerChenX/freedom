@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略组合管理器模块
 
@@ -14,8 +15,9 @@ from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import StrategyManager
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -305,8 +307,7 @@ class StrategyCombiner:
                 stock_info_dict[stock_code] = {
                     "stock_code": stock_code,
                     "stock_name": stock_info.name,
-                    "industry": stock_info.industry
-                }
+                    }
         
         # 准备合并结果
         combined_data = []

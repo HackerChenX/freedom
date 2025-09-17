@@ -27,7 +27,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
 from db.clickhouse_db import get_clickhouse_db, ClickHouseDbmanager
-from config import get_config
+from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

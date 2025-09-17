@@ -22,6 +22,7 @@ from utils.logger import getLogger
 from utils.decorators import performance_monitor, exception_handler
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -78,8 +79,7 @@ class SimpleStrategyFunctionTester:
                     
                     query = f"""
                     SELECT code, name, date, open, high, low, close, volume
-                    FROM stock_info 
-                    WHERE code = '{code}'
+                    FROM stock_info WHERE level = %(level)s AND code = '{code}'
                     AND date >= '{start_date}' AND date <= '{end_date}'
                     AND level = '日线'
                     ORDER BY date ASC
@@ -187,8 +187,7 @@ class SimpleStrategyFunctionTester:
                     
                     query = f"""
                     SELECT code, name, date, open, high, low, close, volume
-                    FROM stock_info 
-                    WHERE code = '{code}'
+                    FROM stock_info WHERE level = %(level)s AND code = '{code}'
                     AND date >= '{start_date}' AND date <= '{end_date}'
                     AND level = '日线'
                     ORDER BY date ASC
@@ -284,8 +283,7 @@ class SimpleStrategyFunctionTester:
                     
                     query = f"""
                     SELECT code, name, date, open, high, low, close, volume
-                    FROM stock_info 
-                    WHERE code = '{code}'
+                    FROM stock_info WHERE level = %(level)s AND code = '{code}'
                     AND date >= '{start_date}' AND date <= '{end_date}'
                     AND level = '日线'
                     ORDER BY date ASC

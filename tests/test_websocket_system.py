@@ -50,7 +50,7 @@ class WebSocketSystemTest(unittest.TestCase):
                 from api.websocket_server import WebSocketServer, WebSocketConnectionManager
                 
                 # 测试连接管理器
-                manager = WebSocketConnectionManager()
+                manager = WebSocketget_connection_pool()
                 self.assertIsNotNone(manager)
                 self.assertEqual(len(manager.connections), 0)
                 
@@ -123,7 +123,7 @@ class WebSocketSystemTest(unittest.TestCase):
                 from api.websocket_server import WebSocketConnectionManager, WebSocketMessageHandler
                 
                 # 创建连接管理器和消息处理器
-                manager = WebSocketConnectionManager()
+                manager = WebSocketget_connection_pool()
                 handler = WebSocketMessageHandler(manager)
                 
                 self.assertIsNotNone(handler)
@@ -228,7 +228,7 @@ class WebSocketSystemTest(unittest.TestCase):
             try:
                 from api.websocket_server import WebSocketConnectionManager, WebSocketMessageHandler
                 
-                manager = WebSocketConnectionManager()
+                manager = WebSocketget_connection_pool()
                 handler = WebSocketMessageHandler(manager)
                 
                 # 测试无效JSON处理

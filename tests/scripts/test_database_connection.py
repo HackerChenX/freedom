@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from config import get_config
+from config.unified_config_manager import get_config
 """
 数据库连接测试脚本
 用于诊断ClickHouse连接问题
@@ -135,6 +135,7 @@ def test_connection_pool():
     
     try:
         from db.enhanced_connection_pool import get_connection_pool
+from db.sql_manager import SQLManager, QueryType
         
         pool = get_connection_pool()
         print(f"✅ 连接池创建成功: {pool}")

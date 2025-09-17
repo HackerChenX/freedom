@@ -475,6 +475,7 @@ def create_test_suite_manager(engine: ComprehensiveTestEngine) -> TestSuiteManag
 if __name__ == "__main__":
     # 测试套件管理器功能演示
     from .test_infrastructure import initialize_test_infrastructure
+from db.sql_manager import SQLManager, QueryType
     
     # 初始化测试基础设施
     engine = initialize_test_infrastructure()

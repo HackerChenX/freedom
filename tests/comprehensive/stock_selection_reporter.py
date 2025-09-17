@@ -857,6 +857,7 @@ class StockSelectionReporter:
 def main():
     """测试报告生成器"""
     from datetime import datetime, timedelta
+from db.sql_manager import SQLManager, QueryType
     
     # 创建模拟测试结果
     test_results = TestResults(

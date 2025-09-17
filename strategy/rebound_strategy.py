@@ -1,3 +1,4 @@
+from utils.container import container
 """
 回踩反弹买点策略模块
 
@@ -11,8 +12,9 @@ import numpy as np
 from strategy.base_strategy import BaseStrategy
 from formula import formula
 from enums.kline_period import Kline_period
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -25,6 +27,9 @@ class ReboundStrategy(BaseStrategy):
     """
     
     def __init__(self, name: str = "回踩反弹", description: str = "回踩均线反弹买点策略"):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化回踩反弹买点策略
         
@@ -170,7 +175,6 @@ class ReboundStrategy(BaseStrategy):
                     result_list.append({
                         'code': code,
                         'name': f.name,
-                        'industry': f.industry,
                         'close': close[-1],
                         'ma': ma_values[-1],
                         'touch_index': touch_index,
@@ -186,7 +190,7 @@ class ReboundStrategy(BaseStrategy):
             result_df = result_df.sort_values('bounce_pct', ascending=False)
             return result_df
         else:
-            return pd.DataFrame(columns=['code', 'name', 'industry', 'close', 'ma', 'touch_index', 'bounce_pct'])
+            return pd.DataFrame(columns=['code', 'name', 'close', 'ma', 'touch_index', 'bounce_pct'])
     
     def select_stocks_unified_base_strategy(self, universe: List[str], 
                                            start_date: str, end_date: str, 

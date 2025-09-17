@@ -1,0 +1,50 @@
+{
+  "analysis_type": "COMPLETE_STOCK_ANALYSIS",
+  "timestamp": "2025-09-16 16:26:30",
+  "target_date": "2024-12-20",
+  "test_stocks": [
+    {
+      "code": "300005",
+      "name": "探路者"
+    },
+    {
+      "code": "603359",
+      "name": "东珠生态"
+    }
+  ],
+  "phases": {
+    "phase1_initialization": {
+      "phase_name": "系统初始化验证",
+      "success": true,
+      "start_time": 1758011190.858274,
+      "details": {
+        "components": {
+          "data_service": true,
+          "indicator_service": true,
+          "universal_calculator": true,
+          "buypoint_detector": true,
+          "indicator_registry": true
+        },
+        "config_status": {
+          "config_loaded": true,
+          "indicator_weights": true,
+          "builtin_strategies": true,
+          "all_indicators": true
+        },
+        "indicator_count": 128,
+        "strategy_count": 5,
+        "weight_count": 128
+      },
+      "issues": [],
+      "duration": 0.0036830902099609375
+    },
+    "phase2_data_validation": {
+      "phase_name": "数据获取验证",
+      "success": false,
+      "start_time": 1758011190.861969,
+      "details": {
+        "data_coverage": {
+          "300005": {
+            "stock_name": "探路者",
+            "period_coverage": {
+              

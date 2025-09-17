@@ -8,6 +8,7 @@ import os
 import re
 from pathlib import Path
 from collections import defaultdict
+from db.sql_manager import SQLManager, QueryType
 
 def fix_final_compliance():
     """修复最终合规性问题"""

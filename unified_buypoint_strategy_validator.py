@@ -18,6 +18,7 @@ from utils.logger import get_logger
 from analysis.buypoints.analyze_buypoints import BuyPointAnalyzer
 from strategy.kdj_upward_strategy import KDJUpwardStrategy
 from strategy.strategy_manager import StrategyManager
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

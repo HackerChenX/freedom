@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 """
 ZXM_BS_ABSORB 指标
@@ -13,20 +14,35 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+"""
+ZxmbsabsorbAbsorb - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 22个方法分为以下职责组:
+  * 核心功能方法 (约7个)
+  * 辅助工具方法 (约7个)  
+  * 接口适配方法 (约7个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     ZXM买卖吸筹指标 (ZXM Buy/Sell Absorb)
 
     基于ZXM体系教程的真实算法：
-    V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)
-    V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100
-    吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)
+    V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+    V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+    吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     """
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__()
         self.name = "ZXMBSAbsorb"
         self.description = "ZXM买卖吸筹指标"
@@ -40,10 +56,10 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _get_default_parameters_zxmbsabsorb(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
-            "v11_threshold": 13,  # V11阈值
-            "v12_threshold": 13,  # V12阈值
-            "count_period": 6,    # 计数周期
-            "filter_period_aa": 15,  # AA信号过滤周期
+            "v11_threshold": 13,  # V11阈值  # TODO: 将魔法数字提取到配置中
+            "v12_threshold": 13,  # V12阈值  # TODO: 将魔法数字提取到配置中
+            "count_period": 6,    # 计数周期  # TODO: 将魔法数字提取到配置中
+            "filter_period_aa": 15,  # AA信号过滤周期  # TODO: 将魔法数字提取到配置中
             "filter_period_bb": 10   # BB信号过滤周期
         }
 
@@ -62,7 +78,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 setattr(self, key, value)
 
     def calculate_confidence_Absorb_Zxm_Bs_Absorb(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Absorb_Zxm_Bs_Absorb(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -114,7 +130,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="基于买卖力量分析的主力吸筹信号",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=25.0,
+            score_impact=25.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -125,7 +141,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="主力资金买入信号，表明资金流入",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=20.0,
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -136,7 +152,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="主力资金卖出信号，表明资金流出",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-20.0,
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -145,11 +161,11 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算ZXM买卖吸筹指标 - 基于ZXM体系教程的真实算法
 
         核心公式：
-        V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)
-        V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100
-        吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)
+        V11 = 3*SMA((C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100,5,1) - 2*SMA(SMA(...),3,1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        V12 = (EMA(V11,3)-REF(EMA(V11,3),1))/REF(EMA(V11,3),1)*100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        吸筹信号 = (EMA(V11,3)<=13) AND (V12>13)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         """
-        if len(data) < 60:
+        if len(data) < 60:  # TODO: 将魔法数字提取到配置中
             # 数据不足时返回空结果
             result = data.copy()
             result['ZXM_BS_V11'] = np.nan
@@ -175,11 +191,11 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         high = df['high']
         low = df['low']
 
-        # 步骤1: 计算LLV(L,55)和HHV(H,55)
-        llv_55 = low.rolling(window=55).min()
-        hhv_55 = high.rolling(window=55).max()
+        # 步骤1: 计算LLV(L,55)和HHV(H,55)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        llv_55 = low.rolling(window=55).min()  # TODO: 将魔法数字提取到配置中
+        hhv_55 = high.rolling(window=55).max()  # TODO: 将魔法数字提取到配置中
 
-        # 步骤2: 计算RSV = (C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100
+        # 步骤2: 计算RSV = (C-LLV(L,55))/(HHV(H,55)-LLV(L,55))*100  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         rsv = (close - llv_55) / (hhv_55 - llv_55) * 100
         rsv = rsv.fillna(0)  # 处理除零情况
 
@@ -189,15 +205,15 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             alpha = m / n
             return series.ewm(alpha=alpha, adjust=False).mean()
 
-        # 计算SMA(RSV, 5, 1)和SMA(SMA(RSV, 5, 1), 3, 1)
-        sma_5_1 = sma_tdx(rsv, 5, 1)
-        sma_3_1 = sma_tdx(sma_5_1, 3, 1)
+        # 计算SMA(RSV, 5, 1)和SMA(SMA(RSV, 5, 1), 3, 1)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        sma_5_1 = sma_tdx(rsv, 5, 1)  # TODO: 将魔法数字提取到配置中
+        sma_3_1 = sma_tdx(sma_5_1, 3, 1)  # TODO: 将魔法数字提取到配置中
 
         # 步骤4: 计算V11
-        v11 = 3 * sma_5_1 - 2 * sma_3_1
+        v11 = 3 * sma_5_1 - 2 * sma_3_1  # TODO: 将魔法数字提取到配置中
 
-        # 步骤5: 计算EMA(V11,3)
-        ema_v11_3 = v11.ewm(span=3).mean()
+        # 步骤5: 计算EMA(V11,3)  # TODO: 将魔法数字提取到配置中
+        ema_v11_3 = v11.ewm(span=3).mean()  # TODO: 将魔法数字提取到配置中
 
         # 步骤6: 计算V12
         ema_v11_3_ref = ema_v11_3.shift(1)
@@ -205,10 +221,10 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         v12 = v12.fillna(0)  # 处理除零情况
 
         # 步骤7: 计算吸筹信号
-        # AA条件：EMA(V11,3) <= 13
+        # AA条件：EMA(V11,3) <= 13  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         aa_condition = ema_v11_3 <= self.v11_threshold
 
-        # BB条件：EMA(V11,3) <= 13 AND V12 > 13
+        # BB条件：EMA(V11,3) <= 13 AND V12 > 13  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         bb_condition = (ema_v11_3 <= self.v11_threshold) & (v12 > self.v12_threshold)
 
         # 简化FILTER函数实现
@@ -236,7 +252,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signal_count = combined_signal.rolling(window=self.count_period).sum()
 
         # 卖出信号（简化实现）
-        sell_signal = (ema_v11_3 > 80) & (v12 < -10)  # 高位且下降
+        sell_signal = (ema_v11_3 > 80) & (v12 < -10)  # 高位且下降  # TODO: 将魔法数字提取到配置中
 
         # 添加结果到DataFrame
         df['ZXM_BS_V11'] = v11
@@ -300,7 +316,7 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 60  # ZXM买卖吸筹需要更多历史数据
+        return 60  # ZXM买卖吸筹需要更多历史数据  # TODO: 将魔法数字提取到配置中
 
     # 实现BaseIndicator的抽象方法
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -319,11 +335,11 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基于信号强度计算评分
         if hasattr(self, '_result') and self._result is not None:
             if 'ZXM_BS_SIGNAL_COUNT' in self._result.columns:
-                base_score = 50.0
+                base_score = 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signal_bonus = self._result['ZXM_BS_SIGNAL_COUNT'] * 10.0
                 return pd.Series(base_score + signal_bonus, index=data.index)
 
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def calculate_confidence(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
@@ -362,11 +378,11 @@ class ZxmbsabsorbAbsorb(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基于信号强度计算评分
         if hasattr(self, '_result') and self._result is not None:
             if 'ZXM_BS_SIGNAL_COUNT' in self._result.columns:
-                base_score = 50.0
+                base_score = 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 signal_bonus = self._result['ZXM_BS_SIGNAL_COUNT'] * 10.0
                 return pd.Series(base_score + signal_bonus, index=data.index)
 
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """BaseIndicator的抽象方法实现"""

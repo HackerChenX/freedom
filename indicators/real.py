@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
+# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 """
 Real模块 - 提供真实技术指标计算功能
 
@@ -29,7 +31,7 @@ try:
     
 except ImportError:
     # 如果real_technical_indicators不存在，创建Mock实现
-    class MockRealIndicatorFactory:
+    class MockRealIndicatorFactory(BaseIndicator):
         """Mock真实指标工厂"""
         
         def create_indicator(self, name: str, **kwargs):
@@ -40,10 +42,14 @@ except ImportError:
             """获取可用指标列表"""
             return []
     
-    class MockRealIndicator:
+    class MockRealIndicator(BaseIndicator):
         """Mock真实指标"""
         
         def __init__(self, name: str):
+                super().__init__(name=self.__class__.__name__, **kwargs)
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
             self.name = name
         
         def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -65,15 +71,15 @@ except ImportError:
         return real_indicator_factory.get_available_indicators()
 
 # 常用的技术指标计算函数
-def calculate_sma(data: pd.Series, period: int = 20) -> pd.Series:
+def calculate_sma(data: pd.Series, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
     """计算简单移动平均"""
     return data.rolling(window=period).mean()
 
-def calculate_ema(data: pd.Series, period: int = 20) -> pd.Series:
+def calculate_ema(data: pd.Series, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
     """计算指数移动平均"""
     return data.ewm(span=period).mean()
 
-def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:
+def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
     """计算RSI"""
     delta = data.diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
@@ -81,7 +87,7 @@ def calculate_rsi(data: pd.Series, period: int = 14) -> pd.Series:
     rs = gain / loss
     return 100 - (100 / (1 + rs))
 
-def calculate_macd(data: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:
+def calculate_macd(data: pd.Series, fast: int = 12, slow: int = 26, signal: int = 9) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     """计算MACD"""
     ema_fast = calculate_ema(data, fast)
     ema_slow = calculate_ema(data, slow)
@@ -95,7 +101,7 @@ def calculate_macd(data: pd.Series, fast: int = 12, slow: int = 26, signal: int 
         'Histogram': histogram
     }
 
-def calculate_bollinger_bands(data: pd.Series, period: int = 20, std_dev: float = 2.0) -> Dict[str, pd.Series]:
+def calculate_bollinger_bands(data: pd.Series, period: int = 20, std_dev: float = 2.0) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中
     """计算布林带"""
     sma = calculate_sma(data, period)
     std = data.rolling(window=period).std()
@@ -107,7 +113,7 @@ def calculate_bollinger_bands(data: pd.Series, period: int = 20, std_dev: float 
     }
 
 def calculate_stochastic(high: pd.Series, low: pd.Series, close: pd.Series, 
-                        k_period: int = 14, d_period: int = 3) -> Dict[str, pd.Series]:
+                        k_period: int = 14, d_period: int = 3) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     """计算随机指标"""
     lowest_low = low.rolling(window=k_period).min()
     highest_high = high.rolling(window=k_period).max()

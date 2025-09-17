@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 并发优化性能测试
 
@@ -22,8 +22,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.append(project_root)
 
 from db.enhanced_connection_pool import initialize_connection_pool, get_connection_pool
-from db.unified_data_manager import get_unified_data_manager
-from db.query_cache import get_query_cache
+from db.managers.data_access_manager import get_unified_data_manager
+from db.services.cache_service import get_query_cache
 from utils.logger import get_logger
 
 logger = get_logger(__name__)

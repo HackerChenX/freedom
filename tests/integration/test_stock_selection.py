@@ -16,9 +16,10 @@ import numpy as np
 from strategy.strategy_parser import Strategy_parser
 from strategy.strategy_executor import Strategy_executor
 from strategy.strategy_manager import Strategy_manager
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from strategy.selector import Stock_selector
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_stock_selection_workflow(unittest.TestCase):
@@ -163,8 +164,8 @@ class Test_stock_selection_workflow(unittest.TestCase):
         self.temp_dir.cleanup()
         
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_end_to_end_selection_Selection(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试端到端的选股流程"""
         # 配置模拟对象行为
@@ -206,8 +207,8 @@ class Test_stock_selection_workflow(unittest.TestCase):
     
     @patch.object(StrategyManager, 'get_strategy')
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_strategy_manager_integration(self, mock_get_kline, mock_get_stocks, mock_create_indicator, mock_get_strategy):
         """测试策略管理器与选股流程的集成"""
         # 配置模拟对象行为
@@ -239,8 +240,8 @@ class Test_stock_selection_workflow(unittest.TestCase):
             self.assertIn(stock, result['stock_code'].values)
     
     @patch.object(IndicatorFactory, 'create')
-    @patch.object(DataManager, 'get_stock_list')
-    @patch.object(DataManager, 'get_kline_data')
+    @patch.object(DataAccessManager, 'get_stock_list')
+    @patch.object(DataAccessManager, 'get_kline_data')
     def test_performance_and_caching(self, mock_get_kline, mock_get_stocks, mock_create_indicator):
         """测试性能和缓存机制"""
         # 配置模拟对象行为

@@ -7,6 +7,7 @@
 import sys
 import os
 from clickhouse_driver import Client
+from db.sql_manager import SQLManager, QueryType
 
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')

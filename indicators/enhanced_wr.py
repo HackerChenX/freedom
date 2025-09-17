@@ -1,3 +1,4 @@
+from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
@@ -5,7 +6,7 @@ from typing import Dict, Any, List, Optional, Tuple
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,21 +19,24 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, 
-                 period: int = 14,
-                 overbought: float = -20.0,
-                 oversold: float = -80.0,
+                 period: int = 14,  # TODO: 将魔法数字提取到配置中
+                 overbought: float = -20.0,  # TODO: 将魔法数字提取到配置中
+                 oversold: float = -80.0,  # TODO: 将魔法数字提取到配置中
                  multi_periods: List[int] = None,
                  adaptive_thresholds: bool = True,
-                 smooth_period: int = 3,
+                 smooth_period: int = 3,  # TODO: 将魔法数字提取到配置中
                  **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型Williams %R指标
 
         Args:
             period: Williams %R计算周期，默认14
-            overbought: 超买阈值，默认-20
-            oversold: 超卖阈值，默认-80
-            multi_periods: 多周期分析，默认[9, 14, 21]
+            overbought: 超买阈值，默认-20  # TODO: 将魔法数字提取到配置中
+            oversold: 超卖阈值，默认-80  # TODO: 将魔法数字提取到配置中
+            multi_periods: 多周期分析，默认[9, 14, 21]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             adaptive_thresholds: 是否使用自适应阈值，默认True
             smooth_period: 平滑周期，默认3
             **kwargs: 其他参数
@@ -42,7 +46,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.period = period
         self.overbought = overbought
         self.oversold = oversold
-        self.multi_periods = multi_periods or [9, 14, 21]
+        self.multi_periods = multi_periods or [9, 14, 21]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.adaptive_thresholds = adaptive_thresholds
         self.smooth_period = smooth_period
 
@@ -67,10 +71,10 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _get_default_parameters_enhancedwr(self) -> Dict[str, Any]:
         """获取默认参数"""
         return {
-            "period": 14,
-            "overbought": -20.0,
-            "oversold": -80.0,
-            "smooth_period": 3
+            "period": 14,  # TODO: 将魔法数字提取到配置中
+            "overbought": -20.0,  # TODO: 将魔法数字提取到配置中
+            "oversold": -80.0,  # TODO: 将魔法数字提取到配置中
+            "smooth_period": 3  # TODO: 将魔法数字提取到配置中
         }
 
     def set_parameters(self, **kwargs):
@@ -83,6 +87,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
 
             # 合并默认参数和用户参数
@@ -100,10 +105,10 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
 
         # 设置参数
-        self.period = kwargs.get('period', 14)
-        self.overbought = kwargs.get('overbought', -20.0)
-        self.oversold = kwargs.get('oversold', -80.0)
-        self.smooth_period = kwargs.get('smooth_period', 3)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
+        self.overbought = kwargs.get('overbought', -20.0)  # TODO: 将魔法数字提取到配置中
+        self.oversold = kwargs.get('oversold', -80.0)  # TODO: 将魔法数字提取到配置中
+        self.smooth_period = kwargs.get('smooth_period', 3)  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Wr(self, **kwargs):
         """
@@ -154,7 +159,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(data) < min_length:
             # 数据不足，返回空结果
             df = data.copy()
-            df['ENHANCED_WR_VALUE'] = 50.0
+            df['ENHANCED_WR_VALUE'] = 50.0  # TODO: 将魔法数字提取到配置中
             df['wr_signal'] = 0
             df['buy_signal'] = False
             df['sell_signal'] = False
@@ -238,17 +243,17 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             (超买阈值序列, 超卖阈值序列)
         """
         # 使用滚动统计计算动态阈值
-        window = 50
+        window = 50  # TODO: 将魔法数字提取到配置中
         wr_mean = wr.rolling(window=window).mean()
         wr_std = wr.rolling(window=window).std()
         
         # 动态阈值：均值 ± 1.5倍标准差
-        overbought = wr_mean + 1.5 * wr_std
-        oversold = wr_mean - 1.5 * wr_std
+        overbought = wr_mean + 1.5 * wr_std  # TODO: 将魔法数字提取到配置中
+        oversold = wr_mean - 1.5 * wr_std  # TODO: 将魔法数字提取到配置中
         
         # 限制阈值范围
-        overbought = overbought.clip(-30, -10)
-        oversold = oversold.clip(-90, -70)
+        overbought = overbought.clip(-30, -10)  # TODO: 将魔法数字提取到配置中
+        oversold = oversold.clip(-90, -70)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         return overbought, oversold
     
@@ -283,8 +288,8 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             趋势强度序列
         """
         # 计算Williams %R的移动平均和标准差
-        wr_ma = wr.rolling(window=14).mean()
-        wr_std = wr.rolling(window=14).std()
+        wr_ma = wr.rolling(window=14).mean()  # TODO: 将魔法数字提取到配置中
+        wr_std = wr.rolling(window=14).std()  # TODO: 将魔法数字提取到配置中
         
         # 趋势强度：Williams %R偏离移动平均的程度
         trend_strength = abs(wr - wr_ma) / (wr_std + 1e-10)
@@ -310,9 +315,9 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if len(wr_values) > 1:
                 # 计算Williams %R值的标准差，标准差越小一致性越高
                 std_dev = np.std(wr_values)
-                consistency = max(0, 1 - std_dev / 50)  # 归一化到0-1
+                consistency = max(0, 1 - std_dev / 50)  # 归一化到0-1  # TODO: 将魔法数字提取到配置中
             else:
-                consistency = 0.5
+                consistency = 0.5  # TODO: 将魔法数字提取到配置中
             consistency_scores.append(consistency)
         
         return pd.Series(consistency_scores, index=df.index)
@@ -328,10 +333,10 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             动量序列
         """
         # 计算Williams %R的变化率
-        momentum = wr.diff(periods=5)  # 5日变化率
+        momentum = wr.diff(periods=5)  # 5日变化率  # TODO: 将魔法数字提取到配置中
         
         # 平滑动量
-        momentum_smooth = momentum.rolling(window=3).mean()
+        momentum_smooth = momentum.rolling(window=3).mean()  # TODO: 将魔法数字提取到配置中
         
         return momentum_smooth
     
@@ -347,7 +352,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         # 基础Williams %R评分
         wr = df['wr']
-        base_score = pd.Series(50.0, index=df.index)
+        base_score = pd.Series(50.0, index=df.index)  # TODO: 将魔法数字提取到配置中
         
         # Williams %R位置评分 (0-40分)
         for i in range(len(wr)):
@@ -358,29 +363,29 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             
             if wr_val <= df['wr_oversold'].iloc[i]:
                 # 超卖区域，看涨信号
-                base_score.iloc[i] = 70 + min(20, (df['wr_oversold'].iloc[i] - wr_val) * 0.5)
+                base_score.iloc[i] = 70 + min(20, (df['wr_oversold'].iloc[i] - wr_val) * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             elif wr_val >= df['wr_overbought'].iloc[i]:
                 # 超买区域，看跌信号
-                base_score.iloc[i] = 30 - min(20, (wr_val - df['wr_overbought'].iloc[i]) * 0.5)
+                base_score.iloc[i] = 30 - min(20, (wr_val - df['wr_overbought'].iloc[i]) * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             else:
                 # 正常区域，根据Williams %R值调整
                 # Williams %R范围是-100到0，-50为中性
-                if wr_val > -50:
-                    base_score.iloc[i] = 50 + (wr_val + 50) * 0.5
+                if wr_val > -50:  # TODO: 将魔法数字提取到配置中
+                    base_score.iloc[i] = 50 + (wr_val + 50) * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                 else:
-                    base_score.iloc[i] = 50 - (-50 - wr_val) * 0.5
+                    base_score.iloc[i] = 50 - (-50 - wr_val) * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 背离加分 (0-15分)
-        divergence_score = df['wr_divergence'] * 15
+        divergence_score = df['wr_divergence'] * 15  # TODO: 将魔法数字提取到配置中
         
         # 趋势强度加分 (0-15分)
-        trend_score = df['wr_trend_strength'].clip(0, 1) * 15
+        trend_score = df['wr_trend_strength'].clip(0, 1) * 15  # TODO: 将魔法数字提取到配置中
         
         # 多周期一致性加分 (0-15分)
-        consistency_score = df['wr_consistency'] * 15
+        consistency_score = df['wr_consistency'] * 15  # TODO: 将魔法数字提取到配置中
         
         # 动量加分 (0-15分)
-        momentum_score = (df['wr_momentum'].clip(-10, 10) + 10) / 20 * 15
+        momentum_score = (df['wr_momentum'].clip(-10, 10) + 10) / 20 * 15  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 综合评分
         final_score = base_score + divergence_score + trend_score + consistency_score + momentum_score
@@ -404,8 +409,8 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         wr = df['wr']
         wr_smooth = df['wr_smooth']
 
-        # 增强指标需要更严格的信号条件，降低信号频率到1-3%
-        signal_cooldown = 15  # 信号冷却期，避免频繁信号
+        # 增强指标需要更严格的信号条件，降低信号频率到1-3%  # TODO: 将魔法数字提取到配置中
+        signal_cooldown = 15  # 信号冷却期，避免频繁信号  # TODO: 将魔法数字提取到配置中
         last_signal_index = -signal_cooldown
 
         for i in range(10, len(df)):  # 从第10个数据点开始，确保有足够历史数据
@@ -419,26 +424,26 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 强烈超卖反弹买入信号（更严格条件）
             if (wr.iloc[i-1] <= df['wr_oversold'].iloc[i-1] and
                 wr.iloc[i] > df['wr_oversold'].iloc[i] and
-                df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高
-                df['wr_momentum'].iloc[i] > 3):  # 动量向上
+                df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                df['wr_momentum'].iloc[i] > 3):  # 动量向上  # TODO: 将魔法数字提取到配置中
                 signals.iloc[i] = 1
                 last_signal_index = i
 
             # 强烈超买回落卖出信号（更严格条件）
             elif (wr.iloc[i-1] >= df['wr_overbought'].iloc[i-1] and
                   wr.iloc[i] < df['wr_overbought'].iloc[i] and
-                  df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高
-                  df['wr_momentum'].iloc[i] < -3):  # 动量向下
+                  df['wr_consistency'].iloc[i] > 0.7 and  # 多周期一致性高  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                  df['wr_momentum'].iloc[i] < -3):  # 动量向下  # TODO: 将魔法数字提取到配置中
                 signals.iloc[i] = -1
                 last_signal_index = i
 
             # 强烈背离信号（更严格条件）
-            elif (abs(df['wr_divergence'].iloc[i]) > 0.8 and
-                  df['wr_trend_strength'].iloc[i] > 0.6):
-                if df['wr_divergence'].iloc[i] > 0 and wr.iloc[i] < -75:
+            elif (abs(df['wr_divergence'].iloc[i]) > 0.8 and  # TODO: 将魔法数字提取到配置中
+                  df['wr_trend_strength'].iloc[i] > 0.6):  # TODO: 将魔法数字提取到配置中
+                if df['wr_divergence'].iloc[i] > 0 and wr.iloc[i] < -75:  # TODO: 将魔法数字提取到配置中
                     signals.iloc[i] = 1
                     last_signal_index = i
-                elif df['wr_divergence'].iloc[i] < 0 and wr.iloc[i] > -25:
+                elif df['wr_divergence'].iloc[i] < 0 and wr.iloc[i] > -25:  # TODO: 将魔法数字提取到配置中
                     signals.iloc[i] = -1
                     last_signal_index = i
 
@@ -452,7 +457,7 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if 'ENHANCED_WR_VALUE' in self._result.columns:
             return self._result['ENHANCED_WR_VALUE']
         else:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
     def calculate_raw_score_Wr(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
@@ -461,16 +466,16 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Wr(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if score.empty:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基于评分的变化和极值计算置信度
         score_std = score.std()
         score_range = score.max() - score.min()
 
         # 评分变化越大，置信度越高
-        confidence = min(1.0, (score_std / 25.0 + score_range / 100.0) / 2)
+        confidence = min(1.0, (score_std / 25.0 + score_range / 100.0) / 2)  # TODO: 将魔法数字提取到配置中
 
-        return max(0.3, confidence)
+        return max(0.3, confidence)  # TODO: 将魔法数字提取到配置中
 
     def has_result(self) -> bool:
         """检查是否有计算结果"""
@@ -488,12 +493,12 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if 'wr_overbought' in self._result.columns:
                 patterns['wr_overbought'] = self._result['wr'] >= self._result['wr_overbought']
             else:
-                patterns['wr_overbought'] = self._result['wr'] >= -20
+                patterns['wr_overbought'] = self._result['wr'] >= -20  # TODO: 将魔法数字提取到配置中
 
             if 'wr_oversold' in self._result.columns:
                 patterns['wr_oversold'] = self._result['wr'] <= self._result['wr_oversold']
             else:
-                patterns['wr_oversold'] = self._result['wr'] <= -80
+                patterns['wr_oversold'] = self._result['wr'] <= -80  # TODO: 将魔法数字提取到配置中
 
             patterns['wr_divergence'] = self._result['wr_divergence'] > 0
             patterns['wr_uptrend'] = self._result['wr_momentum'] > 0

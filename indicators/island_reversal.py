@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 ISLAND_REVERSAL 指标
 
@@ -13,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,6 +27,9 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ISLAND_REVERSAL指标
         
@@ -43,7 +47,7 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_islandreversal(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Reversal(self, **kwargs):
         """
@@ -55,6 +59,7 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -70,11 +75,11 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -116,7 +121,7 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 检查是否有向上跳空
             if df['up_gap'].iloc[i-1]:
                 # 检查后续是否有向下跳空
-                for j in range(i, min(i+5, len(df))):  # 在5天内寻找
+                for j in range(i, min(i+5, len(df))):  # 在5天内寻找  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     if df['down_gap'].iloc[j]:
                         df.iloc[j, df.columns.get_loc('top_island_reversal')] = True
                         break
@@ -126,22 +131,22 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 检查是否有向下跳空
             if df['down_gap'].iloc[i-1]:
                 # 检查后续是否有向上跳空
-                for j in range(i, min(i+5, len(df))):  # 在5天内寻找
+                for j in range(i, min(i+5, len(df))):  # 在5天内寻找  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
                     if df['up_gap'].iloc[j]:
                         df.iloc[j, df.columns.get_loc('bottom_island_reversal')] = True
                         break
 
-        # 3. 计算岛形反转强度
+        # 3. 计算岛形反转强度  # TODO: 将魔法数字提取到配置中
         df['island_reversal_strength'] = 0.0
         df.loc[df['top_island_reversal'], 'island_reversal_strength'] = -1.0  # 看跌信号
         df.loc[df['bottom_island_reversal'], 'island_reversal_strength'] = 1.0  # 看涨信号
 
-        # 4. 计算跳空幅度
+        # 4. 计算跳空幅度  # TODO: 将魔法数字提取到配置中
         df['gap_size'] = 0.0
         df.loc[df['up_gap'], 'gap_size'] = (df['low'] - df['high'].shift(1)) / df['close'].shift(1)
         df.loc[df['down_gap'], 'gap_size'] = (df['high'] - df['low'].shift(1)) / df['close'].shift(1)
 
-        # 5. 岛形反转综合信号
+        # 5. 岛形反转综合信号  # TODO: 将魔法数字提取到配置中
         df['island_reversal_signal'] = df['top_island_reversal'] | df['bottom_island_reversal']
 
         # 添加形态识别和信号生成
@@ -154,11 +159,11 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate_Reversal(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
     
     def calculate_confidence_Reversal(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -215,4 +220,4 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中

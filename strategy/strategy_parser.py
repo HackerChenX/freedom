@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略解析器模块
 
@@ -11,9 +13,10 @@ import yaml
 from datetime import datetime
 
 from indicators.complete_indicator_registry import complete_registry
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from enums.period import Period
 from utils.exceptions import (
+from db.sql_manager import SQLManager, QueryType
     StrategyParseError, 
     StrategyValidationError, 
     ConfigFileError,
@@ -30,6 +33,9 @@ class StrategyParser:
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化策略解析器"""
         self.indicator_registry = complete_registry
         self.indicator_factory = complete_registry  # 添加indicator_factory别名
@@ -353,8 +359,8 @@ class StrategyParser:
         
         # 支持的过滤器类型
         supported_filters = [
-            "market", "industry", "market_cap", "price",
-            "volume", "turnover", "pe_ratio", "pb_ratio"
+            "market", "market_cap", "price",
+            "volume", "turnover_rate", "pe_ratio", "pb_ratio"
         ]
         
         for key, value in filters.items():

@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
 
@@ -19,16 +20,17 @@ sys.path.insert(0, root_dir)
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.dependency_injection import get_service
 from enums.kline_period import Kline_period
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.path_utils import get_result_dir
 from indicators.complete_indicator_registry import complete_registry
 from analysis.market.market_dimension_analyzer import Market_dimension_analyzer
 from analysis.buypoints.buypoint_dimension_analyzer import Buy_point_dimension_analyzer
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = getLogger(__name__)
 
-class MultiDimensionAnalyzer:
+class MultiDimensionAnalyzer(BaseAnalyzer):
     """
     多维度分析器 - 集成市场和买点分析功能，提供多维度综合分析
     
@@ -71,21 +73,26 @@ class MultiDimensionAnalyzer:
         logger.info("多维度分析器初始化完成")
     
     def analyze_single_stock(self, stock_code: str, date: str,
-                          periods: List[str] = ['DAILY', 'WEEKLY'],
+                          periods: List[str] = None,  # 默认全周期分析
                           indicators: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
         对单个股票进行多维度分析
-        
+
         Args:
             stock_code: 股票代码
             date: 分析日期，格式YYYYMMDD
-            periods: 分析周期列表
+            periods: 分析周期列表，None表示全周期分析（15分钟、30分钟、60分钟、日线、周线、月线）
             indicators: 指标列表，如果为None则使用默认指标集
-            
+
         Returns:
             Dict: 分析结果
         """
-        logger.info(f"开始对股票 {stock_code} 进行多维度分析, 日期={date}")
+        # 默认使用全周期分析
+        if periods is None:
+            periods = ['15MIN', '30MIN', '60MIN', 'DAILY', 'WEEKLY', 'MONTHLY']
+            logger.info(f"开始对股票 {stock_code} 进行全周期多维度分析, 日期={date}")
+        else:
+            logger.info(f"开始对股票 {stock_code} 进行多维度分析, 日期={date}, 周期={periods}")
         
         try:
             # 获取股票基本信息
@@ -120,29 +127,26 @@ class MultiDimensionAnalyzer:
             market_state = self.market_analyzer.analyze_market_overview(date)
             
             # 获取行业分析
-            industry = stock_info.get('industry', '')
-            industry_analysis = None
-            if industry:
-                # 查询同行业股票
-                industry_stocks = self._get_industry_stocks(industry, exclude=[stock_code])
+            = stock_info.get('')
+            _analysis = None
+            if exclude=[stock_code])
                 
-                if industry_stocks:
+                if _stocks:
                     # 使用买点分析器分析行业股票
                     start_date, end_date = self._get_period_date_range(date, 'DAILY')
-                    industry_analysis = self.buypoint_analyzer.analyze_pattern_features(
-                        industry_stocks, start_date, end_date, 'DAILY')
+                    _analysis = self.buypoint_analyzer.analyze_pattern_features(
+                        _stocks, start_date, end_date, 'DAILY')
             
             # 构建综合结果
             result = {
                 "stock_code": stock_code,
                 "stock_name": stock_info.get('stock_name', ''),
-                "industry": industry,
                 "date": date,
                 "periods": periods,
                 "multi_period_analysis": multi_period_result,
                 "indicator_analysis": indicator_results,
                 "market_state": market_state,
-                "industry_analysis": industry_analysis
+                _analysis": _analysis
             }
             
             # 提取关键特征
@@ -165,8 +169,7 @@ class MultiDimensionAnalyzer:
         """获取股票基本信息"""
         try:
             sql = f"""
-            SELECT code as stock_code, name as stock_name, industry
-            FROM stock_info WHERE 1=1
+            SELECT code as stock_code, name as stock_name, FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE code = '{stock_code}'
             ORDER BY date DESC
             LIMIT 1
@@ -182,7 +185,7 @@ class MultiDimensionAnalyzer:
             logger.error(f"获取股票 {stock_code} 基本信息时出错: {e}")
             return {}
     
-    def _get_industry_stocks(self, industry: str, exclude: List[str] = None) -> List[str]:
+    def _get__stocks(self, exclude: List[str] = None) -> List[str]:
         """获取行业股票列表"""
         try:
             exclude_condition = ""
@@ -192,8 +195,8 @@ class MultiDimensionAnalyzer:
                 
             sql = f"""
             SELECT DISTINCT code as stock_code
-            FROM stock_info WHERE 1=1
-            WHERE industry = '{industry}'{exclude_condition}
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
+            WHERE = '{}'{exclude_condition}
             LIMIT 50
             """
             result = self.data_access.query(sql)
@@ -204,7 +207,7 @@ class MultiDimensionAnalyzer:
             return result['stock_code'].tolist()
             
         except Exception as e:
-            logger.error(f"获取行业 {industry} 股票列表时出错: {e}")
+            logger.error(f"获取行业 {} 股票列表时出错: {e}")
             return []
     
     def _get_period_date_range(self, date: str, period: str) -> Tuple[str, str]:
@@ -303,7 +306,7 @@ class MultiDimensionAnalyzer:
             market_state = self.market_analyzer.analyze_market_overview(date)
             
             # 获取行业分布
-            industry_distribution = self._analyze_industry_distribution(stock_codes)
+            _distribution = self._analyze__distribution(stock_codes)
             
             # 构建综合结果
             result = {
@@ -313,7 +316,7 @@ class MultiDimensionAnalyzer:
                 "multi_period_analysis": multi_period_result,
                 "indicator_analysis": indicator_results,
                 "market_state": market_state,
-                "industry_distribution": industry_distribution
+                _distribution": _distribution
             }
             
             # 提取共性特征
@@ -460,17 +463,16 @@ class MultiDimensionAnalyzer:
             logger.error(f"分析市场相关性时出错: {e}")
             return {}
     
-    def _analyze_industry_distribution(self, stock_codes: List[str]) -> Dict[str, Any]:
+    def _analyze__distribution(self, stock_codes: List[str]) -> Dict[str, Any]:
         """分析股票的行业分布"""
         try:
             # 查询股票行业信息
             stock_codes_str = "', '".join(stock_codes)
             sql = f"""
-            SELECT industry, COUNT(*) as count
-            FROM stock_info WHERE 1=1
+            SELECT COUNT(*) as count
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
             WHERE stock_code IN ('{stock_codes_str}')
-            GROUP BY industry
-            ORDER BY count DESC
+            GROUP BY ORDER BY count DESC
             """
             result = self.data_access.query(sql)
             
@@ -480,9 +482,9 @@ class MultiDimensionAnalyzer:
             # 构建行业分布
             distribution = {}
             for _, row in result.iterrows():
-                industry = row['industry'] if row['industry'] else "其他"
+                = row[] if row[] else "其他"
                 count = int(row['count'])
-                distribution[industry] = count
+                distribution[] = count
             
             # 计算行业分布百分比
             total = sum(distribution.values())
@@ -939,9 +941,9 @@ class MultiDimensionAnalyzer:
         
         # 生成总结文字
         stock_name = analysis_result.get("stock_name", "")
-        industry = analysis_result.get("industry", "")
+        = analysis_result.get("")
         
-        summary = f"{stock_name}({analysis_result.get('stock_code', '')})属于{industry}行业，"
+        summary = f"{stock_name}({analysis_result.get('stock_code', '')})属于{}行业，"
         
         if overall_score > 30:
             summary += "各项技术指标表现良好，"
@@ -995,14 +997,14 @@ class MultiDimensionAnalyzer:
                 bearish_features += 1
         
         # 获取行业分布
-        industry_distribution = analysis_result.get("industry_distribution", {})
-        percentages = industry_distribution.get("percentages", {})
+        _distribution = analysis_result.get(_distribution", {})
+        percentages = _distribution.get("percentages", {})
         
         # 找出主要行业
         main_industries = []
-        for industry, percentage in percentages.items():
+        for percentage in percentages.items():
             if percentage > 0.2:  # 占比超过20%的行业
-                main_industries.append(f"{industry}({percentage*100:.1f}%)")
+                main_industries.append(f"{}({percentage*100:.1f}%)")
         
         # 生成共性特征描述
         feature_desc = []
@@ -1019,9 +1021,7 @@ class MultiDimensionAnalyzer:
                     f"周期: {feature.get('period', '')}, "
                     f"频率: {feature.get('frequency', 0)*100:.1f}%"
                 )
-            elif feature["type"] == "industry":
-                feature_desc.append(
-                    f"{i+1}. {feature.get('feature', '')}, "
+            elif feature["type"] == }. {feature.get('feature', '')}, "
                     f"占比: {feature.get('frequency', 0)*100:.1f}%"
                 )
         
@@ -1154,16 +1154,16 @@ class MultiDimensionAnalyzer:
                             markdown += f"```\n{assessment.get('common_characteristics', '')}\n```\n\n"
                         
                         # 行业分布
-                        industry_distribution = analysis.get("industry_distribution", {})
-                        percentages = industry_distribution.get("percentages", {})
+                        _distribution = analysis.get(_distribution", {})
+                        percentages = _distribution.get("percentages", {})
                         
                         if percentages:
                             markdown += "#### 行业分布\n\n"
                             markdown += "| 行业 | 占比 |\n"
                             markdown += "| ---- | ---- |\n"
                             
-                            for industry, percentage in sorted(percentages.items(), key=lambda x: x[1], reverse=True):
-                                markdown += f"| {industry} | {percentage*100:.1f}% |\n"
+                            for percentage in sorted(percentages.items(), key=lambda x: x[1], reverse=True):
+                                markdown += f"| {} | {percentage*100:.1f}% |\n"
                             
                             markdown += "\n"
                 

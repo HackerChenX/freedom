@@ -1,3 +1,4 @@
+from analysis.base_analyzer import BaseAnalyzer
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -27,7 +28,7 @@ from io import String_iO
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from analysis.buypoints.period_data_processor import PeriodDataProcessor
 from analysis.buypoints.auto_indicator_analyzer import Auto_indicator_analyzer
@@ -138,7 +139,7 @@ class PerformanceProfiler:
         }
 
 
-class PerformanceAnalyzer:
+class PerformanceAnalyzer(BaseAnalyzer):
     """股票分析系统性能分析器"""
     
     def analyze_batch_processing_performance(self, 

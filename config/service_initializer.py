@@ -25,7 +25,7 @@ def initialize_all_services() -> ServiceContainer:
         logger.info("注册数据访问接口...")
         try:
             from db.interfaces.data_access_interface import DataAccessInterface
-            from db.data_access_manager import DataAccessManager
+            from db.managers.data_access_manager import DataAccessManager
             
             def create_data_access_manager():
                 return DataAccessManager()

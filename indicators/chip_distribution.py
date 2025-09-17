@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 CHIP_DISTRIBUTION 指标
 
@@ -13,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,6 +27,9 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化CHIP_DISTRIBUTION指标
 
@@ -39,19 +43,19 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._default_parameters = self._get_default_parameters_chipdistribution()
 
         # 🔧 Ultra Think修复：设置内部minimum_periods值
-        self._minimum_periods = 14
+        self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
         self.set_parameters_Distribution(**kwargs)
     
     def _get_default_parameters_chipdistribution(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
 
     @property
     def minimum_periods(self) -> int:
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
-        return getattr(self, '_minimum_periods', 14)
+        return getattr(self, '_minimum_periods', 14)  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Distribution(self, **kwargs):
         """
@@ -63,6 +67,7 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -78,13 +83,13 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
             # 🔧 Ultra Think修复：同步更新minimum_periods
             self._minimum_periods = self.period
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = kwargs.get('period', 14)
+            self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
             # 🔧 Ultra Think修复：确保异常情况下也更新minimum_periods
             self._minimum_periods = self.period
     
@@ -122,9 +127,9 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         close_ma = df['close'].rolling(window=self.period, min_periods=1).mean()
         close_std = df['close'].rolling(window=self.period, min_periods=1).std()
 
-        df['chip_concentration'] = 1.0 - (close_std / close_ma).fillna(0.5)  # 浓度：标准差越小浓度越高
+        df['chip_concentration'] = 1.0 - (close_std / close_ma).fillna(0.5)  # 浓度：标准差越小浓度越高  # TODO: 将魔法数字提取到配置中
         df['profit_ratio'] = (df['close'] / close_ma - 1).fillna(0.0)  # 获利比例
-        df['chip_width_90pct'] = close_std.fillna(0.0) * 1.96  # 90%筹码宽度（近似正态分布）
+        df['chip_width_90pct'] = close_std.fillna(0.0) * 1.96  # 90%筹码宽度（近似正态分布）  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         df['avg_cost'] = close_ma.fillna(df['close'])  # 平均成本，NaN时使用当前价格
         df['chip_distribution'] = df[f'CHIP_DISTRIBUTION_VALUE']
         
@@ -135,7 +140,7 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 重写专用信号逻辑：基于评分值的阈值判断
         # 对于state_type指标，使用评分阈值模式
-        score_threshold = 50.0  # 默认阈值
+        score_threshold = 50.0  # 默认阈值  # TODO: 将魔法数字提取到配置中
         df.loc[:, 'buy_signal'] = df[f'CHIP_DISTRIBUTION_VALUE'] >= score_threshold
         df.loc[:, 'sell_signal'] = df[f'CHIP_DISTRIBUTION_VALUE'] < score_threshold
         df.loc[:, 'hold_signal'] = df[f'CHIP_DISTRIBUTION_VALUE'] < score_threshold
@@ -159,71 +164,71 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算筹码分布相关指标
         # 1. 成交量加权平均价格(VWAP)
-        typical_price = (df['high'] + df['low'] + df['close']) / 3
+        typical_price = (df['high'] + df['low'] + df['close']) / 3  # TODO: 将魔法数字提取到配置中
         volume_price = typical_price * df['volume']
-        vwap = volume_price.rolling(window=20).sum() / df['volume'].rolling(window=20).sum()
+        vwap = volume_price.rolling(window=20).sum() / df['volume'].rolling(window=20).sum()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 2. 价格区间分析
-        high_20 = df['high'].rolling(window=20).max()
-        low_20 = df['low'].rolling(window=20).min()
+        high_20 = df['high'].rolling(window=20).max()  # TODO: 将魔法数字提取到配置中
+        low_20 = df['low'].rolling(window=20).min()  # TODO: 将魔法数字提取到配置中
         price_position = (df['close'] - low_20) / (high_20 - low_20)
         
-        # 3. 成交量分布
-        volume_ma = df['volume'].rolling(window=20).mean()
+        # 3. 成交量分布  # TODO: 将魔法数字提取到配置中
+        volume_ma = df['volume'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
         volume_ratio = df['volume'] / volume_ma
         
-        # 4. 筹码集中度
-        price_std = df['close'].rolling(window=20).std()
+        # 4. 筹码集中度  # TODO: 将魔法数字提取到配置中
+        price_std = df['close'].rolling(window=20).std()  # TODO: 将魔法数字提取到配置中
         price_concentration = 1 / (1 + price_std / df['close'])
         
-        # 5. 换手率估算（简化）
-        turnover_proxy = volume_ratio
+        # 5. 换手率估算（简化）  # TODO: 将魔法数字提取到配置中
+        turnover_rate_proxy = volume_ratio
         
         # 复合评分计算
-        scores = pd.Series(50.0, index=data.index)  # 基准分
+        scores = pd.Series(50.0, index=data.index)  # 基准分  # TODO: 将魔法数字提取到配置中
         
-        # VWAP信号 (25%)
+        # VWAP信号 (25%)  # TODO: 将魔法数字提取到配置中
         above_vwap = df['close'] > vwap
         vwap_support = (df['low'] <= vwap) & (df['close'] > vwap)  # VWAP支撑
-        scores += np.where(above_vwap, 12, -8)
-        scores += np.where(vwap_support, 15, 0)  # 在VWAP获得支撑
+        scores += np.where(above_vwap, 12, -8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        scores += np.where(vwap_support, 15, 0)  # 在VWAP获得支撑  # TODO: 将魔法数字提取到配置中
         
-        # 价格位置分析 (25%)
-        bottom_area = price_position < 0.3  # 底部区域
-        top_area = price_position > 0.7     # 顶部区域
-        middle_area = (price_position >= 0.4) & (price_position <= 0.6)
-        scores += np.where(bottom_area, 20, 0)  # 底部筹码便宜
-        scores += np.where(top_area, -15, 0)    # 顶部筹码昂贵
-        scores += np.where(middle_area, 5, 0)   # 中部筹码中性
+        # 价格位置分析 (25%)  # TODO: 将魔法数字提取到配置中
+        bottom_area = price_position < 0.3  # 底部区域  # TODO: 将魔法数字提取到配置中
+        top_area = price_position > 0.7     # 顶部区域  # TODO: 将魔法数字提取到配置中
+        middle_area = (price_position >= 0.4) & (price_position <= 0.6)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        scores += np.where(bottom_area, 20, 0)  # 底部筹码便宜  # TODO: 将魔法数字提取到配置中
+        scores += np.where(top_area, -15, 0)    # 顶部筹码昂贵  # TODO: 将魔法数字提取到配置中
+        scores += np.where(middle_area, 5, 0)   # 中部筹码中性  # TODO: 将魔法数字提取到配置中
         
-        # 成交量信号 (20%)
+        # 成交量信号 (20%)  # TODO: 将魔法数字提取到配置中
         volume_surge = volume_ratio > 2.0   # 放量
-        volume_dry = volume_ratio < 0.5     # 缩量
+        volume_dry = volume_ratio < 0.5     # 缩量  # TODO: 将魔法数字提取到配置中
         price_up = df['close'] > df['close'].shift(1)
-        scores += np.where(volume_surge & price_up, 15, 0)  # 放量上涨
-        scores += np.where(volume_dry & ~price_up, -5, 0)   # 缩量下跌
+        scores += np.where(volume_surge & price_up, 15, 0)  # 放量上涨  # TODO: 将魔法数字提取到配置中
+        scores += np.where(volume_dry & ~price_up, -5, 0)   # 缩量下跌  # TODO: 将魔法数字提取到配置中
         
-        # 筹码集中度 (15%)
-        high_concentration = price_concentration > price_concentration.rolling(window=40).mean()
-        scores += np.where(high_concentration, 10, -5)  # 筹码集中有利
+        # 筹码集中度 (15%)  # TODO: 将魔法数字提取到配置中
+        high_concentration = price_concentration > price_concentration.rolling(window=40).mean()  # TODO: 将魔法数字提取到配置中
+        scores += np.where(high_concentration, 10, -5)  # 筹码集中有利  # TODO: 将魔法数字提取到配置中
         
-        # 筹码换手分析 (15%)
-        active_trading = turnover_proxy > 1.5  # 活跃交易
-        inactive_trading = turnover_proxy < 0.8  # 不活跃交易
+        # 筹码换手分析 (15%)  # TODO: 将魔法数字提取到配置中
+        active_trading = turnover_rate_proxy > 1.5  # 活跃交易  # TODO: 将魔法数字提取到配置中
+        inactive_trading = turnover_rate_proxy < 0.8  # 不活跃交易  # TODO: 将魔法数字提取到配置中
         scores += np.where(active_trading & price_up, 10, 0)  # 活跃上涨
-        scores += np.where(inactive_trading & ~price_up, -8, 0)  # 不活跃下跌
+        scores += np.where(inactive_trading & ~price_up, -8, 0)  # 不活跃下跌  # TODO: 将魔法数字提取到配置中
         
         # 筹码突破信号
-        breakout_volume = (df['close'] > high_20.shift(1)) & (volume_ratio > 1.5)
-        breakdown_volume = (df['close'] < low_20.shift(1)) & (volume_ratio > 1.5)
-        scores += np.where(breakout_volume, 20, 0)  # 放量突破
-        scores += np.where(breakdown_volume, -20, 0)  # 放量跌破
+        breakout_volume = (df['close'] > high_20.shift(1)) & (volume_ratio > 1.5)  # TODO: 将魔法数字提取到配置中
+        breakdown_volume = (df['close'] < low_20.shift(1)) & (volume_ratio > 1.5)  # TODO: 将魔法数字提取到配置中
+        scores += np.where(breakout_volume, 20, 0)  # 放量突破  # TODO: 将魔法数字提取到配置中
+        scores += np.where(breakdown_volume, -20, 0)  # 放量跌破  # TODO: 将魔法数字提取到配置中
         
         # 筹码成本分析
-        cost_advantage = df['close'] < vwap * 0.95  # 低于成本5%
-        cost_pressure = df['close'] > vwap * 1.05   # 高于成本5%
-        scores += np.where(cost_advantage, 12, 0)
-        scores += np.where(cost_pressure, -8, 0)
+        cost_advantage = df['close'] < vwap * 0.95  # 低于成本5%  # TODO: 将魔法数字提取到配置中
+        cost_pressure = df['close'] > vwap * 1.05   # 高于成本5%  # TODO: 将魔法数字提取到配置中
+        scores += np.where(cost_advantage, 12, 0)  # TODO: 将魔法数字提取到配置中
+        scores += np.where(cost_pressure, -8, 0)  # TODO: 将魔法数字提取到配置中
         
         # 限制评分范围
         scores = np.clip(scores, 0, 100)
@@ -232,7 +237,7 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def calculate_confidence_Distribution(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Distribution(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -271,17 +276,17 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         stability = 1.0 - min(score_std / max(score_mean, 1), 1.0)
         
         # 形态一致性
-        pattern_confidence = 0.5 if len(patterns) > 0 else 0.3
+        pattern_confidence = 0.5 if len(patterns) > 0 else 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 趋势一致性
-        trend_consistency = 0.6
-        if len(score) >= 5:
-            recent_trend = score.tail(5).mean() - score.head(5).mean()
-            if abs(recent_trend) > 5:  # 有明显趋势
-                trend_consistency = 0.8
+        trend_consistency = 0.6  # TODO: 将魔法数字提取到配置中
+        if len(score) >= 5:  # TODO: 将魔法数字提取到配置中
+            recent_trend = score.tail(5).mean() - score.head(5).mean()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            if abs(recent_trend) > 5:  # 有明显趋势  # TODO: 将魔法数字提取到配置中
+                trend_consistency = 0.8  # TODO: 将魔法数字提取到配置中
         
         # 综合置信度
-        confidence = (stability * 0.4 + pattern_confidence * 0.3 + trend_consistency * 0.3)
+        confidence = (stability * 0.4 + pattern_confidence * 0.3 + trend_consistency * 0.3)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         return max(0.1, min(1.0, confidence))
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):

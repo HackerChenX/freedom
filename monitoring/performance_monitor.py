@@ -336,7 +336,7 @@ class Performancemonitor_monitor:
         try:
             # 尝试获取数据管理器统计
             try:
-                from db.unified_data_manager import get_unified_data_manager
+                from db.managers.data_access_manager import get_unified_data_manager
                 data_manager = get_unified_data_manager()
                 stats = data_manager.get_stats_Monitor()
                 
@@ -361,6 +361,7 @@ class Performancemonitor_monitor:
             # 尝试获取连接池统计
             try:
                 from db.connection_pool_adapter import get_connection_pool_adapter
+from db.sql_manager import SQLManager, QueryType
                 adapter = get_connection_pool_adapter()
                 pool_stats = adapter.get_statistics()
 
@@ -619,6 +620,7 @@ def database_health_check() -> Dict[str, Any]:
     """数据库健康检查"""
     try:
         from db.connection_pool_adapter import get_connection_pool_adapter
+from db.sql_manager import SQLManager, QueryType
         adapter = get_connection_pool_adapter()
 
         with adapter.get_connection() as conn:

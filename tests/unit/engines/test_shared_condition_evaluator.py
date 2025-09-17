@@ -16,6 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
 
 from analysis.engines.shared_condition_evaluator import Shared_condition_evaluator
 from analysis.engines.unified_indicator_engine import Unified_indicator_engine
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_shared_condition_evaluator(unittest.TestCase):

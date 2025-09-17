@@ -32,6 +32,7 @@ class ComprehensiveStrategyValidator:
         """设置服务"""
         try:
             from db.interfaces.indicator_calculator_interface import IIndicatorCalculator
+from db.sql_manager import SQLManager, QueryType
             
             # 创建完整的指标计算器
             class FullIndicatorCalculator:
@@ -108,8 +109,7 @@ class ComprehensiveStrategyValidator:
         try:
             query = f"""
             SELECT code, COUNT(*) as record_count
-            FROM stock_info 
-            WHERE level = '日线'
+            FROM stock_info WHERE code = %(code)s AND level = '日线'
             AND date >= '2020-01-01'
             GROUP BY code
             HAVING record_count >= 500
@@ -136,8 +136,7 @@ class ComprehensiveStrategyValidator:
             
             query = f"""
             SELECT code, name, date, open, high, low, close, volume
-            FROM stock_info 
-            WHERE code = '{code}'
+            FROM stock_info WHERE level = %(level)s AND code = '{code}'
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             ORDER BY date ASC

@@ -39,7 +39,7 @@ warnings.filterwarnings('ignore')
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
@@ -61,6 +61,7 @@ try:
     import plotly.graph_objects as go
     import plotly.express as px
     from plotly.subplots import make_subplots
+from db.sql_manager import SQLManager, QueryType
     import plotly.offline as pyo
     PLOTLY_AVAILABLE = True
 except ImportError:
@@ -294,7 +295,7 @@ class ChartEngine:
             'factor_exposure': self._generate_factor_exposure,
             'factor_attribution': self._generate_factor_attribution,
             'position_concentration': self._generate_position_concentration,
-            'turnover_analysis': self._generate_turnover_analysis,
+            'turnover_rate_analysis': self._generate_turnover_rate_analysis,
             'monthly_returns_heatmap': self._generate_monthly_returns_heatmap,
             'performance_attribution': self._generate_performance_attribution
         }
@@ -669,7 +670,7 @@ class ChartEngine:
         """生成持仓集中度图 - 占位符"""
         return self._create_placeholder_chart(chart_spec)
 
-    def _generate_turnover_analysis(self, chart_spec, data, config):
+    def _generate_turnover_rate_analysis(self, chart_spec, data, config):
         """生成换手率分析图 - 占位符"""
         return self._create_placeholder_chart(chart_spec)
 

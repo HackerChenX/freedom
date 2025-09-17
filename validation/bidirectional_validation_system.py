@@ -33,10 +33,11 @@ warnings.filterwarnings('ignore')
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -1705,7 +1706,7 @@ class BidirectionalValidationSystem:
 
     def _create_mock_data_manager(self):
         """创建模拟数据管理器（用于测试）"""
-        class MockDataManager:
+        class MockDataAccessManager:
             def get_stock_data_data_access_manager(self, code, start_date, end_date):
                 # 返回模拟数据
                 dates = pd.date_range(start=start_date, end=end_date, freq='D')
@@ -1719,7 +1720,7 @@ class BidirectionalValidationSystem:
                 })
                 return data
 
-        return MockDataManager()
+        return MockDataAccessManager()
 
 
 # 导出主要类和函数

@@ -33,6 +33,7 @@ try:
     from analysis.engines.unified_indicator_engine import UnifiedIndicatorEngine
     from indicators.real_technical_indicators import RealTechnicalIndicators
     from enums.pattern_polarity import PatternPolarity
+from db.sql_manager import SQLManager, QueryType
 except ImportError as e:
     logger.warning(f"导入部分模块失败: {e}")
     

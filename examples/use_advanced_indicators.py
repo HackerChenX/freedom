@@ -27,6 +27,7 @@ from indicators.gann_tools import GannTools, GannAngle, GannTimeCycle
 from utils.logger import get_logger
 from indicators.enhanced_factory import EnhancedIndicatorFactory
 from indicators.market_env import MarketDetector
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

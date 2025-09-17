@@ -108,6 +108,7 @@ def test_command_line_tool():
     try:
         # 测试命令行工具
         from bin.production_stock_selector import ProductionStockSelector
+from db.sql_manager import SQLManager, QueryType
 
         selector = ProductionStockSelector()
         results = selector.execute_full_pipeline(
@@ -151,6 +152,7 @@ def test_data_loading():
 
     try:
         from bin.production_stock_selector import ProductionStockSelector
+from db.sql_manager import SQLManager, QueryType
 
         selector = ProductionStockSelector()
 

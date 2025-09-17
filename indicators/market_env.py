@@ -1,3 +1,4 @@
+from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
@@ -5,7 +6,7 @@ from typing import Dict, Any, List
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -18,6 +19,9 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化MARKET_ENV指标
         
@@ -31,14 +35,14 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._default_parameters = self._get_default_parameters_marketenv()
 
         # 🔧 Ultra Think修复：设置内部minimum_periods值
-        self._minimum_periods = 14
+        self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
 
         # 应用用户参数
         self.set_parameters_Env(**kwargs)
     
     def _get_default_parameters_marketenv(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Env(self, **kwargs):
         """
@@ -50,6 +54,7 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -67,7 +72,7 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pass
         
         # 设置参数
-        self.period = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)  # TODO: 将魔法数字提取到配置中
         # 🔧 Ultra Think修复：同步更新minimum_periods
         self._minimum_periods = self.period
     
@@ -112,11 +117,11 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 🔧 Ultra Think修复：移除has_result检查，直接计算
         # if not self.has_result():
         #     self.calculate_Env(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
     
     def calculate_confidence_Env(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Env(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -146,4 +151,4 @@ class MarketEnv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
-        return getattr(self, '_minimum_periods', 14)
+        return getattr(self, '_minimum_periods', 14)  # TODO: 将魔法数字提取到配置中

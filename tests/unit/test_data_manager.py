@@ -20,6 +20,7 @@ from db.data_manager_adapter import Data_manager_adapter as Data_manager
 from models.stock_info import Stock_info
 from enums.period import Period
 from utils.exceptions import DataAccessError, DataNotFoundError, DataValidationError
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_data_manager(unittest.TestCase):
@@ -56,7 +57,7 @@ class Test_data_manager(unittest.TestCase):
             'turnover_rate': [2, 3, 4]
         })
     
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_kline_data_success(self, mock_get_stock_info):
         """测试成功获取K线数据"""
         # 配置模拟对象
@@ -79,7 +80,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_kline_data_empty(self, mock_get_stock_info):
         """测试获取空K线数据"""
         # 配置模拟对象返回空DataFrame
@@ -99,7 +100,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_kline_data_db_error(self, mock_get_stock_info):
         """测试数据库错误时获取K线数据"""
         # 配置模拟对象抛出异常
@@ -117,7 +118,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_kline_data_cache(self, mock_get_stock_info):
         """测试K线数据缓存功能"""
         # 配置模拟对象
@@ -146,7 +147,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象未被再次调用
         mock_get_stock_info.assert_not_called()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_stock_info_for_list_success(self, mock_get_stock_info):
         """测试成功获取股票列表"""
         # 配置模拟对象
@@ -164,7 +165,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_stock_info_for_list_with_filters(self, mock_get_stock_info):
         """测试使用过滤器获取股票列表"""
         # 配置模拟对象
@@ -185,7 +186,7 @@ class Test_data_manager(unittest.TestCase):
         # 验证模拟对象被调用
         mock_get_stock_info.assert_called_once()
 
-    @patch('db.data_manager.DataManager.db.get_stock_info')
+    @patch('db.data_manager.DataAccessManager.db.get_stock_info')
     def test_get_stock_info_for_list_db_error(self, mock_get_stock_info):
         """测试数据库错误时获取股票列表"""
         # 配置模拟对象抛出异常

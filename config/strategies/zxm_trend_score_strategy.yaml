@@ -1,0 +1,165 @@
+# ZXM趋势评分策略
+# 基于ZXM体系趋势指标的综合评分策略
+
+strategy_id: "ZXM_TREND_SCORE"
+name: "ZXM趋势评分策略"
+description: "基于ZXM体系多个趋势指标的综合评分选股策略"
+version: "1.0"
+category: "zxm_trend"
+
+# 策略条件 - ZXM趋势指标组合
+conditions:
+  # 1. 日线趋势组 (权重40%)
+  daily_trend_group:
+    type: "logic"
+    operator: "AND"
+    weight: 0.4
+    conditions:
+      # ZXM日线趋势向上
+      - type: "indicator"
+        indicator: "ZXM_DAILY_TREND_UP"
+        field: "trend_signal"
+        operator: ">"
+        value: 0.7
+        weight: 0.4
+      
+      # ZXM日线MACD
+      - type: "indicator"
+        indicator: "ZXM_DAILY_MACD"
+        field: "macd_signal"
+        operator: ">"
+        value: 0.6
+        weight: 0.3
+      
+      # ZXM日线KDJ
+      - type: "indicator"
+        indicator: "ZXM_DAILY_KDJ"
+        field: "kdj_signal"
+        operator: ">"
+        value: 0.5
+        weight: 0.3
+
+  # 2. 周线趋势组 (权重35%)
+  weekly_trend_group:
+    type: "logic"
+    operator: "AND"
+    weight: 0.35
+    conditions:
+      # ZXM周线趋势向上
+      - type: "indicator"
+        indicator: "ZXM_WEEKLY_TREND_UP"
+        field: "trend_signal"
+        operator: ">"
+        value: 0.6
+        weight: 0.4
+      
+      # ZXM周线MACD
+      - type: "indicator"
+        indicator: "ZXM_WEEKLY_MACD"
+        field: "macd_signal"
+        operator: ">"
+        value: 0.5
+        weight: 0.3
+      
+      # ZXM周线KDJ
+      - type: "indicator"
+        indicator: "ZXM_WEEKLY_KDJ"
+        field: "kdj_signal"
+        operator: ">"
+        value: 0.4
+        weight: 0.3
+
+  # 3. 月线趋势组 (权重25%)
+  monthly_trend_group:
+    type: "logic"
+    operator: "OR"
+    weight: 0.25
+    conditions:
+      # ZXM月线KDJ趋势
+      - type: "indicator"
+        indicator: "ZXM_MONTHLY_KDJ_TREND_UP"
+        field: "kdj_trend"
+        operator: ">"
+        value: 0.5
+        weight: 0.5
+      
+      # ZXM月线MACD
+      - type: "indicator"
+        indicator: "ZXM_MONTHLY_MACD"
+        field: "macd_value"
+        operator: "<"
+        value: 1.5
+        weight: 0.5
+
+# ZXM特色技术条件
+zxm_technical_filters:
+  # 趋势强度
+  trend_strength:
+    - type: "indicator"
+      indicator: "ZXM_TREND_STRENGTH"
+      field: "strength_score"
+      operator: ">"
+      value: 0.6
+  
+  # 趋势持续性
+  trend_duration:
+    - type: "indicator"
+      indicator: "ZXM_TREND_DURATION"
+      field: "duration_score"
+      operator: ">"
+      value: 0.4
+  
+  # 支撑阻力
+  support_resistance:
+    - type: "indicator"
+      indicator: "ZXM_SUPPORT_RESISTANCE"
+      field: "support_strength"
+      operator: ">"
+      value: 0.5
+
+# 评分系统
+scoring_system:
+  method: "zxm_composite_scoring"
+  
+  # ZXM评分权重
+  zxm_weights:
+    daily_trend_score: 0.4
+    weekly_trend_score: 0.35
+    monthly_trend_score: 0.25
+  
+  # 趋势一致性加分
+  trend_consistency_bonus:
+    all_timeframes_aligned: 1.3
+    two_timeframes_aligned: 1.15
+    single_timeframe: 1.0
+  
+  # 强度调整因子
+  strength_multipliers:
+    strong_trend: 1.2
+    moderate_trend: 1.0
+    weak_trend: 0.8
+
+# 风险控制
+risk_management:
+  # 趋势反转止损
+  trend_reversal_stop: true
+  
+  # ZXM风险控制
+  zxm_risk_control:
+    enable: true
+    risk_threshold: 0.3
+  
+  # 多周期确认
+  multi_timeframe_confirmation: true
+
+# 执行参数
+execution_parameters:
+  min_data_points: 120
+  trend_analysis_period: 60
+  signal_confirmation_days: 3
+  
+  # ZXM特定参数
+  zxm_parameters:
+    trend_sensitivity: 0.7
+    signal_threshold: 0.6
+    risk_adjustment: true

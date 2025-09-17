@@ -34,6 +34,7 @@ from utils.decorators import performance_monitor, exception_handler
 from db.managers.query_executor import UnifiedQueryExecutor
 from strategy.strategy_executor import StrategyExecutor
 from analysis.buy_point.buy_point_analyzer import BuyPointAnalyzer
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger('strategy_coverage_tester')
 
@@ -196,7 +197,7 @@ class StrategyCoverageTester:
             # ZXM策略
             StrategyType.ZXM_STRATEGY: [
                 "zxm_absorption",              # ZXM吸筹策略
-                "zxm_turnover_buypoint",       # ZXM换手买点
+                "zxm_turnover_rate_buypoint",       # ZXM换手买点
                 "zxm_daily_macd",              # ZXM日MACD策略
                 "zxm_ma_callback",             # ZXM均线回踩
                 "zxm_comprehensive"            # ZXM综合策略
@@ -441,8 +442,7 @@ class StrategyCoverageTester:
             # 获取测试股票列表
             query = f"""
             SELECT DISTINCT code
-            FROM stock_info 
-            WHERE level = '日线'
+            FROM stock_info WHERE code = %(code)s AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             LIMIT {self.test_config['test_stocks_count']}
             """
@@ -455,8 +455,7 @@ class StrategyCoverageTester:
             code_list = "','".join(stock_codes['code'].tolist())
             detail_query = f"""
             SELECT code, name, date, open, high, low, close, volume, turnover_rate
-            FROM stock_info 
-            WHERE code IN ('{code_list}')
+            FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{code_list}')
             AND level = '日线'
             AND date >= '{start_date}' AND date <= '{end_date}'
             ORDER BY code, date ASC

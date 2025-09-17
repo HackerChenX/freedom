@@ -121,6 +121,7 @@ class Unit_test_layer(Base_test_layer):
         
         try:
             from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
             indicator = complete_registry.create_indicator(indicator_name)
             
             # 生成标准测试数据
@@ -162,6 +163,7 @@ class Unit_test_layer(Base_test_layer):
         
         try:
             from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
             indicator = complete_registry.create_indicator(indicator_name)
             
             # 测试数据不足情况
@@ -196,6 +198,7 @@ class Unit_test_layer(Base_test_layer):
         
         try:
             from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
             indicator = complete_registry.create_indicator(indicator_name)
             
             # 测试NaN数据
@@ -311,6 +314,7 @@ class Semantic_test_layer(Base_test_layer):
         
         try:
             from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
             indicator = complete_registry.create_indicator(indicator_name)
             
             # 生成特定语义的测试数据
@@ -347,6 +351,7 @@ class Semantic_test_layer(Base_test_layer):
         
         try:
             from indicators.complete_indicator_registry import complete_registry
+from db.sql_manager import SQLManager, QueryType
             indicator = complete_registry.create_indicator(indicator_name)
             
             test_data = self._generate_standard_test_data_Layered_Testing_Framework_Layered_Testing_Framework_layeredtestingframework()

@@ -1,3 +1,4 @@
+from utils.container import container
 """
 统一指标计算引擎
 
@@ -12,6 +13,7 @@ import logging
 
 from utils.logger import getLogger
 from utils.cache import get_memory_cache
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -24,6 +26,9 @@ class UnifiedIndicatorEngine:
     """
     
     def __init__(self, enable_cache: bool = True):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化统一指标计算引擎
         

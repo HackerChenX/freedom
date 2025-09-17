@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略与回测集成引擎
 
@@ -16,12 +18,13 @@ from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from strategy.strategy_selection_analysis_controller import StrategySelectionAnalysisController
 from analysis.buypoints.buypoint_backtest_analysis_controller import BuyPointBacktestAnalysisController
 from analysis.buypoints.buypoint_strategy_adapter import get_buypoint_strategy_adapter
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -87,6 +90,18 @@ class IntegrationSummary:
 
 
 class IntegratedStrategyBacktestEngine:
+"""
+IntegratedStrategyBacktestEngine - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 21个方法分为以下职责组:
+  * 核心功能方法 (约7个)
+  * 辅助工具方法 (约7个)  
+  * 接口适配方法 (约7个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     策略与回测集成引擎
     
@@ -98,6 +113,9 @@ class IntegratedStrategyBacktestEngine:
     """
     
     def __init__(self, config: Optional[IntegrationConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化集成引擎
         

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from config import get_config
+from config.unified_config_manager import get_config
 """
 智能日期管理器单元测试
 

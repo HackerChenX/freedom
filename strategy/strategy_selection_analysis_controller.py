@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略选股分析模块主控制器
 
@@ -12,7 +14,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 from dataclasses import asdict
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from strategy.enhanced_strategy_config_engine import (
@@ -20,6 +22,7 @@ from strategy.enhanced_strategy_config_engine import (
 )
 from strategy.enhanced_stock_selection_engine import EnhancedStockSelectionEngine
 from strategy.enhanced_strategy_evaluation_system import EnhancedStrategyEvaluationSystem
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -32,6 +35,9 @@ class StrategySelectionAnalysisController:
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化控制器"""
         self.logger = logger
         

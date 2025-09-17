@@ -851,6 +851,7 @@ class AdvancedPerformanceStressTest:
         """测试批量指标计算"""
         try:
             from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
 
             registry = get_indicator_registry()
 

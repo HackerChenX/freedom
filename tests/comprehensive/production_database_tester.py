@@ -24,7 +24,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
 from db.clickhouse_db import get_clickhouse_db
-from config import get_config
+from config.unified_config_manager import get_config
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -147,7 +148,7 @@ class ProductionDatabaseTester:
         try:
             # 1. 随机抽样检查
             sample_query = f"""
-            SELECT code, name, date, open, high, low, close, volume, turnover, level
+            SELECT code, name, date, open, high, low, close, volume, turnover_rate, level
             FROM stock.stock_info 
             ORDER BY rand() 
             LIMIT {sample_size}

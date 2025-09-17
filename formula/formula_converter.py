@@ -14,6 +14,7 @@ from utils.logger import getLogger
 from enums.period import Period
 from indicators.indicator_factory import Indicator_factory
 from formula.stock_formula import StockFormula
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

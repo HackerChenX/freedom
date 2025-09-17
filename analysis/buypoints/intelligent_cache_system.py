@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -25,7 +26,8 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -123,6 +125,9 @@ class MemoryCache:
     """内存缓存 - LRU算法"""
 
     def __init__(self, config: CacheConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.cache = OrderedDict()
         self.timestamps = {}
@@ -256,6 +261,9 @@ class DiskCache:
     """磁盘缓存"""
 
     def __init__(self, config: CacheConfig):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.config = config
         self.cache_dir = config.disk_cache_dir
         self.db_path = os.path.join(self.cache_dir, "cache_metadata.db")
@@ -505,6 +513,9 @@ class IntelligentCacheSystem:
     """
 
     def __init__(self, config: Optional[CacheConfig] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化智能缓存系统"""
         self.config = config or CacheConfig()
         self.logger = logger
@@ -661,6 +672,9 @@ class CachePreloader:
     """缓存预加载器"""
 
     def __init__(self, cache_system: IntelligentCacheSystem):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.cache_system = cache_system
         self.executor = ThreadPoolExecutor(max_workers=2)
         self.preload_patterns = {}

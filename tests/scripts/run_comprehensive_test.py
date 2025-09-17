@@ -31,6 +31,7 @@ sys.path.insert(0, str(project_root))
 
 from comprehensive_indicator_pattern_strategy_tester import ComprehensiveIndicatorPatternStrategyTester
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

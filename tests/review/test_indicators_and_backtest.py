@@ -309,6 +309,7 @@ class TestIndicatorsAndBacktest(unittest.TestCase):
             
             # 解析策略
             from strategy.strategy_parser import StrategyParser
+from db.sql_manager import SQLManager, QueryType
             parser = StrategyParser()
             strategy_plan = parser.parse_strategy(strategy)
             

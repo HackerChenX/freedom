@@ -10,10 +10,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from indicators.complete_indicator_registry import complete_registry
 from utils.logger import get_logger, init_logging
-from config.config import get_config
+from config.unified_config_manager import get_config
 
 # 初始化日志
 init_logging(level=get_config('logging.level', 'INFO'))

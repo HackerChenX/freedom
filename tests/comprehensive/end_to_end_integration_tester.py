@@ -20,7 +20,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from utils.logger import get_logger
-from config.config import get_config
+from config.unified_config_manager import get_config
 from enums.test_status import TestStatus
 from utils.decorators import exception_handler, performance_monitor
 
@@ -114,8 +114,7 @@ class WorkflowExecutor:
                 codes_str = "', '".join(stock_codes)
                 query = f"""
                 SELECT code, name, date, open, high, low, close, volume, turnover_rate
-                FROM stock_info 
-                WHERE code IN ('{codes_str}')
+                FROM stock_info WHERE code = %(code)s AND level = %(level)s AND code IN ('{codes_str}')
                 AND date >= '{date_range[0]}' AND date <= '{date_range[1]}'
                 AND level = '日线'
                 ORDER BY code, date ASC
@@ -261,6 +260,7 @@ class WorkflowExecutor:
             # 双均线策略分析
             try:
                 from strategy.dual_ma.dual_ma_strategy import DualMAStrategy
+from db.sql_manager import SQLManager, QueryType
                 dual_ma_strategy = DualMAStrategy()
                 
                 for _, row in indicators.iterrows():

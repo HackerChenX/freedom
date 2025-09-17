@@ -21,6 +21,7 @@ def test_macd_simple():
     try:
         # 导入测试框架
         from unified_indicator_tester import UnifiedIndicatorTester
+from db.sql_manager import SQLManager, QueryType
         
         # 初始化测试器
         print("🔄 初始化测试框架...")

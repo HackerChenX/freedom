@@ -189,7 +189,8 @@ class EnhancedExceptionHandler:
             # 尝试重新连接数据库
             from utils.unified_container import get_container
             from db.interfaces.data_access_interface import DataAccessInterface
-            
+            from db.sql_manager import SQLManager, QueryType
+
             container = get_container()
             if container.is_registered(DataAccessInterface):
                 # 重新创建数据访问实例

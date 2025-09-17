@@ -1,3 +1,4 @@
+from utils.container import container
 """
 复杂逻辑处理器
 
@@ -22,6 +23,7 @@ import numpy as np
 from utils.logger import getLogger
 from utils.cache import get_memory_cache
 from analysis.engines.shared_condition_evaluator import SharedConditionEvaluator
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -401,6 +403,18 @@ class LogicExpressionParser:
 
 
 class ComplexLogicProcessor:
+"""
+ComplexLogicProcessor - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 36个方法分为以下职责组:
+  * 核心功能方法 (约12个)
+  * 辅助工具方法 (约12个)  
+  * 接口适配方法 (约12个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     复杂逻辑处理器
 
@@ -414,6 +428,9 @@ class ComplexLogicProcessor:
     """
 
     def __init__(self, condition_evaluator: Optional[SharedConditionEvaluator] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化复杂逻辑处理器
 

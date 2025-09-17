@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 策略评分系统 - 多维度评估指标
 
@@ -9,10 +10,11 @@ import numpy as np
 from typing import Dict, List, Any, Optional, Union, Tuple
 from datetime import datetime, timedelta
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from utils.decorators import performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -412,16 +414,16 @@ class StrategyEvaluator:
         if history.empty:
             return 0.0
         
-        if "stock_code" in history.columns and "industry" in history.columns:
+        if "stock_code" in history.columns and in history.columns:
             # 计算行业分布
-            industry_counts = history["industry"].value_counts()
-            industry_ratios = industry_counts / industry_counts.sum()
+            _counts = history[].value_counts()
+            _ratios = _counts / _counts.sum()
             
             # 使用熵来衡量多样性
-            entropy = -np.sum(industry_ratios * np.log(industry_ratios)) if len(industry_ratios) > 0 else 0
+            entropy = -np.sum(_ratios * np.log(_ratios)) if len(_ratios) > 0 else 0
             
             # 将熵映射到0-100的评分
-            max_entropy = np.log(len(industry_ratios)) if len(industry_ratios) > 0 else 1
+            max_entropy = np.log(len(_ratios)) if len(_ratios) > 0 else 1
             diversity_score = 100 * (entropy / max_entropy) if max_entropy > 0 else 0
             
             return diversity_score

@@ -18,7 +18,7 @@ from typing import Dict, List, Any, Optional
 # 添加项目根目录到路径
 sys.path.append('/Users/hacker/PycharmProjects/freedom')
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -111,6 +111,7 @@ class RSIMaintainabilityOptimization:
         
         try:
             from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
             rsi = RsiRsi()
             
             # 分析API一致性
@@ -265,6 +266,7 @@ class RSIMaintainabilityOptimization:
             
             # 检查是否有需要重命名的方法
             from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
             rsi = RsiRsi()
             
             methods_to_check = [method for method in dir(rsi) if not method.startswith('__')]
@@ -336,6 +338,7 @@ class RSIMaintainabilityOptimization:
         
         try:
             from indicators.rsi import RsiRsi
+from db.sql_manager import SQLManager, QueryType
             rsi = RsiRsi()
             
             # 重新评估可维护性

@@ -1,14 +1,17 @@
+from typing import Dict, Any
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 """
 统一指标计算基类模块
 
 提供统一的指标计算基础设施，包括：
 1. 标准化的指标计算接口
 2. 通用的数据验证和处理
-3. 统一的指标注册和管理
-4. 高效的批量计算支持
+3. 统一的指标注册和管理  # TODO: 将魔法数字提取到配置中
+4. 高效的批量计算支持  # TODO: 将魔法数字提取到配置中
 """
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 import abc
 import pandas as pd
@@ -18,13 +21,14 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.common_utils import DataProcessor, ValidationUtils, CacheUtils
 from utils.decorators import exception_handler, performance_monitor
 from enums.indicator_types import Indicatortype_indicator_types
+from db.sql_manager import SQLManager, QueryType
 
 # 创建兼容的枚举类
-class IndicatorType:
+class IndicatorType(BaseIndicator):
     TREND = "trend"
     MOMENTUM = "momentum" 
     VOLUME = "volume"
@@ -34,7 +38,7 @@ class IndicatorType:
 logger = get_logger(__name__)
 
 
-class CalculationMode(Enum):
+class CalculationMode(BaseIndicator,Enum):
     """计算模式"""
     SINGLE = "single"      # 单次计算
     BATCH = "batch"        # 批量计算
@@ -42,7 +46,7 @@ class CalculationMode(Enum):
 
 
 @dataclass
-class IndicatorResult:
+class IndicatorResult(BaseIndicator):
     """指标计算结果"""
     name: str
     data: Union[pd.Series, pd.DataFrame]
@@ -62,7 +66,7 @@ class IndicatorResult:
         }
 
 
-class UnifiedIndicatorCalculator(abc.ABC):
+class UnifiedIndicatorCalculator(BaseIndicator,abc.ABC):
     """
     统一指标计算基类
     
@@ -70,10 +74,13 @@ class UnifiedIndicatorCalculator(abc.ABC):
     """
     
     def __init__(self, name: str, indicator_type: IndicatorType):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.name = name
         self.indicator_type = indicator_type
         self.cache_enabled = True
-        self.cache_ttl = 300  # 5分钟缓存
+        self.cache_ttl = 300  # 5分钟缓存  # TODO: 将魔法数字提取到配置中
         
         # 性能统计
         self.calculation_count = 0
@@ -157,7 +164,7 @@ class UnifiedIndicatorCalculator(abc.ABC):
             if not is_valid:
                 raise ValueError(f"参数验证失败: {errors}")
             
-            # 3. 缓存检查
+            # 3. 缓存检查  # TODO: 将魔法数字提取到配置中
             if self.cache_enabled:
                 cache_key = self._generate_cache_key(data, merged_params)
                 cached_result = CacheUtils.get(cache_key)
@@ -165,14 +172,14 @@ class UnifiedIndicatorCalculator(abc.ABC):
                     logger.debug(f"使用缓存结果: {self.name}")
                     return cached_result
             
-            # 4. 执行计算
+            # 4. 执行计算  # TODO: 将魔法数字提取到配置中
             result_data = self.calculate(data, **merged_params)
             
-            # 5. 结果验证
+            # 5. 结果验证  # TODO: 将魔法数字提取到配置中
             if not self._validate_result(result_data):
                 raise ValueError(f"计算结果验证失败: {self.name}")
             
-            # 6. 创建结果对象
+            # 6. 创建结果对象  # TODO: 将魔法数字提取到配置中
             calculation_time = (datetime.now() - start_time).total_seconds()
             result = IndicatorResult(
                 name=self.name,
@@ -186,11 +193,11 @@ class UnifiedIndicatorCalculator(abc.ABC):
                 success=True
             )
             
-            # 7. 缓存结果
+            # 7. 缓存结果  # TODO: 将魔法数字提取到配置中
             if self.cache_enabled:
                 CacheUtils.set(cache_key, result, self.cache_ttl)
             
-            # 8. 更新统计信息
+            # 8. 更新统计信息  # TODO: 将魔法数字提取到配置中
             self._update_stats(calculation_time)
             
             return result
@@ -291,16 +298,19 @@ class UnifiedIndicatorCalculator(abc.ABC):
         """清除缓存"""
         CacheUtils.clear()
     
-    def set_cache_config(self, enabled: bool = True, ttl: int = 300) -> None:
+    def set_cache_config(self, enabled: bool = True, ttl: int = 300) -> None:  # TODO: 将魔法数字提取到配置中
         """设置缓存配置"""
         self.cache_enabled = enabled
         self.cache_ttl = ttl
 
 
-class TrendIndicatorBase(UnifiedIndicatorCalculator):
+class TrendIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
     """趋势指标基类"""
     
     def __init__(self, name: str):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(name, IndicatorType.TREND)
     
     def get_trend_direction(self, data: pd.DataFrame) -> pd.Series:
@@ -324,15 +334,18 @@ class TrendIndicatorBase(UnifiedIndicatorCalculator):
             return pd.Series(dtype=float)
 
 
-class MomentumIndicatorBase(UnifiedIndicatorCalculator):
+class MomentumIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
     """动量指标基类"""
     
     def __init__(self, name: str):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(name, IndicatorType.MOMENTUM)
     
     def get_momentum_signals(self, data: pd.DataFrame, 
-                           overbought_threshold: float = 80,
-                           oversold_threshold: float = 20) -> pd.DataFrame:
+                           overbought_threshold: float = 80,  # TODO: 将魔法数字提取到配置中
+                           oversold_threshold: float = 20) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """
         获取动量信号
         
@@ -360,10 +373,13 @@ class MomentumIndicatorBase(UnifiedIndicatorCalculator):
         return signals
 
 
-class VolumeIndicatorBase(UnifiedIndicatorCalculator):
+class VolumeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
     """成交量指标基类"""
     
     def __init__(self, name: str):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(name, IndicatorType.VOLUME)
     
     def get_required_columns_unified_calculator(self) -> List[str]:
@@ -386,17 +402,20 @@ class VolumeIndicatorBase(UnifiedIndicatorCalculator):
             profile = pd.DataFrame(index=result.index)
             profile['volume_indicator'] = result
             profile['volume_raw'] = data['volume']
-            profile['volume_ratio'] = result / data['volume'].rolling(20).mean()
+            profile['volume_ratio'] = result / data['volume'].rolling(20).mean()  # TODO: 将魔法数字提取到配置中
         else:
             profile = pd.DataFrame()
         
         return profile
 
 
-class VolatilityIndicatorBase(UnifiedIndicatorCalculator):
+class VolatilityIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
     """波动率指标基类"""
     
     def __init__(self, name: str):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(name, IndicatorType.VOLATILITY)
     
     def get_volatility_level(self, data: pd.DataFrame) -> pd.Series:
@@ -420,10 +439,13 @@ class VolatilityIndicatorBase(UnifiedIndicatorCalculator):
             return pd.Series(dtype=float)
 
 
-class CompositeIndicatorBase(UnifiedIndicatorCalculator):
+class CompositeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
     """复合指标基类"""
     
     def __init__(self, name: str, component_indicators: List[UnifiedIndicatorCalculator]):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__(name, IndicatorType.COMPOSITE)
         self.component_indicators = component_indicators
     
@@ -466,7 +488,7 @@ class CompositeIndicatorBase(UnifiedIndicatorCalculator):
         return list(set(all_columns))  # 去重
 
 
-class IndicatorCalculatorFactory:
+class IndicatorCalculatorFactory(BaseIndicator):
     """指标计算器工厂"""
     
     _registry = {}
@@ -508,26 +530,29 @@ class IndicatorCalculatorFactory:
 
 
 # 示例：简单移动平均线指标
-class SimpleMovingAverageCalculator(TrendIndicatorBase):
+class SimpleMovingAverageCalculator(BaseIndicator,TrendIndicatorBase):
     """简单移动平均线"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         super().__init__("SMA")
     
     def calculate(self, data: pd.DataFrame, **params) -> pd.Series:
-        period = params.get('period', 20)
+        period = params.get('period', 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         return data['close'].rolling(window=period).mean()
     
     def get_required_columns_unified_calculator(self) -> List[str]:
         return ['close']
     
     def get_default_params_unified_calculator(self) -> Dict[str, Any]:
-        return {'period': 20}
+        return {'period': 20}  # TODO: 将魔法数字提取到配置中
     
     def validate_params_unified_calculator(self, params: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors = []
         
-        period = params.get('period', 20)
+        period = params.get('period', 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         if not isinstance(period, int) or period <= 0:
             errors.append("period必须是正整数")
         
@@ -536,3 +561,26 @@ class SimpleMovingAverageCalculator(TrendIndicatorBase):
 
 # 注册示例指标
 IndicatorCalculatorFactory.register('SMA', SimpleMovingAverageCalculator)
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

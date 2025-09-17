@@ -20,6 +20,7 @@ from db.sql_manager import QueryType
 from utils.logger import get_logger
 from .logging_config import get_test_logger
 from .config_manager import get_config_manager
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_test_logger('data_validation')
 

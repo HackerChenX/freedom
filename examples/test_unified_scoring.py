@@ -17,6 +17,7 @@ sys.path.insert(0, root_dir)
 from indicators.complete_indicator_registry import complete_registry
 from utils.dependency_injection import get_service
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -29,8 +30,7 @@ def test_unified_scoring():
     data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info 
-    WHERE code = '000001'
+    FROM stock_info WHERE level = %(level)s AND code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'
     ORDER BY date
@@ -98,7 +98,7 @@ def test_market_environment_detection():
     data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2023-01-01'
@@ -147,7 +147,7 @@ def test_scoring_consistency_Scoring():
     data_access = get_service("IDataAccess")
     sql = """
     SELECT date, open, high, low, close, volume
-    FROM stock_info WHERE 1=1
+    FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
     WHERE code = '000001'
     AND level = '日线'
     AND date >= '2024-01-01'

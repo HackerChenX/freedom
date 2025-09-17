@@ -105,7 +105,7 @@ class SimpleTimeoutTest:
         
         try:
             # 简单的数据库连接测试
-            from config import get_config
+            from config.unified_config_manager import get_config
             
             # 模拟数据库操作
             time.sleep(1.0)  # 模拟连接时间

@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
 
 from tests.comprehensive.test_result_validator import TestResultValidator, PatternValidationResult, IndicatorValidationResult, ComprehensiveValidationResult
+from db.sql_manager import SQLManager, QueryType
 
 
 # 模拟测试结果类

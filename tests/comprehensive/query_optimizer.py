@@ -16,6 +16,7 @@ import re
 
 from utils.logger import getLogger
 from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
 from .cache_manager import get_cache_manager
 
 logger = getLogger(__name__)
@@ -457,6 +458,7 @@ class ClickHouseOptimizer:
 def main():
     """测试ClickHouse查询优化器"""
     from db.interfaces.data_access_interface import DataAccessInterface
+from db.sql_manager import SQLManager, QueryType
     
     # 创建数据访问接口
     data_access = None  # 实际应用中应该获取真实的数据访问接口

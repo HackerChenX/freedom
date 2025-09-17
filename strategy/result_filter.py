@@ -1,3 +1,4 @@
+from utils.container import container
 """
 结果筛选与排序模块
 
@@ -10,8 +11,9 @@ import re
 import json
 from datetime import datetime
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -24,6 +26,9 @@ class ResultFilter:
     """
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化结果筛选与排序类
         """
@@ -31,7 +36,6 @@ class ResultFilter:
         self.filter_functions = {
             "score": self._filter_by_score,
             "rank": self._filter_by_rank,
-            "industry": self._filter_by_industry,
             "market_cap": self._filter_by_market_cap,
             "strategy_count": self._filter_by_strategy_count,
             "condition_count": self._filter_by_condition_count,
@@ -44,7 +48,6 @@ class ResultFilter:
             "score": lambda df: df.sort_values(by="score", ascending=False),
             "rank": lambda df: df.sort_values(by="rank"),
             "market_cap": lambda df: df.sort_values(by="market_cap", ascending=False),
-            "industry": lambda df: df.sort_values(by="industry"),
             "stock_code": lambda df: df.sort_values(by="stock_code"),
             "condition_count": self._sort_by_condition_count,
             "strategy_count": lambda df: df.sort_values(by="strategy_count", ascending=False),
@@ -256,18 +259,18 @@ class ResultFilter:
             return df[(df["rank"] >= min_rank) & (df["rank"] <= max_rank)]
         return df
     
-    def _filter_by_industry(self, df: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
+    def _filter_by_(self, df: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
         """按行业筛选"""
         industries = config.get("values", [])
         exclude = config.get("exclude", False)
         
-        if not industries or "industry" not in df.columns:
+        if not industries or not in df.columns:
             return df
             
         if exclude:
-            return df[~df["industry"].isin(industries)]
+            return df[~df[].isin(industries)]
         else:
-            return df[df["industry"].isin(industries)]
+            return df[df[].isin(industries)]
     
     def _filter_by_market_cap(self, df: pd.DataFrame, config: Dict[str, Any]) -> pd.DataFrame:
         """按市值筛选"""

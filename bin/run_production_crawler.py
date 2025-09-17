@@ -22,6 +22,7 @@ from crawler.monitoring.performance_monitor import Performance_monitor
 from crawler.monitoring.alert_manager import Alert_manager
 from crawler.integration.system_integrator import System_integrator
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

@@ -24,6 +24,7 @@ sys.path.insert(0, str(project_root))
 from monitoring.alert_config_manager import AlertConfigManager, AlertRuleConfig
 from monitoring.intelligent_alert_system import IntelligentAlertSystem
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

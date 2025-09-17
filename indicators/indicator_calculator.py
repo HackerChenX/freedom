@@ -1,3 +1,6 @@
+from typing import Dict, Any
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 """
 指标计算器实现
 
@@ -10,12 +13,12 @@ import logging
 
 from db.interfaces.indicator_calculator_interface import IindicatorCalculator, IIndicatorCalculator
 from enums.indicator_types import Indicatortype_indicator_types as IndicatorType
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class IndicatorCalculator(IindicatorCalculator):
+class IndicatorCalculator(BaseIndicator,IindicatorCalculator):
     """
     基础指标计算器实现
     
@@ -23,6 +26,10 @@ class IndicatorCalculator(IindicatorCalculator):
     """
     
     def __init__(self):
+            super().__init__(name=self.__class__.__name__, **kwargs)
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """初始化指标计算器"""
         self._indicators = {}
         logger.debug("指标计算器初始化完成")
@@ -44,7 +51,7 @@ class IndicatorCalculator(IindicatorCalculator):
             params = {}
         
         # 简单的移动平均计算作为默认实现
-        period = params.get('period', 20)
+        period = params.get('period', 20)  # TODO: 将魔法数字提取到配置中
         if 'close' in data.columns:
             return data['close'].rolling(window=period).mean()
         else:
@@ -76,7 +83,7 @@ class IndicatorCalculator(IindicatorCalculator):
         Returns:
             Dict[str, Any]: 默认参数字典
         """
-        return {'period': 20}
+        return {'period': 20}  # TODO: 将魔法数字提取到配置中
     
     def validate_data(self, data: pd.DataFrame) -> bool:
         """
@@ -99,7 +106,7 @@ class IndicatorCalculator(IindicatorCalculator):
         
         return True
     
-    def calculate_ma_indicator_calculator(self, data: pd.DataFrame, period: int = 20) -> pd.Series:
+    def calculate_ma_indicator_calculator(self, data: pd.DataFrame, period: int = 20) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算移动平均线
         
@@ -115,7 +122,7 @@ class IndicatorCalculator(IindicatorCalculator):
         
         return data['close'].rolling(window=period).mean()
     
-    def calculate_rsi_indicator_calculator(self, data: pd.DataFrame, period: int = 14) -> pd.Series:
+    def calculate_rsi_indicator_calculator(self, data: pd.DataFrame, period: int = 14) -> pd.Series:  # TODO: 将魔法数字提取到配置中
         """
         计算RSI指标
         
@@ -140,9 +147,9 @@ class IndicatorCalculator(IindicatorCalculator):
         return rsi
     
     def calculate_macd_indicator_calculator(self, data: pd.DataFrame, 
-                      fast_period: int = 12, 
-                      slow_period: int = 26, 
-                      signal_period: int = 9) -> Dict[str, pd.Series]:
+                      fast_period: int = 12,  # TODO: 将魔法数字提取到配置中 
+                      slow_period: int = 26,  # TODO: 将魔法数字提取到配置中 
+                      signal_period: int = 9) -> Dict[str, pd.Series]:  # TODO: 将魔法数字提取到配置中
         """
         计算MACD指标
         
@@ -180,3 +187,54 @@ class IndicatorCalculator(IindicatorCalculator):
 
 # 兼容性别名
 IIndicatorCalculator = IndicatorCalculator 
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算指标值
+        
+        Args:
+            data: 输入数据，包含OHLCV等字段
+            
+        Returns:
+            pd.DataFrame: 包含指标计算结果的数据框
+        """
+        if not self.validate_data(data):
+            raise ValueError("输入数据不符合要求")
+        
+        # 预处理数据
+        processed_data = self.preprocess_data(data)
+        
+        # TODO: 实现具体的指标计算逻辑
+        result = processed_data.copy()
+        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        
+        # 后处理结果
+        result = self.postprocess_result(result)
+        
+        # 保存结果
+        self._result = result
+        
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

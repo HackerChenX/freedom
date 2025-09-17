@@ -17,6 +17,7 @@ from enum import Enum
 
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -80,7 +81,7 @@ class TradingHaltProcessor:
         self.halt_detection_config = {
             'zero_volume_threshold': 1000,        # 成交量接近零的阈值
             'min_halt_days': 2,                   # 最小停牌天数
-            'price_change_threshold': 0.001,      # 价格变化阈值
+            _threshold': 0.001,      # 价格变化阈值
             'volume_ratio_threshold': 0.01,       # 成交量比例阈值
             'turnover_rate_threshold': 0.0001     # 换手率阈值
         }
@@ -167,16 +168,16 @@ class TradingHaltProcessor:
         # 停牌条件2: 价格基本不变（如果有价格数据）
         price_condition = pd.Series([False] * len(stock_data))
         if 'close' in stock_data.columns:
-            price_changes = stock_data['close'].diff().abs()
-            price_condition = price_changes <= self.halt_detection_config['price_change_threshold']
+            s = stock_data['close'].diff().abs()
+            price_condition = s <= self.halt_detection_config[_threshold']
         
         # 停牌条件3: 换手率极低（如果有换手率数据）
-        turnover_condition = pd.Series([False] * len(stock_data))
+        turnover_rate_condition = pd.Series([False] * len(stock_data))
         if 'turnover_rate' in stock_data.columns:
-            turnover_condition = stock_data['turnover_rate'] <= self.halt_detection_config['turnover_rate_threshold']
+            turnover_rate_condition = stock_data['turnover_rate'] <= self.halt_detection_config['turnover_rate_threshold']
         
         # 综合判断停牌
-        halt_condition = volume_condition & (price_condition | turnover_condition)
+        halt_condition = volume_condition & (price_condition | turnover_rate_condition)
         
         # 找到连续的停牌期间
         halt_periods = []

@@ -11,10 +11,11 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # 导入需要测试的ZXM指标
-from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolume_shrink, ZXMBSAbsorb
+from indicators.zxm.buy_point_indicators import ZXMturnover_rate, ZXMVolume_shrink, ZXMBSAbsorb
 from indicators.zxm.trend_indicators import ZXMDaily_trend_up, ZXMWeekly_trend_up
 from indicators.zxm.elasticity_indicators import Amplitude_elasticity, ZXMRise_elasticity
 from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_zXMBoundary_conditions(unittest.TestCase):
@@ -146,7 +147,7 @@ class Test_zXMBoundary_conditions(unittest.TestCase):
         
         insufficient_data = self.boundary_scenarios['insufficient_data']
         indicators_to_test = [
-            ('ZXMTurnover', ZXMTurnover()),
+            ('ZXMturnover_rate', ZXMturnover_rate()),
             ('ZXMVolumeShrink', ZXMVolumeShrink()),
             ('ZXMDailyTrendUp', ZXMDailyTrendUp()),
             ('AmplitudeElasticity', AmplitudeElasticity()),
@@ -179,7 +180,7 @@ class Test_zXMBoundary_conditions(unittest.TestCase):
         
         nan_data = self.boundary_scenarios['nan_values']
         indicators_to_test = [
-            ('ZXMTurnover', ZXMTurnover()),
+            ('ZXMturnover_rate', ZXMturnover_rate()),
             ('ZXMVolumeShrink', ZXMVolumeShrink()),
             ('AmplitudeElasticity', AmplitudeElasticity()),
         ]
@@ -213,7 +214,7 @@ class Test_zXMBoundary_conditions(unittest.TestCase):
         
         extreme_data = self.boundary_scenarios['extreme_values']
         indicators_to_test = [
-            ('ZXMTurnover', ZXMTurnover()),
+            ('ZXMturnover_rate', ZXMturnover_rate()),
             ('AmplitudeElasticity', AmplitudeElasticity()),
             ('StockScoreCalculator', StockScoreCalculator()),
         ]
@@ -241,7 +242,7 @@ class Test_zXMBoundary_conditions(unittest.TestCase):
         
         zero_data = self.boundary_scenarios['zero_values']
         indicators_to_test = [
-            ('ZXMTurnover', ZXMTurnover()),
+            ('ZXMturnover_rate', ZXMturnover_rate()),
             ('ZXMVolumeShrink', ZXMVolumeShrink()),
         ]
         
@@ -296,7 +297,7 @@ class Test_zXMBoundary_conditions(unittest.TestCase):
         
         empty_data = self.boundary_scenarios['empty_data']
         indicators_to_test = [
-            ('ZXMTurnover', ZXMTurnover()),
+            ('ZXMturnover_rate', ZXMturnover_rate()),
             ('AmplitudeElasticity', AmplitudeElasticity()),
         ]
         

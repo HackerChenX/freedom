@@ -23,6 +23,7 @@ sys.path.insert(0, '/Users/hacker/PycharmProjects/freedom')
 
 from db.enhanced_connection_pool import get_connection_pool
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -43,16 +44,16 @@ class CachePerformanceTester:
             "SELECT code, name, date, close FROM stock_info WHERE code = '000001' AND level = '日线' ORDER BY date DESC LIMIT 100",
             
             # 时间范围查询
-            "SELECT code, name, date, open, close, high, low, volume FROM stock_info WHERE date >= '2024-01-01' AND date <= '2024-01-31' AND level = '日线' LIMIT 1000",
+            "SELECT code, name, date, open, close, high, low, volume FROM stock_info WHERE code = %(code)s AND date >= '2024-01-01' AND date <= '2024-01-31' AND level = '日线' LIMIT 1000",
             
             # 聚合查询
-            "SELECT code, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE level = '日线' GROUP BY code LIMIT 50",
+            "SELECT code, COUNT(*) as count, AVG(close) as avg_close FROM stock_info WHERE code = %(code)s AND level = '日线' GROUP BY code LIMIT 50",
             
             # 复杂条件查询
-            "SELECT code, name, date, close, volume FROM stock_info WHERE close > 10 AND volume > 1000000 AND level = '日线' ORDER BY date DESC LIMIT 200",
+            "SELECT code, name, date, close, volume FROM stock_info WHERE code = %(code)s AND close > 10 AND volume > 1000000 AND level = '日线' ORDER BY date DESC LIMIT 200",
             
             # 行业统计查询
-            "SELECT industry, COUNT(*) as stock_count FROM stock_info WHERE level = '日线' GROUP BY industry LIMIT 20"
+            "SELECT industry, COUNT(*) as stock_count FROM stock_info WHERE code = %(code)s AND level = '日线' GROUP BY industry LIMIT 20"
         ]
     
     def test_cache_performance(self) -> Dict[str, Any]:

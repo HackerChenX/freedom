@@ -9,6 +9,7 @@
 
 from typing import Dict, Optional
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -63,7 +64,7 @@ class IndicatorNameMapper:
             # ZXM指标映射
             'TrendDetector': 'ZXM_TREND_DETECTOR',
             'TrendDuration': 'ZXM_TREND_DURATION',
-            'ZXMTurnover': 'ZXM_TURNOVER',
+            'ZXMturnover_rate': 'ZXM_turnover_rate',
             'ZXMVolumeShrink': 'ZXM_VOLUME_SHRINK',
             'ZXMBSAbsorb': 'ZXM_BS_ABSORB',
             'AmplitudeElasticity': 'ZXM_AMPLITUDE_ELASTICITY',
@@ -225,7 +226,7 @@ class IndicatorNameMapper:
             '核心指标': ['VOL', 'SAR', 'KC', 'MTM', 'PSY', 'PVT', 'TRIX', 'VIX', 'VOSC', 'VR', 'WR', 'MACD', 'BOLL', 'KDJ', 'BIAS', 'DMI', 'EMV', 'CMO', 'DMA', 'RSI'],
             '增强指标': ['EnhancedMACD', 'EnhancedTRIX', 'EnhancedKDJ', 'EnhancedOBV', 'EnhancedCCI', 'EnhancedRSI', 'EnhancedWR', 'EnhancedMFI'],
             '形态指标': ['CandlestickPatterns', 'AdvancedCandlestickPatterns', 'ZXMPattern'],
-            'ZXM指标': ['TrendDetector', 'TrendDuration', 'ZXMTurnover', 'ZXMVolumeShrink', 'ZXMBSAbsorb', 'AmplitudeElasticity', 'ZXMRiseElasticity', 'Elasticity', 'BounceDetector', 'ZXMElasticityScore', 'ZXMBuyPointScore', 'StockScoreCalculator', 'SelectionModel']
+            'ZXM指标': ['TrendDetector', 'TrendDuration', 'ZXMturnover_rate', 'ZXMVolumeShrink', 'ZXMBSAbsorb', 'AmplitudeElasticity', 'ZXMRiseElasticity', 'Elasticity', 'BounceDetector', 'ZXMElasticityScore', 'ZXMBuyPointScore', 'StockScoreCalculator', 'SelectionModel']
         }
         
         for category, indicators in categories.items():

@@ -1,4 +1,4 @@
-from config.config import get_config\n"""
+from config.unified_config_manager import get_config\n"""
 数据管理器性能测试模块
 
 用于测试数据管理器在不同负载下的性能表现
@@ -13,7 +13,7 @@ from unittest.mock import MagicMock
 import pandas as pd
 import numpy as np
 
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from enums.period import Period
 from utils.logger import get_logger, setup_logger
 from tests.helper.data_generator import Test_data_generator

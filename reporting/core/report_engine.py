@@ -35,7 +35,7 @@ import numpy as np
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger, get_service
+from utils.logger import get_logger, get_service
 from utils.decorators import performance_monitor, exception_handler
 from db.interfaces.data_access_interface import DataAccessInterface
 from analysis.integrated_performance_framework import PerformanceEvaluationFramework
@@ -414,7 +414,7 @@ class BacktestReportEngine:
                     'priority': 2
                 },
                 {
-                    'type': 'turnover_analysis',
+                    'type': 'turnover_rate_analysis',
                     'title': '换手率分析',
                     'data_key': 'position_analysis',
                     'priority': 2
@@ -562,6 +562,7 @@ class BacktestReportEngine:
             )
         elif output_format.lower() == 'markdown':
             from reporting.generators.markdown_generator import MarkdownReportGenerator
+from db.sql_manager import SQLManager, QueryType
             generator = MarkdownReportGenerator(
                 template_manager=self.template_manager,
                 config=request.config

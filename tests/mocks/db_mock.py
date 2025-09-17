@@ -14,6 +14,7 @@ import json
 import re
 import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Callable
+from db.sql_manager import SQLManager, QueryType
 
 class Mock_click_house_dB:
     """模拟ClickHouse数据库服务"""

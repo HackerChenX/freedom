@@ -11,11 +11,12 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # 导入需要测试的ZXM指标
-from indicators.zxm.buy_point_indicators import ZXMTurnover, ZXMVolume_shrink, ZXMBSAbsorb
+from indicators.zxm.buy_point_indicators import ZXMturnover_rate, ZXMVolume_shrink, ZXMBSAbsorb
 from indicators.zxm.trend_indicators import ZXMDaily_trend_up, ZXMWeekly_trend_up
 from indicators.zxm.elasticity_indicators import Amplitude_elasticity, ZXMRise_elasticity
 from indicators.zxm.score_indicators import ZXMElasticity_score, ZXMBuy_point_score, Stock_score_calculator
 from indicators.zxm.selection_model import Selection_model
+from db.sql_manager import SQLManager, QueryType
 
 
 class Test_zXMSignal_semantic_validation(unittest.TestCase):
@@ -31,8 +32,8 @@ class Test_zXMSignal_semantic_validation(unittest.TestCase):
         scenarios = {}
         
         # 场景1：换手率测试数据
-        scenarios['turnover_high'] = self._create_high_turnover_scenario()
-        scenarios['turnover_low'] = self._create_low_turnover_scenario()
+        scenarios['turnover_rate_high'] = self._create_high_turnover_rate_scenario()
+        scenarios['turnover_rate_low'] = self._create_low_turnover_rate_scenario()
         
         # 场景2：缩量测试数据
         scenarios['volume_shrink'] = self._create_volume_shrink_scenario()
@@ -52,7 +53,7 @@ class Test_zXMSignal_semantic_validation(unittest.TestCase):
         
         return scenarios
     
-    def _create_high_turnover_scenario(self):
+    def _create_high_turnover_rate_scenario(self):
         """创建高换手率场景：换手率持续>0.7%"""
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         data = pd.DataFrame({
@@ -66,7 +67,7 @@ class Test_zXMSignal_semantic_validation(unittest.TestCase):
         })
         return data
     
-    def _create_low_turnover_scenario(self):
+    def _create_low_turnover_rate_scenario(self):
         """创建低换手率场景：换手率持续<0.7%"""
         dates = pd.date_range(start='2023-01-01', periods=100, freq='D')
         data = pd.DataFrame({
@@ -221,29 +222,29 @@ class Test_zXMSignal_semantic_validation(unittest.TestCase):
         })
         return data
     
-    def test_zxm_turnover_semantic_consistency(self):
+    def test_zxm_turnover_rate_semantic_consistency(self):
         """测试ZXM换手率指标的语义一致性"""
-        indicator = ZXMTurnover()
+        indicator = ZXMturnover_rate()
         
         # 测试高换手率场景
-        high_turnover_data = self.test_scenarios['turnover_high']
-        result = indicator.calculate(high_turnover_data)
+        high_turnover_rate_data = self.test_scenarios['turnover_rate_high']
+        result = indicator.calculate(high_turnover_rate_data)
         
         # 验证语义：换手率>0.7时，XG应该为True，buy_signal应该为True
-        high_turnover_rows = result[result['Turnover'] > 0.7]
-        self.assertTrue(len(high_turnover_rows) > 0, "应该有高换手率的数据")
-        self.assertTrue(high_turnover_rows['XG'].all(), "高换手率时XG应该为True")
-        self.assertTrue(high_turnover_rows['buy_signal'].all(), "高换手率时buy_signal应该为True")
+        high_turnover_rate_rows = result[result['turnover_rate'] > 0.7]
+        self.assertTrue(len(high_turnover_rate_rows) > 0, "应该有高换手率的数据")
+        self.assertTrue(high_turnover_rate_rows['XG'].all(), "高换手率时XG应该为True")
+        self.assertTrue(high_turnover_rate_rows['buy_signal'].all(), "高换手率时buy_signal应该为True")
         
         # 测试低换手率场景
-        low_turnover_data = self.test_scenarios['turnover_low']
-        result = indicator.calculate(low_turnover_data)
+        low_turnover_rate_data = self.test_scenarios['turnover_rate_low']
+        result = indicator.calculate(low_turnover_rate_data)
         
         # 验证语义：换手率<0.7时，XG应该为False，buy_signal应该为False
-        low_turnover_rows = result[result['Turnover'] < 0.7]
-        self.assertTrue(len(low_turnover_rows) > 0, "应该有低换手率的数据")
-        self.assertFalse(low_turnover_rows['XG'].any(), "低换手率时XG应该为False")
-        self.assertFalse(low_turnover_rows['buy_signal'].any(), "低换手率时buy_signal应该为False")
+        low_turnover_rate_rows = result[result['turnover_rate'] < 0.7]
+        self.assertTrue(len(low_turnover_rate_rows) > 0, "应该有低换手率的数据")
+        self.assertFalse(low_turnover_rate_rows['XG'].any(), "低换手率时XG应该为False")
+        self.assertFalse(low_turnover_rate_rows['buy_signal'].any(), "低换手率时buy_signal应该为False")
         
         print("✅ ZXM换手率指标语义验证通过")
     

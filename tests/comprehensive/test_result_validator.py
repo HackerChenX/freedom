@@ -17,6 +17,7 @@ from utils.logger import getLogger
 from .validators import RealDataValidator, DataQualityChecker
 from .stock_selection_tester import TestResults, IndicatorTestResult, PatternTestResult, VerificationResult
 from .buypoint_verification_engine import BatchVerificationResult
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

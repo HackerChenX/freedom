@@ -287,6 +287,7 @@ def update_enum_file(new_indicators):
 """
 
 from enum import Enum, auto
+from db.sql_manager import SQLManager, QueryType
 
 
 class IndicatortypeGenerateTechnicalIndicatorsGenerateTechnicalIndicators(str, Enum):

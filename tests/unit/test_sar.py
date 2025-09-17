@@ -8,6 +8,7 @@ from indicators.complete_indicator_registry import complete_registry
 from tests.unit.indicator_test_mixin import Indicator_test_mixin
 from tests.helper.data_generator import Test_data_generator
 from tests.helper.log_capture import Log_capture_mixin, LogCaptureMixin
+from db.sql_manager import SQLManager, QueryType
 
 
 class Testsar_sar(unittest.TestCase, Indicator_test_mixin, Log_capture_mixin):

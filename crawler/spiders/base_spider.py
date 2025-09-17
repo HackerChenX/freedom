@@ -1,5 +1,5 @@
 """
-from config import get_config
+from config.unified_config_manager import get_config
 基础爬虫类
 
 定义爬虫的通用接口和基础功能
@@ -12,6 +12,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from bs4 import Beautiful_soup
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

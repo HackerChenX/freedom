@@ -14,7 +14,7 @@ from indicators.factory import IndicatorFactory as Indicator_factory
 from enums.period import Period
 from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, log_calls, safe_run
 
 logger = get_logger(__name__)

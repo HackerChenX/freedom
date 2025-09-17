@@ -19,7 +19,7 @@ import threading
 root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, root_dir)
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from analysis.integration.unified_data_adapter import get_unified_data_adapter
 from analysis.buypoints.buypoint_batch_analyzer import Buy_point_batch_analyzer
 from strategy.strategy_factory import Strategy_factory
@@ -533,6 +533,7 @@ def get_unified_analysis_engine_unified_analysis_engine() -> UnifiedAnalysisEngi
     """
     try:
         from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
         container = get_container()
         return container.resolve(UnifiedAnalysisEngine)
     except Exception as e:
@@ -548,6 +549,7 @@ def get_legacy_unified_analysis_engine() -> UnifiedAnalysisEngine:
 # 注册到依赖注入容器
 try:
     from utils.dependency_injection import get_container
+from db.sql_manager import SQLManager, QueryType
     container = get_container()
     if not container.is_registered(UnifiedAnalysisEngine):
         container.register_singleton(UnifiedAnalysisEngine, UnifiedAnalysisEngine)

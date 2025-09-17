@@ -51,6 +51,7 @@ def fix_zxm_file(file_path: str) -> bool:
             content = re.sub(
                 import_pattern,
                 r'\1from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin\n',
+from db.sql_manager import SQLManager, QueryType
                 content
             )
         else:
@@ -60,6 +61,7 @@ def fix_zxm_file(file_path: str) -> bool:
                 content = re.sub(
                     import_pattern,
                     r'\1from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin\n',
+from db.sql_manager import SQLManager, QueryType
                     content
                 )
         

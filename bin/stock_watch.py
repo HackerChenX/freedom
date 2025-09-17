@@ -21,8 +21,9 @@ sys.path.append(root_dir)
 from strategy.strategy_combiner import Strategy_combiner
 from strategy.signal_watcher import Signal_watcher
 from strategy.strategy_manager import Strategy_manager
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger("stock_watch")
 

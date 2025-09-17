@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -25,6 +26,9 @@ class ZXMAbsorbSignalDetector:
     """ZXM 30分钟吸筹信号检测器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.target_date = '2025-05-12'
         
     def calculate_zxm_absorb_signal(self, data: pd.DataFrame) -> pd.DataFrame:

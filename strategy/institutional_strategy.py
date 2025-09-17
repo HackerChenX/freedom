@@ -1,3 +1,4 @@
+from utils.container import container
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -14,7 +15,8 @@ import warnings
 
 from strategy.base_strategy import BaseStrategy
 from indicators.institutional_behavior import InstitutionalBehavior as Institutional_behavior
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -29,6 +31,9 @@ class InstitutionalStrategy(BaseStrategy):
     """
     
     def __init__(self, params: Dict[str, Any] = None):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化主力行为选股策略
         

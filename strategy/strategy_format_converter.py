@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 """
 策略格式兼容性转换器
@@ -7,7 +8,7 @@
 
 import copy
 from typing import Dict, List, Any, Optional
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.dependency_injection import get_container
 
 logger = get_logger(__name__)

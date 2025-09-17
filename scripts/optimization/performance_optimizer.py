@@ -34,12 +34,13 @@ sys.path.insert(0, str(project_root))
 
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
-from db.unified_data_manager import get_unified_data_manager
+from db.managers.data_access_manager import get_unified_data_manager
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
 
-class PerformanceOptimizer:
+class PerformanceOptimizationService:
     """性能优化器"""
     
     def __init__(self, config: Optional[Dict[str, Any]] = None):

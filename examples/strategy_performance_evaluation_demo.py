@@ -40,7 +40,8 @@ from analysis.integrated_performance_framework import (
 )
 from analysis.strategy_performance_evaluator import EvaluationConfig
 from strategy.unified_base_strategy import UnifiedBaseStrategy
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 

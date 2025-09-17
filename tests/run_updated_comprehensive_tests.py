@@ -22,6 +22,7 @@ sys.path.insert(0, project_root)
 from tests.reverse_validation.reverse_validation_framework import Reverse_validation_framework
 from tests.comprehensive.stock_selection_tester import ComprehensiveStockSelectionTester
 from utils.logger import getLogger
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 

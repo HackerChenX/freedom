@@ -39,6 +39,7 @@ import threading
 import queue
 from logging.handlers import Rotating_file_handler
 from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
 from db.interfaces.data_access_interface import DataAccessInterface
 import random
 from dataclasses import dataclass
@@ -52,6 +53,7 @@ from utils.logger import get_logger
 from utils.date_utils import get_last_trade_date, format_date
 from config.config_manager import get_config
 from utils.dependency_injection import get_service
+from db.sql_manager import SQLManager, QueryType
 
 class DataType(Enum):
     """数据类型枚举"""
@@ -888,7 +890,7 @@ class AkshareToClickHouse:
                     
                     # 查询最大日期
                     query = f"""
-                    SELECT max(date) FROM stock_info WHERE 1=1
+                    SELECT max(date) FROM stock_info WHERE code = %(code)s AND level = %(level)s AND 1=1
                     WHERE code = '{stock_code}' AND level = '{level}'
                     """
                     

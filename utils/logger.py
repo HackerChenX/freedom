@@ -10,7 +10,7 @@ from logging.handlers import RotatingFileHandler
 import datetime
 from typing import Dict, Optional, Union, Any
 
-from config import get_config
+from config.unified_config_manager import get_config
 
 
 # 日志级别映射
@@ -41,16 +41,24 @@ _initialized = False
 def _ensure_log_dir() -> str:
     """
     确保日志目录存在
-    
+
     Returns:
         str: 日志目录路径
     """
+    # 获取输出目录，如果为None则使用默认值
     output_dir = get_config('paths.output')
-    log_dir = os.path.join(output_dir, get_config('paths.logs', 'logs'))
-    
+    if output_dir is None:
+        # 使用项目根目录下的data/result作为默认输出目录
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        output_dir = os.path.join(project_root, 'data', 'result')
+
+    # 获取日志子目录
+    logs_subdir = get_config('paths.logs', 'logs')
+    log_dir = os.path.join(output_dir, logs_subdir)
+
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
-    
+
     return log_dir
 
 

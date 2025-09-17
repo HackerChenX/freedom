@@ -100,7 +100,7 @@ class ArchitectureValidator:
         self._validate_class_definition(
             "缓存层类定义",
             "db/cache_layer.py",
-            ["UnifiedCacheLayer", "MemoryCache", "DiskCache"]
+            ["CacheService", "MemoryCache", "DiskCache"]
         )
         
         # 验证缓存配置
@@ -125,7 +125,7 @@ class ArchitectureValidator:
         self._validate_class_definition(
             "批量数据优化器",
             "db/batch_data_optimizer.py",
-            ["BatchDataOptimizer"]
+            ["DataOptimizationService"]
         )
         
         # 验证并行处理器
@@ -139,14 +139,14 @@ class ArchitectureValidator:
         self._validate_class_definition(
             "内存优化器",
             "db/memory_optimizer.py", 
-            ["MemoryOptimizer"]
+            ["MemoryOptimizationService"]
         )
         
         # 验证性能优化主控制器
         self._validate_class_definition(
             "性能优化主控制器",
             "db/performance_optimizer.py",
-            ["PerformanceOptimizer"]
+            ["PerformanceOptimizationService"]
         )
     
     def _validate_configuration(self):

@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 """
 统一策略执行器模块
 
@@ -19,7 +20,7 @@ from utils.dependency_injection import get_service
 from db.interfaces.data_access_interface import DataAccessInterface
 from strategy.strategy_manager import StrategyManager
 from indicators.complete_indicator_registry import complete_registry, get_indicator_registry
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, safe_run, cache_result
 from utils.strategy_validator import UnifiedStrategyConfigValidator
 from utils.cache import get_unified_cache, cache_with_unified_layer
@@ -1824,6 +1825,7 @@ class StrategyExecutor(UnifiedStrategyExecutor):
                 progress_callback(0.2, "正在解析策略配置")
                 
             from strategy.strategy_parser import Strategy_parser
+from db.sql_manager import SQLManager, QueryType
             parser = Strategy_parser()
             strategy_plan = parser.parse_strategy(strategy_config)
             
@@ -2050,7 +2052,7 @@ class StrategyExecutor(UnifiedStrategyExecutor):
         """
         try:
             # 预加载行业数据
-            self.data_access.preload_industry_data()
+            self.data_access.preload__data()
             
             # 预加载指数数据
             index_codes = ['000001.SH', '399001.SZ', '399006.SZ']  # 上证指数、深证成指、创业板指
@@ -2239,12 +2241,11 @@ class StrategyExecutor(UnifiedStrategyExecutor):
                 score = self._calculate_stock_score_Strategy_Executor(stock_code, data, condition_details)
                 
                 # 获取行业信息
-                industry = self.data_access.get_stock_industry(stock_code)
+                = self.data_access.get_stock_(stock_code)
                 
                 return {
                     'stock_code': stock_code,
                     'stock_name': stock_name,
-                    'industry': industry,
                     'price': price,
                     'change_pct': change_pct,
                     'score': score,
@@ -2694,17 +2695,17 @@ class StrategyExecutor(UnifiedStrategyExecutor):
             price_volume_score = 0
             if 'close' in data.columns:
                 close = data['close']
-                price_change = (close.iloc[-1] / close.iloc[-6] - 1) * 100 if len(close) >= 6 else 0
+                = (close.iloc[-1] / close.iloc[-6] - 1) * 100 if len(close) >= 6 else 0
                 
                 # 放量上涨加分，放量下跌减分
                 if vol_change_ratio > 1.2:
-                    if price_change > 3:  # 明显上涨
+                    if > 3:  # 明显上涨
                         price_volume_score = 15
-                    elif price_change > 0:  # 轻微上涨
+                    elif > 0:  # 轻微上涨
                         price_volume_score = 10
-                    elif price_change < -3:  # 明显下跌
+                    elif < -3:  # 明显下跌
                         price_volume_score = -15
-                    elif price_change < 0:  # 轻微下跌
+                    elif < 0:  # 轻微下跌
                         price_volume_score = -10
             
             # 综合成交量评分
@@ -2898,16 +2899,15 @@ class StrategyExecutor(UnifiedStrategyExecutor):
             else:
                 return pd.DataFrame({'stock_code': [stock_codes]})
         
-        # 转换filters参数为DataManagerAdapter支持的参数
+        # 转换filters参数为DataAccessManagerAdapter支持的参数
         market = filters.get('market')
-        industry = filters.get('industry')
+        = filters.get()
         limit = filters.get('limit')
 
-        # 调用DataManagerAdapter的get_stock_list方法
+        # 调用DataAccessManagerAdapter的get_stock_list方法
         stock_list = self.data_access.get_stock_list(
             market=market,
-            industry=industry,
-            limit=limit
+            =limit=limit
         )
 
         # 如果返回的是列表，转换为DataFrame

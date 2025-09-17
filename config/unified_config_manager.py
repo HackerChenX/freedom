@@ -165,7 +165,13 @@ class UnifiedConfigManager:
     """
     
     def __init__(self, config_dir: str = "config", cache_ttl: int = 300):
-        self.config_dir = Path(config_dir)
+        # 确保配置目录路径正确
+        if not os.path.isabs(config_dir):
+            # 相对路径，基于当前工作目录
+            self.config_dir = Path.cwd() / config_dir
+        else:
+            self.config_dir = Path(config_dir)
+
         self.sources: List[ConfigSource] = []
         self.merged_config: Dict[str, Any] = {}
         self.validator = ConfigValidator()
@@ -206,7 +212,7 @@ class UnifiedConfigManager:
             },
             'database': {
                 'host': 'localhost',
-                'port': 8123,
+                'port': 9000,
                 'user': 'default',
                 'password': '',
                 'database': 'stock_data',
@@ -280,13 +286,13 @@ class UnifiedConfigManager:
         
         for filename, format_type, priority in base_config_files:
             config_path = self.config_dir / filename
-            if config_path.exists():
-                self.sources.append(ConfigSource(
-                    name=filename,
-                    path=str(config_path),
-                    priority=priority,
-                    format=format_type
-                ))
+            # 添加配置源，不管文件是否存在
+            self.sources.append(ConfigSource(
+                name=filename,
+                path=str(config_path),
+                priority=priority,
+                format=format_type
+            ))
         
         # 3. 环境特定配置
         env = os.getenv('ENVIRONMENT', 'development')
@@ -297,13 +303,13 @@ class UnifiedConfigManager:
         
         for filename, format_type, priority in env_config_files:
             config_path = self.config_dir / filename
-            if config_path.exists():
-                self.sources.append(ConfigSource(
-                    name=filename,
-                    path=str(config_path),
-                    priority=priority,
-                    format=format_type
-                ))
+            # 添加配置源，不管文件是否存在
+            self.sources.append(ConfigSource(
+                name=filename,
+                path=str(config_path),
+                priority=priority,
+                format=format_type
+            ))
         
         # 4. 本地配置文件（最高优先级）
         local_config_files = [
@@ -313,13 +319,13 @@ class UnifiedConfigManager:
         
         for filename, format_type, priority in local_config_files:
             config_path = self.config_dir / filename
-            if config_path.exists():
-                self.sources.append(ConfigSource(
-                    name=filename,
-                    path=str(config_path),
-                    priority=priority,
-                    format=format_type
-                ))
+            # 添加配置源，不管文件是否存在
+            self.sources.append(ConfigSource(
+                name=filename,
+                path=str(config_path),
+                priority=priority,
+                format=format_type
+            ))
         
         # 5. 环境变量（最高优先级）
         self.sources.append(ConfigSource(
@@ -363,7 +369,16 @@ class UnifiedConfigManager:
     def _load_file_config(self, source: ConfigSource) -> Dict[str, Any]:
         """加载文件配置"""
         try:
-            with open(source.path, 'r', encoding='utf-8') as f:
+            # 确保路径正确
+            file_path = source.path
+            if not os.path.isabs(file_path):
+                file_path = self.config_dir / file_path
+
+            if not os.path.exists(file_path):
+                logger.debug(f"配置文件不存在: {file_path}")
+                return {}
+
+            with open(file_path, 'r', encoding='utf-8') as f:
                 if source.format == 'json':
                     return json.load(f)
                 elif source.format == 'yaml':
@@ -371,7 +386,7 @@ class UnifiedConfigManager:
                 else:
                     return {}
         except Exception as e:
-            logger.error(f"加载配置文件失败 {source.path}: {e}")
+            logger.debug(f"加载配置文件失败 {source.path}: {e}")
             return {}
     
     def _merge_configs(self, base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -393,20 +408,29 @@ class UnifiedConfigManager:
                 # 加载所有配置源
                 for source in self.sources:
                     if source.format in ['json', 'yaml'] and source.path:
-                        source.data = self._load_file_config(source)
-                        source.loaded = True
-                        source.last_modified = datetime.now()
+                        # 检查文件是否存在
+                        if os.path.exists(source.path):
+                            source.data = self._load_file_config(source)
+                            source.loaded = True
+                            source.last_modified = datetime.now()
+                        else:
+                            # 文件不存在，使用空配置
+                            source.data = {}
+                            source.loaded = True
                     elif source.format == 'env':
                         source.data = self._load_env_config()
                         source.loaded = True
                         source.last_modified = datetime.now()
-                
+                    elif source.format == 'dict':
+                        # 默认配置，已经加载
+                        source.loaded = True
+
                 # 合并配置
                 self.merged_config = {}
-                for source in self.sources:
+                for source in sorted(self.sources, key=lambda x: x.priority):
                     if source.loaded:
                         self.merged_config = self._merge_configs(self.merged_config, source.data)
-                
+
                 # 验证配置
                 validation_errors = self.validator.validate(self.merged_config)
                 if validation_errors:

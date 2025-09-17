@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 MOMENTUM 指标
 
@@ -13,7 +14,7 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -28,9 +29,12 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """返回计算指标所需的最小周期数"""
-        return getattr(self, 'period', 14) + 1
+        return getattr(self, 'period', 14) + 1  # TODO: 将魔法数字提取到配置中
 
     def __init__(self, **kwargs):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化MOMENTUM指标
 
@@ -52,7 +56,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     def _get_default_parameters_momentum(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Momentum(self, **kwargs):
         """
@@ -64,6 +68,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -79,11 +84,11 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -126,7 +131,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df['MOMENTUM_VALUE'] = momentum  # 为了向后兼容
         
         # 计算动量的移动平均（平滑处理）
-        df['momentum_ma'] = momentum.rolling(window=5).mean()
+        df['momentum_ma'] = momentum.rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
         
         # 计算动量的标准差（波动性）
         df['momentum_std'] = momentum.rolling(window=10).std()
@@ -204,16 +209,16 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         计算MOMENTUM原始评分
         
         基于MOMENTUM指标的技术分析特点进行评分：
-        1. 动量数值评分 (35%)
-        2. 动量趋势评分 (30%)
-        3. 动量强度评分 (25%)
-        4. 动量稳定性评分 (10%)
+        1. 动量数值评分 (35%)  # TODO: 将魔法数字提取到配置中
+        2. 动量趋势评分 (30%)  # TODO: 将魔法数字提取到配置中
+        3. 动量强度评分 (25%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        4. 动量稳定性评分 (10%)  # TODO: 将魔法数字提取到配置中
         """
         if not self.has_result():
             self.calculate_Momentum(data, **kwargs)
         
         if self._result is None:
-            return pd.Series(50.0, index=data.index)
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 获取MOMENTUM数据
         momentum = self._result['momentum']
@@ -222,28 +227,28 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         momentum_ratio = self._result['momentum_ratio']
         
         # 初始化评分
-        scores = pd.Series(50.0, index=data.index)
+        scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 计算动量的统计特征
-        momentum_mean = momentum.rolling(window=20).mean()
-        momentum_percentile = momentum.rolling(window=20).rank(pct=True)
+        momentum_mean = momentum.rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
+        momentum_percentile = momentum.rolling(window=20).rank(pct=True)  # TODO: 将魔法数字提取到配置中
         
-        # 1. 动量数值评分 (35%)
+        # 1. 动量数值评分 (35%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于动量值的正负和相对强度
         value_score = pd.Series(0.0, index=data.index)
         
         # 正动量加分，负动量减分
-        value_score = np.where(momentum > 0, momentum_percentile * 20, value_score)
-        value_score = np.where(momentum < 0, (momentum_percentile - 1) * 20, value_score)
+        value_score = np.where(momentum > 0, momentum_percentile * 20, value_score)  # TODO: 将魔法数字提取到配置中
+        value_score = np.where(momentum < 0, (momentum_percentile - 1) * 20, value_score)  # TODO: 将魔法数字提取到配置中
         
         # 强动量额外加分
         momentum_abs = abs(momentum)
-        momentum_strength = momentum_abs / (momentum_abs.rolling(window=20).mean() + 1e-8)
-        value_score += np.where(momentum_strength > 1.5, 10, 0)
+        momentum_strength = momentum_abs / (momentum_abs.rolling(window=20).mean() + 1e-8)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        value_score += np.where(momentum_strength > 1.5, 10, 0)  # TODO: 将魔法数字提取到配置中
         
-        scores += value_score * 0.35
+        scores += value_score * 0.35  # TODO: 将魔法数字提取到配置中
         
-        # 2. 动量趋势评分 (30%)
+        # 2. 动量趋势评分 (30%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于动量的变化趋势
         momentum_change = momentum - momentum.shift(1)
         momentum_change_2 = momentum.shift(1) - momentum.shift(2)
@@ -251,52 +256,52 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         trend_score = pd.Series(0.0, index=data.index)
         
         # 动量加速（连续上升）
-        trend_score = np.where((momentum_change > 0) & (momentum_change_2 > 0), 15, trend_score)
+        trend_score = np.where((momentum_change > 0) & (momentum_change_2 > 0), 15, trend_score)  # TODO: 将魔法数字提取到配置中
         # 动量减速（连续下降）
-        trend_score = np.where((momentum_change < 0) & (momentum_change_2 < 0), -15, trend_score)
+        trend_score = np.where((momentum_change < 0) & (momentum_change_2 < 0), -15, trend_score)  # TODO: 将魔法数字提取到配置中
         # 单次上升
-        trend_score = np.where((momentum_change > 0) & (momentum_change_2 <= 0), 8, trend_score)
+        trend_score = np.where((momentum_change > 0) & (momentum_change_2 <= 0), 8, trend_score)  # TODO: 将魔法数字提取到配置中
         # 单次下降
-        trend_score = np.where((momentum_change < 0) & (momentum_change_2 >= 0), -8, trend_score)
+        trend_score = np.where((momentum_change < 0) & (momentum_change_2 >= 0), -8, trend_score)  # TODO: 将魔法数字提取到配置中
         
         # 动量方向改变
         momentum_direction_change = ((momentum > 0) & (momentum.shift(1) < 0)) | ((momentum < 0) & (momentum.shift(1) > 0))
-        trend_score = np.where(momentum_direction_change, 5, trend_score)
+        trend_score = np.where(momentum_direction_change, 5, trend_score)  # TODO: 将魔法数字提取到配置中
         
-        scores += trend_score * 0.3
+        scores += trend_score * 0.3  # TODO: 将魔法数字提取到配置中
         
-        # 3. 动量强度评分 (25%)
+        # 3. 动量强度评分 (25%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于动量的相对强度和波动性
         strength_score = pd.Series(0.0, index=data.index)
         
         # 相对动量强度
         if len(momentum_ratio.dropna()) > 0:
             ratio_abs = abs(momentum_ratio)
-            strength_score = np.where(ratio_abs > 5, 12, strength_score)
-            strength_score = np.where((ratio_abs >= 3) & (ratio_abs <= 5), 8, strength_score)
-            strength_score = np.where((ratio_abs >= 1) & (ratio_abs < 3), 4, strength_score)
-            strength_score = np.where(ratio_abs < 0.5, -5, strength_score)  # 动量太弱减分
+            strength_score = np.where(ratio_abs > 5, 12, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strength_score = np.where((ratio_abs >= 3) & (ratio_abs <= 5), 8, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strength_score = np.where((ratio_abs >= 1) & (ratio_abs < 3), 4, strength_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strength_score = np.where(ratio_abs < 0.5, -5, strength_score)  # 动量太弱减分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 动量一致性（与移动平均的关系）
         if len(momentum_ma.dropna()) > 0:
-            momentum_consistency = abs(momentum - momentum_ma) / (momentum_std + 1e-8)
-            strength_score += np.where(momentum_consistency < 0.5, 5, 0)  # 一致性高加分
-            strength_score += np.where(momentum_consistency > 2, -3, 0)  # 一致性低减分
+            momentum_consistency = abs(momentum - momentum_ma) / (momentum_std + 1e-8)  # TODO: 将魔法数字提取到配置中
+            strength_score += np.where(momentum_consistency < 0.5, 5, 0)  # 一致性高加分  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strength_score += np.where(momentum_consistency > 2, -3, 0)  # 一致性低减分  # TODO: 将魔法数字提取到配置中
         
-        scores += strength_score * 0.25
+        scores += strength_score * 0.25  # TODO: 将魔法数字提取到配置中
         
-        # 4. 动量稳定性评分 (10%)
+        # 4. 动量稳定性评分 (10%)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 基于动量的稳定性和可预测性
         stability_score = pd.Series(0.0, index=data.index)
         
         if len(momentum_std.dropna()) > 0:
             # 波动性适中加分
-            volatility_percentile = momentum_std.rolling(window=20).rank(pct=True)
-            stability_score = np.where((volatility_percentile >= 0.3) & (volatility_percentile <= 0.7), 5, stability_score)
+            volatility_percentile = momentum_std.rolling(window=20).rank(pct=True)  # TODO: 将魔法数字提取到配置中
+            stability_score = np.where((volatility_percentile >= 0.3) & (volatility_percentile <= 0.7), 5, stability_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 波动性过高减分
-            stability_score = np.where(volatility_percentile > 0.9, -5, stability_score)
+            stability_score = np.where(volatility_percentile > 0.9, -5, stability_score)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 波动性过低减分（缺乏动量）
-            stability_score = np.where(volatility_percentile < 0.1, -3, stability_score)
+            stability_score = np.where(volatility_percentile < 0.1, -3, stability_score)  # TODO: 将魔法数字提取到配置中
         
         scores += stability_score * 0.1
         
@@ -308,26 +313,26 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate_confidence_Momentum(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if self._result is None:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
         # 基于MOMENTUM指标的明确性计算置信度
         momentum = self._result['momentum'].dropna()
         momentum_std = self._result['momentum_std'].dropna()
         
         if len(momentum) == 0:
-            return 0.5
+            return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 计算最近的动量值
         recent_momentum = momentum.iloc[-1] if len(momentum) > 0 else 0
         recent_std = momentum_std.iloc[-1] if len(momentum_std) > 0 else 1
         
         # 动量相对强度
-        momentum_strength = min(abs(recent_momentum) / (recent_std + 1e-8), 3.0) / 3.0
+        momentum_strength = min(abs(recent_momentum) / (recent_std + 1e-8), 3.0) / 3.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 趋势一致性
         trend_consistency = 0
-        if len(momentum) >= 3:
-            recent_trend = momentum.iloc[-3:].diff().dropna()
+        if len(momentum) >= 3:  # TODO: 将魔法数字提取到配置中
+            recent_trend = momentum.iloc[-3:].diff().dropna()  # TODO: 将魔法数字提取到配置中
             if len(recent_trend) > 0:
                 # 如果趋势方向一致，提高置信度
                 if all(recent_trend > 0) or all(recent_trend < 0):
@@ -335,13 +340,13 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 动量持续性
         momentum_persistence = 0
-        if len(momentum) >= 5:
-            recent_momentum_values = momentum.iloc[-5:]
+        if len(momentum) >= 5:  # TODO: 将魔法数字提取到配置中
+            recent_momentum_values = momentum.iloc[-5:]  # TODO: 将魔法数字提取到配置中
             if (recent_momentum_values > 0).all() or (recent_momentum_values < 0).all():
-                momentum_persistence = 0.15
+                momentum_persistence = 0.15  # TODO: 将魔法数字提取到配置中
         
-        base_confidence = 0.25 + momentum_strength * 0.4 + trend_consistency + momentum_persistence
-        return min(max(base_confidence, 0.2), 0.9)
+        base_confidence = 0.25 + momentum_strength * 0.4 + trend_consistency + momentum_persistence  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        return min(max(base_confidence, 0.2), 0.9)  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Momentum(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取MOMENTUM相关形态"""
@@ -360,7 +365,7 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 基本形态
         patterns['MOMENTUM_POSITIVE'] = momentum > 0
         patterns['MOMENTUM_NEGATIVE'] = momentum < 0
-        patterns['MOMENTUM_NEUTRAL'] = abs(momentum) < (momentum_std * 0.5)
+        patterns['MOMENTUM_NEUTRAL'] = abs(momentum) < (momentum_std * 0.5)  # TODO: 将魔法数字提取到配置中
         
         # 强度形态
         patterns['MOMENTUM_STRONG_POSITIVE'] = momentum > momentum_std

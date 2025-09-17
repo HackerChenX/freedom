@@ -1,0 +1,212 @@
+strategy:
+  id: "ENHANCED_TWO_WAVE_STABILIZATION"
+  name: "增强二波企稳策略"
+  description: "基于二波企稳公式的复杂技术分析策略，包含振幅、涨幅、均线回踩、KDJ和MACD信号等多重条件"
+  version: "1.0.0"
+  author: "system"
+  create_time: "2025-09-15 16:00:00"
+  update_time: "2025-09-15 16:00:00"
+  
+  # 策略类型
+  type: "technical_analysis"
+  category: "reversal"
+  risk_level: "medium"
+  
+  # 复杂策略条件组合
+  conditions:
+    # 条件1: 110日振幅>8.1至少两次
+    - type: technical
+      name: "amplitude_condition"
+      description: "110日振幅>8.1至少两次"
+      parameters:
+        period: 110
+        amplitude_threshold: 8.1
+        min_occurrences: 2
+      weight: 0.2
+    
+    - logic: "AND"
+    
+    # 条件2: 近60日至少一次涨幅大于7%
+    - type: technical
+      name: "gain_condition"
+      description: "近60日至少一次涨幅大于7%"
+      parameters:
+        period: 60
+        gain_threshold: 7.0
+        min_occurrences: 1
+      weight: 0.15
+    
+    - logic: "AND"
+    
+    # 条件3: 价格条件 - 股价在合理范围
+    - type: price
+      field: close
+      operator: ">="
+      value: 3.0
+      description: "股价大于等于3元"
+    
+    - logic: "AND"
+    
+    - type: price
+      field: close
+      operator: "<="
+      value: 200.0
+      description: "股价小于等于200元"
+    
+    - logic: "AND"
+    
+    # 条件4: 回踩10/20/30均线
+    - type: technical
+      name: "ma_retracement"
+      description: "回踩10/20/30均线（误差5%以内）"
+      parameters:
+        ma_periods: [10, 20, 30]
+        tolerance: 5.0  # 5%误差
+      weight: 0.2
+    
+    - logic: "AND"
+    
+    # 条件5: KDJ任一上移
+    - type: indicator
+      indicator_id: "KDJ"
+      parameter: "K"
+      operator: ">="
+      threshold: 0  # 相对前一日的变化
+      description: "KDJ K值上移"
+      parameters:
+        period: 9
+        k_period: 3
+        d_period: 3
+    
+    - logic: "OR"
+    
+    - type: indicator
+      indicator_id: "KDJ"
+      parameter: "D"
+      operator: ">="
+      threshold: 0
+      description: "KDJ D值上移"
+      parameters:
+        period: 9
+        k_period: 3
+        d_period: 3
+    
+    - logic: "OR"
+    
+    - type: indicator
+      indicator_id: "KDJ"
+      parameter: "J"
+      operator: ">="
+      threshold: 0
+      description: "KDJ J值上移"
+      parameters:
+        period: 9
+        k_period: 3
+        d_period: 3
+    
+    - logic: "AND"
+    
+    # 条件6: MACD DEA上移
+    - type: indicator
+      indicator_id: "MACD"
+      parameter: "dea"
+      operator: ">="
+      threshold: 0
+      description: "MACD DEA上移"
+      parameters:
+        fast_period: 12
+        slow_period: 26
+        signal_period: 9
+    
+    - logic: "AND"
+    
+    # 条件7: 均线上移（至少3条均线上移）
+    - type: technical
+      name: "ma_rising"
+      description: "至少3条均线上移"
+      parameters:
+        ma_periods: [5, 10, 20, 30]
+        min_rising_count: 3
+      weight: 0.15
+    
+    - logic: "AND"
+    
+    # 条件8: 无放量大跌
+    - type: technical
+      name: "no_volume_decline"
+      description: "无放量大跌"
+      parameters:
+        check_period: 5
+        decline_threshold: -3.0  # 跌幅超过3%
+        volume_multiplier: 1.5   # 成交量放大1.5倍
+      weight: 0.1
+    
+    - logic: "AND"
+    
+    # 条件9: 无放量大阴线
+    - type: technical
+      name: "no_volume_bearish"
+      description: "无放量大阴线"
+      parameters:
+        check_period: 5
+        bearish_threshold: -4.0  # 阴线实体跌幅>4%
+        volume_multiplier: 1.8   # 成交量超过5日均量1.8倍
+      weight: 0.1
+    
+    - logic: "AND"
+    
+    # 条件10: 成交量适中
+    - type: volume
+      operator: ">="
+      value: 1000000
+      description: "成交量大于100万"
+
+  # 基础过滤条件
+  filters:
+    market_filters:
+      markets: ["主板", "创业板", "科创板"]
+      exclude_st: true
+    
+    financial_filters:
+      market_cap:
+        min: 10
+        max: 5000
+      price_range:
+        min: 3.0
+        max: 200.0
+      volume_filter:
+        min_avg_volume: 1000000
+        min_turnover: 10000000
+
+  # 选股参数
+  selection_parameters:
+    max_selections: 20
+    min_score: 0.7
+    ranking_method: "composite"
+    diversification:
+      max_per_industry: 2
+      max_concentration: 0.1
+
+  # 排序规则
+  sort:
+    - field: "composite_score"
+      direction: "DESC"
+    - field: "volume"
+      direction: "DESC"
+    - field: "close"
+      direction: "ASC"
+
+  # 风险控制
+  risk_control:
+    max_position_size: 0.05
+    stop_loss: -0.08
+    take_profit: 0.15
+    max_holding_period: 30
+
+  # 回测参数
+  backtest:
+    start_date: "2024-01-01"
+    end_date: "2025-09-15"
+    initial_capital: 1000000
+    commission_rate: 0.0003
+    slippage: 0.001

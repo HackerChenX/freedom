@@ -32,6 +32,7 @@ from indicators.atr import ATR
 from indicators.macd import MACD
 from indicators.ma import MA
 from indicators.rsi import RSI
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = get_logger(__name__)

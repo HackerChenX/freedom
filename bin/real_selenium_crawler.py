@@ -31,6 +31,7 @@ try:
     from selenium.webdriver.chrome.options import Options
     from selenium.webdriver.common.action_chains import Action_chains
     from selenium.common.exceptions import Timeout_exception, No_such_element_exception
+from db.sql_manager import SQLManager, QueryType
     SELENIUM_AVAILABLE = True
     print("✅ Selenium可用")
 except Import_error:

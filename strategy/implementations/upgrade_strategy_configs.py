@@ -1,3 +1,5 @@
+from utils.container import container
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python3
 """
 策略配置文件升级工具
@@ -15,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 from utils.parameter_standardizer import ParameterStandardizer
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -23,6 +26,9 @@ class StrategyConfigUpgrader:
     """策略配置升级器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.standardizer = ParameterStandardizer()
         self.upgrade_stats = {
             'total_files': 0,
@@ -226,7 +232,6 @@ def create_sample_upgraded_strategy():
             
             'filters': {
                 'market': [],
-                'industry': [],
                 'market_cap': {
                     'min': 0,
                     'max': 10000

@@ -9,7 +9,6 @@
 3. 统一的数据访问接口
 """
 
-import pandas as pd
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 

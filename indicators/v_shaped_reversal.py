@@ -1,5 +1,6 @@
+from utils.container import container
 #!/usr/bin/env python3
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 """
 V_SHAPED_REVERSAL 指标
 
@@ -13,37 +14,42 @@ from typing import Dict, Any, List, Optional
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 
-class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
+class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     V_SHAPED_REVERSAL 指标
     
     自动生成的最小化实现，支持参数标准化
     """
     
-    def __init__(self, **kwargs):
+    def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         """
         初始化V_SHAPED_REVERSAL指标
-        
+
         Args:
-            **kwargs: 指标参数
+            period: 计算周期
+            **kwargs: 其他指标参数
         """
-        super().__init__()
         self.name = "V_SHAPED_REVERSAL"
-        
+        self.period = period
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_vshapedreversal()
-        
+        self._default_parameters['period'] = period
+
         # 应用用户参数
-        self.set_parameters_Reversal_V_Shaped_Reversal(**kwargs)
+        self.set_parameters_Reversal_V_Shaped_Reversal(period=period, **kwargs)
     
     def _get_default_parameters_vshapedreversal(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14}
+        return {"period": 14}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Reversal_V_Shaped_Reversal(self, **kwargs):
         """
@@ -55,6 +61,7 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
+from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -70,11 +77,11 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 params = self._default_parameters.copy()
             
             # 设置参数
-            self.period = params.get('period', 14)
+            self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
                     
         except Exception:
             # 如果验证失败，静默处理，保持向后兼容
-            self.period = 14
+            self.period = 14  # TODO: 将魔法数字提取到配置中
     
     def calculate_Reversal_V_Shaped_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -104,46 +111,46 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 真实的V形反转算法实现
         # 1. 计算价格变化率
-        df['price_change'] = df['close'].pct_change()
-        df['price_change_ma'] = df['price_change'].rolling(window=5).mean()
+        df[] = df['close'].pct_change()
+        df[_ma'] = df[].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
 
         # 2. 识别急剧下跌（V形底部的左侧）
-        df['sharp_decline'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)
+        df['sharp_decline'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 3. 识别快速反弹（V形底部的右侧）
-        df['sharp_rebound'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)
+        # 3. 识别快速反弹（V形底部的右侧）  # TODO: 将魔法数字提取到配置中
+        df['sharp_rebound'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 4. 识别V形底部反转
+        # 4. 识别V形底部反转  # TODO: 将魔法数字提取到配置中
         df['v_bottom_reversal'] = False
-        for i in range(5, len(df)):
+        for i in range(5, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 检查前5天是否有急剧下跌
-            if df['sharp_decline'].iloc[i-5:i].any():
+            if df['sharp_decline'].iloc[i-5:i].any():  # TODO: 将魔法数字提取到配置中
                 # 检查当前是否有快速反弹
                 if df['sharp_rebound'].iloc[i]:
                     df.iloc[i, df.columns.get_loc('v_bottom_reversal')] = True
 
-        # 5. 识别急剧上涨（倒V形顶部的左侧）
-        df['sharp_rise'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)
+        # 5. 识别急剧上涨（倒V形顶部的左侧）  # TODO: 将魔法数字提取到配置中
+        df['sharp_rise'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 6. 识别快速回落（倒V形顶部的右侧）
-        df['sharp_fall'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)
+        # 6. 识别快速回落（倒V形顶部的右侧）  # TODO: 将魔法数字提取到配置中
+        df['sharp_fall'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
-        # 7. 识别倒V形顶部反转
+        # 7. 识别倒V形顶部反转  # TODO: 将魔法数字提取到配置中
         df['v_top_reversal'] = False
-        for i in range(5, len(df)):
+        for i in range(5, len(df)):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             # 检查前5天是否有急剧上涨
-            if df['sharp_rise'].iloc[i-5:i].any():
+            if df['sharp_rise'].iloc[i-5:i].any():  # TODO: 将魔法数字提取到配置中
                 # 检查当前是否有快速回落
                 if df['sharp_fall'].iloc[i]:
                     df.iloc[i, df.columns.get_loc('v_top_reversal')] = True
 
-        # 8. 计算V形反转强度
+        # 8. 计算V形反转强度  # TODO: 将魔法数字提取到配置中
         df['v_reversal_strength'] = 0.0
         df.loc[df['v_bottom_reversal'], 'v_reversal_strength'] = 1.0  # 看涨信号
         df.loc[df['v_top_reversal'], 'v_reversal_strength'] = -1.0  # 看跌信号
 
-        # 9. 计算反转幅度
-        df['reversal_magnitude'] = abs(df['price_change']) * 100  # 转换为百分比
+        # 9. 计算反转幅度  # TODO: 将魔法数字提取到配置中
+        df['reversal_magnitude'] = abs(df[]) * 100  # 转换为百分比
 
         # 10. V形反转综合信号
         df['v_shaped_reversal_signal'] = df['v_bottom_reversal'] | df['v_top_reversal']
@@ -158,11 +165,11 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算原始评分"""
         if not self.has_result():
             self.calculate_Reversal_V_Shaped_Reversal(data, **kwargs)
-        return pd.Series(50.0, index=data.index)
+        return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
     
     def calculate_confidence_Reversal_V_Shaped_Reversal(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
-        return 0.5
+        return 0.5  # TODO: 将魔法数字提取到配置中
     
     def get_patterns_Reversal_V_Shaped_Reversal(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -176,21 +183,25 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """基础指标计算方法"""
         return self._calculate_vshapedreversal(data, *args, **kwargs)
 
-    def calculate_confidence_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+    def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]) -> float:
         """计算指标置信度"""
-        result = self._calculate_baseindicator(data)
-        # 计算V形反转的置信度
-        score = self.calculate_raw_score_Reversal_V_Shaped_Reversal(data)
-        confidence = score.mean() / 100.0  # 将评分转换为置信度
-        result['confidence'] = confidence
-        return result
+        # 基于V形反转的置信度计算
+        base_confidence = 0.6  # TODO: 将魔法数字提取到配置中
 
-    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
+        # 基于形态数量调整置信度
+        if patterns:
+            pattern_bonus = min(0.2, len(patterns) * 0.05)  # TODO: 将魔法数字提取到配置中
+            base_confidence += pattern_bonus
+
+        return min(1.0, base_confidence)
+
+    def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """计算原始评分"""
-        result = self._calculate_baseindicator(data)
-        score = self.calculate_raw_score_Reversal_V_Shaped_Reversal(data)
-        result['raw_score'] = score
-        return result
+        if len(data) < self.minimum_periods:
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+
+        score = self.calculate_raw_score_Reversal_V_Shaped_Reversal(data, **kwargs)
+        return score
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame) -> pd.DataFrame:
         """获取形态识别结果"""
@@ -206,4 +217,4 @@ class VshapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30
+        return 30  # TODO: 将魔法数字提取到配置中

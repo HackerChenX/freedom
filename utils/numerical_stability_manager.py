@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from typing import Union, Tuple, Optional, Dict, Any
 from decimal import Decimal, getcontext
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 
 logger = get_logger(__name__)
 

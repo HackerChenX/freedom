@@ -139,7 +139,7 @@ class SimplifiedIntegrationTester:
     def _test_config_imports(self) -> bool:
         """测试配置模块导入"""
         try:
-            from config.config import get_config
+            from config.unified_config_manager import get_config
             from config.cache_config import get_cache_config
             
             # 验证配置获取
@@ -176,12 +176,12 @@ class SimplifiedIntegrationTester:
     def _test_cache_operations(self) -> bool:
         """测试缓存基本操作"""
         try:
-            from db.cache_layer import UnifiedCacheLayer
+            from db.services.cache_service import CacheService
             from config.cache_config import get_cache_config, CacheProfile
             
             # 创建缓存实例
             cache_config = get_cache_config(CacheProfile.DEVELOPMENT)
-            cache = UnifiedCacheLayer(cache_config)
+            cache = CacheService(cache_config)
             
             # 测试基本操作
             test_key = "test_key"
@@ -206,9 +206,9 @@ class SimplifiedIntegrationTester:
     def _test_batch_optimizer(self) -> bool:
         """测试批量数据优化器"""
         try:
-            from db.batch_data_optimizer import BatchDataOptimizer
+            from db.services.integrated.batch_data_optimizer import DataOptimizationService
             
-            optimizer = BatchDataOptimizer()
+            optimizer = DataOptimizationService()
             
             # 验证基本方法存在
             assert hasattr(optimizer, 'optimize_batch_queries')
@@ -240,7 +240,7 @@ class SimplifiedIntegrationTester:
     def _test_memory_optimizer_Simplified_Integration_Test(self) -> bool:
         """测试内存优化器"""
         try:
-            from db.memory_optimizer import Memory_optimizer
+            from db.services.integrated.memory_optimizer import Memory_optimizer
             
             optimizer = Memory_optimizer()
             

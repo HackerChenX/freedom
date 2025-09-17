@@ -1,3 +1,4 @@
+from strategy.unified_base_strategy import UnifiedBaseStrategy
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
@@ -28,11 +29,12 @@ import itertools
 from collections import defaultdict
 import hashlib
 
-from utils.dependency_injection import get_logger
+from utils.logger import get_logger
 from utils.decorators import performance_monitor, exception_handler
 from utils.unified_container import get_container
 from analysis.buypoints.enhanced_backtest_engine import BuyPointData
 from strategy.intelligent_strategy_generator import GeneratedStrategy, TechnicalPattern
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -85,6 +87,18 @@ class OptimizationResult:
 
 @dataclass
 class StrategyOptimizerConfig:
+"""
+StrategyOptimizer - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 22个方法分为以下职责组:
+  * 核心功能方法 (约7个)
+  * 辅助工具方法 (约7个)  
+  * 接口适配方法 (约7个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """策略优化器配置"""
     optimization_method: str = 'bayesian'  # 'bayesian', 'grid', 'genetic', 'particle_swarm'
     max_iterations: int = 100

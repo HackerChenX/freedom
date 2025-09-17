@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional, Callable
 from dataclasses import dataclass, asdict
 from collections import defaultdict, deque
+from db.sql_manager import SQLManager, QueryType
 import numpy as np
 import pandas as pd
 import warnings

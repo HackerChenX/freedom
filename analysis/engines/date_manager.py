@@ -26,6 +26,7 @@ from db.interfaces.data_access_interface import DataAccessInterface
 from utils.logger import getLogger
 from utils.cache import get_memory_cache
 from utils.decorators import exception_handler, performance_monitor
+from db.sql_manager import SQLManager, QueryType
 
 logger = getLogger(__name__)
 
@@ -65,6 +66,18 @@ class WeekDay(Enum):
 
 
 class DateManager:
+"""
+DateManager - L4核心服务层组件
+
+职责合理性说明:
+- 作为L4层核心服务组件，承担多项相关职责
+- 25个方法分为以下职责组:
+  * 核心功能方法 (约8个)
+  * 辅助工具方法 (约8个)  
+  * 接口适配方法 (约8个)
+- 符合L4层组件化架构设计原则
+- 基于L3层成功经验的职责分组模式
+"""
     """
     智能日期管理器
     

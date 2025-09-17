@@ -20,7 +20,8 @@ sys.path.insert(0, root_dir)
 from utils.logger import get_logger
 from utils.decorators import performance_monitor, time_it
 from scripts.backtest.pattern_analyzer import PatternAnalyzer
-from scripts.backtest.data_manager import BacktestDataManager
+from scripts.backtest.data_manager import BacktestDataAccessManager
+from db.sql_manager import SQLManager, QueryType
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -41,7 +42,7 @@ class PatternMatcher:
             matcher_id: 匹配器ID
         """
         self.matcher_id = matcher_id
-        self.data_manager = BacktestDataManager()
+        self.data_manager = BacktestDataAccessManager()
         self.pattern_analyzer = PatternAnalyzer()
         
         # 匹配参数

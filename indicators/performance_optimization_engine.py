@@ -1,3 +1,6 @@
+from typing import Dict, Any
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 """
 指标计算性能优化引擎
 提供指标计算缓存、批量优化、时间预测和调度优化
@@ -25,12 +28,13 @@ from utils.advanced_performance_monitor import (
 from utils.enhanced_exception_handler import exception_handler, ErrorSeverity, ErrorCategory
 from config.unified_config_manager import get_config
 from indicators.complete_indicator_registry import get_indicator_registry
+from db.sql_manager import SQLManager, QueryType
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class IndicatorPerformanceProfile:
+class IndicatorPerformanceProfile(BaseIndicator):
     """指标性能档案"""
     indicator_name: str
     avg_calculation_time: float
@@ -47,7 +51,7 @@ class IndicatorPerformanceProfile:
 
 
 @dataclass
-class BatchCalculationTask:
+class BatchCalculationTask(BaseIndicator):
     """批量计算任务"""
     task_id: str
     indicator_names: List[str]
@@ -59,10 +63,14 @@ class BatchCalculationTask:
     callback: Optional[Callable] = None
 
 
-class IndicatorCacheManager:
+class IndicatorCacheService(BaseIndicator):
     """指标缓存管理器"""
     
-    def __init__(self, max_memory_cache: int = 1000, enable_disk_cache: bool = True):
+    def __init__(self, max_memory_cache: int = 1000, enable_disk_cache: bool = True):  # TODO: 将魔法数字提取到配置中
+            super().__init__(name=self.__class__.__name__, **kwargs)
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.max_memory_cache = max_memory_cache
         self.enable_disk_cache = enable_disk_cache
         
@@ -73,8 +81,8 @@ class IndicatorCacheManager:
         self.cache_miss_count = 0
         
         # 缓存策略配置
-        self.cache_ttl = get_config('indicator_cache.ttl', 3600)  # 1小时
-        self.cache_size_limit = get_config('indicator_cache.size_limit', 100 * 1024 * 1024)  # 100MB
+        self.cache_ttl = get_config('indicator_cache.ttl', 3600)  # 1小时  # TODO: 将魔法数字提取到配置中
+        self.cache_size_limit = get_config('indicator_cache.size_limit', 100 * 1024 * 1024)  # 100MB  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 线程安全
         self.lock = threading.RLock()
@@ -159,12 +167,15 @@ class IndicatorCacheManager:
         }
 
 
-class IndicatorPerformanceProfiler:
+class IndicatorPerformanceProfiler(BaseIndicator):
     """指标性能分析器"""
     
     def __init__(self):
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.profiles: Dict[str, IndicatorPerformanceProfile] = {}
-        self.calculation_history: deque = deque(maxlen=10000)
+        self.calculation_history: deque = deque(maxlen=10000)  # TODO: 将魔法数字提取到配置中
         self.lock = threading.RLock()
         
         logger.info("指标性能分析器初始化完成")
@@ -231,9 +242,9 @@ class IndicatorPerformanceProfiler:
         elif time_per_record < 0.001:  # < 1ms per record
             return 2.0  # 中等复杂度
         elif time_per_record < 0.01:   # < 10ms per record
-            return 3.0  # 高复杂度
+            return 3.0  # 高复杂度  # TODO: 将魔法数字提取到配置中
         else:
-            return 4.0  # 极高复杂度
+            return 4.0  # 极高复杂度  # TODO: 将魔法数字提取到配置中
     
     def predict_calculation_time(self, indicator_name: str, data_size: int) -> float:
         """预测指标计算时间"""
@@ -249,7 +260,7 @@ class IndicatorPerformanceProfiler:
         # 考虑数据大小的影响
         if profile.data_size_correlation > 0:
             # 线性相关
-            estimated_time = base_time * (data_size / 1000)  # 假设基准是1000条记录
+            estimated_time = base_time * (data_size / 1000)  # 假设基准是1000条记录  # TODO: 将魔法数字提取到配置中
         else:
             # 固定时间
             estimated_time = base_time
@@ -266,23 +277,23 @@ class IndicatorPerformanceProfiler:
         base_times = {
             'MA': 0.001,      # 移动平均 - 简单
             'EMA': 0.002,     # 指数移动平均 - 简单
-            'MACD': 0.005,    # MACD - 中等
-            'RSI': 0.003,     # RSI - 中等
-            'BOLL': 0.004,    # 布林带 - 中等
-            'KDJ': 0.006,     # KDJ - 复杂
-            'CCI': 0.008,     # CCI - 复杂
-            'ATR': 0.004,     # ATR - 中等
+            'MACD': 0.005,    # MACD - 中等  # TODO: 将魔法数字提取到配置中
+            'RSI': 0.003,     # RSI - 中等  # TODO: 将魔法数字提取到配置中
+            'BOLL': 0.004,    # 布林带 - 中等  # TODO: 将魔法数字提取到配置中
+            'KDJ': 0.006,     # KDJ - 复杂  # TODO: 将魔法数字提取到配置中
+            'CCI': 0.008,     # CCI - 复杂  # TODO: 将魔法数字提取到配置中
+            'ATR': 0.004,     # ATR - 中等  # TODO: 将魔法数字提取到配置中
         }
         
         # 查找匹配的基础时间
-        base_time = 0.005  # 默认5ms
+        base_time = 0.005  # 默认5ms  # TODO: 将魔法数字提取到配置中
         for pattern, time_val in base_times.items():
             if pattern in indicator_name.upper():
                 base_time = time_val
                 break
         
         # 根据数据大小调整
-        return base_time * (data_size / 1000)
+        return base_time * (data_size / 1000)  # TODO: 将魔法数字提取到配置中
     
     def get_performance_summary(self) -> Dict[str, Any]:
         """获取性能摘要"""
@@ -334,17 +345,20 @@ class IndicatorPerformanceProfiler:
             }
 
 
-class BatchCalculationOptimizer:
+class BatchCalculationOptimizer(BaseIndicator):
     """批量计算优化器"""
     
-    def __init__(self, max_workers: int = 4):
+    def __init__(self, max_workers: int = 4):  # TODO: 将魔法数字提取到配置中
+        # 依赖注入示例:
+        # self.data_access = container.resolve("DataAccessInterface")
+        # self.cache_service = container.resolve("ICacheService")
         self.max_workers = max_workers
         self.task_queue: deque = deque()
         self.active_tasks: Dict[str, BatchCalculationTask] = {}
         self.completed_tasks: Dict[str, Any] = {}
         
         self.profiler = IndicatorPerformanceProfiler()
-        self.cache_manager = IndicatorCacheManager()
+        self.cache_manager = IndicatorCacheService()
         
         # 线程池
         self.executor = ThreadPoolExecutor(max_workers=max_workers)
@@ -352,12 +366,12 @@ class BatchCalculationOptimizer:
         
         logger.info(f"批量计算优化器初始化 - 工作线程: {max_workers}")
     
-    @indicator_performance_monitor(threshold_seconds=5.0)
+    @indicator_performance_monitor(threshold_seconds=5.0)  # TODO: 将魔法数字提取到配置中
     def submit_batch_calculation(self, indicator_names: List[str], data: pd.DataFrame,
                                priority: int = 1, dependencies: List[str] = None,
                                callback: Callable = None) -> str:
         """提交批量计算任务"""
-        task_id = f"batch_{int(time.time() * 1000)}"
+        task_id = f"batch_{int(time.time() * 1000)}"  # TODO: 将魔法数字提取到配置中
         
         # 预测总执行时间
         estimated_time = sum(
@@ -544,10 +558,62 @@ def get_batch_optimizer() -> BatchCalculationOptimizer:
 
 # 导出主要类
 __all__ = [
-    'IndicatorCacheManager',
+    'IndicatorCacheService',
     'IndicatorPerformanceProfiler',
     'BatchCalculationOptimizer',
     'IndicatorPerformanceProfile',
     'BatchCalculationTask',
     'get_batch_optimizer'
 ]
+
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算指标值
+        
+        Args:
+            data: 输入数据，包含OHLCV等字段
+            
+        Returns:
+            pd.DataFrame: 包含指标计算结果的数据框
+        """
+        if not self.validate_data(data):
+            raise ValueError("输入数据不符合要求")
+        
+        # 预处理数据
+        processed_data = self.preprocess_data(data)
+        
+        # TODO: 实现具体的指标计算逻辑
+        result = processed_data.copy()
+        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        
+        # 后处理结果
+        result = self.postprocess_result(result)
+        
+        # 保存结果
+        self._result = result
+        
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取交易信号
+        
+        Args:
+            data: 包含指标计算结果的数据
+            
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        if data.empty:
+            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
+        
+        # TODO: 实现具体的信号生成逻辑
+        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+        
+        return {
+            'signal': 'hold',
+            'strength': 0.0,
+            'timestamp': data.index[-1] if not data.empty else None,
+            'price': latest_close,
+            'indicator': self.name
+        }

@@ -326,8 +326,7 @@ def _get_stock_data_for_indicator(stock_code: str, start_date: str, end_date: st
         # 构建查询SQL
         query = f"""
         SELECT date, open, high, low, close, volume, turnover_rate
-        FROM stock_info 
-        WHERE code = '{stock_code}'
+        FROM stock_info WHERE level = %(level)s AND code = '{stock_code}'
         AND level = '日线'
         AND date >= '{start_date}' AND date <= '{end_date}'
         ORDER BY date ASC
@@ -351,6 +350,7 @@ def _generate_mock_stock_dataframe(stock_code: str, start_date: str, end_date: s
     """生成模拟股票数据DataFrame"""
     import numpy as np
     from datetime import datetime, timedelta
+from db.sql_manager import SQLManager, QueryType
     
     start = datetime.strptime(start_date, '%Y-%m-%d')
     end = datetime.strptime(end_date, '%Y-%m-%d')
