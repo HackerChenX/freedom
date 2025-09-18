@@ -607,12 +607,12 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if not isinstance(result_df, pd.DataFrame):
                 raise TypeError(f"指标 {self.name} 的_calculate方法必须返回pandas.DataFrame")
 
-            # 保留原始基础数据列
-            self._result = self._preserve_base_columns(data, result_df)
+            # 直接返回计算结果
+            self._result = result_df
             self._error = None
             self.is_available = True
 
-            return self._result
+            return result_df
 
         except Exception as e:
             self._error = str(e)
@@ -686,11 +686,20 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df["D"] = df["D"].clip(0, 100)
         # J值可以超出0-100范围,这是正常的
 
-        # 添加形态识别和信号生成
-        df = self.add_pattern_detection(df)
-        df = self.add_signal_generation(df)
+        # 返回包含K、D、J值的DataFrame - 包含项目级标准列名
+        result_df = pd.DataFrame(index=df.index)
 
-        return df
+        # 向后兼容列名
+        result_df["K"] = df["K"]
+        result_df["D"] = df["D"]
+        result_df["J"] = df["J"]
+
+        # 项目级标准列名（符合StandardColumnNames）
+        result_df["kdj_k"] = df["K"]  # 项目标准：K值
+        result_df["kdj_d"] = df["D"]  # 项目标准：D值
+        result_df["kdj_j"] = df["J"]  # 项目标准：J值
+
+        return result_df
 
     def add_signals(self, data: pd.DataFrame, k_col: str = "K", d_col: str = "D", j_col: str = "J") -> pd.DataFrame:
         """
@@ -1553,67 +1562,146 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 限制评分在0-100之间
         return score.clip(0, 100)
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        BaseIndicator要求的抽象方法：获取交易信号
+
+        Args:
+            data: 包含指标计算结果的数据
+
+        Returns:
+            Dict[str, Any]: 交易信号信息
+        """
+        try:
+            # 生成信号
+            signals_df = self.get_signals(data)
+
+            if signals_df.empty:
+                return {
+                    "signal": "HOLD",
+                    "strength": 0.0,
+                    "confidence": 0.5,
+                    "details": "无足够数据生成信号"
+                }
+
+            # 获取最新信号
+            latest_signals = signals_df.iloc[-1]
+
+            # 确定主要信号
+            if latest_signals.get('buy_signal', False):
+                signal_type = "BUY"
+                strength = 0.8
+            elif latest_signals.get('sell_signal', False):
+                signal_type = "SELL"
+                strength = 0.8
+            else:
+                signal_type = "HOLD"
+                strength = 0.0
+
+            # 计算置信度
+            confidence = 0.7  # 基于KDJ指标的一般可靠性
+
+            return {
+                "signal": signal_type,
+                "strength": strength,
+                "confidence": confidence,
+                "details": f"KDJ信号基于{len(data)}个数据点"
+            }
+
+        except Exception as e:
+            logger.error(f"KDJ信号生成失败: {e}")
+            return {
+                "signal": "HOLD",
+                "strength": 0.0,
+                "confidence": 0.0,
+                "details": f"信号生成错误: {e}"
+            }
+
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """真实实现:生成KDJ交易信号"""
+        """
+        标准方法：生成KDJ交易信号DataFrame
+
+        返回符合BaseIndicator标准的信号DataFrame，包含：
+        - buy_signal: bool, 买入信号
+        - sell_signal: bool, 卖出信号
+        - hold_signal: bool, 持有信号
+        - signal_strength: float, 信号强度(0-1)
+        - signal_confidence: float, 信号置信度(0-1)
+        """
         if data.empty:
             return pd.DataFrame()
 
-        # 计算KDJ指标
-        kdj_data = self.calculate_Kdj(data)
-        result_df = data.copy()
+        try:
+            # 计算KDJ指标
+            kdj_data = self.calculate_Kdj(data)
 
-        # 合并KDJ数据
-        for col in kdj_data.columns:
-            result_df[col] = kdj_data[col]
+            # 检查KDJ数据是否有效
+            if kdj_data.empty or 'K' not in kdj_data.columns:
+                logger.warning("KDJ数据计算失败或缺少必要列，返回空信号")
+                signals_df = pd.DataFrame(index=data.index)
+                signals_df['buy_signal'] = False
+                signals_df['sell_signal'] = False
+                signals_df['hold_signal'] = True
+                signals_df['signal_strength'] = 0.0
+                signals_df['signal_confidence'] = 0.0
+                return signals_df
 
-        # 初始化信号列
-        result_df["kdj_signal"] = 0
-        result_df["kdj_strength"] = 0.0
-        result_df["kdj_confidence"] = 0.0
+            # 初始化信号DataFrame
+            signals_df = pd.DataFrame(index=data.index)
+            signals_df['buy_signal'] = False
+            signals_df['sell_signal'] = False
 
-        # 获取KDJ数据
-        k_values = kdj_data["K"]
-        d_values = kdj_data["D"]
-        j_values = kdj_data["J"]
+            # 获取KDJ数据
+            k_values = kdj_data["K"]
+            d_values = kdj_data["D"]
+            j_values = kdj_data["J"]
 
-        # 1. 金叉买入信号
-        golden_cross = crossover(k_values, d_values)
-        result_df.loc[golden_cross, "kdj_signal"] = 1
+            # 1. 金叉买入信号
+            golden_cross = crossover(k_values, d_values)
+            signals_df.loc[golden_cross, "buy_signal"] = True
 
-        # 根据位置调整信号强度
-        low_position_golden = golden_cross & (k_values < 50)  # TODO: 将魔法数字提取到配置中
-        result_df.loc[low_position_golden, "kdj_strength"] = 0.8  # TODO: 将魔法数字提取到配置中
-        result_df.loc[low_position_golden, "kdj_confidence"] = 0.9  # TODO: 将魔法数字提取到配置中
+            # 2. 死叉卖出信号
+            death_cross = crossunder(k_values, d_values)
+            signals_df.loc[death_cross, "sell_signal"] = True
 
-        high_position_golden = golden_cross & (k_values >= 50)  # TODO: 将魔法数字提取到配置中
-        result_df.loc[high_position_golden, "kdj_strength"] = 0.5  # TODO: 将魔法数字提取到配置中
-        result_df.loc[high_position_golden, "kdj_confidence"] = 0.6  # TODO: 将魔法数字提取到配置中
+            # 添加标准信号列
+            signals_df['hold_signal'] = ~(signals_df['buy_signal'] | signals_df['sell_signal'])
 
-        # 2. 死叉卖出信号
-        death_cross = crossunder(k_values, d_values)
-        result_df.loc[death_cross, "kdj_signal"] = -1
+            # 计算信号强度（基于K、D值的位置和J值的加速度）
+            signals_df['signal_strength'] = 0.0
 
-        # 根据位置调整信号强度
-        high_position_death = death_cross & (k_values > 50)  # TODO: 将魔法数字提取到配置中
-        result_df.loc[high_position_death, "kdj_strength"] = 0.8  # TODO: 将魔法数字提取到配置中
-        result_df.loc[high_position_death, "kdj_confidence"] = 0.9  # TODO: 将魔法数字提取到配置中
+            # 买入信号强度：K、D值越低且J值加速度越大，强度越高
+            buy_mask = signals_df['buy_signal']
+            if buy_mask.any():
+                k_strength = (100 - k_values[buy_mask]) / 100  # K值越低强度越高
+                d_strength = (100 - d_values[buy_mask]) / 100  # D值越低强度越高
+                signals_df.loc[buy_mask, 'signal_strength'] = ((k_strength + d_strength) / 2).fillna(0.0).clip(0, 1)
 
-        low_position_death = death_cross & (k_values <= 50)  # TODO: 将魔法数字提取到配置中
-        result_df.loc[low_position_death, "kdj_strength"] = 0.5  # TODO: 将魔法数字提取到配置中
-        result_df.loc[low_position_death, "kdj_confidence"] = 0.6  # TODO: 将魔法数字提取到配置中
+            # 卖出信号强度：K、D值越高，强度越高
+            sell_mask = signals_df['sell_signal']
+            if sell_mask.any():
+                k_strength = k_values[sell_mask] / 100  # K值越高强度越高
+                d_strength = d_values[sell_mask] / 100  # D值越高强度越高
+                signals_df.loc[sell_mask, 'signal_strength'] = ((k_strength + d_strength) / 2).fillna(0.0).clip(0, 1)
 
-        # 3. 极端超买超卖信号  # TODO: 将魔法数字提取到配置中
-        extreme_oversold = j_values < 0
-        result_df.loc[extreme_oversold, "kdj_signal"] = 1
-        result_df.loc[extreme_oversold, "kdj_strength"] = 0.9  # TODO: 将魔法数字提取到配置中
-        result_df.loc[extreme_oversold, "kdj_confidence"] = 0.8  # TODO: 将魔法数字提取到配置中
+            # 设置信号置信度（基于KDJ指标的可靠性）
+            signals_df['signal_confidence'] = 0.0
+            signals_df.loc[signals_df['buy_signal'] | signals_df['sell_signal'], 'signal_confidence'] = 0.75  # KDJ信号置信度设为0.75
 
-        extreme_overbought = j_values > 100
-        result_df.loc[extreme_overbought, "kdj_signal"] = -1
-        result_df.loc[extreme_overbought, "kdj_strength"] = 0.9  # TODO: 将魔法数字提取到配置中
-        result_df.loc[extreme_overbought, "kdj_confidence"] = 0.8  # TODO: 将魔法数字提取到配置中
+            return signals_df
 
-        return result_df
+        except Exception as e:
+            logger.error(f"KDJ信号生成失败: {e}")
+            # 返回空信号DataFrame
+            signals_df = pd.DataFrame(index=data.index)
+            signals_df['buy_signal'] = False
+            signals_df['sell_signal'] = False
+            signals_df['hold_signal'] = True
+            signals_df['signal_strength'] = 0.0
+            signals_df['signal_confidence'] = 0.0
+            return signals_df
+
+
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
         """真实实现:计算KDJ综合评分"""

@@ -116,7 +116,7 @@ class ZXMDiagnostics(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXM
             except Exception as e:
                 logger.error(f"错误: {e}")
                 return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
+                
                 data = ColumnMapper.standardize_columns(data, ['open', 'high', 'low', 'close', 'volume'])
 
                 # 重新检查
@@ -651,11 +651,11 @@ from db.sql_manager import SQLManager, QueryType
         volume_health = {}
         
         # 1. 量价关系
-        = data['close'].pct_change()
+        price_change = data['close'].pct_change()
         volume_change = data['volume'].pct_change()
         
         # 量价配合度 (价格上涨，成交量放大)
-        volume_health['volume_price_coordination'] = (> 0) & (volume_change > 0)
+        volume_health['volume_price_coordination'] = (price_change > 0) & (volume_change > 0)
         
         # 2. 成交量激增
         avg_volume = data['volume'].rolling(window=lookback_period).mean()
@@ -730,7 +730,7 @@ from db.sql_manager import SQLManager, QueryType
         close = data['close']
 
         # 简单的反转潜力分析
-        = close.pct_change(lookback_period)
+        momentum_change = close.pct_change(lookback_period)
 
         result['reversal_signal'] = pd.Series(0.0, index=data.index)
         result['reversal_strength'] = pd.Series(0.5, index=data.index)  # TODO: 将魔法数字提取到配置中

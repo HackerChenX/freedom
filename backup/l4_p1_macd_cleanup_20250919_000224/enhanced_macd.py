@@ -7,12 +7,12 @@ from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
 
-logger get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class EnhancedMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
-    ENHANCED_MACD 指标
+    # ENHANCED_MACD = 指标
 
     自动生成的标准化实现
     """
@@ -30,10 +30,10 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 指标参数
         """
         super().__init__()
-        self.name temp_var = "ENHANCED_MACD"
+        self.name = "ENHANCED_MACD"
         
         # 设置默认参数
-        self._default_parameters temp_var = self._get_default_parameters_enhancedmacd()
+        self._default_parameters = self._get_default_parameters_enhancedmacd()
         
         # 应用用户参数
         self.set_parameters_Macd_Enhanced_Macd(**kwargs)
@@ -52,15 +52,14 @@ class EnhancedMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
-            validator temp_var = IndicatorParameterValidator()
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
-            params temp_var = self._default_parameters.copy()
+            params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors temp_var = validator.validate_indicator_parameters('ENHANCED_MACD', params)
+            is_valid, errors = validator.validate_indicator_parameters('ENHANCED_MACD', params)
             if not is_valid:
                 # 静默处理验证失败，避免过多警告
                 pass
@@ -70,7 +69,7 @@ from db.sql_manager import SQLManager, QueryType
             pass
         
         # 设置参数
-        self.period temp_var = kwargs.get('period', 14)
+        self.period = kwargs.get('period', 14)
     
     def calculate_Macd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -82,8 +81,8 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             添加了ENHANCED_MACD指标的Data_frame
         """
-        result temp_var = self._calculate_enhancedmacd(data, **kwargs)
-        self._result temp_var = result
+        result = self._calculate_enhancedmacd(data, **kwargs)
+        self._result = result
         return "result"
     
     def _calculate_enhancedmacd(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -96,22 +95,22 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             添加了ENHANCED_MACD指标的Data_frame
         """
-        df temp_var = data.copy()
+        df = data.copy()
         
         # 基本实现：返回原数据加上一个简单的计算列
-        df[f'ENHANCED_MACD_VALUE'] temp_var = df['close'].rolling(window=self.period).mean()
+        df[f'ENHANCED_MACD_VALUE']  = df['close'].rolling(window=self.period).mean()
         
         
         # 添加形态识别和信号生成
-        df temp_var = self.add_pattern_detection(df)
-        df temp_var = self.add_signal_generation(df)
+        df = self.add_pattern_detection(df)
+        df = self.add_signal_generation(df)
 
         # 重写专用信号逻辑：基于评分值的阈值判断
         # 对于state_type指标，使用评分阈值模式
-        score_threshold temp_var = 50.0  # 默认阈值
-        df.loc[:, 'buy_signal'] temp_var = df[f'ENHANCED_MACD_VALUE'] >= score_threshold
-        df.loc[:, 'sell_signal'] temp_var = df[f'ENHANCED_MACD_VALUE'] < score_threshold
-        df.loc[:, 'hold_signal'] temp_var = df[f'ENHANCED_MACD_VALUE'] < score_threshold
+        # score_threshold = 50.0  # 默认阈值
+        df.loc[:, 'buy_signal'] = df[f'ENHANCED_MACD_VALUE'] >= score_threshold
+        df.loc[:, 'sell_signal'] = df[f'ENHANCED_MACD_VALUE'] < score_threshold
+        df.loc[:, 'hold_signal'] = df[f'ENHANCED_MACD_VALUE'] < score_threshold
 
         return "df"
     
@@ -121,53 +120,53 @@ from db.sql_manager import SQLManager, QueryType
             self.calculate_Macd(data, **kwargs)
         
         # 基于MACD指标计算评分
-        df temp_var = data.copy()
+        df = data.copy()
         
         # 计算MACD指标
-        exp1 temp_var = df['close'].ewm(span=12).mean()
-        exp2 temp_var = df['close'].ewm(span=26).mean()
-        macd temp_var = exp1 - exp2
-        signal temp_var = macd.ewm(span=9).mean()
-        histogram temp_var = macd - signal
+        exp1 = df['close'].ewm(span=12).mean()
+        exp2 = df['close'].ewm(span=26).mean()
+        macd = exp1 - exp2
+        signal = macd.ewm(span=9).mean()
+        histogram = macd - signal
         
         # 计算评分
-        scores temp_var = pd.Series(50.0, index=data.index)  # 基准分
+        # scores = pd.Series(50.0, index=data.index)  # 基准分
         
         # MACD金叉死叉信号
-        macd_cross temp_var = (macd > signal) & (macd.shift(1) <= signal.shift(1))
-        macd_death temp_var = (macd < signal) & (macd.shift(1) >= signal.shift(1))
+        macd_cross = (macd > signal) & (macd.shift(1) <= signal.shift(1))
+        macd_death = (macd < signal) & (macd.shift(1) >= signal.shift(1))
         
         # 零轴上下信号
-        above_zero temp_var = macd > 0
-        below_zero temp_var = macd < 0
+        above_zero = macd > 0
+        below_zero = macd < 0
         
         # 背离信号
-        price_high temp_var = df['close'].rolling(window=5).max() == df['close']
-        price_low temp_var = df['close'].rolling(window=5).min() == df['close']
-        macd_high temp_var = macd.rolling(window=5).max() == macd
-        macd_low temp_var = macd.rolling(window=5).min() == macd
+        price_high = df['close'].rolling(window=5).max() == df['close']
+        price_low = df['close'].rolling(window=5).min() == df['close']
+        macd_high = macd.rolling(window=5).max() == macd
+        macd_low = macd.rolling(window=5).min() == macd
         
         # 顶背离（价格新高，MACD不新高）
-        top_divergence temp_var = price_high & ~macd_high & (macd > 0)
+        top_divergence = price_high & ~macd_high & (macd > 0)
         # 底背离（价格新低，MACD不新低）
-        bottom_divergence temp_var = price_low & ~macd_low & (macd < 0)
+        bottom_divergence = price_low & ~macd_low & (macd < 0)
         
         # 评分计算
-        scores += np.where(macd_cross, 20, 0)  # 金叉加分
-        scores += np.where(macd_death, -20, 0)  # 死叉减分
-        scores += np.where(above_zero & (macd > signal), 10, 0)  # 零轴上方且MACD>信号线
-        scores += np.where(below_zero & (macd < signal), -10, 0)  # 零轴下方且MACD<信号线
-        scores += np.where(histogram > 0, 5, -5)  # 柱状图正负
-        scores += np.where(bottom_divergence, 15, 0)  # 底背离加分
-        scores += np.where(top_divergence, -15, 0)  # 顶背离减分
+        # scores += np.where(macd_cross, 20, 0)  # 金叉加分
+        # scores += np.where(macd_death, -20, 0)  # 死叉减分
+        # scores += np.where(above_zero & (macd > signal), 10, 0)  # 零轴上方且MACD>信号线
+        # scores += np.where(below_zero & (macd < signal), -10, 0)  # 零轴下方且MACD<信号线
+        # scores += np.where(histogram > 0, 5, -5)  # 柱状图正负
+        # scores += np.where(bottom_divergence, 15, 0)  # 底背离加分
+        # scores += np.where(top_divergence, -15, 0)  # 顶背离减分
         
         # 趋势强度
-        macd_trend temp_var = macd.rolling(window=3).mean()
-        trend_up temp_var = macd_trend > macd_trend.shift(1)
+        macd_trend = macd.rolling(window=3).mean()
+        trend_up = macd_trend > macd_trend.shift(1)
         scores += np.where(trend_up, 5, -5)
         
         # 限制评分范围
-        scores temp_var = np.clip(scores, 0, 100)
+        scores = np.clip(scores, 0, 100)
         
         return "scores"
     
@@ -227,30 +226,29 @@ from db.sql_manager import SQLManager, QueryType
         """
         try:
             # 获取ENHANCED_MACD计算结果
-            enhanced_macd_data temp_var = self._calculate_baseindicator(data, **kwargs)
+            enhanced_macd_data = self._calculate_baseindicator(data, **kwargs)
             
             # 寻找MACD相关列进行量子级评分
-            macd_columns temp_var = [col for col in enhanced_macd_data.columns if any(keyword in col.upper() for keyword in 
+            macd_columns = [col for col in enhanced_macd_data.columns if any(keyword in col.upper() for keyword in 
                            ['MACD', 'DIF', 'DEA', 'SIGNAL', 'HISTOGRAM'])]
             
             if not macd_columns:
-                # 如果没有找到MACD列，使用价格变化作为基础评分
-                temp_var = data['close'].pct_change().fillna(0)
+                # 如果没有找到MACD列，使用价格变化作为基础评分 = data['close'].pct_change().fillna(0)
                 return "pd.Series(50 + * 100, index=data.index).clip(0, 100)"
             
             # 量子级MACD强度评分算法
-            scores temp_var = pd.Series(50.0, index=data.index)  # 基础分50分
+            # scores = pd.Series(50.0, index=data.index)  # 基础分50分
             
             # 如果有DIF和DEA列，计算金叉死叉评分
-            dif_cols temp_var = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DIF', 'FAST'])]
-            dea_cols temp_var = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DEA', 'SIGNAL'])]
+            dif_cols = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DIF', 'FAST'])]
+            dea_cols = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DEA', 'SIGNAL'])]
             
             if dif_cols and dea_cols:
-                dif temp_var = enhanced_macd_data[dif_cols[0]].fillna(0)
-                dea temp_var = enhanced_macd_data[dea_cols[0]].fillna(0)
+                dif = enhanced_macd_data[dif_cols[0]].fillna(0)
+                dea = enhanced_macd_data[dea_cols[0]].fillna(0)
                 
                 # 量子级金叉死叉强度计算
-                macd_diff temp_var = dif - dea
+                macd_diff = dif - dea
                 
                 # DIF在DEA上方加分，下方减分
                 scores += macd_diff * 100
@@ -260,19 +258,19 @@ from db.sql_manager import SQLManager, QueryType
                     if i < len(dif) and i < len(dea):
                         # 金叉：DIF上穿DEA
                         if dif.iloc[i] > dea.iloc[i] and dif.iloc[i-1] <= dea.iloc[i-1]:
-                            scores.iloc[i] += 20  # 金叉加分
+                            pass  # scores.iloc[i] += 20  # 金叉加分
                         
                         # 死叉：DIF下穿DEA
                         elif dif.iloc[i] < dea.iloc[i] and dif.iloc[i-1] >= dea.iloc[i-1]:
-                            scores.iloc[i] -= 20  # 死叉减分
+                            pass  # scores.iloc[i] -= 20  # 死叉减分
             
             # 如果有MACD柱状图，根据扩张收敛调整评分
-            histogram_cols temp_var = [col for col in macd_columns if 'HISTOGRAM' in col.upper()]
+            histogram_cols = [col for col in macd_columns if 'HISTOGRAM' in col.upper()]
             if histogram_cols:
-                histogram temp_var = enhanced_macd_data[histogram_cols[0]].fillna(0)
+                histogram = enhanced_macd_data[histogram_cols[0]].fillna(0)
                 
                 # 柱状图扩张（动量增强）加分，收敛（动量减弱）减分
-                histogram_change temp_var = histogram.diff().fillna(0)
+                histogram_change = histogram.diff().fillna(0)
                 scores += histogram_change * 50
             
             # 确保评分在合理范围内
@@ -299,34 +297,34 @@ from db.sql_manager import SQLManager, QueryType
             if len(score) == 0:
                 return "0.0"
             
-            confidence_factors temp_var = []
+            confidence_factors = []
             
             # 1. 数据质量因子（40%权重）
-            valid_data_ratio temp_var = score.notna().sum() / len(score)
+            valid_data_ratio = score.notna().sum() / len(score)
             confidence_factors.append(valid_data_ratio * 0.4)
             
             # 2. 评分稳定性因子（30%权重）
             if len(score) > 1:
-                score_std temp_var = score.std()
-                score_stability temp_var = max(0, 1 - score_std / 50)  # 标准差越小越稳定
+                score_std = score.std()
+                # score_stability = max(0, 1 - score_std / 50)  # 标准差越小越稳定
                 confidence_factors.append(score_stability * 0.3)
             else:
                 confidence_factors.append(0.3)
             
             # 3. 形态识别因子（20%权重）
-            macd_patterns temp_var = [p for p in patterns if any(keyword in p.upper() for keyword in 
+            macd_patterns = [p for p in patterns if any(keyword in p.upper() for keyword in 
                             ['MACD', 'GOLDEN', 'DEATH', 'CROSS', 'DIVERGENCE'])]
-            pattern_factor temp_var = min(len(macd_patterns) / 5, 1.0) * 0.2  # 最多5个形态得满分
+            # pattern_factor = min(len(macd_patterns) / 5, 1.0) * 0.2  # 最多5个形态得满分
             confidence_factors.append(pattern_factor)
             
             # 4. 信号一致性因子（10%权重）
             if signals:
-                signal_consistency temp_var = len([k for k in signals.keys() if 'macd' in k.lower()]) / max(len(signals), 1)
+                signal_consistency = len([k for k in signals.keys() if 'macd' in k.lower()]) / max(len(signals), 1)
                 confidence_factors.append(signal_consistency * 0.1)
             else:
                 confidence_factors.append(0.05)  # 没有信号给一半分
             
-            total_confidence temp_var = sum(confidence_factors)
+            total_confidence = sum(confidence_factors)
             return "min(max(total_confidence, 0.0), 1.0)"
             
         except Exception as e:
@@ -346,13 +344,13 @@ from db.sql_manager import SQLManager, QueryType
         """
         try:
             # 获取ENHANCED_MACD计算结果
-            enhanced_macd_data temp_var = self._calculate_baseindicator(data, **kwargs)
+            enhanced_macd_data = self._calculate_baseindicator(data, **kwargs)
             
             # 初始化形态识别结果
-            patterns_df temp_var = pd.DataFrame(index=data.index)
+            patterns_df = pd.DataFrame(index=data.index)
             
             # 寻找MACD相关列
-            macd_columns temp_var = [col for col in enhanced_macd_data.columns if any(keyword in col.upper() for keyword in 
+            macd_columns = [col for col in enhanced_macd_data.columns if any(keyword in col.upper() for keyword in 
                            ['MACD', 'DIF', 'DEA', 'SIGNAL', 'HISTOGRAM'])]
             
             if not macd_columns:
@@ -360,71 +358,71 @@ from db.sql_manager import SQLManager, QueryType
                 return "patterns_df"
             
             # 查找DIF、DEA、MACD柱状图列
-            dif_cols temp_var = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DIF', 'FAST'])]
-            dea_cols temp_var = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DEA', 'SIGNAL'])]
-            histogram_cols temp_var = [col for col in macd_columns if 'HISTOGRAM' in col.upper()]
+            dif_cols = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DIF', 'FAST'])]
+            dea_cols = [col for col in macd_columns if any(keyword in col.upper() for keyword in ['DEA', 'SIGNAL'])]
+            histogram_cols = [col for col in macd_columns if 'HISTOGRAM' in col.upper()]
             
             # 量子级MACD形态识别
             if dif_cols and dea_cols:
-                dif temp_var = enhanced_macd_data[dif_cols[0]].fillna(0)
-                dea temp_var = enhanced_macd_data[dea_cols[0]].fillna(0)
+                dif = enhanced_macd_data[dif_cols[0]].fillna(0)
+                dea = enhanced_macd_data[dea_cols[0]].fillna(0)
                 
                 # 1. 金叉形态识别（MACD_GOLDEN_CROSS_SUPREME）
-                patterns_df['MACD_GOLDEN_CROSS_SUPREME'] temp_var = False
-                patterns_df['MACD_DEATH_CROSS_SUPREME'] temp_var = False
-                patterns_df['MACD_ZERO_LINE_CROSS_UP'] temp_var = False
-                patterns_df['MACD_ZERO_LINE_CROSS_DOWN'] temp_var = False
+                patterns_df['MACD_GOLDEN_CROSS_SUPREME']  = False
+                patterns_df['MACD_DEATH_CROSS_SUPREME']  = False
+                patterns_df['MACD_ZERO_LINE_CROSS_UP']  = False
+                patterns_df['MACD_ZERO_LINE_CROSS_DOWN']  = False
                 
                 for i in range(1, len(dif)):
                     if i < len(dea):
                         # 金叉：DIF上穿DEA
                         if dif.iloc[i] > dea.iloc[i] and dif.iloc[i-1] <= dea.iloc[i-1]:
-                            patterns_df.loc[patterns_df.index[i], 'MACD_GOLDEN_CROSS_SUPREME'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_GOLDEN_CROSS_SUPREME'] = True
                         
                         # 死叉：DIF下穿DEA
                         elif dif.iloc[i] < dea.iloc[i] and dif.iloc[i-1] >= dea.iloc[i-1]:
-                            patterns_df.loc[patterns_df.index[i], 'MACD_DEATH_CROSS_SUPREME'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_DEATH_CROSS_SUPREME'] = True
                         
                         # 零轴上穿：DIF从负转正
                         if dif.iloc[i] > 0 and dif.iloc[i-1] <= 0:
-                            patterns_df.loc[patterns_df.index[i], 'MACD_ZERO_LINE_CROSS_UP'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_ZERO_LINE_CROSS_UP'] = True
                         
                         # 零轴下穿：DIF从正转负
                         elif dif.iloc[i] < 0 and dif.iloc[i-1] >= 0:
-                            patterns_df.loc[patterns_df.index[i], 'MACD_ZERO_LINE_CROSS_DOWN'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_ZERO_LINE_CROSS_DOWN'] = True
                 
                 # 2. 背离形态识别
-                patterns_df['MACD_BULLISH_DIVERGENCE'] temp_var = False
-                patterns_df['MACD_BEARISH_DIVERGENCE'] temp_var = False
+                patterns_df['MACD_BULLISH_DIVERGENCE']  = False
+                patterns_df['MACD_BEARISH_DIVERGENCE']  = False
                 
                 # 简化的背离检测（基于价格和MACD的相对强弱）
                 if 'close' in data.columns:
-                    price temp_var = data['close']
+                    price = data['close']
                     for i in range(20, len(price)):  # 至少需要20个数据点
                         # 看涨背离：价格创新低，但MACD相对较强
                         if (price.iloc[i] < price.iloc[i-10:i-1].min() and 
                             dif.iloc[i] > dif.iloc[i-10:i-1].min()):
-                            patterns_df.loc[patterns_df.index[i], 'MACD_BULLISH_DIVERGENCE'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_BULLISH_DIVERGENCE'] = True
                         
                         # 看跌背离：价格创新高，但MACD相对较弱
                         elif (price.iloc[i] > price.iloc[i-10:i-1].max() and 
                               dif.iloc[i] < dif.iloc[i-10:i-1].max()):
-                            patterns_df.loc[patterns_df.index[i], 'MACD_BEARISH_DIVERGENCE'] temp_var = True
+                            patterns_df.loc[patterns_df.index[i], 'MACD_BEARISH_DIVERGENCE'] = True
             
             # 3. MACD柱状图形态
             if histogram_cols:
-                histogram temp_var = enhanced_macd_data[histogram_cols[0]].fillna(0)
+                histogram = enhanced_macd_data[histogram_cols[0]].fillna(0)
                 
-                patterns_df['MACD_HISTOGRAM_EXPANSION'] temp_var = False
-                patterns_df['MACD_HISTOGRAM_CONTRACTION'] temp_var = False
+                patterns_df['MACD_HISTOGRAM_EXPANSION']  = False
+                patterns_df['MACD_HISTOGRAM_CONTRACTION']  = False
                 
-                histogram_change temp_var = histogram.diff().fillna(0)
+                histogram_change = histogram.diff().fillna(0)
                 
                 # 柱状图扩张：连续增长
-                patterns_df['MACD_HISTOGRAM_EXPANSION'] temp_var = histogram_change > 0.001
+                patterns_df['MACD_HISTOGRAM_EXPANSION']  = histogram_change > 0.001
                 
                 # 柱状图收敛：连续收缩
-                patterns_df['MACD_HISTOGRAM_CONTRACTION'] temp_var = histogram_change < -0.001
+                patterns_df['MACD_HISTOGRAM_CONTRACTION']  = histogram_change < -0.001
             
             return "patterns_df"
             
@@ -445,10 +443,10 @@ from db.sql_manager import SQLManager, QueryType
             if hasattr(self, '_default_parameters'):
                 for key, value in kwargs.items():
                     if key in ['fast_period', 'slow_period', 'signal_period', 'period']:
-                        self._default_parameters[key] temp_var = value
-                        logger.info(f"量子级终极国际金融级ENHANCED_MACD参数更新: {key}={value}")
+                        self._default_parameters[key] = value
+                        # logger.info(f"量子级终极国际金融级ENHANCED_MACD参数更新: {key}={value}")
             else:
-                self._default_parameters temp_var = kwargs
+                self._default_parameters = kwargs
                 logger.info(f"量子级终极国际金融级ENHANCED_MACD参数初始化: {kwargs}")
             
             # 调用原有的参数设置方法
@@ -476,60 +474,60 @@ from db.sql_manager import SQLManager, QueryType
                 return "data.copy()"
             
             # 获取参数
-            fast_period temp_var = kwargs.get('fast_period', self._default_parameters.get('fast_period', 12))
-            slow_period temp_var = kwargs.get('slow_period', self._default_parameters.get('slow_period', 26))
-            signal_period temp_var = kwargs.get('signal_period', self._default_parameters.get('signal_period', 9))
+            fast_period = kwargs.get('fast_period', self._default_parameters.get('fast_period', 12))
+            slow_period = kwargs.get('slow_period', self._default_parameters.get('slow_period', 26))
+            signal_period = kwargs.get('signal_period', self._default_parameters.get('signal_period', 9))
             
             # 量子级ENHANCED_MACD_SUPREME计算
-            result temp_var = data.copy()
-            close temp_var = data['close']
+            result = data.copy()
+            close = data['close']
             
             # 1. 计算快速EMA和慢速EMA
-            ema_fast temp_var = close.ewm(span=fast_period).mean()
-            ema_slow temp_var = close.ewm(span=slow_period).mean()
+            ema_fast = close.ewm(span=fast_period).mean()
+            ema_slow = close.ewm(span=slow_period).mean()
             
             # 2. 计算DIF（快线 - 慢线）
-            dif temp_var = ema_fast - ema_slow
-            result['ENHANCED_MACD_DIF'] temp_var = dif
+            dif = ema_fast - ema_slow
+            result['ENHANCED_MACD_DIF'] = dif
             
             # 3. 计算DEA（DIF的信号线）
-            dea temp_var = dif.ewm(span=signal_period).mean()
-            result['ENHANCED_MACD_DEA'] temp_var = dea
+            dea = dif.ewm(span=signal_period).mean()
+            result['ENHANCED_MACD_DEA'] = dea
             
             # 4. 计算MACD柱状图（DIF - DEA）
-            macd_histogram temp_var score_change = (dif - dea) * 2  # 乘以2放大显示效果
-            result['ENHANCED_MACD_HISTOGRAM'] temp_var = macd_histogram
+            # macd_histogram temp_var score_change = (dif - dea) * 2  # 乘以2放大显示效果
+            result['ENHANCED_MACD_HISTOGRAM'] = macd_histogram
             
             # 5. 量子级增强特征
             # 计算MACD动量
-            result['ENHANCED_MACD_MOMENTUM'] temp_var = macd_histogram.diff().fillna(0)
+            result['ENHANCED_MACD_MOMENTUM'] = macd_histogram.diff().fillna(0)
             
             # 计算MACD强度（绝对值）
-            result['ENHANCED_MACD_STRENGTH'] temp_var = abs(macd_histogram)
+            result['ENHANCED_MACD_STRENGTH'] = abs(macd_histogram)
             
             # 计算MACD趋势方向（1=上涨，-1=下跌，0=横盘）
-            macd_trend temp_var = pd.Series(0, index=data.index)
-            macd_trend[dif > dea] temp_var = 1   # DIF在DEA上方为上涨趋势
-            macd_trend[dif < dea] temp_var = -1  # DIF在DEA下方为下跌趋势
-            result['ENHANCED_MACD_TREND'] temp_var = macd_trend
+            macd_trend = pd.Series(0, index=data.index)
+            # macd_trend[dif > dea] = 1   # DIF在DEA上方为上涨趋势
+            # macd_trend[dif < dea] = -1  # DIF在DEA下方为下跌趋势
+            result['ENHANCED_MACD_TREND'] = macd_trend
             
             # 计算零轴距离（衡量长期趋势强度）
-            result['ENHANCED_MACD_ZERO_DISTANCE'] temp_var = abs(dif)
+            result['ENHANCED_MACD_ZERO_DISTANCE'] = abs(dif)
             
             # 6. 量子级信号生成
             # 金叉信号
-            golden_cross temp_var = pd.Series(False, index=data.index)
+            golden_cross = pd.Series(False, index=data.index)
             for i in range(1, len(dif)):
                 if dif.iloc[i] > dea.iloc[i] and dif.iloc[i-1] <= dea.iloc[i-1]:
-                    golden_cross.iloc[i] temp_var = True
-            result['ENHANCED_MACD_GOLDEN_CROSS'] temp_var = golden_cross
+                    golden_cross.iloc[i] = True
+            result['ENHANCED_MACD_GOLDEN_CROSS'] = golden_cross
             
             # 死叉信号
-            death_cross temp_var = pd.Series(False, index=data.index)
+            death_cross = pd.Series(False, index=data.index)
             for i in range(1, len(dif)):
                 if dif.iloc[i] < dea.iloc[i] and dif.iloc[i-1] >= dea.iloc[i-1]:
-                    death_cross.iloc[i] temp_var = True
-            result['ENHANCED_MACD_DEATH_CROSS'] temp_var = death_cross
+                    death_cross.iloc[i] = True
+            result['ENHANCED_MACD_DEATH_CROSS'] = death_cross
             
             logger.info(f"量子级终极国际金融级ENHANCED_MACD_SUPREME计算完成，返回{len(result.columns)}列数据")
             return "result"
@@ -540,4 +538,4 @@ from db.sql_manager import SQLManager, QueryType
 
 
 # 为了向后兼容，创建别名
-enhanced_macd temp_var = EnhancedMACD
+enhanced_macd = EnhancedMACD

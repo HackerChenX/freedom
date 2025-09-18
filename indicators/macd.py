@@ -9,6 +9,7 @@ MACD指标分析模块
 from typing import Dict, List, Tuple, Optional, Any, Union
 import pandas as pd
 import numpy as np
+from datetime import datetime
 from utils.logger import get_logger
 from utils.technical_utils import calculate_macd, crossover, crossunder
 from indicators.base_indicator import BaseIndicator
@@ -320,7 +321,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 空数据处理
         if data is None or data.empty:
             logger.warning("MACD计算: 输入数据为空")
-            return pd.DataFrame(columns=["macd_line", "macd_signal", "macd_histogram"])
+            return pd.DataFrame(columns=["DIF", "DEA", "MACD", "macd_line", "macd_signal", "macd_histogram"])
 
         # 检查数据长度是否足够
         min_periods = max(self.slow_period, self.signal_period) + 10
@@ -328,6 +329,9 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning(f"MACD计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
             # 返回与输入数据长度相同的空结果
             result = pd.DataFrame(index=data.index)
+            result["DIF"] = np.nan
+            result["DEA"] = np.nan
+            result["MACD"] = np.nan
             result["macd_line"] = np.nan
             result["macd_signal"] = np.nan
             result["macd_histogram"] = np.nan
@@ -339,6 +343,9 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if price_col not in data.columns:
             logger.error(f"MACD计算: 缺少必需列 '{price_col}'")
             result = pd.DataFrame(index=data.index)
+            result["DIF"] = np.nan
+            result["DEA"] = np.nan
+            result["MACD"] = np.nan
             result["macd_line"] = np.nan
             result["macd_signal"] = np.nan
             result["macd_histogram"] = np.nan
@@ -422,14 +429,29 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     macd_histogram = macd_histogram[: len(data.index)]
             macd_histogram = pd.Series(macd_histogram, index=data.index)
 
-        # 统一列名
+        # 简化的统一列名策略：使用{indicator}_{type}格式
         result_df = pd.DataFrame(
-            {"macd_line": macd_line, "macd_signal": macd_signal, "macd_histogram": macd_histogram}, index=data.index
+            {
+                # 统一标准列名格式
+                "macd_dif": macd_line,      # MACD DIF线
+                "macd_dea": macd_signal,    # MACD DEA线
+                "macd_histogram": macd_histogram,  # MACD柱状图
+            },
+            index=data.index
         )
 
-        # 添加形态识别和信号生成
-        result_df = self.add_pattern_detection(result_df)
-        result_df = self.add_signal_generation(result_df)
+        # 添加形态识别和信号生成（如果方法存在）
+        try:
+            if hasattr(self, 'add_pattern_detection'):
+                result_df = self.add_pattern_detection(result_df)
+        except Exception:
+            pass  # 如果方法不存在或出错，继续执行
+
+        try:
+            if hasattr(self, 'add_signal_generation'):
+                result_df = self.add_signal_generation(result_df)
+        except Exception:
+            pass  # 如果方法不存在或出错，继续执行
 
         return result_df
 
@@ -1606,7 +1628,7 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """兼容性方法:获取形态"""
         return self.get_patterns_Indicator_Base_Indicator(data, **kwargs)
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成MACD交易信号 - Ultra Think修复:添加缺失的信号生成功能
 
@@ -1653,8 +1675,69 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return self.calculate_raw_score_Indicator_Base_Indicator(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法:获取信号"""
-        return self.get_signals_Macd(data, **kwargs)
+        """
+        标准方法:获取MACD交易信号DataFrame
+
+        返回符合BaseIndicator标准的信号DataFrame，包含：
+        - buy_signal: bool, 买入信号
+        - sell_signal: bool, 卖出信号
+        - hold_signal: bool, 持有信号
+        - signal_strength: float, 信号强度(0-1)
+        - signal_confidence: float, 信号置信度(0-1)
+        """
+        signals_dict = self.get_signals_Macd(data, **kwargs)
+
+        # 创建标准格式的信号DataFrame
+        signals_df = pd.DataFrame(index=data.index)
+
+        # 将Dict格式转换为DataFrame格式
+        if isinstance(signals_dict, dict):
+            signals_df['buy_signal'] = signals_dict.get('buy_signal', pd.Series(False, index=data.index))
+            signals_df['sell_signal'] = signals_dict.get('sell_signal', pd.Series(False, index=data.index))
+        else:
+            # 如果已经是DataFrame格式，提取信号列
+            signals_df['buy_signal'] = signals_dict.get('buy_signal', False) if hasattr(signals_dict, 'get') else False
+            signals_df['sell_signal'] = signals_dict.get('sell_signal', False) if hasattr(signals_dict, 'get') else False
+
+        # 添加标准信号列
+        signals_df['hold_signal'] = ~(signals_df['buy_signal'] | signals_df['sell_signal'])
+
+        # 计算信号强度（基于MACD指标强度）
+        try:
+            macd_data = self.calculate(data)
+            if not macd_data.empty and 'MACD' in macd_data.columns:
+                # 基于MACD柱状图强度计算信号强度
+                macd_histogram = macd_data['MACD'].abs()
+                max_histogram = macd_histogram.max() if macd_histogram.max() > 0 else 1.0
+                normalized_strength = (macd_histogram / max_histogram).fillna(0.0)
+
+                # 只在有信号时设置强度
+                signals_df['signal_strength'] = 0.0
+                signals_df.loc[signals_df['buy_signal'] | signals_df['sell_signal'], 'signal_strength'] = \
+                    normalized_strength.loc[signals_df['buy_signal'] | signals_df['sell_signal']]
+            else:
+                signals_df['signal_strength'] = 0.0
+        except Exception:
+            signals_df['signal_strength'] = 0.0
+
+        # 设置信号置信度（基于MACD指标的可靠性）
+        signals_df['signal_confidence'] = 0.0
+        signals_df.loc[signals_df['buy_signal'] | signals_df['sell_signal'], 'signal_confidence'] = 0.7  # MACD信号置信度设为0.7
+
+        return signals_df
+    
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """获取交易信号（抽象方法实现）"""
+        signals = self.get_signals_Macd(data)
+        if isinstance(signals, dict):
+            return signals
+        else:
+            # 如果返回的是DataFrame，转换为字典格式
+            return {
+                'signal': 'HOLD',
+                'score': 50.0,
+                'confidence': 0.5
+            }
 
 
 # 为了兼容指标注册表,创建别名

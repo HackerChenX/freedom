@@ -62,7 +62,7 @@ class Adapter(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         except Exception as e:
             logger.error(f"错误: {e}")
             return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
+            
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数

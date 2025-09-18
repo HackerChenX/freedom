@@ -83,7 +83,7 @@ class CompleteIndicatorRegistry:
             "MA": "indicators.ma.MaMa",
             "EMA": "indicators.ema.EmaEma",
             "MACD": "indicators.macd.MacdMacd",
-            "RSI": "indicators.score_indicators.RSIScoreIndicator",
+            "RSI": "indicators.rsi.RsiRsi",
             "BOLL": "indicators.boll.BOLL",
             "PSY": "indicators.psy.PSY",
         }
@@ -122,8 +122,8 @@ class CompleteIndicatorRegistry:
             "CMO": "indicators.cmo.ChandeMomentumOscillator",
             "STOCHRSI": "indicators.stochrsi.Stochrsi",
             "STOCH": "indicators.stochrsi.Stochrsi",  # 别名
-            "ENHANCED_RSI": "indicators.enhanced_rsi.EnhancedRSI",
-            "ENHANCED_KDJ": "indicators.oscillator.enhanced_kdj.EnhancedKdj",
+            # "ENHANCED_RSI": "indicators.enhanced_rsi.EnhancedRSI",  # P1.1.2: 已整合到主RSI实现
+            # "ENHANCED_KDJ": "indicators.oscillator.enhanced_kdj.EnhancedKdj",  # P1.1.3: 已整合到主KDJ实现
             "ENHANCED_WR": "indicators.enhanced_wr.EnhancedWR",
             "MOMENTUM": "indicators.momentum.MOMENTUM",
             "ROC": "indicators.roc.RateOfChange",
@@ -175,7 +175,7 @@ class CompleteIndicatorRegistry:
         zxm_indicators = {
             # 买点指标
             "ZXM_DAILY_MACD": "indicators.zxm.buy_point_indicators.ZXMDailyMACD",
-            "ZXM_turnover_rate": "indicators.zxm.buy_point_indicators.ZXMturnover_rate",
+            "ZXM_turnover_rate": "indicators.zxm.buy_point_indicators.ZXMTurnover",
             "ZXM_VOLUME_SHRINK": "indicators.zxm.buy_point_indicators.ZXMVolumeShrink",
             "ZXM_MA_CALLBACK": "indicators.zxm.buy_point_indicators.ZXMMACallback",
             "ZXM_BS_ABSORB": "indicators.zxm.buy_point_indicators.ZXMBSAbsorb",
@@ -203,7 +203,7 @@ class CompleteIndicatorRegistry:
             "ZXM_FUND_FLOW": "indicators.institutional_behavior.FundFlow",
             "ZXM_INSTITUTION_BEHAVIOR": "indicators.institutional_behavior.InstitutionalBehavior",
             "ZXM_HOT_SPOT": "indicators.zxm.hot_spot_indicators.ZXMHotSpot",  # 修复路径
-            "ZXM__ROTATION": "indicators.zxm._rotation_indicators.ZXMRotation",  # 修复路径
+            "ZXM__ROTATION": "indicators.zxm.industry_rotation_indicators.ZXMRotation",  # 修复路径
             "ZXM_CYCLE_POSITION": "indicators.zxm.cycle_position_indicators.ZXMCyclePosition",  # 修复路径
             "ZXM_RISK_CONTROL": "indicators.zxm.risk_control_indicators.ZXMRiskControl",  # 修复路径
             "ZXM_TIMING_SIGNAL": "indicators.zxm.timing_signal_indicators.ZXMTimingSignal",  # 修复路径
@@ -258,7 +258,7 @@ class CompleteIndicatorRegistry:
         logger.info("注册增强指标...")
 
         enhanced_indicators = {
-            "ENHANCED_MACD": "indicators.enhanced_macd.EnhancedMACD",
+            # "ENHANCED_MACD": "indicators.enhanced_macd.EnhancedMACD",  # P1.1.1: 已整合到主MACD实现
             "ENHANCED_BOLL": "indicators.trend.enhanced_boll_indicators.EnhancedBoll",
             "ENHANCED_STOCHRSI": "indicators.enhanced_stochrsi.EnhancedStochasticRSI",
         }
@@ -286,9 +286,9 @@ class CompleteIndicatorRegistry:
             "UNIFIED_MA": "indicators.unified_ma.UNIFIED_MA",
             # 评分框架
             "MACD_SCORE": "indicators.macd_score.MACDScore",
-            "RSI_SCORE": "indicators.rsi_score.RSIScore",
+            # "RSI_SCORE": "indicators.rsi_score.RSIScore",  # P1.1.2: 已整合到主RSI实现
             "BOLL_SCORE": "indicators.boll_score.BOLLScore",
-            "KDJ_SCORE": "indicators.kdj_score.KDJScore",
+            # "KDJ_SCORE": "indicators.kdj_score.KDJScore",  # P1.1.3: 已整合到主KDJ实现
             "VOLUME_SCORE": "indicators.volume_score.VolumeScore",
         }
 

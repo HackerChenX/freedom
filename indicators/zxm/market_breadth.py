@@ -149,7 +149,7 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
             result[f'above_ma{period}'] = above_ma
         
         # 4. 计算板块强度  # TODO: 将魔法数字提取到配置中
-        if 'sector' in data.columns or in data.columns:
+        if 'sector' in data.columns or 'industry' in data.columns:
             sector_strength = self._calculate_sector_strength(data)
             result.loc[:, 'strongest_sector'] = sector_strength['strongest_sector']
             result.loc[:, 'weakest_sector'] = sector_strength['weakest_sector']
@@ -979,11 +979,11 @@ class ZxmmarketBreadth(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, Z
         try:
             # 1. 基于价格动量的简化涨跌比率
             if 'close' in data.columns:
-                = data['close'].pct_change()
+                price_change = data['close'].pct_change()
                 # 使用滚动窗口计算涨跌比率
                 window = min(20, len(data) // 4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                positive_days = (> 0).rolling(window=window).sum()
-                negative_days = (< 0).rolling(window=window).sum()
+                positive_days = (price_change > 0).rolling(window=window).sum()
+                negative_days = (price_change < 0).rolling(window=window).sum()
                 total_days = positive_days + negative_days
 
                 # 避免除零错误

@@ -23,7 +23,7 @@ from indicators.zxm.elasticity_indicators import (
 
 from indicators.zxm.buy_point_indicators import (
     ZXMDailyMACD,
-    ZXMturnover_rate,
+    ZXMTurnover,
     ZXMVolumeShrink,
     ZXMMACallback,
     ZXMBSAbsorb,
@@ -68,7 +68,7 @@ __all__ = [
     "BounceDetector",
     # 买点指标
     "ZXMDailyMACD",
-    "ZXMturnover_rate",
+    "ZXMTurnover",
     "ZXMVolumeShrink",
     "ZXMMACallback",
     "ZXMBSAbsorb",

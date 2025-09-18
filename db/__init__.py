@@ -35,13 +35,13 @@ def register_data_services(container):
         from db.enhanced_connection_pool import get_connection_pool
         connection_pool = get_connection_pool()
 
-        # 注册连接管理器服务（按名称注册）
-        container.register("connection_manager", connection_pool)
+        # 注册连接管理器服务（按接口注册）
+        container.register(IconnectionManager, instance=connection_pool)
 
-        # 注册数据访问接口，传入连接管理器
+        # 注册数据访问接口
         container.register_singleton(
             DataAccessInterface,
-            factory=lambda: DataAccessManager(connection_manager=connection_pool)
+            factory=lambda: DataAccessManager()
         )
 
         logger.info("数据服务层服务注册完成")

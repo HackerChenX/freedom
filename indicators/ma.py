@@ -295,31 +295,51 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return result_df
 
-    def get_signal(self, data: pd.DataFrame, **kwargs) -> str:
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         获取MA信号 - 实现抽象方法
 
         Returns:
-            str: BUY, SELL, 或 HOLD
+            Dict[str, Any]: 包含signal, score, confidence的字典
         """
         try:
             if not self.has_result():
                 self.calculate(data, **kwargs)
 
             if self._result is None or len(self._result) == 0:
-                return "HOLD"
+                return {
+                    'signal': 'HOLD',
+                    'score': 50.0,
+                    'confidence': 0.5
+                }
 
             # 获取最新的买卖信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
             if 'buy_signal' in self._result.columns and self._result['buy_signal'].iloc[-1]:
-                return "BUY"
+                signal = "BUY"
+                score = 75.0
+                confidence = 0.8
             elif 'sell_signal' in self._result.columns and self._result['sell_signal'].iloc[-1]:
-                return "SELL"
-            else:
-                return "HOLD"
+                signal = "SELL"
+                score = 25.0
+                confidence = 0.8
+            
+            return {
+                'signal': signal,
+                'score': score,
+                'confidence': confidence
+            }
 
         except Exception as e:
             logger.warning(f"MA信号获取失败: {e}")
-            return "HOLD"
+            return {
+                'signal': 'HOLD',
+                'score': 50.0,
+                'confidence': 0.5
+            }
 
     def has_result(self) -> bool:
         """检查是否有计算结果"""
