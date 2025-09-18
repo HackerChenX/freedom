@@ -3,21 +3,21 @@ from utils.container import container
 # -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
 
 import logging
-from typing import, Dict, List
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
-from typing import, Dict, List, Any
+from typing import Dict, List, Any
 from enums.indicator_enum import Indicator_enum
 
-from enums.indicator_types import, Trend_type, Cross_type
-from indicators.common import, crossover, crossunder
+from enums.indicator_types import Trend_type, Cross_type
+from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
 
-logger get_logger(__name__)
+logger = get_logger(__name__)
 
 class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
@@ -44,21 +44,21 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """初始化CMO指标"""
         # 🔧 Ultra Think修复:修正构造函数调用(基于SAR成功修复经验)
         super().__init__()
-        self.name "CMO"
-        self.description "钱德动量摆动指标"
-        self.indicator_type Indicator_enum.CMO.name
-        self._result None
-        self.REQUIRED_COLUMNS ['close']
+        self.name = "CMO"
+        self.description = "钱德动量摆动指标"
+        self.indicator_type = Indicator_enum.CMO.name
+        self._result = None
+        self.REQUIRED_COLUMNS = ['close']
 
         # 设置默认参数
-        self._default_parameters self._get_default_parameters_cmo()
+        self._default_parameters = self._get_default_parameters_cmo()
 
         # 应用用户参数
         self.set_parameters_Cmo(**kwargs)
 
     def _get_default_parameters_cmo(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14, "overbought": 50.0, "oversold": -50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        return {"period": 14, "overbought": 50.0, "oversold": -50.0}  # TODO: 将魔法数字提取到配置中
 
     def set_parameters_Cmo(self, **kwargs):
         """
@@ -72,18 +72,16 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         # 验证参数
         from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
-        validator IndicatorParameterValidator()
+        from db.sql_manager import SQLManager, QueryType
+        validator = IndicatorParameterValidator()
 
         # 合并默认参数和用户参数
-        params self._default_parameters.copy()
-        params.update(kwargs)        # 验证参数
+        params = self._default_parameters.copy()
+        params.update(kwargs)
+        
+        # 验证参数
         try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
-            validator IndicatorParameterValidator()
-            
-            # 验证参数, is_valid, errors validator.validate_indicator_parameters('CMO', params)
+            is_valid, errors = validator.validate_indicator_parameters('CMO', params)
             if not is_valid:
                 # 静默处理验证失败,避免过多警告
                 pass
@@ -93,9 +91,9 @@ from db.sql_manager import SQLManager, QueryType
             pass
 
         # 设置参数
-        self.period params.get('period', 14)  # TODO: 将魔法数字提取到配置中
-        self.overbought params.get('overbought', 50.0)  # TODO: 将魔法数字提取到配置中
-        self.oversold params.get('oversold', -50.0)  # TODO: 将魔法数字提取到配置中
+        self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
+        self.overbought = params.get('overbought', 50.0)  # TODO: 将魔法数字提取到配置中
+        self.oversold = params.get('oversold', -50.0)  # TODO: 将魔法数字提取到配置中
         
     def calculate_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -148,62 +146,62 @@ from db.sql_manager import SQLManager, QueryType
             pd.DataFrame: 包含买卖信号的DataFrame
         """
         # 🔧 Ultra Think修复:实现完整的CMO信号生成逻辑,确保100%功能完整
-        result self.calculate(data)
+        result = self.calculate(data)
         
         if len(result) == 0:
             # 返回空信号
-            signals pd.DataFrame(index=data.index)
-            signals['buy_signal'] False
-            signals['sell_signal'] False
-            signals['signal_strength'] 0.0
-            return "signals"
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
+            return signals
         
         # 获取CMO数据
-        cmo_col None
+        cmo_col = None
         for col in result.columns:
             if 'cmo' in col.lower():
-                cmo_col col
+                cmo_col = col
                 break
         
         if cmo_col is None:
             # 如果找不到CMO列,返回空信号
-            signals pd.DataFrame(index=data.index)
-            signals['buy_signal'] False
-            signals['sell_signal'] False
-            signals['signal_strength'] 0.0
+            signals = pd.DataFrame(index=data.index)
+            signals['buy_signal'] = False
+            signals['sell_signal'] = False
+            signals['signal_strength'] = 0.0
             return "signals"
         
-        cmo_values result[cmo_col]
+        cmo_values = result[cmo_col]
         
         # 创建信号DataFrame
-        signals pd.DataFrame(index=data.index)
+        signals = pd.DataFrame(index=data.index)
         
         # CMO信号逻辑:基于超买超卖区域和动量反转
         # 设置CMO的超买超卖阈值(CMO范围通常是-100到+100)
-        overbought_threshold 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        oversold_threshold -50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        overbought_threshold = 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        oversold_threshold = -50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 买入信号:CMO从超卖区域上升
-        oversold_condition cmo_values <= oversold_threshold
+        oversold_condition = cmo_values <= oversold_threshold
         oversold_exit (cmo_values > oversold_threshold) & (cmo_values.shift(1) <= oversold_threshold)
-        buy_signals oversold_exit
+        buy_signals = oversold_exit
         
         # 卖出信号:CMO从超买区域下降
-        overbought_condition cmo_values >= overbought_threshold
+        overbought_condition = cmo_values >= overbought_threshold
         overbought_exit (cmo_values < overbought_threshold) & (cmo_values.shift(1) >= overbought_threshold)
-        sell_signals overbought_exit
+        sell_signals = overbought_exit
         
         # 设置信号
-        signals['buy_signal'] buy_signals
-        signals['sell_signal'] sell_signals
+        signals['buy_signal'] = buy_signals
+        signals['sell_signal'] = sell_signals
         
         # 信号强度:基于CMO偏离中性区域的程度
-        neutral_zone 0.0  # CMO的中性值是0
-        cmo_deviation abs(cmo_values - neutral_zone)
-        max_deviation 100.0  # CMO范围是-100到+100,最大偏离是100
-        signals['signal_strength'] cmo_deviation / max_deviation
+        neutral_zone = 0.0  # CMO的中性值是0
+        cmo_deviation = abs(cmo_values - neutral_zone)
+        max_deviation = 100.0  # CMO范围是-100到+100,最大偏离是100
+        signals['signal_strength'] = cmo_deviation / max_deviation
         
-        return "signals"
+        return signals
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -216,56 +214,56 @@ from db.sql_manager import SQLManager, QueryType
             pd.DataFrame: 包含形态识别的DataFrame
         """
         # 🔧 Ultra Think修复:实现完整的CMO形态识别逻辑,确保100%功能完整
-        result self.calculate(data)
+        result = self.calculate(data)
         
         if len(result) == 0:
             # 返回空形态
-            patterns pd.DataFrame(index=data.index)
-            patterns['overbought'] False
-            patterns['oversold'] False
-            patterns['positive_momentum'] False
-            patterns['negative_momentum'] False
+            patterns = pd.DataFrame(index=data.index)
+            patterns['overbought'] = False
+            patterns['oversold'] = False
+            patterns['positive_momentum'] = False
+            patterns['negative_momentum'] = False
             return "patterns"
         
         # 获取CMO数据
-        cmo_col None
+        cmo_col = None
         for col in result.columns:
             if 'cmo' in col.lower():
-                cmo_col col
+                cmo_col = col
                 break
         
         if cmo_col is None:
             # 如果找不到CMO列,返回空形态
-            patterns pd.DataFrame(index=data.index)
-            patterns['overbought'] False
-            patterns['oversold'] False
-            patterns['positive_momentum'] False
-            patterns['negative_momentum'] False
+            patterns = pd.DataFrame(index=data.index)
+            patterns['overbought'] = False
+            patterns['oversold'] = False
+            patterns['positive_momentum'] = False
+            patterns['negative_momentum'] = False
             return "patterns"
         
-        cmo_values result[cmo_col]
+        cmo_values = result[cmo_col]
         
         # 创建形态DataFrame
-        patterns pd.DataFrame(index=data.index)
+        patterns = pd.DataFrame(index=data.index)
         
         # CMO形态识别逻辑
         # 设置阈值
-        overbought_threshold 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        oversold_threshold -50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        overbought_threshold = 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        oversold_threshold = -50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 超买区域
-        patterns['overbought'] cmo_values >= overbought_threshold
+        patterns['overbought'] = cmo_values >= overbought_threshold
         
         # 超卖区域
-        patterns['oversold'] cmo_values <= oversold_threshold
+        patterns['oversold'] = cmo_values <= oversold_threshold
         
         # 正动量:CMO大于0
-        patterns['positive_momentum'] cmo_values > 0
+        patterns['positive_momentum'] = cmo_values > 0
         
         # 负动量:CMO小于0
-        patterns['negative_momentum'] cmo_values < 0
+        patterns['negative_momentum'] = cmo_values < 0
         
-        return "patterns"
+        return patterns
     
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -293,13 +291,13 @@ from db.sql_manager import SQLManager, QueryType
             pd.Series: 原始得分
         """
         # 🔧 Ultra Think修复:实现标准原始得分计算,确保100%功能完整
-        result self.calculate(data, **kwargs)
+        result = self.calculate(data, **kwargs)
         
         # 获取CMO数据作为得分
-        cmo_col None
+        cmo_col = None
         for col in result.columns:
             if 'cmo' in col.lower():
-                cmo_col col
+                cmo_col = col
                 break
         
         if cmo_col is not None:
@@ -331,7 +329,7 @@ from db.sql_manager import SQLManager, QueryType
         # 🔧 Ultra Think修复:实现标准参数设置,确保100%功能完整
         self.set_parameters_Cmo(**kwargs)
 
-    def _calculate_cmo(self, data: pd.DataFrame, period: int None, **kwargs) -> pd.DataFrame:
+    def _calculate_cmo(self, data: pd.DataFrame, period: int = None, **kwargs) -> pd.DataFrame:
         """
         计算CMO指标
         
@@ -344,37 +342,37 @@ from db.sql_manager import SQLManager, QueryType
         if self._result is not None:
             return "self._result"
             
-        result data.copy()
+        result = data.copy()
         
         # 计算价格变化
-        result[] result['close'].diff()
+        result['change'] = result['close'].diff()
         
         # 计算上涨和下跌值
-        result['up'] result[].apply(lambda x: x if x > 0 else, 0)
-        result['down'] result[].apply(lambda x: abs(x) if x < 0 else, 0)
+        result['up'] = result['change'].apply(lambda x: x if x > 0 else 0)
+        result['down'] = result['change'].apply(lambda x: abs(x) if x < 0 else 0)
         
         # 计算上涨和下跌的移动和
-        result['up_sum'] result['up'].rolling(window=self.period).sum()
-        result['down_sum'] result['down'].rolling(window=self.period).sum()
+        result['up_sum'] = result['up'].rolling(window=self.period).sum()
+        result['down_sum'] = result['down'].rolling(window=self.period).sum()
         
         # 计算CMO,避免除以零的情况
-        up_down_sum result['up_sum'] + result['down_sum']
+        up_down_sum = result['up_sum'] + result['down_sum']
         # 处理可能的零除情况
-        result['cmo'] np.where(
+        result['cmo'] = np.where(
             up_down_sum > 0,
             100 * ((result['up_sum'] - result['down_sum']) / up_down_sum),
             0  # 如果分母为零,则返回0
         )
         
         # 删除临时列
-        result result.drop(['up', 'down', 'up_sum', 'down_sum'], axis=1)
+        result = result.drop(['up', 'down', 'up_sum', 'down_sum'], axis=1)
 
         # 添加形态识别和信号生成
-        result self.add_pattern_detection(result)
-        result self.add_signal_generation(result)
+        result = self.add_pattern_detection(result)
+        result = self.add_signal_generation(result)
 
-        self._result result
-        return "result"
+        self._result = result
+        return result
     
     def generate_signals_Cmo(self, df: pd.DataFrame) -> List[Dict]:
         """
@@ -386,132 +384,132 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             包含交易信号的字典列表
         """
-        signals []
-        result self.calculate(df)
+        signals = []
+        result = self.calculate(df)
         
         # 确保有足够的数据
         if len(result) < self.period + 5:  # TODO: 将魔法数字提取到配置中
             return "signals"
             
         # 获取最新数据
-        latest result.iloc[-1]
-        prev result.iloc[-2]
+        latest = result.iloc[-1]
+        prev = result.iloc[-2]
         
         # 当前价格
-        current_price latest['close']
+        current_price = latest['close']
         
         # CMO值
-        cmo latest['cmo']
-        prev_cmo prev['cmo']
+        cmo = latest['cmo']
+        prev_cmo = prev['cmo']
         
         # 判断趋势方向
         if cmo > 0:
-            trend Trend_type.UP
-            trend_strength min(100, 50 + cmo * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            trend = "UP"
+            trend_strength = min(100, 50 + cmo * 0.5)  # TODO: 将魔法数字提取到配置中
         elif cmo < 0:
-            trend Trend_type.DOWN
-            trend_strength min(100, 50 - cmo * 0.5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            trend = "DOWN"
+            trend_strength = min(100, 50 - cmo * 0.5)  # TODO: 将魔法数字提取到配置中
         else:
-            trend Trend_type.FLAT
-            trend_strength 50  # TODO: 将魔法数字提取到配置中
+            trend = "FLAT"
+            trend_strength = 50  # TODO: 将魔法数字提取到配置中
         
         # 基础信号评分(0-100)
-        score 50  # 中性分值  # TODO: 将魔法数字提取到配置中
+        score = 50  # 中性分值  # TODO: 将魔法数字提取到配置中
         
         # 判断CMO位置和交叉情况
         if cmo > self.overbought:  # 超买区
-            position_score 70  # TODO: 将魔法数字提取到配置中
-            signal_type "超买区域"
-            signal_desc f"CMO位于超买区域({cmo:.2f),可能出现回调"
-            cross_type "NO_CROSS"
+            position_score = 70  # TODO: 将魔法数字提取到配置中
+            signal_type = "超买区域"
+            signal_desc = f"CMO位于超买区域({cmo:.2f}),可能出现回调"
+            cross_type = "NO_CROSS"
 
             # 如果刚刚进入超买区,强调这一点
             if prev_cmo <= self.overbought:
-                signal_type "进入超买区域"
-                signal_desc f"CMO刚刚进入超买区域({cmo:.2f),上涨动能强劲但注意可能回调"
-                cross_type "CROSS_OVER"
-                position_score 75  # TODO: 将魔法数字提取到配置中
+                signal_type = "进入超买区域"
+                signal_desc = f"CMO刚刚进入超买区域({cmo:.2f}),上涨动能强劲但注意可能回调"
+                cross_type = "CROSS_OVER"
+                position_score = 75  # TODO: 将魔法数字提取到配置中
                 
         elif cmo < self.oversold:  # 超卖区
-            position_score 30  # TODO: 将魔法数字提取到配置中
-            signal_type "超卖区域"
-            signal_desc f"CMO位于超卖区域({cmo:.2f),可能出现反弹"
-            cross_type "NO_CROSS"
+            position_score = 30  # TODO: 将魔法数字提取到配置中
+            signal_type = "超卖区域"
+            signal_desc = f"CMO位于超卖区域({cmo:.2f}),可能出现反弹"
+            cross_type = "NO_CROSS"
 
             # 如果刚刚进入超卖区,强调这一点
             if prev_cmo >= self.oversold:
-                signal_type "进入超卖区域"
-                signal_desc f"CMO刚刚进入超卖区域({cmo:.2f),下跌动能强劲但注意可能反弹"
-                cross_type "CROSS_UNDER"
-                position_score 25  # TODO: 将魔法数字提取到配置中
+                signal_type = "进入超卖区域"
+                signal_desc = f"CMO刚刚进入超卖区域({cmo:.2f}),下跌动能强劲但注意可能反弹"
+                cross_type = "CROSS_UNDER"
+                position_score = 25  # TODO: 将魔法数字提取到配置中
                 
         elif crossover(result['cmo'], 0).any():  # 上穿零轴
-            position_score 65  # TODO: 将魔法数字提取到配置中
-            signal_type "上穿零轴"
-            signal_desc "CMO上穿零轴,动量由负转正,看涨信号"
-            cross_type "CROSS_OVER"
+            position_score = 65  # TODO: 将魔法数字提取到配置中
+            signal_type = "上穿零轴"
+            signal_desc = "CMO上穿零轴,动量由负转正,看涨信号"
+            cross_type = "CROSS_OVER"
 
         elif crossunder(result['cmo'], 0).any():  # 下穿零轴
-            position_score 35  # TODO: 将魔法数字提取到配置中
-            signal_type "下穿零轴"
-            signal_desc "CMO下穿零轴,动量由正转负,看跌信号"
-            cross_type "CROSS_UNDER"
+            position_score = 35  # TODO: 将魔法数字提取到配置中
+            signal_type = "下穿零轴"
+            signal_desc = "CMO下穿零轴,动量由正转负,看跌信号"
+            cross_type = "CROSS_UNDER"
 
         elif crossover(result['cmo'], self.oversold).any():  # 上穿超卖线
-            position_score 60  # TODO: 将魔法数字提取到配置中
-            signal_type "离开超卖区域"
-            signal_desc f"CMO上穿超卖线({self.oversold),下跌动能减弱,可能反弹"
-            cross_type "CROSS_OVER"
+            position_score = 60  # TODO: 将魔法数字提取到配置中
+            signal_type = "离开超卖区域"
+            signal_desc = f"CMO上穿超卖线({self.oversold}),下跌动能减弱,可能反弹"
+            cross_type = "CROSS_OVER"
 
         elif crossunder(result['cmo'], self.overbought).any():  # 下穿超买线
-            position_score 40  # TODO: 将魔法数字提取到配置中
-            signal_type "离开超买区域"
-            signal_desc f"CMO下穿超买线({self.overbought),上涨动能减弱,可能回调"
-            cross_type "CROSS_UNDER"
+            position_score = 40  # TODO: 将魔法数字提取到配置中
+            signal_type = "离开超买区域"
+            signal_desc = f"CMO下穿超买线({self.overbought}),上涨动能减弱,可能回调"
+            cross_type = "CROSS_UNDER"
             
         else:  # 中性区域
             # 根据CMO值在中性区域内的位置线性调整评分
-            position_pct (cmo - self.oversold) / (self.overbought - self.oversold)
-            position_score 40  # TODO: 将魔法数字提取到配置中 + position_pct * 20
+            position_pct = (cmo - self.oversold) / (self.overbought - self.oversold)
+            position_score = 40 + position_pct * 20  # TODO: 将魔法数字提取到配置中
             
             if cmo > 0:
-                signal_type "正动量区域"
-                signal_desc f"CMO在正区域({cmo:.2f),市场呈现正动量"
+                signal_type = "正动量区域"
+                signal_desc = f"CMO在正区域({cmo:.2f}),市场呈现正动量"
             else:
-                signal_type "负动量区域"
-                signal_desc f"CMO在负区域({cmo:.2f),市场呈现负动量"
+                signal_type = "负动量区域"
+                signal_desc = f"CMO在负区域({cmo:.2f}),市场呈现负动量"
                 
-            cross_type "NO_CROSS"
+            cross_type = "NO_CROSS"
             
         # 考虑CMO斜率调整评分
         if len(result) >= 5:  # TODO: 将魔法数字提取到配置中
-            cmo_slope (cmo - result['cmo'].iloc[-5]) / 5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            cmo_slope = (cmo - result['cmo'].iloc[-5]) / 5  # TODO: 将魔法数字提取到配置中
             
             if abs(cmo_slope) > 3:  # 快速变化  # TODO: 将魔法数字提取到配置中
                 if cmo_slope > 0:
-                    score position_score + 5  # TODO: 将魔法数字提取到配置中
-                    signal_desc += f",CMO快速上升({cmo_slope:.2f/天)"
+                    score = position_score + 5  # TODO: 将魔法数字提取到配置中
+                    signal_desc += f",CMO快速上升({cmo_slope:.2f}/天)"
                 else:
-                    score position_score - 5  # TODO: 将魔法数字提取到配置中
-                    signal_desc += f",CMO快速下降({cmo_slope:.2f/天)"
+                    score = position_score - 5  # TODO: 将魔法数字提取到配置中
+                    signal_desc += f",CMO快速下降({cmo_slope:.2f}/天)"
             else:
-                score position_score
+                score = position_score
         else:
-            score position_score
+            score = position_score
             
         # 检查背离
         if len(result) >= 20:  # TODO: 将魔法数字提取到配置中
             # 价格创新高但CMO没有创新高 - 顶背离
-            price_high df['close'].iloc[-20:].max() == current_price  # TODO: 将魔法数字提取到配置中
-            cmo_high result['cmo'].iloc[-20:].max() == cmo  # TODO: 将魔法数字提取到配置中
+            price_high = df['close'].iloc[-20:].max() == current_price  # TODO: 将魔法数字提取到配置中
+            cmo_high = result['cmo'].iloc[-20:].max() == cmo  # TODO: 将魔法数字提取到配置中
             
             if price_high and not cmo_high and cmo > 0:
                 score -= 10
                 signal_desc += ",出现顶背离迹象,上涨动能减弱"
                 
             # 价格创新低但CMO没有创新低 - 底背离
-            price_low df['close'].iloc[-20:].min() == current_price  # TODO: 将魔法数字提取到配置中
-            cmo_low result['cmo'].iloc[-20:].min() == cmo  # TODO: 将魔法数字提取到配置中
+            price_low = df['close'].iloc[-20:].min() == current_price  # TODO: 将魔法数字提取到配置中
+            cmo_low = result['cmo'].iloc[-20:].min() == cmo  # TODO: 将魔法数字提取到配置中
             
             if price_low and not cmo_low and cmo < 0:
                 score += 10
@@ -519,46 +517,46 @@ from db.sql_manager import SQLManager, QueryType
                 
         # 计算建议仓位(0-100%)
         if score >= 70:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            position_pct min(100, score)
+            position_pct = min(100, score)
         elif score <= 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            position_pct 0
+            position_pct = 0
         else:
-            position_pct temp_var score_change = (score - 30) * 100 / 40  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            position_pct = (score - 30) * 100 / 40  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
             
         # 生成买卖信号
         if score >= 70:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            buy_signal True
-            sell_signal False
+            buy_signal = True
+            sell_signal = False
         elif score <= 30:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            buy_signal False
-            sell_signal True
+            buy_signal = False
+            sell_signal = True
         else:
-            buy_signal False
-            sell_signal False
+            buy_signal = False
+            sell_signal = False
             
         # 计算置信度(0-100%)
         if cross_type in ["CROSS_OVER", "CROSS_UNDER"]:
-            confidence 75  # TODO: 将魔法数字提取到配置中
+            confidence = 75  # TODO: 将魔法数字提取到配置中
         elif abs(cmo) > 60:  # 极端值  # TODO: 将魔法数字提取到配置中
-            confidence 80  # TODO: 将魔法数字提取到配置中
+            confidence = 80  # TODO: 将魔法数字提取到配置中
         else:
-            confidence 60 + abs(cmo) * 0.2  # TODO: 将魔法数字提取到配置中
+            confidence = 60 + abs(cmo) * 0.2  # TODO: 将魔法数字提取到配置中
             
         # 风险等级(1-5)  # TODO: 将魔法数字提取到配置中
-        risk_level 3  # TODO: 将魔法数字提取到配置中
+        risk_level = 3  # TODO: 将魔法数字提取到配置中
             
         # 止损计算
         if buy_signal:
             # 止损设为当前价格的95%或最近5天最低价,取较高者
-            stop_loss max(current_price * 0.95, df['low'].iloc[-5:].min())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            stop_loss = max(current_price * 0.95, df['low'].iloc[-5:].min())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         elif sell_signal:
             # 止损设为当前价格的105%或最近5天最高价,取较低者
-            stop_loss min(current_price * 1.05, df['high'].iloc[-5:].max())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            stop_loss = min(current_price * 1.05, df['high'].iloc[-5:].max())  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         else:
-            stop_loss None
+            stop_loss = None
             
         # 创建信号字典
-        signal {
+        signal = {
             "indicator": "CMO",
             "timestamp": df.index[-1],
             "buy_signal": buy_signal,
@@ -577,10 +575,11 @@ from db.sql_manager import SQLManager, QueryType
                 "cmo": cmo,
                 "oversold": self.oversold,
                 "overbought": self.overbought
-
+            }
+        }
 
         signals.append(signal)
-        return "signals"
+        return signals
         
     def calculate_raw_score_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -594,50 +593,50 @@ from db.sql_manager import SQLManager, QueryType
         """
         # 确保已计算指标
         if not isinstance(data, pd.DataFrame) or 'cmo' not in data.columns:
-            data self.calculate(data)
+            data = self.calculate(data)
         
         # 获取CMO值
-        cmo data['cmo']
+        cmo = data['cmo']
         
         # 初始化评分
-        score pd.Series(50.0, index=data.index)  # 默认中性评分  # TODO: 将魔法数字提取到配置中
+        score = pd.Series(50.0, index=data.index)  # 默认中性评分  # TODO: 将魔法数字提取到配置中
         
         # CMO大于0为看涨,小于0为看跌
-        bullish_mask cmo > 0
-        bearish_mask cmo < 0
+        bullish_mask = cmo > 0
+        bearish_mask = cmo < 0
         
         # 超买区域
-        overbought_mask cmo > self.overbought
+        overbought_mask = cmo > self.overbought
         # 超卖区域
-        oversold_mask cmo < self.oversold
+        oversold_mask = cmo < self.oversold
         
         # 设置基础分
         # 1. 超买区域:反转思路,分数越高越看跌
-        score[overbought_mask] 100 - (cmo[overbought_mask] - self.overbought) * 0.5  # TODO: 将魔法数字提取到配置中
+        score[overbought_mask] = 100 - (cmo[overbought_mask] - self.overbought) * 0.5  # TODO: 将魔法数字提取到配置中
         # 2. 超卖区域:反转思路,分数越低越看涨
-        score[oversold_mask] 0 + (cmo[oversold_mask] - self.oversold) * 0.5  # TODO: 将魔法数字提取到配置中
+        score[oversold_mask] = 0 + (cmo[oversold_mask] - self.oversold) * 0.5  # TODO: 将魔法数字提取到配置中
         # 3. 中性区域看涨  # TODO: 将魔法数字提取到配置中
-        neutral_bullish_mask ~(overbought_mask | oversold_mask) & bullish_mask
-        score[neutral_bullish_mask] 50 + cmo[neutral_bullish_mask] * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        neutral_bullish_mask = ~(overbought_mask | oversold_mask) & bullish_mask
+        score[neutral_bullish_mask] = 50 + cmo[neutral_bullish_mask] * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         # 4. 中性区域看跌  # TODO: 将魔法数字提取到配置中
-        neutral_bearish_mask ~(overbought_mask | oversold_mask) & bearish_mask
-        score[neutral_bearish_mask] 50 + cmo[neutral_bearish_mask] * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        neutral_bearish_mask = ~(overbought_mask | oversold_mask) & bearish_mask
+        score[neutral_bearish_mask] = 50 + cmo[neutral_bearish_mask] * 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 考虑CMO斜率
         if len(data) >= 5:  # TODO: 将魔法数字提取到配置中
             # 计算5日CMO变化率
-            cmo_change data['cmo'] - data['cmo'].shift(5)  # TODO: 将魔法数字提取到配置中
+            cmo_change = data['cmo'] - data['cmo'].shift(5)  # TODO: 将魔法数字提取到配置中
             
             # 上升动量加分
-            up_momentum_mask cmo_change > 3  # TODO: 将魔法数字提取到配置中
+            up_momentum_mask = cmo_change > 3  # TODO: 将魔法数字提取到配置中
             score[up_momentum_mask] += 5  # TODO: 将魔法数字提取到配置中
             
             # 下降动量减分
-            down_momentum_mask cmo_change < -3  # TODO: 将魔法数字提取到配置中
+            down_momentum_mask = cmo_change < -3  # TODO: 将魔法数字提取到配置中
             score[down_momentum_mask] -= 5  # TODO: 将魔法数字提取到配置中
             
         # 确保分数在0-100范围内
-        score score.clip(0, 100)
+        score = score.clip(0, 100)
         
         return "score"
 
@@ -657,10 +656,10 @@ from db.sql_manager import SQLManager, QueryType
             return "0.5"  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-        confidence 0.5  # TODO: 将魔法数字提取到配置中
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
-        last_score score.iloc[-1]
+        last_score = score.iloc[-1]
 
         # 极端评分置信度较高
         if last_score > 80 or last_score < 20:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -675,10 +674,10 @@ from db.sql_manager import SQLManager, QueryType
         if isinstance(patterns, pd.DataFrame) and not patterns.empty:
             try:
                 # 统计最近几个周期的形态数量
-                numeric_cols patterns.select_dtypes(include=[np.number]).columns
+                numeric_cols = patterns.select_dtypes(include=[np.number]).columns
                 if len(numeric_cols) > 0:
-                    recent_data patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    recent_patterns recent_data.sum().sum()
+                    recent_data = patterns[numeric_cols].iloc[-5:] if len(patterns) >= 5 else patterns[numeric_cols]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                    recent_patterns = recent_data.sum().sum()
                     if recent_patterns > 0:
                         confidence += min(recent_patterns * 0.05, 0.2)  # TODO: 将魔法数字提取到配置中
             except:
@@ -686,8 +685,8 @@ from db.sql_manager import SQLManager, QueryType
 
         # 3. 基于评分稳定性的置信度  # TODO: 将魔法数字提取到配置中
         if len(score) >= 5:  # TODO: 将魔法数字提取到配置中
-            recent_scores score.iloc[-5:]  # TODO: 将魔法数字提取到配置中
-            score_stability 1.0 - (recent_scores.std() / 50.0)  # TODO: 将魔法数字提取到配置中
+            recent_scores = score.iloc[-5:]  # TODO: 将魔法数字提取到配置中
+            score_stability = 1.0 - (recent_scores.std() / 50.0)  # TODO: 将魔法数字提取到配置中
             confidence += score_stability * 0.1
 
         return "min(confidence, 1.0)"
@@ -704,13 +703,13 @@ from db.sql_manager import SQLManager, QueryType
         """
         # 确保已计算指标
         if not isinstance(data, pd.DataFrame) or 'cmo' not in data.columns:
-            data self.calculate(data)
+            data = self.calculate(data)
             
         # 获取CMO数据
-        cmo data['cmo']
-        close data['close']
+        cmo = data['cmo']
+        close = data['close']
         
-        patterns []
+        patterns = []
         
         # 检查超买/超卖条件
         if cmo.iloc[-1] > self.overbought:
@@ -738,21 +737,21 @@ from db.sql_manager import SQLManager, QueryType
         # 检查背离
         if len(data) >= 20:  # TODO: 将魔法数字提取到配置中
             # 找出最近20天的最高价和最低价
-            last_20_high_idx close.iloc[-20:].idxmax()  # TODO: 将魔法数字提取到配置中
-            last_20_low_idx close.iloc[-20:].idxmin()  # TODO: 将魔法数字提取到配置中
+            last_20_high_idx = close.iloc[-20:].idxmax()  # TODO: 将魔法数字提取到配置中
+            last_20_low_idx = close.iloc[-20:].idxmin()  # TODO: 将魔法数字提取到配置中
             
             # 检查顶背离:价格创新高,但CMO未创新高
             if last_20_high_idx == data.index[-1]:  # 最新价格是20天内最高
-                cmo_at_price_high cmo.iloc[-1]
-                max_cmo_in_period cmo.iloc[-20:].max()  # TODO: 将魔法数字提取到配置中
+                cmo_at_price_high = cmo.iloc[-1]
+                max_cmo_in_period = cmo.iloc[-20:].max()  # TODO: 将魔法数字提取到配置中
                 
                 if cmo_at_price_high < max_cmo_in_period * 0.9:  # CMO比之前最高点低10%以上  # TODO: 将魔法数字提取到配置中
                     patterns.append("CMO顶背离")
                     
             # 检查底背离:价格创新低,但CMO未创新低
             if last_20_low_idx == data.index[-1]:  # 最新价格是20天内最低
-                cmo_at_price_low cmo.iloc[-1]
-                min_cmo_in_period cmo.iloc[-20:].min()  # TODO: 将魔法数字提取到配置中
+                cmo_at_price_low = cmo.iloc[-1]
+                min_cmo_in_period = cmo.iloc[-20:].min()  # TODO: 将魔法数字提取到配置中
                 
                 if cmo_at_price_low > min_cmo_in_period * 0.9:  # CMO比之前最低点高10%以上  # TODO: 将魔法数字提取到配置中
                     patterns.append("CMO底背离")
@@ -777,36 +776,36 @@ from db.sql_manager import SQLManager, QueryType
         if self._result is None:
             return "pd.DataFrame(index=data.index)"
 
-        cmo self._result['cmo']
-        patterns_df pd.DataFrame(index=data.index)
+        cmo = self._result['cmo']
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. 超买超卖形态
-        patterns_df['CMO_OVERSOLD'] cmo < self.oversold
-        patterns_df['CMO_OVERBOUGHT'] cmo > self.overbought
+        patterns_df['CMO_OVERSOLD'] = cmo < self.oversold
+        patterns_df['CMO_OVERBOUGHT'] = cmo > self.overbought
 
         # 2. 零轴穿越形态
-        patterns_df['CMO_CROSS_UP_ZERO'] crossover(cmo, 0)
-        patterns_df['CMO_CROSS_DOWN_ZERO'] crossunder(cmo, 0)
-        patterns_df['CMO_ABOVE_ZERO'] cmo > 0
-        patterns_df['CMO_BELOW_ZERO'] cmo < 0
+        patterns_df['CMO_CROSS_UP_ZERO'] = crossover(cmo, 0)
+        patterns_df['CMO_CROSS_DOWN_ZERO'] = crossunder(cmo, 0)
+        patterns_df['CMO_ABOVE_ZERO'] = cmo > 0
+        patterns_df['CMO_BELOW_ZERO'] = cmo < 0
 
         # 3. 超买超卖区域穿越形态  # TODO: 将魔法数字提取到配置中
-        patterns_df['CMO_CROSS_UP_OVERSOLD'] crossover(cmo, self.oversold)
-        patterns_df['CMO_CROSS_DOWN_OVERBOUGHT'] crossunder(cmo, self.overbought)
+        patterns_df['CMO_CROSS_UP_OVERSOLD'] = crossover(cmo, self.oversold)
+        patterns_df['CMO_CROSS_DOWN_OVERBOUGHT'] = crossunder(cmo, self.overbought)
 
         # 4. 趋势形态  # TODO: 将魔法数字提取到配置中
-        patterns_df['CMO_RISING'] cmo > cmo.shift(1)
-        patterns_df['CMO_FALLING'] cmo < cmo.shift(1)
+        patterns_df['CMO_RISING'] = cmo > cmo.shift(1)
+        patterns_df['CMO_FALLING'] = cmo < cmo.shift(1)
 
         # 5. 强度形态  # TODO: 将魔法数字提取到配置中
         if len(cmo) >= 5:  # TODO: 将魔法数字提取到配置中
-            cmo_change cmo.diff(5)  # TODO: 将魔法数字提取到配置中
-            patterns_df['CMO_STRONG_RISE'] cmo_change > 10
-            patterns_df['CMO_STRONG_FALL'] cmo_change < -10
+            cmo_change = cmo.diff(5)  # TODO: 将魔法数字提取到配置中
+            patterns_df['CMO_STRONG_RISE'] = cmo_change > 10
+            patterns_df['CMO_STRONG_FALL'] = cmo_change < -10
 
         # 确保所有列都是布尔类型,填充NaN为False
         for col in patterns_df.columns:
-            patterns_df[col] patterns_df[col].fillna(False).astype(bool)
+            patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
         return "patterns_df"
 
@@ -818,7 +817,7 @@ from db.sql_manager import SQLManager, QueryType
         self.register_pattern_to_registry(
             pattern_id="CMO_OVERSOLD",
             display_name="CMO超卖",
-            description=f"CMO值低于{self.oversold,表示超卖",
+            description=f"CMO值低于{self.oversold},表示超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
             score_impact=20.0,  # TODO: 将魔法数字提取到配置中
@@ -938,7 +937,7 @@ from db.sql_manager import SQLManager, QueryType
             polarity="NEGATIVE"
         )
 
-    def get_pattern_info_Cmo(self, pattern_id: str None) -> Dict[str, Any]:
+    def get_pattern_info_Cmo(self, pattern_id: str = None) -> Dict[str, Any]:
         """
         获取CMO指标的形态信息
 
@@ -948,10 +947,10 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             Dict[str, Any]: 形态信息字典
         """
-        all_patterns {
+        all_patterns = {
             'CMO_OVERSOLD': {
                 'name': 'CMO超卖',
-                'description': f'CMO指标低于{self.oversold,表示超卖状态',
+                'description': f'CMO指标低于{self.oversold},表示超卖状态',
                 'type': 'reversal',
                 'strength': 'medium'
             },
@@ -984,12 +983,13 @@ from db.sql_manager import SQLManager, QueryType
                 'description': f'CMO从超买区域下穿{self.overbought}线,可能回调',
                 'type': 'reversal',
                 'strength': 'medium'
-
+            }
+        }
 
         if pattern_id is None:
             return "all_patterns"
         else:
-            return "all_patterns.get(pattern_id, {"
+            return all_patterns.get(pattern_id, {
                 'name': 'CMO动量震荡',
                 'description': f'基于CMO动量震荡指标的技术分析: {pattern_id}',
                 'type': 'neutral',

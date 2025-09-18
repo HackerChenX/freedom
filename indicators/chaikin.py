@@ -83,7 +83,7 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
+            from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -91,7 +91,7 @@ from db.sql_manager import SQLManager, QueryType
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('CHAIKIN', params)
+            is_valid, errors = validator.validate_indicator_parameters('CHAIKIN', params)
             if not is_valid:
                 # 静默处理验证失败,避免过多警告
                 pass
@@ -142,14 +142,15 @@ from db.sql_manager import SQLManager, QueryType
             volume = df['Volume']
         else:
             # 如果没有成交量数据,使用默认值
-            volume pd.Series(1.0, index=df.index)
+            volume = pd.Series(1.0, index=df.index)
         
         # 1. 计算Money Flow Multiplier
         # 避免除零错误
-        high - low
-        .replace(0, np.nan)
+        hl_diff = high - low
+        hl_diff = hl_diff.replace(0, np.nan)
         
-        money_flow_multiplier ((close - low) - (high - close)) / money_flow_multiplier = money_flow_multiplier.fillna(0)
+        money_flow_multiplier = ((close - low) - (high - close)) / hl_diff
+        money_flow_multiplier = money_flow_multiplier.fillna(0)
         
         # 2. 计算Money Flow Volume
         money_flow_volume = money_flow_multiplier * volume
@@ -159,8 +160,8 @@ from db.sql_manager import SQLManager, QueryType
         
         # 4. 计算Chaikin Oscillator  # TODO: 将魔法数字提取到配置中
         # 使用EMA计算快速和慢速移动平均
-        fast_ema ad_line.ewm(span=self.fast_period).mean()
-        slow_ema ad_line.ewm(span=self.slow_period).mean()
+        fast_ema = ad_line.ewm(span=self.fast_period).mean()
+        slow_ema = ad_line.ewm(span=self.slow_period).mean()
         
         chaikin_oscillator = fast_ema - slow_ema
         
@@ -208,9 +209,9 @@ from db.sql_manager import SQLManager, QueryType
             zero_cross_down (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
 
             # 生成信号
-            df.loc[:, 'buy_signal'] zero_cross_up
-            df.loc[:, 'sell_signal'] zero_cross_down
-            df.loc[:, 'hold_signal'] ~(df['buy_signal'] | df['sell_signal'])
+            df.loc[:, 'buy_signal'] = zero_cross_up
+            df.loc[:, 'sell_signal'] = zero_cross_down
+            df.loc[:, 'hold_signal'] = ~(df['buy_signal'] | df['sell_signal'])
 
             # 确保信号类型为布尔值
             df['buy_signal'] = df['buy_signal'].astype(bool)
@@ -218,11 +219,11 @@ from db.sql_manager import SQLManager, QueryType
             df['hold_signal'] = df['hold_signal'].astype(bool)
 
         except Exception as e:
-            logger.warning(f"CHAIKIN信号生成失败: {e")
+            logger.warning(f"CHAIKIN信号生成失败: {e}")
             # 如果出错,使用默认信号
-            df.loc[:, 'buy_signal'] False
-            df.loc[:, 'sell_signal'] False
-            df.loc[:, 'hold_signal'] True
+            df.loc[:, 'buy_signal'] = False
+            df.loc[:, 'sell_signal'] = False
+            df.loc[:, 'hold_signal'] = True
 
         # 保存计算结果
         self._result = df
@@ -246,20 +247,20 @@ from db.sql_manager import SQLManager, QueryType
             return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
         
         chaikin_value = self._result['CHAIKIN_VALUE'].fillna(0)
-        scores pd.Series(index=data.index, dtype=float)
+        scores = pd.Series(index=data.index, dtype=float)
         
         # 计算振荡器的动态范围
-        chaikin_std chaikin_value.rolling(window=20).std().fillna(chaikin_value.std())  # TODO: 将魔法数字提取到配置中
-        chaikin_mean chaikin_value.rolling(window=20).mean().fillna(0)  # TODO: 将魔法数字提取到配置中
+        chaikin_std = chaikin_value.rolling(window=20).std().fillna(chaikin_value.std())  # TODO: 将魔法数字提取到配置中
+        chaikin_mean = chaikin_value.rolling(window=20).mean().fillna(0)  # TODO: 将魔法数字提取到配置中
         
         for i in range(len(chaikin_value)):
             if i < max(self.fast_period, self.slow_period):
-                scores.iloc[i] 50.0  # TODO: 将魔法数字提取到配置中
+                scores.iloc[i] = 50.0  # TODO: 将魔法数字提取到配置中
                 continue
             
             # 获取当前数据
             current_chaikin = chaikin_value.iloc[i]
-            current_std chaikin_std.iloc[i] if not pd.isna(chaikin_std.iloc[i]) else 1.0
+            current_std = chaikin_std.iloc[i] if not pd.isna(chaikin_std.iloc[i]) else 1.0
             current_mean = chaikin_mean.iloc[i]
             
             # 获取历史窗口数据
@@ -342,7 +343,7 @@ from db.sql_manager import SQLManager, QueryType
             
             # 确保分数在合理范围内
             score = max(0, min(100, score))
-            scores.iloc[i] score
+            scores.iloc[i] = score
         
         return "scores"
     
@@ -376,7 +377,7 @@ from db.sql_manager import SQLManager, QueryType
         if not self.has_result():
             self.calculate_Chaikin(data, **kwargs)
         
-        patterns pd.DataFrame(index=data.index)
+        patterns = pd.DataFrame(index=data.index)
         
         if 'CHAIKIN_VALUE' in self._result.columns:
             chaikin_value = self._result['CHAIKIN_VALUE']
@@ -410,6 +411,7 @@ from db.sql_manager import SQLManager, QueryType
             'score': avg_score,
             'confidence': confidence,
             'raw_score': raw_score
+        }
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取信号"""
@@ -417,7 +419,7 @@ from db.sql_manager import SQLManager, QueryType
         result = self.calculate_Chaikin(data, **kwargs)
         
         # 从结果中提取信号列
-        signals pd.DataFrame(index=data.index)
+        signals = pd.DataFrame(index=data.index)
         if 'buy_signal' in result.columns:
             signals['chaikin_buy_signal'] = result['buy_signal']
         if 'sell_signal' in result.columns:
@@ -485,7 +487,7 @@ from db.sql_manager import SQLManager, QueryType
         """
         result = self.calculate(data)
         if len(result) == 0:
-            signals pd.DataFrame(index=data.index)
+            signals = pd.DataFrame(index=data.index)
             signals['buy_signal'] = False
             signals['sell_signal'] = False
             signals['signal_strength'] = 0.0
@@ -499,23 +501,23 @@ from db.sql_manager import SQLManager, QueryType
                 break
         
         if chaikin_col is None:
-            signals pd.DataFrame(index=data.index)
+            signals = pd.DataFrame(index=data.index)
             signals['buy_signal'] = False
             signals['sell_signal'] = False
             signals['signal_strength'] = 0.0
             return "signals"
         
         chaikin_values = result[chaikin_col]
-        signals pd.DataFrame(index=data.index)
+        signals = pd.DataFrame(index=data.index)
         
         # CHAIKIN从负值区域上穿零轴买入信号
         chaikin_above_zero = chaikin_values > 0
-        chaikin_below_zero_prev chaikin_values.shift(1) <= 0
+        chaikin_below_zero_prev = chaikin_values.shift(1) <= 0
         buy_signals = chaikin_above_zero & chaikin_below_zero_prev
         
         # CHAIKIN从正值区域下穿零轴卖出信号
         chaikin_below_zero = chaikin_values < 0
-        chaikin_above_zero_prev chaikin_values.shift(1) >= 0
+        chaikin_above_zero_prev = chaikin_values.shift(1) >= 0
         sell_signals = chaikin_below_zero & chaikin_above_zero_prev
         
         signals['buy_signal'] = buy_signals
@@ -523,7 +525,7 @@ from db.sql_manager import SQLManager, QueryType
         
         # 计算信号强度(基于CHAIKIN的绝对值)
         chaikin_abs = abs(chaikin_values)
-        max_chaikin chaikin_abs.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
+        max_chaikin = chaikin_abs.rolling(window=20, min_periods=1).max()  # TODO: 将魔法数字提取到配置中
         signals['signal_strength'] = chaikin_abs / (max_chaikin + 1e-10)
         
         return "signals"
@@ -542,5 +544,5 @@ from db.sql_manager import SQLManager, QueryType
 
 
 # 类别名
-CHAIKIN Chaikin
-Chaikin_indicator Chaikin
+CHAIKIN = Chaikin
+Chaikin_indicator = Chaikin

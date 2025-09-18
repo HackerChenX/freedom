@@ -100,6 +100,80 @@ class BaseIndicator(abc.ABC):
         """
         pass
 
+    def register_pattern_to_registry(self, 
+                                   pattern_id: str, 
+                                   display_name: str, 
+                                   description: str = "",
+                                   pattern_type: str = "NEUTRAL",
+                                   default_strength: str = "MEDIUM", 
+                                   score_impact: float = 0.0,
+                                   polarity: str = "NEUTRAL",
+                                   detection_function=None,
+                                   allow_override: bool = True) -> None:
+        """
+        注册形态到全局注册表
+
+        Args:
+            pattern_id: 形态ID
+            display_name: 显示名称
+            description: 形态描述
+            pattern_type: 形态类型(BULLISH/BEARISH/NEUTRAL/REVERSAL)
+            default_strength: 默认强度(STRONG/MEDIUM/WEAK)
+            score_impact: 评分影响
+            polarity: 极性(POSITIVE/NEGATIVE/NEUTRAL)
+            detection_function: 检测函数(可选)
+            allow_override: 是否允许覆盖
+        """
+        try:
+            # 导入形态注册表
+            from indicators.pattern_registry import get_pattern_registry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
+            
+            # 获取注册表实例
+            registry = get_pattern_registry()
+            
+            # 转换形态类型
+            pattern_type_enum = PatternTypePatternRegistry.NEUTRAL
+            if pattern_type.upper() == "BULLISH":
+                pattern_type_enum = PatternTypePatternRegistry.BULLISH
+            elif pattern_type.upper() == "BEARISH":
+                pattern_type_enum = PatternTypePatternRegistry.BEARISH
+            elif pattern_type.upper() == "REVERSAL":
+                pattern_type_enum = PatternTypePatternRegistry.REVERSAL
+            
+            # 转换强度
+            strength_enum = PatternStrengthPatternRegistry.MEDIUM
+            if default_strength.upper() == "STRONG":
+                strength_enum = PatternStrengthPatternRegistry.STRONG
+            elif default_strength.upper() == "WEAK":
+                strength_enum = PatternStrengthPatternRegistry.WEAK
+                
+            # 转换极性
+            polarity_enum = PatternPolarity.NEUTRAL
+            if polarity.upper() == "POSITIVE":
+                polarity_enum = PatternPolarity.POSITIVE
+            elif polarity.upper() == "NEGATIVE":
+                polarity_enum = PatternPolarity.NEGATIVE
+            
+            # 注册形态
+            registry.register_pattern_registry(
+                pattern_id=pattern_id,
+                display_name=display_name,
+                indicator_id=self.name,
+                pattern_type=pattern_type_enum,
+                default_strength=strength_enum,
+                description=description,
+                score_impact=score_impact,
+                polarity=polarity_enum,
+                detection_function=detection_function,
+                allow_override=allow_override
+            )
+            
+            logger.debug(f"形态 {pattern_id} 注册成功: {display_name}")
+            
+        except Exception as e:
+            logger.warning(f"注册形态 {pattern_id} 失败: {e}")
+            # 不抛出异常，确保指标能正常实例化
+
     @abc.abstractmethod
     @performance_monitor(threshold=2.0)
     @exception_handler(reraise=True)

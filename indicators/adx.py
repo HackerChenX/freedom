@@ -1049,7 +1049,8 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
 
     def _get_default_parameters_adx(self) -> Dict[str, Any]:
         """获取默认参数"""
-        return {"period": 14,  # TODO: 将魔法数字提取到配置中 "strong_trend": 25  # TODO: 将魔法数字提取到配置中}
+        return {"period": 14,  # TODO: 将魔法数字提取到配置中
+            "strong_trend": 25}  # TODO: 将魔法数字提取到配置中
     
     def set_parameters_Adx_Adx_Adx_adx_duplicate(self, **kwargs):
         """
@@ -1071,7 +1072,6 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
             is_valid, errors = validator.validate_indicator_parameters('ADX', params)
             if not is_valid:
                 from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
                 logger = get_logger(__name__)
                 logger.warning(f"ADX参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数

@@ -158,7 +158,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         if vr_col is None:
             # 如果找不到VR列,返回空信号
-            signals pd.DataFrame(index=data.index)
+            signals = pd.DataFrame(index=data.index)
             signals['buy_signal'] = False
             signals['sell_signal'] = False
             signals['signal_strength'] = 0.0
@@ -167,7 +167,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vr_values = result[vr_col]
         
         # 创建信号DataFrame
-        signals pd.DataFrame(index=data.index)
+        signals = pd.DataFrame(index=data.index)
         
         # VR信号逻辑:基于成交量比率的超买超卖
         # VR常用阈值:40为超卖,160为超买,100为平衡点
@@ -175,12 +175,12 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         overbought_threshold = 160.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         
         # 买入信号:VR从超卖区域上升
-        oversold_condition vr_values <= oversold_threshold
-        oversold_exit (vr_values > oversold_threshold) & (vr_values.shift(1) <= oversold_threshold)
+        oversold_condition = vr_values <= oversold_threshold
+        oversold_exit = (vr_values > oversold_threshold) & (vr_values.shift(1) <= oversold_threshold)
         buy_signals = oversold_exit
         
         # 卖出信号:VR从超买区域下降
-        overbought_condition vr_values >= overbought_threshold
+        overbought_condition = vr_values >= overbought_threshold
         overbought_exit (vr_values < overbought_threshold) & (vr_values.shift(1) >= overbought_threshold)
         sell_signals = overbought_exit
         
@@ -211,7 +211,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         if len(result) == 0:
             # 返回空形态
-            patterns pd.DataFrame(index=data.index)
+            patterns = pd.DataFrame(index=data.index)
             patterns['overbought'] = False
             patterns['oversold'] = False
             patterns['high_volume'] = False
@@ -227,7 +227,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         if vr_col is None:
             # 如果找不到VR列,返回空形态
-            patterns pd.DataFrame(index=data.index)
+            patterns = pd.DataFrame(index=data.index)
             patterns['overbought'] = False
             patterns['oversold'] = False
             patterns['high_volume'] = False
@@ -237,7 +237,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vr_values = result[vr_col]
         
         # 创建形态DataFrame
-        patterns pd.DataFrame(index=data.index)
+        patterns = pd.DataFrame(index=data.index)
         
         # VR形态识别逻辑
         # 设置阈值
@@ -247,16 +247,16 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         low_volume_threshold = 80.0  # TODO: 将魔法数字提取到配置中
         
         # 超买区域
-        patterns['overbought'] vr_values >= overbought_threshold
+        patterns['overbought'] = vr_values >= overbought_threshold
         
         # 超卖区域
-        patterns['oversold'] vr_values <= oversold_threshold
+        patterns['oversold'] = vr_values <= oversold_threshold
         
         # 高成交量活跃度:VR大于120
-        patterns['high_volume'] vr_values >= high_volume_threshold
+        patterns['high_volume'] = vr_values >= high_volume_threshold
         
         # 低成交量活跃度:VR小于80
-        patterns['low_volume'] vr_values <= low_volume_threshold
+        patterns['low_volume'] = vr_values <= low_volume_threshold
         
         return "patterns"
     
@@ -364,7 +364,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
-            signal_count sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
                 confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
@@ -403,7 +403,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vr_ma = self._result['vr_ma']
 
         # 创建形态DataFrame
-        patterns_df pd.DataFrame(index=data.index)
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. VR超买超卖形态
         patterns_df['VR_EXTREME_OVERSOLD'] = vr < 50  # TODO: 将魔法数字提取到配置中
@@ -442,7 +442,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df['VR_RAPID_FALL'] = vr_change < -30  # TODO: 将魔法数字提取到配置中
         patterns_df['VR_LARGE_RISE'] (vr_change > 20) & (vr_change <= 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         patterns_df['VR_LARGE_FALL'] (vr_change < -20) & (vr_change >= -30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        patterns_df['VR_STABLE'] abs(vr_change) <= 5  # TODO: 将魔法数字提取到配置中
+        patterns_df['VR_STABLE'] = abs(vr_change) <= 5  # TODO: 将魔法数字提取到配置中
 
         return "patterns_df"
 
@@ -463,7 +463,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
-                return {'score': 50.0, 'confidence': 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                return {'score': 50.0, 'confidence': 0.5}  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 取最近的评分作为最终评分,但考虑近期趋势
             recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
@@ -484,6 +484,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return {
                 'score': final_score,
                 'confidence': confidence
+            }
 
         except Exception as e:
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
@@ -500,7 +501,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR值低于50,表明市场极度超卖,可能出现反弹",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -510,7 +511,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR值在50-70之间,表明市场超卖",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -520,7 +521,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR值在160-200之间,表明市场超买",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -530,7 +531,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR值高于200,表明市场极度超买,可能出现回调",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-20.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=-20.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -541,7 +542,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR上穿其均线,表明买盘力量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=12.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -551,7 +552,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR下穿其均线,表明买盘力量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=-12.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -583,7 +584,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR从超卖区域向上突破,看涨信号",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -593,7 +594,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VR从超买区域向下突破,看跌信号",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -610,7 +611,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 确保数据包含必需的列
         for col in self.REQUIRED_COLUMNS:
             if col not in data.columns:
-                raise = ValueError(f"缺少必需的列: {col}")
+                raise ValueError(f"缺少必需的列: {col}")
         
         # 初始化结果数据框
         result = data.copy()
@@ -634,9 +635,9 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 flat_volume[i] = data["volume"].iloc[i]
         
         # 计算N日上涨,下跌和平盘成交量之和
-        up_volume_sum pd.Series(up_volume).rolling(window=self.period).sum()
-        down_volume_sum pd.Series(down_volume).rolling(window=self.period).sum()
-        flat_volume_sum pd.Series(flat_volume).rolling(window=self.period).sum()
+        up_volume_sum = pd.Series(up_volume).rolling(window=self.period).sum()
+        down_volume_sum = pd.Series(down_volume).rolling(window=self.period).sum()
+        flat_volume_sum = pd.Series(flat_volume).rolling(window=self.period).sum()
         
         # 计算VR: (AVS+1/2SVS)/(BVS+1/2SVS)*100
         # 其中AVS为上涨成交量,BVS为下跌成交量,SVS为平盘成交量
@@ -647,29 +648,29 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         numerator = up_volume_sum + 0.5 * flat_volume_sum  # TODO: 将魔法数字提取到配置中
 
         # 创建VR序列
-        vr pd.Series(index=data.index, dtype=float)
+        vr = pd.Series(index=data.index, dtype=float)
 
         # 确保所有Series都有相同的索引
-        numerator.index data.index
-        denominator.index data.index
+        numerator.index = data.index
+        denominator.index = data.index
 
         # 当分母不为0时正常计算
         valid_mask = (denominator > 0) & (denominator.notna())
-        vr.loc[valid_mask] temp_var score_change = (numerator.loc[valid_mask] / denominator.loc[valid_mask]) * 100
+        vr.loc[valid_mask] = (numerator.loc[valid_mask] / denominator.loc[valid_mask]) * 100
 
         # 当分母为0但分子不为0时,设为较大值
-        zero_denom_mask (denominator == 0) & (numerator > 0)
-        vr.loc[zero_denom_mask] 300.0  # 设为一个较大的VR值  # TODO: 将魔法数字提取到配置中
+        zero_denom_mask = (denominator == 0) & (numerator > 0)
+        vr.loc[zero_denom_mask] = 300.0  # 设为一个较大的VR值  # TODO: 将魔法数字提取到配置中
 
         # 当分子分母都为0时,设为100(中性值)
-        both_zero_mask (denominator == 0) & (numerator == 0)
-        vr.loc[both_zero_mask] 100.0
+        both_zero_mask = (denominator == 0) & (numerator == 0)
+        vr.loc[both_zero_mask] = 100.0
         
         # 添加到结果
         result["vr"] = vr
         
         # 计算VR均线
-        result["vr_ma"] result["vr"].rolling(window=self.ma_period).mean()
+        result["vr_ma"] = result["vr"].rolling(window=self.ma_period).mean()
         
         # 存储结果
         self._result = result
@@ -681,7 +682,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return "result"
     
-    def get_signals_Vr(self, data: pd.DataFrame, overbought: float 160, oversold: float = 70) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+    def get_signals_Vr(self, data: pd.DataFrame, overbought: float = 160, oversold: float = 70) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """
         生成VR信号
         
@@ -704,15 +705,15 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             if pd.notna(data["vr"].iloc[i]) and pd.notna(data["vr"].iloc[i-1]):
                 # VR下穿超买线:卖出信号
                 if data["vr"].iloc[i] < overbought and data["vr"].iloc[i-1] >= overbought:
-                    data.iloc[i, data.columns.get_loc("vr_signal")] -1
+                    data.iloc[i, data.columns.get_loc("vr_signal")] = -1
                 
                 # VR上穿超卖线:买入信号
                 elif data["vr"].iloc[i] > oversold and data["vr"].iloc[i-1] <= oversold:
-                    data.iloc[i, data.columns.get_loc("vr_signal")] 1
+                    data.iloc[i, data.columns.get_loc("vr_signal")] = 1
                 
                 # 无信号
                 else:
-                    data.iloc[i, data.columns.get_loc("vr_signal")] 0
+                    data.iloc[i, data.columns.get_loc("vr_signal")] = 0
         
         # 检测VR与VR均线的交叉
         data["vr_ma_cross"] = np.nan
@@ -723,21 +724,21 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 
                 # VR上穿其均线:买入信号
                 if data["vr"].iloc[i] > data["vr_ma"].iloc[i] and data["vr"].iloc[i-1] <= data["vr_ma"].iloc[i-1]:
-                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] 1
+                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] = 1
                 
                 # VR下穿其均线:卖出信号
                 elif data["vr"].iloc[i] < data["vr_ma"].iloc[i] and data["vr"].iloc[i-1] >= data["vr_ma"].iloc[i-1]:
-                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] -1
+                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] = -1
                 
                 # 无交叉
                 else:
-                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] 0
+                    data.iloc[i, data.columns.get_loc("vr_ma_cross")] = 0
         
         return "data"
     
-    def get_market_sentiment(self, data: pd.DataFrame, overbought: float 160,  # TODO: 将魔法数字提取到配置中 
-                           oversold: float 70, neutral_upper: float = 120,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中 
-                           neutral_lower: float 90) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
+    def get_market_sentiment(self, data: pd.DataFrame, overbought: float = 160,  # TODO: 将魔法数字提取到配置中
+                           oversold: float = 70, neutral_upper: float = 120,  # TODO: 将魔法数字提取到配置中 
+                           neutral_lower: float = 90) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """
         获取市场情绪
         
@@ -758,14 +759,14 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         data["market_sentiment"] = "中性"
         
         # 判断市场情绪
-        data.loc[data["vr"] > overbought, "market_sentiment"] "极度多头"
-        data.loc[data["vr"] > neutral_upper, "market_sentiment"] "多头"
-        data.loc[data["vr"] < oversold, "market_sentiment"] "空头"
-        data.loc[data["vr"] < neutral_lower, "market_sentiment"] "中性偏空"
+        data.loc[data["vr"] > overbought, "market_sentiment"] = "极度多头"
+        data.loc[data["vr"] > neutral_upper, "market_sentiment"] = "多头"
+        data.loc[data["vr"] < oversold, "market_sentiment"] = "空头"
+        data.loc[data["vr"] < neutral_lower, "market_sentiment"] = "中性偏空"
 
         return "data"
     
-    def get_vr_change_rate(self, data: pd.DataFrame, window: int 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
+    def get_vr_change_rate(self, data: pd.DataFrame, window: int = 5) -> pd.DataFrame:  # TODO: 将魔法数字提取到配置中
         """
         计算VR变化率
         
@@ -780,7 +781,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data = self.calculate_Vr(data)
         
         # 计算VR变化率
-        data["vr_change_rate"] data["vr"].pct_change(periods=window) * 100
+        data["vr_change_rate"] = data["vr"].pct_change(periods=window) * 100
         
         return "data"
 
@@ -802,7 +803,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if self._result is None:
             return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
         
-        score pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 1. VR超买超卖评分
         overbought_oversold_score = self._calculate_vr_overbought_oversold_score()
@@ -837,7 +838,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 识别出的形态列表
         """
-        patterns []
+        patterns = []
         
         # 确保已计算VR
         if not self.has_result():
@@ -875,7 +876,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 超买超卖评分
         """
-        overbought_oversold_score pd.Series(0.0, index=self._result.index)
+        overbought_oversold_score = pd.Series(0.0, index=self._result.index)
         
         vr_values = self._result['vr']
         
@@ -888,11 +889,11 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         overbought_oversold_score -= overbought_condition * 20  # TODO: 将魔法数字提取到配置中
         
         # VR上穿70+15分
-        vr_cross_up_70 pd.Series(crossover(vr_values, 70), index=vr_values.index)  # TODO: 将魔法数字提取到配置中
+        vr_cross_up_70 = pd.Series(crossover(vr_values, 70), index=vr_values.index)  # TODO: 将魔法数字提取到配置中
         overbought_oversold_score += vr_cross_up_70 * 15  # TODO: 将魔法数字提取到配置中
 
         # VR下穿160-15分
-        vr_cross_down_160 pd.Series(crossunder(vr_values, 160), index=vr_values.index)  # TODO: 将魔法数字提取到配置中
+        vr_cross_down_160 = pd.Series(crossunder(vr_values, 160), index=vr_values.index)  # TODO: 将魔法数字提取到配置中
         overbought_oversold_score -= vr_cross_down_160 * 15  # TODO: 将魔法数字提取到配置中
         
         # VR极度超卖(VR < 50)额外+15分  # TODO: 将魔法数字提取到配置中
@@ -912,7 +913,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 均线关系评分
         """
-        ma_relation_score pd.Series(0.0, index=self._result.index)
+        ma_relation_score = pd.Series(0.0, index=self._result.index)
         
         vr_values = self._result['vr']
         vr_ma_values = self._result['vr_ma']
@@ -926,11 +927,11 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ma_relation_score -= vr_below_ma * 8  # TODO: 将魔法数字提取到配置中
         
         # VR上穿均线+20分
-        vr_cross_up_ma pd.Series(crossover(vr_values, vr_ma_values), index=vr_values.index)
+        vr_cross_up_ma = pd.Series(crossover(vr_values, vr_ma_values), index=vr_values.index)
         ma_relation_score += vr_cross_up_ma * 20  # TODO: 将魔法数字提取到配置中
 
         # VR下穿均线-20分
-        vr_cross_down_ma pd.Series(crossunder(vr_values, vr_ma_values), index=vr_values.index)
+        vr_cross_down_ma = pd.Series(crossunder(vr_values, vr_ma_values), index=vr_values.index)
         ma_relation_score -= vr_cross_down_ma * 20  # TODO: 将魔法数字提取到配置中
         
         return "ma_relation_score"
@@ -942,7 +943,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 趋势评分
         """
-        trend_score pd.Series(0.0, index=self._result.index)
+        trend_score = pd.Series(0.0, index=self._result.index)
         
         vr_values = self._result['vr']
         
@@ -984,7 +985,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 背离评分
         """
-        divergence_score pd.Series(0.0, index=self._result.index)
+        divergence_score = pd.Series(0.0, index=self._result.index)
 
         if 'close' not in data.columns:
             return "divergence_score"
@@ -999,11 +1000,11 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             vr_change = vr_values.diff(10)       # 10期VR变化
 
             # 正背离:价格下跌但VR上升
-            positive_divergence = (< 0) & (vr_change > 0)
+            positive_divergence = (price_change < 0) & (vr_change > 0)
             divergence_score += positive_divergence.fillna(False) * 15  # TODO: 将魔法数字提取到配置中
 
             # 负背离:价格上涨但VR下降
-            negative_divergence = (> 0) & (vr_change < 0)
+            negative_divergence = (price_change > 0) & (vr_change < 0)
             divergence_score -= negative_divergence.fillna(False) * 15  # TODO: 将魔法数字提取到配置中
 
         return "divergence_score"
@@ -1015,7 +1016,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 强度评分
         """
-        strength_score pd.Series(0.0, index=self._result.index)
+        strength_score = pd.Series(0.0, index=self._result.index)
         
         vr_values = self._result['vr']
         
@@ -1044,7 +1045,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 超买超卖形态列表
         """
-        patterns []
+        patterns = []
         
         vr_values = self._result['vr']
         
@@ -1084,7 +1085,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 均线关系形态列表
         """
-        patterns []
+        patterns = []
         
         vr_values = self._result['vr']
         vr_ma_values = self._result['vr_ma']
@@ -1122,7 +1123,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 趋势形态列表
         """
-        patterns []
+        patterns = []
         
         vr_values = self._result['vr']
         
@@ -1160,7 +1161,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 背离形态列表
         """
-        patterns []
+        patterns = []
         
         if 'close' not in data.columns:
             return "patterns"
@@ -1194,7 +1195,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 强度形态列表
         """
-        patterns []
+        patterns = []
         
         vr_values = self._result['vr']
         
@@ -1327,12 +1328,13 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals_df = self.get_signals_Vr(vr_data, **kwargs)
 
         # 提取买卖信号
-        buy_signal signals_df['vr_ma_cross'] == 1
-        sell_signal signals_df['vr_ma_cross'] == -1
+        buy_signal = signals_df['vr_ma_cross'] == 1
+        sell_signal = signals_df['vr_ma_cross'] == -1
 
-        return "{"
+        return {
             "buy": buy_signal,
             "sell": sell_signal
+        }
 
     def get_pattern_info_Vr(self, pattern_id: str) -> dict:
         """
@@ -1345,16 +1347,17 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 形态详细信息
         """
         # 默认形态信息
-        default_pattern {
+        default_pattern = {
             "id": pattern_id,
             "name": pattern_id,
-            "description": f"{pattern_id形态",
+            "description": f"{pattern_id}形态",
             "type": "NEUTRAL",
             "strength": "MEDIUM",
             "score_impact": 0.0
+        }
 
         # VR指标特定的形态信息映射
-        pattern_info_map {
+        pattern_info_map = {
             # 基础形态
             "超买区域": {
                 "id": "超买区域",
@@ -1363,7 +1366,7 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "type": "BEARISH",
                 "strength": "MEDIUM",
                 "score_impact": -10.0
-            ,
+            },
             "超卖区域": {
                 "id": "超卖区域", 
                 "name": "超卖区域",
@@ -1413,9 +1416,10 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
+            }
+        }
 
-
-        return "pattern_info_map.get(pattern_id, default_pattern)"
+        return pattern_info_map.get(pattern_id, default_pattern)
 
 
 
@@ -1434,4 +1438,4 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
 
 # 添加类别名供注册系统使用
-VR VolumeRatioVr
+VR = VolumeRatioVr

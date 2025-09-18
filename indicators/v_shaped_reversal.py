@@ -15,6 +15,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -64,7 +66,10 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         except Exception as e:
             logger.error(f"错误: {e}")
             return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
+    
+    def validate_parameters(self, **kwargs):
+        """验证参数"""
+        try:
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -114,14 +119,14 @@ from db.sql_manager import SQLManager, QueryType
 
         # 真实的V形反转算法实现
         # 1. 计算价格变化率
-        df[] = df['close'].pct_change()
-        df[_ma'] = df[].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
+        df['price_change'] = df['close'].pct_change()
+        df['price_change_ma'] = df['price_change'].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
 
         # 2. 识别急剧下跌(V形底部的左侧)
-        df['sharp_decline'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
+        df['sharp_decline'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
         # 3. 识别快速反弹(V形底部的右侧)  # TODO: 将魔法数字提取到配置中
-        df['sharp_rebound'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
+        df['sharp_rebound'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
         # 4. 识别V形底部反转  # TODO: 将魔法数字提取到配置中
         df['v_bottom_reversal'] = False
@@ -133,10 +138,10 @@ from db.sql_manager import SQLManager, QueryType
                     df.iloc[i, df.columns.get_loc('v_bottom_reversal')] = True
 
         # 5. 识别急剧上涨(倒V形顶部的左侧)  # TODO: 将魔法数字提取到配置中
-        df['sharp_rise'] = (df[] > 0.03) & (df[_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
+        df['sharp_rise'] = (df['price_change'] > 0.03) & (df['price_change_ma'] > 0.01)  # TODO: 将魔法数字提取到配置中
 
         # 6. 识别快速回落(倒V形顶部的右侧)  # TODO: 将魔法数字提取到配置中
-        df['sharp_fall'] = (df[] < -0.03) & (df[_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
+        df['sharp_fall'] = (df['price_change'] < -0.03) & (df['price_change_ma'] < -0.01)  # TODO: 将魔法数字提取到配置中
 
         # 7. 识别倒V形顶部反转  # TODO: 将魔法数字提取到配置中
         df['v_top_reversal'] = False
@@ -153,7 +158,7 @@ from db.sql_manager import SQLManager, QueryType
         df.loc[df['v_top_reversal'], 'v_reversal_strength'] = -1.0  # 看跌信号
 
         # 9. 计算反转幅度  # TODO: 将魔法数字提取到配置中
-        df['reversal_magnitude'] = abs(df[]) * 100  # 转换为百分比
+        df['reversal_magnitude'] = abs(df['price_change']) * 100  # 转换为百分比
 
         # 10. V形反转综合信号
         df['v_shaped_reversal_signal'] = df['v_bottom_reversal'] | df['v_top_reversal']

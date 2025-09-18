@@ -7,6 +7,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -54,7 +56,10 @@ class UnifiedMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         except Exception as e:
             logger.error(f"错误: {e}")
             return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
+    
+    def validate_parameters(self, **kwargs):
+        """验证参数"""
+        try:
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数

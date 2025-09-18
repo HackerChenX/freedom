@@ -519,7 +519,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.Series: 市场氛围指标序列
         """
         # 将PSY从0-100的范围映射到-100至100的范围,以便于判断市场情绪
-        sentiment = temp_var score_change = (psy - 50) * 2  # TODO: 将魔法数字提取到配置中
+        sentiment = (psy - 50) * 2  # TODO: 将魔法数字提取到配置中
         
         # 计算市场情绪的移动平均,以减少噪声
         sentiment_ma = sentiment.rolling(window=10).mean()
@@ -706,7 +706,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             synergy = self.analyze_multi_period_synergy()
             if not synergy.empty and 'synergy_score' in synergy.columns:
                 # 协同评分影响(最大±15分)
-                synergy_effect temp_var score_change = (synergy['synergy_score'] - 50) * 0.3  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                synergy_effect = (synergy['synergy_score'] - 50) * 0.3  # TODO: 将魔法数字提取到配置中
                 score += synergy_effect
             
             # 8. 根据市场环境调整评分  # TODO: 将魔法数字提取到配置中
@@ -936,7 +936,7 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 2. PSY金叉死叉形态
         from utils.indicator_utils import crossover, crossunder
-from db.sql_manager import SQLManager, QueryType
+        from db.sql_manager import SQLManager, QueryType
 
         patterns_df['PSY_GOLDEN_CROSS'] = crossover(psy, psyma)
         patterns_df['PSY_DEATH_CROSS'] = crossunder(psy, psyma)

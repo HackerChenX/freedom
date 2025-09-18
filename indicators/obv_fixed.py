@@ -338,32 +338,6 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning(f"OBV置信度计算失败: {e}")
             return 0.0
 
-    def get_signal(self, data: pd.DataFrame, **kwargs) -> str:
-        """
-        获取OBV信号 - 实现抽象方法
-        
-        Returns:
-            str: BUY, SELL, 或 HOLD
-        """
-        try:
-            if not self.has_result():
-                self.calculate_Obv(data, **kwargs)
-            
-            if self._result is None or len(self._result) == 0:
-                return "HOLD"
-            
-            # 获取最新的买卖信号
-            if 'buy_signal' in self._result.columns and self._result['buy_signal'].iloc[-1]:
-                return "BUY"
-            elif 'sell_signal' in self._result.columns and self._result['sell_signal'].iloc[-1]:
-                return "SELL"
-            else:
-                return "HOLD"
-                
-        except Exception as e:
-            logger.warning(f"OBV信号获取失败: {e}")
-            return "HOLD"
-
     def has_result(self) -> bool:
         """检查是否有计算结果"""
         return self._result is not None

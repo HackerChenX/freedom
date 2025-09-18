@@ -22,8 +22,8 @@ logger = get_logger(__name__)
 
 
 class EnhancedKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
-"""
-EnhancedKdj - L4核心服务层组件
+    """
+    EnhancedKdj - L4核心服务层组件
 
 职责合理性说明:
 - 作为L4层核心服务组件，承担多项相关职责

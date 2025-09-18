@@ -722,12 +722,24 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
             # 验证参数
             is_valid, errors = validator.validate_indicator_parameters('DMA', params)
             if not is_valid:
-                from utils.logger import get_logger
+                logger.warning(f"DMA参数验证失败: {'; '.join(errors)}")
         except Exception as e:
             logger.error(f"错误: {e}")
             return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
-                logger = get_logger(__name__)
+    
+    def validate_parameters(self, **kwargs):
+        """验证参数"""
+        try:
+            validator = IndicatorParameterValidator()
+            
+            # 合并默认参数和用户参数
+            params = self._default_parameters.copy()
+            params.update(kwargs)
+            
+            # 检查参数有效性
+            is_valid, errors = validator.validate_indicator_parameters('DMA', params)
+            
+            if not is_valid:
                 logger.warning(f"DMA参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()

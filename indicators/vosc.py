@@ -227,17 +227,17 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         for i in range(1, len(df_copy)):
             if df_copy['vosc'].iloc[i-1] < df_copy['vosc_signal'].iloc[i-1] and \
                df_copy['vosc'].iloc[i] > df_copy['vosc_signal'].iloc[i]:
-                df_copy.iloc[i, df_copy.columns.get_loc('vosc_buy_signal')] 1
+                df_copy.iloc[i, df_copy.columns.get_loc('vosc_buy_signal')] = 1
             
             # VOSC下穿信号线为卖出信号
             elif df_copy['vosc'].iloc[i-1] > df_copy['vosc_signal'].iloc[i-1] and \
                  df_copy['vosc'].iloc[i] < df_copy['vosc_signal'].iloc[i]:
-                df_copy.iloc[i, df_copy.columns.get_loc('vosc_sell_signal')] 1
+                df_copy.iloc[i, df_copy.columns.get_loc('vosc_sell_signal')] = 1
         
         
         # 添加形态识别和信号生成
-        df_copy self.add_pattern_detection(df_copy)
-        df_copy self.add_signal_generation(df_copy)
+        df_copy = self.add_pattern_detection(df_copy)
+        df_copy = self.add_signal_generation(df_copy)
 
         return "df_copy"
     
@@ -259,29 +259,29 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if self._result is None:
             return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
         
-        score pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 1. VOSC零轴穿越评分
-        zero_cross_score self._calculate_vosc_zero_cross_score()
+        zero_cross_score = self._calculate_vosc_zero_cross_score()
         score += zero_cross_score
         
         # 2. VOSC与信号线交叉评分
-        signal_cross_score self._calculate_vosc_signal_cross_score()
+        signal_cross_score = self._calculate_vosc_signal_cross_score()
         score += signal_cross_score
         
         # 3. VOSC趋势评分  # TODO: 将魔法数字提取到配置中
-        trend_score self._calculate_vosc_trend_score()
+        trend_score = self._calculate_vosc_trend_score()
         score += trend_score
         
         # 4. VOSC极值评分  # TODO: 将魔法数字提取到配置中
-        extreme_score self._calculate_vosc_extreme_score()
+        extreme_score = self._calculate_vosc_extreme_score()
         score += extreme_score
         
         # 5. VOSC与价格关系评分  # TODO: 将魔法数字提取到配置中
-        price_relation_score self._calculate_vosc_price_relation_score(data)
+        price_relation_score = self._calculate_vosc_price_relation_score(data)
         score += price_relation_score
         
-        return "np.clip(score, 0, 100)"
+        return np.clip(score, 0, 100)
     
     def identify_patterns_Vosc(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
@@ -294,36 +294,36 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 识别出的形态列表
         """
-        patterns []
+        patterns = []
         
         # 确保已计算VOSC
         if not self.has_result():
             self.calculate_Vosc(data, **kwargs)
         
         if self._result is None:
-            return "patterns"
+            return patterns
         
         # 1. 检测VOSC零轴穿越形态
-        zero_cross_patterns self._detect_vosc_zero_cross_patterns()
+        zero_cross_patterns = self._detect_vosc_zero_cross_patterns()
         patterns.extend(zero_cross_patterns)
         
         # 2. 检测VOSC与信号线交叉形态
-        signal_cross_patterns self._detect_vosc_signal_cross_patterns()
+        signal_cross_patterns = self._detect_vosc_signal_cross_patterns()
         patterns.extend(signal_cross_patterns)
         
         # 3. 检测VOSC趋势形态  # TODO: 将魔法数字提取到配置中
-        trend_patterns self._detect_vosc_trend_patterns()
+        trend_patterns = self._detect_vosc_trend_patterns()
         patterns.extend(trend_patterns)
         
         # 4. 检测VOSC极值形态  # TODO: 将魔法数字提取到配置中
-        extreme_patterns self._detect_vosc_extreme_patterns()
+        extreme_patterns = self._detect_vosc_extreme_patterns()
         patterns.extend(extreme_patterns)
         
         # 5. 检测VOSC与价格关系形态  # TODO: 将魔法数字提取到配置中
-        price_relation_patterns self._detect_vosc_price_relation_patterns(data)
+        price_relation_patterns = self._detect_vosc_price_relation_patterns(data)
         patterns.extend(price_relation_patterns)
         
-        return "patterns"
+        return patterns
     
     def _calculate_vosc_zero_cross_score(self) -> pd.Series:
         """
@@ -332,27 +332,27 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 零轴穿越评分
         """
-        zero_cross_score pd.Series(0.0, index=self._result.index)
+        zero_cross_score = pd.Series(0.0, index=self._result.index)
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         # VOSC上穿零轴+25分
-        vosc_cross_up_zero crossover(vosc_values, 0)
+        vosc_cross_up_zero = crossover(vosc_values, 0)
         zero_cross_score += vosc_cross_up_zero * 25  # TODO: 将魔法数字提取到配置中
         
         # VOSC下穿零轴-25分
-        vosc_cross_down_zero crossunder(vosc_values, 0)
+        vosc_cross_down_zero = crossunder(vosc_values, 0)
         zero_cross_score -= vosc_cross_down_zero * 25  # TODO: 将魔法数字提取到配置中
         
         # VOSC在零轴上方+8分
-        vosc_above_zero vosc_values > 0
+        vosc_above_zero = vosc_values > 0
         zero_cross_score += vosc_above_zero * 8  # TODO: 将魔法数字提取到配置中
         
         # VOSC在零轴下方-8分
-        vosc_below_zero vosc_values < 0
+        vosc_below_zero = vosc_values < 0
         zero_cross_score -= vosc_below_zero * 8  # TODO: 将魔法数字提取到配置中
         
-        return "zero_cross_score"
+        return zero_cross_score
     
     def _calculate_vosc_signal_cross_score(self) -> pd.Series:
         """
@@ -361,28 +361,28 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 信号线交叉评分
         """
-        signal_cross_score pd.Series(0.0, index=self._result.index)
+        signal_cross_score = pd.Series(0.0, index=self._result.index)
         
-        vosc_values self._result['vosc']
-        signal_values self._result['vosc_signal']
+        vosc_values = self._result['vosc']
+        signal_values = self._result['vosc_signal']
         
         # VOSC上穿信号线+20分
-        vosc_cross_up_signal crossover(vosc_values, signal_values)
+        vosc_cross_up_signal = crossover(vosc_values, signal_values)
         signal_cross_score += vosc_cross_up_signal * 20  # TODO: 将魔法数字提取到配置中
         
         # VOSC下穿信号线-20分
-        vosc_cross_down_signal crossunder(vosc_values, signal_values)
+        vosc_cross_down_signal = crossunder(vosc_values, signal_values)
         signal_cross_score -= vosc_cross_down_signal * 20  # TODO: 将魔法数字提取到配置中
         
         # VOSC在信号线上方+5分
-        vosc_above_signal vosc_values > signal_values
+        vosc_above_signal = vosc_values > signal_values
         signal_cross_score += vosc_above_signal * 5  # TODO: 将魔法数字提取到配置中
         
         # VOSC在信号线下方-5分
-        vosc_below_signal vosc_values < signal_values
+        vosc_below_signal = vosc_values < signal_values
         signal_cross_score -= vosc_below_signal * 5  # TODO: 将魔法数字提取到配置中
         
-        return "signal_cross_score"
+        return signal_cross_score
     
     def _calculate_vosc_trend_score(self) -> pd.Series:
         """
@@ -391,21 +391,21 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 趋势评分
         """
-        trend_score pd.Series(0.0, index=self._result.index)
+        trend_score = pd.Series(0.0, index=self._result.index)
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         # VOSC上升趋势+10分
-        vosc_rising vosc_values > vosc_values.shift(1)
+        vosc_rising = vosc_values > vosc_values.shift(1)
         trend_score += vosc_rising * 10
         
         # VOSC下降趋势-10分
-        vosc_falling vosc_values < vosc_values.shift(1)
+        vosc_falling = vosc_values < vosc_values.shift(1)
         trend_score -= vosc_falling * 10
         
         # VOSC连续上升(3个周期)+15分
         if len(vosc_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            consecutive_rising (
+            consecutive_rising = (
                 (vosc_values > vosc_values.shift(1)) &
                 (vosc_values.shift(1) > vosc_values.shift(2)) &
                 (vosc_values.shift(2) > vosc_values.shift(3))  # TODO: 将魔法数字提取到配置中
@@ -414,7 +414,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # VOSC连续下降(3个周期)-15分
         if len(vosc_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            consecutive_falling (
+            consecutive_falling = (
                 (vosc_values < vosc_values.shift(1)) &
                 (vosc_values.shift(1) < vosc_values.shift(2)) &
                 (vosc_values.shift(2) < vosc_values.shift(3))  # TODO: 将魔法数字提取到配置中
@@ -430,16 +430,16 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 极值评分
         """
-        extreme_score pd.Series(0.0, index=self._result.index)
+        extreme_score = pd.Series(0.0, index=self._result.index)
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         # VOSC极度超买(>50)-20分  # TODO: 将魔法数字提取到配置中
-        vosc_extreme_overbought vosc_values > 50  # TODO: 将魔法数字提取到配置中
+        vosc_extreme_overbought = vosc_values > 50  # TODO: 将魔法数字提取到配置中
         extreme_score -= vosc_extreme_overbought * 20  # TODO: 将魔法数字提取到配置中
         
         # VOSC极度超卖(<-50)+20分  # TODO: 将魔法数字提取到配置中
-        vosc_extreme_oversold vosc_values < -50  # TODO: 将魔法数字提取到配置中
+        vosc_extreme_oversold = vosc_values < -50  # TODO: 将魔法数字提取到配置中
         extreme_score += vosc_extreme_oversold * 20  # TODO: 将魔法数字提取到配置中
         
         # VOSC超买(>20)-10分  # TODO: 将魔法数字提取到配置中
@@ -462,31 +462,31 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 价格关系评分
         """
-        price_relation_score pd.Series(0.0, index=self._result.index)
+        price_relation_score = pd.Series(0.0, index=self._result.index)
         
         if 'close' not in data.columns:
             return "price_relation_score"
         
-        close_price data['close']
-        vosc_values self._result['vosc']
+        close_price = data['close']
+        vosc_values = self._result['vosc']
         
         # 计算价格变化率
-        close_price.pct_change()
+        price_change = close_price.pct_change()
         
         # 价格上涨且VOSC为正+12分
-        price_up_vosc_positive (> 0) & (vosc_values > 0)
+        price_up_vosc_positive = (price_change > 0) & (vosc_values > 0)
         price_relation_score += price_up_vosc_positive * 12  # TODO: 将魔法数字提取到配置中
         
         # 价格下跌且VOSC为负-12分
-        price_down_vosc_negative (< 0) & (vosc_values < 0)
+        price_down_vosc_negative = (price_change < 0) & (vosc_values < 0)
         price_relation_score -= price_down_vosc_negative * 12  # TODO: 将魔法数字提取到配置中
         
         # 价格上涨但VOSC为负(量价背离)-15分
-        price_up_vosc_negative (> 0) & (vosc_values < 0)
+        price_up_vosc_negative = (price_change > 0) & (vosc_values < 0)
         price_relation_score -= price_up_vosc_negative * 15  # TODO: 将魔法数字提取到配置中
         
         # 价格下跌但VOSC为正(量价背离)+15分
-        price_down_vosc_positive (< 0) & (vosc_values > 0)
+        price_down_vosc_positive = (price_change < 0) & (vosc_values > 0)
         price_relation_score += price_down_vosc_positive * 15  # TODO: 将魔法数字提取到配置中
         
         return "price_relation_score"
@@ -498,13 +498,13 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 零轴穿越形态列表
         """
-        patterns []
+        patterns = []
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         # 检查最近的零轴穿越
-        recent_periods min(5, len(vosc_values))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        recent_vosc vosc_values.tail(recent_periods)
+        recent_periods = min(5, len(vosc_values))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        recent_vosc = vosc_values.tail(recent_periods)
         
         if crossover(recent_vosc, 0).any():
             patterns.append("VOSC上穿零轴")
@@ -514,7 +514,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 检查当前位置
         if len(vosc_values) > 0:
-            current_vosc vosc_values.iloc[-1]
+            current_vosc = vosc_values.iloc[-1]
             if not pd.isna(current_vosc):
                 if current_vosc > 0:
                     patterns.append("VOSC零轴上方")
@@ -532,15 +532,15 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 信号线交叉形态列表
         """
-        patterns []
+        patterns = []
         
-        vosc_values self._result['vosc']
-        signal_values self._result['vosc_signal']
+        vosc_values = self._result['vosc']
+        signal_values = self._result['vosc_signal']
         
         # 检查最近的信号线穿越
-        recent_periods min(5, len(vosc_values))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        recent_vosc vosc_values.tail(recent_periods)
-        recent_signal signal_values.tail(recent_periods)
+        recent_periods = min(5, len(vosc_values))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        recent_vosc = vosc_values.tail(recent_periods)
+        recent_signal = signal_values.tail(recent_periods)
         
         if crossover(recent_vosc, recent_signal).any():
             patterns.append("VOSC上穿信号线")
@@ -550,8 +550,8 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 检查当前位置关系
         if len(vosc_values) > 0 and len(signal_values) > 0:
-            current_vosc vosc_values.iloc[-1]
-            current_signal signal_values.iloc[-1]
+            current_vosc = vosc_values.iloc[-1]
+            current_signal = signal_values.iloc[-1]
             
             if not pd.isna(current_vosc) and not pd.isna(current_signal):
                 if current_vosc > current_signal:
@@ -570,13 +570,13 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 趋势形态列表
         """
-        patterns []
+        patterns = []
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         # 检查VOSC趋势
         if len(vosc_values) >= 3:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            recent_3 vosc_values.tail(3)  # TODO: 将魔法数字提取到配置中
+            recent_3 = vosc_values.tail(3)  # TODO: 将魔法数字提取到配置中
             if len(recent_3) == 3 and not recent_3.isna().any():  # TODO: 将魔法数字提取到配置中
                 if (recent_3.iloc[2] > recent_3.iloc[1] > recent_3.iloc[0]):
                     patterns.append("VOSC连续上升")
@@ -585,8 +585,8 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 检查当前趋势
         if len(vosc_values) >= 2:
-            current_vosc vosc_values.iloc[-1]
-            prev_vosc vosc_values.iloc[-2]
+            current_vosc = vosc_values.iloc[-1]
+            prev_vosc = vosc_values.iloc[-2]
             
             if not pd.isna(current_vosc) and not pd.isna(prev_vosc):
                 if current_vosc > prev_vosc:
@@ -605,12 +605,12 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 极值形态列表
         """
-        patterns []
+        patterns = []
         
-        vosc_values self._result['vosc']
+        vosc_values = self._result['vosc']
         
         if len(vosc_values) > 0:
-            current_vosc vosc_values.iloc[-1]
+            current_vosc = vosc_values.iloc[-1]
             
             if pd.isna(current_vosc):
                 return "patterns"
@@ -638,22 +638,22 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 价格关系形态列表
         """
-        patterns []
+        patterns = []
         
         if 'close' not in data.columns:
             return "patterns"
         
-        close_price data['close']
-        vosc_values self._result['vosc']
+        close_price = data['close']
+        vosc_values = self._result['vosc']
         
         if len(close_price) >= 5:  # TODO: 将魔法数字提取到配置中
             # 检查最近5个周期的价格和VOSC关系
-            recent_price close_price.tail(5)  # TODO: 将魔法数字提取到配置中
-            recent_vosc vosc_values.tail(5)  # TODO: 将魔法数字提取到配置中
+            recent_price = close_price.tail(5)  # TODO: 将魔法数字提取到配置中
+            recent_vosc = vosc_values.tail(5)  # TODO: 将魔法数字提取到配置中
             
             # 计算价格和VOSC的趋势
-            price_trend recent_price.iloc[-1] - recent_price.iloc[0]
-            vosc_trend recent_vosc.iloc[-1] - recent_vosc.iloc[0]
+            price_trend = recent_price.iloc[-1] - recent_price.iloc[0]
+            vosc_trend = recent_vosc.iloc[-1] - recent_vosc.iloc[0]
             
             # 量价配合
             if price_trend > 0 and vosc_trend > 0:
@@ -686,10 +686,10 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Vosc(data, **kwargs)
         
         # 初始化信号
-        signals {
-        signals['buy_signal'] pd.Series(False, index=data.index)
-        signals['sell_signal'] pd.Series(False, index=data.index)
-        signals['signal_strength'] pd.Series(0, index=data.index)
+        signals = {}
+        signals['buy_signal'] = pd.Series(False, index=data.index)
+        signals['sell_signal'] = pd.Series(False, index=data.index)
+        signals['signal_strength'] = pd.Series(0, index=data.index)
     
         # 在这里实现指标特定的信号生成逻辑
         # 此处提供默认实现
@@ -715,59 +715,59 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return "pd.DataFrame(index=data.index)"
 
         # 获取VOSC数据
-        vosc self._result['vosc']
-        vosc_signal self._result['vosc_signal']
+        vosc = self._result['vosc']
+        vosc_signal = self._result['vosc_signal']
 
         # 创建形态DataFrame
-        patterns_df pd.DataFrame(index=data.index)
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. VOSC零轴相关形态
-        patterns_df['VOSC_ABOVE_ZERO'] vosc > 0
-        patterns_df['VOSC_BELOW_ZERO'] vosc < 0
-        patterns_df['VOSC_CROSS_ABOVE_ZERO'] (vosc > 0) & (vosc.shift(1) <= 0)
-        patterns_df['VOSC_CROSS_BELOW_ZERO'] (vosc < 0) & (vosc.shift(1) >= 0)
+        patterns_df['VOSC_ABOVE_ZERO'] = vosc > 0
+        patterns_df['VOSC_BELOW_ZERO'] = vosc < 0
+        patterns_df['VOSC_CROSS_ABOVE_ZERO'] = (vosc > 0) & (vosc.shift(1) <= 0)
+        patterns_df['VOSC_CROSS_BELOW_ZERO'] = (vosc < 0) & (vosc.shift(1) >= 0)
 
         # 2. VOSC与信号线关系
-        patterns_df['VOSC_ABOVE_SIGNAL'] vosc > vosc_signal
-        patterns_df['VOSC_BELOW_SIGNAL'] vosc < vosc_signal
-        patterns_df['VOSC_GOLDEN_CROSS'] (vosc > vosc_signal) & (vosc.shift(1) <= vosc_signal.shift(1))
-        patterns_df['VOSC_DEATH_CROSS'] (vosc < vosc_signal) & (vosc.shift(1) >= vosc_signal.shift(1))
+        patterns_df['VOSC_ABOVE_SIGNAL'] = vosc > vosc_signal
+        patterns_df['VOSC_BELOW_SIGNAL'] = vosc < vosc_signal
+        patterns_df['VOSC_GOLDEN_CROSS'] = (vosc > vosc_signal) & (vosc.shift(1) <= vosc_signal.shift(1))
+        patterns_df['VOSC_DEATH_CROSS'] = (vosc < vosc_signal) & (vosc.shift(1) >= vosc_signal.shift(1))
 
         # 3. VOSC趋势形态  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_RISING'] vosc > vosc.shift(1)
-        patterns_df['VOSC_FALLING'] vosc < vosc.shift(1)
-        patterns_df['VOSC_UPTREND'] (
+        patterns_df['VOSC_RISING'] = vosc > vosc.shift(1)
+        patterns_df['VOSC_FALLING'] = vosc < vosc.shift(1)
+        patterns_df['VOSC_UPTREND'] = (
             (vosc > vosc.shift(1)) &
             (vosc.shift(1) > vosc.shift(2)) &
             (vosc.shift(2) > vosc.shift(3))  # TODO: 将魔法数字提取到配置中
         )
-        patterns_df['VOSC_DOWNTREND'] (
+        patterns_df['VOSC_DOWNTREND'] = (
             (vosc < vosc.shift(1)) &
             (vosc.shift(1) < vosc.shift(2)) &
             (vosc.shift(2) < vosc.shift(3))  # TODO: 将魔法数字提取到配置中
         )
 
         # 4. VOSC极值形态  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_EXTREME_HIGH'] vosc > 50  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_HIGH'] (vosc > 20) & (vosc <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_EXTREME_LOW'] vosc < -50  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_LOW'] (vosc < -20) & (vosc >= -50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        patterns_df['VOSC_NEUTRAL'] (vosc >= -10) & (vosc <= 10)
+        patterns_df['VOSC_EXTREME_HIGH'] = vosc > 50  # TODO: 将魔法数字提取到配置中
+        patterns_df['VOSC_HIGH'] = (vosc > 20) & (vosc <= 50)  # TODO: 将魔法数字提取到配置中
+        patterns_df['VOSC_EXTREME_LOW'] = vosc < -50  # TODO: 将魔法数字提取到配置中
+        patterns_df['VOSC_LOW'] = (vosc < -20) & (vosc >= -50)  # TODO: 将魔法数字提取到配置中
+        patterns_df['VOSC_NEUTRAL'] = (vosc >= -10) & (vosc <= 10)  # TODO: 将魔法数字提取到配置中
 
         # 5. VOSC与价格关系形态  # TODO: 将魔法数字提取到配置中
         if 'close' in data.columns:
-            data['close'].pct_change()
-            patterns_df['VOSC_PRICE_CONFIRMATION'] (
-                ((> 0) & (vosc > 0)) |
-                ((< 0) & (vosc < 0))
+            price_change = data['close'].pct_change()
+            patterns_df['VOSC_PRICE_CONFIRMATION'] = (
+                ((price_change > 0) & (vosc > 0)) |
+                ((price_change < 0) & (vosc < 0))
             )
-            patterns_df['VOSC_PRICE_DIVERGENCE'] (
-                ((> 0) & (vosc < 0)) |
-                ((< 0) & (vosc > 0))
+            patterns_df['VOSC_PRICE_DIVERGENCE'] = (
+                ((price_change > 0) & (vosc < 0)) |
+                ((price_change < 0) & (vosc > 0))
             )
         else:
-            patterns_df['VOSC_PRICE_CONFIRMATION'] False
-            patterns_df['VOSC_PRICE_DIVERGENCE'] False
+            patterns_df['VOSC_PRICE_CONFIRMATION'] = False
+            patterns_df['VOSC_PRICE_DIVERGENCE'] = False
 
         return "patterns_df"
 
@@ -784,18 +784,18 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 1. 计算原始评分序列
-            raw_scores self.calculate_raw_score_Vosc(data, **kwargs)
+            raw_scores = self.calculate_raw_score_Vosc(data, **kwargs)
 
             # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
-                return {'score': 50.0, 'confidence': 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                return {'score': 50.0, 'confidence': 0.5}  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
             # 取最近的评分作为最终评分,但考虑近期趋势
-            recent_scores raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
-            trend recent_scores.iloc[-1] - recent_scores.iloc[0]
+            recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
+            trend = recent_scores.iloc[-1] - recent_scores.iloc[0]
 
             # 最终评分 最新评分 + 趋势调整
-            final_score recent_scores.iloc[-1] + trend / 2
+            final_score = recent_scores.iloc[-1] + trend / 2
 
             # 确保评分在0-100范围内
             final_score = max(0, min(100, final_score))
@@ -809,6 +809,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return {
                 'score': final_score,
                 'confidence': confidence
+            }
 
         except Exception as e:
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
@@ -825,7 +826,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC从下方穿越零轴,表明短期成交量超过长期成交量",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=15.0,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -835,7 +836,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC从上方穿越零轴,表明短期成交量低于长期成交量",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-15.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=-15.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -846,7 +847,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC上穿信号线,表明成交量动量增强",
             pattern_type="BULLISH",
             default_strength="MEDIUM",
-            score_impact=12.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=12.0  ,  # TODO: 将魔法数字提取到配置中
             polarity="POSITIVE"
         )
 
@@ -856,7 +857,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC下穿信号线,表明成交量动量减弱",
             pattern_type="BEARISH",
             default_strength="MEDIUM",
-            score_impact=-12.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=-12.0  ,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE"
         )
 
@@ -888,7 +889,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC值异常高,表明短期成交量远超长期成交量",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=18.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=18.0  ,  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
@@ -898,7 +899,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             description="VOSC值异常低,表明短期成交量远低于长期成交量",
             pattern_type="BEARISH",
             default_strength="STRONG",
-            score_impact=-18.0  # TODO: 将魔法数字提取到配置中,  # TODO: 将魔法数字提取到配置中
+            score_impact=-18.0  ,  # TODO: 将魔法数字提取到配置中
             polarity="NEUTRAL"
         )
 
@@ -928,7 +929,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         注册VOSC指标相关形态
         """
         # 获取PatternRegistry实例
-        registry Pattern_registry()
+        registry = Pattern_registry()
         
         # 注册VOSC零轴穿越形态
         registry.register(
@@ -1034,6 +1035,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             default_strength=Pattern_strength.MEDIUM,
             score_impact=-10.0
         )
+
     def get_pattern_info_Vosc(self, pattern_id: str) -> dict:
         """
         获取指定形态的详细信息
@@ -1045,16 +1047,17 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 形态详细信息
         """
         # 默认形态信息
-        default_pattern {
+        default_pattern = {
             "id": pattern_id,
             "name": pattern_id,
-            "description": f"{pattern_id形态",
+            "description": f"{pattern_id}形态",
             "type": "NEUTRAL",
             "strength": "MEDIUM",
             "score_impact": 0.0
+        }
 
         # VOSC指标特定的形态信息映射
-        pattern_info_map {
+        pattern_info_map = {
             # 基础形态
             "超买区域": {
                 "id": "超买区域",
@@ -1063,7 +1066,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "type": "BEARISH",
                 "strength": "MEDIUM",
                 "score_impact": -10.0
-            ,
+            },
             "超卖区域": {
                 "id": "超卖区域", 
                 "name": "超卖区域",
@@ -1113,9 +1116,10 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 "type": "BEARISH",
                 "strength": "STRONG",
                 "score_impact": -20.0  # TODO: 将魔法数字提取到配置中
+            }
+        }
 
-
-        return "pattern_info_map.get(pattern_id, default_pattern)"
+        return pattern_info_map.get(pattern_id, default_pattern)
 
 
 
@@ -1133,21 +1137,20 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator IndicatorParameterValidator()
+            validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
-            params self._default_parameters.copy()
+            params = self._default_parameters.copy()
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('VOSC', params)
+            is_valid, errors = validator.validate_indicator_parameters('VOSC', params)
             if not is_valid:
                 from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-                logger get_logger(__name__)
-                logger.warning(f"VOSC参数验证失败: {'; '.join(errors)")
+                logger = get_logger(__name__)
+                logger.warning(f"VOSC参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
-                params self._default_parameters.copy()
+                params = self._default_parameters.copy()
             
             # 设置参数(保持向后兼容)
             for key, value in params.items():
@@ -1168,8 +1171,8 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             int: 最少需要的数据周期数
         """
-        short_period self._parameters.get('short_period', 12)  # TODO: 将魔法数字提取到配置中
-        long_period self._parameters.get('long_period', 26)  # TODO: 将魔法数字提取到配置中
+        short_period = self._parameters.get('short_period', 12)  # TODO: 将魔法数字提取到配置中
+        long_period = self._parameters.get('long_period', 26)  # TODO: 将魔法数字提取到配置中
         return "max(short_period, long_period) + 10"
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
@@ -1249,4 +1252,4 @@ from db.sql_manager import SQLManager, QueryType
 
 
 # 类别名
-VOSC Vosc
+VOSC = Vosc

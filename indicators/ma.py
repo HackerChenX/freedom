@@ -295,6 +295,36 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return result_df
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> str:
+        """
+        获取MA信号 - 实现抽象方法
+
+        Returns:
+            str: BUY, SELL, 或 HOLD
+        """
+        try:
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return "HOLD"
+
+            # 获取最新的买卖信号
+            if 'buy_signal' in self._result.columns and self._result['buy_signal'].iloc[-1]:
+                return "BUY"
+            elif 'sell_signal' in self._result.columns and self._result['sell_signal'].iloc[-1]:
+                return "SELL"
+            else:
+                return "HOLD"
+
+        except Exception as e:
+            logger.warning(f"MA信号获取失败: {e}")
+            return "HOLD"
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None
+
     def calculate_raw_score_Ma(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
         计算MA原始评分.
@@ -461,27 +491,27 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_GOLDEN_CROSS",
-            display_name=f"MA_Ma({p_short},{p_medium})金叉",
+            display_name=f"MA({p_short},{p_medium})金叉",
             description=f"当短期MA({p_short})上穿中期MA({p_medium})时,被视为看涨信号.",
-            pattern_type=Pattern_type.BULLISH,
+            pattern_type="BULLISH",
             polarity="POSITIVE",
         )
         self.register_pattern_to_registry(
             pattern_id=f"MA_{p_short}_{p_medium}_DEATH_CROSS",
-            display_name=f"MA_Ma({p_short},{p_medium})死叉",
+            display_name=f"MA({p_short},{p_medium})死叉",
             description=f"当短期MA({p_short})下穿中期MA({p_medium})时,被视为看跌信号.",
-            pattern_type=Pattern_type.BEARISH,
+            pattern_type="BEARISH",
             polarity="NEGATIVE",
         )
 
-        # 注册MA排列形态(从centralized mapping迁移)
+        # 注册MA排列形态
         self.register_pattern_to_registry(
             pattern_id="MA_BULLISH_ARRANGEMENT",
             display_name="均线多头排列",
             description="短期均线在长期均线之上,形成多头排列",
             pattern_type="BULLISH",
             default_strength="STRONG",
-            score_impact=20.0,  # TODO: 将魔法数字提取到配置中
+            score_impact=20.0,
             polarity="POSITIVE",
         )
 

@@ -80,10 +80,10 @@ class CompleteIndicatorRegistry:
         logger.info("注册核心指标...")
 
         core_indicators = {
-            "MA": "indicators.ma.MA",
-            "EMA": "indicators.ema.EMA",
-            "MACD": "indicators.macd.MACD",
-            "RSI": "indicators.rsi.RSI",
+            "MA": "indicators.ma.MaMa",
+            "EMA": "indicators.ema.EmaEma",
+            "MACD": "indicators.macd.MacdMacd",
+            "RSI": "indicators.score_indicators.RSIScoreIndicator",
             "BOLL": "indicators.boll.BOLL",
             "PSY": "indicators.psy.PSY",
         }

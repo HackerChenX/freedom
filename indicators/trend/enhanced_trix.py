@@ -352,7 +352,7 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX未创新低
                     if trix.iloc[current_trix_trough] > trix.iloc[prev_trix_trough]:
                         # 计算背离强度
-                        = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
+                        price_change = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
                         trix_change = (trix.iloc[current_trix_trough] / trix.iloc[prev_trix_trough]) - 1
                         # 防止除以零
                         if max(abs(), abs(trix_change)) > 0:
@@ -395,11 +395,11 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX未创新高
                     if trix.iloc[current_trix_peak] < trix.iloc[prev_trix_peak]:
                         # 计算背离强度
-                        = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
+                        price_change = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
                         trix_change = (trix.iloc[current_trix_peak] / trix.iloc[prev_trix_peak]) - 1
                         # 防止除以零
-                        if max(abs(), abs(trix_change)) > 0:
-                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
+                        if max(abs(price_change), abs(trix_change)) > 0:
+                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
                         else:
                             strength = 0
                         
@@ -438,11 +438,11 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX更低的低点
                     if trix.iloc[current_trix_trough] < trix.iloc[prev_trix_trough]:
                         # 计算背离强度
-                        = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
+                        price_change = (price.iloc[current_trough_idx] / price.iloc[prev_trough_idx]) - 1
                         trix_change = (trix.iloc[current_trix_trough] / trix.iloc[prev_trix_trough]) - 1
                         # 防止除以零
-                        if max(abs(), abs(trix_change)) > 0:
-                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
+                        if max(abs(price_change), abs(trix_change)) > 0:
+                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
                         else:
                             strength = 0
                         
@@ -481,11 +481,11 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     # TRIX更高的高点
                     if trix.iloc[current_trix_peak] > trix.iloc[prev_trix_peak]:
                         # 计算背离强度
-                        = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
+                        price_change = (price.iloc[current_peak_idx] / price.iloc[prev_peak_idx]) - 1
                         trix_change = (trix.iloc[current_trix_peak] / trix.iloc[prev_trix_peak]) - 1
                         # 防止除以零
-                        if max(abs(), abs(trix_change)) > 0:
-                            strength = abs(- trix_change) / max(abs(), abs(trix_change))
+                        if max(abs(price_change), abs(trix_change)) > 0:
+                            strength = abs(price_change - trix_change) / max(abs(price_change), abs(trix_change))
                         else:
                             strength = 0
                         

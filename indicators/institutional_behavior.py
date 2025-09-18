@@ -15,6 +15,8 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from db.sql_manager import SQLManager, QueryType
+from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -70,7 +72,10 @@ class InstitutionalBehavior(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         except Exception as e:
             logger.error(f"错误: {e}")
             return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
+    
+    def validate_parameters(self, **kwargs):
+        """验证参数"""
+        try:
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -155,8 +160,8 @@ from db.sql_manager import SQLManager, QueryType
         large_volume = df['volume'] > volume_ma * 2  # 大成交量
 
         # 2. 价格稳定性(机构通常不会造成剧烈波动)
-        = df['close'].pct_change().fillna(0)
-        price_volatility = .rolling(window=10, min_periods=1).std().fillna(0)
+        price_change = df['close'].pct_change().fillna(0)
+        price_volatility = price_change.rolling(window=10, min_periods=1).std().fillna(0)
         stable_price = price_volatility < price_volatility.rolling(window=30, min_periods=1).mean()  # TODO: 将魔法数字提取到配置中
         
         # 3. 连续性分析(机构操作通常有连续性)  # TODO: 将魔法数字提取到配置中
@@ -415,23 +420,23 @@ class FundFlow(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         volume = result['volume']
 
         # 计算价量关系
-        = close.pct_change()
+        price_change = close.pct_change()
         volume_change = volume.pct_change()
 
         # 机构行为指标:价涨量增为正,价跌量增为负
         institutional_behavior = pd.Series(0.0, index=data.index)
 
         # 价涨量增(机构买入)
-        institutional_behavior[(> 0) & (volume_change > 0)] = 1
+        institutional_behavior[(price_change > 0) & (volume_change > 0)] = 1
 
         # 价跌量增(机构卖出)
-        institutional_behavior[(< 0) & (volume_change > 0)] = -1
+        institutional_behavior[(price_change < 0) & (volume_change > 0)] = -1
 
         # 价涨量缩(散户跟风)
-        institutional_behavior[(> 0) & (volume_change < 0)] = 0.5  # TODO: 将魔法数字提取到配置中
+        institutional_behavior[(price_change > 0) & (volume_change < 0)] = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 价跌量缩(恐慌抛售)
-        institutional_behavior[(< 0) & (volume_change < 0)] = -0.5  # TODO: 将魔法数字提取到配置中
+        institutional_behavior[(price_change < 0) & (volume_change < 0)] = -0.5  # TODO: 将魔法数字提取到配置中
 
         # 平滑处理
         institutional_behavior_smooth = institutional_behavior.rolling(window=self.volume_period).mean()

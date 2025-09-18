@@ -67,7 +67,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """生成交易信号"""
         result = self.calculate_Vix(data, **kwargs)
-        signals_df pd.DataFrame(index=data.index)
+        signals_df = pd.DataFrame(index=data.index)
         
         if 'vix' in result.columns:
             vix = result['vix'].fillna(0)
@@ -92,7 +92,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         signals_df = self.generate_signals_Vix(data)
 
         # 转换为字典格式
-        signals {
+        signals = {}
         if not signals_df.empty:
             latest_signals = signals_df.iloc[-1]
             for col in signals_df.columns:
@@ -155,7 +155,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         vix_smooth = self._result['vix_smooth']
 
         # 创建形态DataFrame
-        patterns_df pd.DataFrame(index=data.index)
+        patterns_df = pd.DataFrame(index=data.index)
 
         # 1. VIX水平形态
         patterns_df['VIX_EXTREME_PANIC'] = vix > 50  # TODO: 将魔法数字提取到配置中
@@ -190,9 +190,9 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns_df['VIX_FAR_BELOW_SMOOTH'] = vix < vix_smooth * 0.8  # TODO: 将魔法数字提取到配置中
 
         # 5. VIX历史位置形态  # TODO: 将魔法数字提取到配置中
-        if len(vix) >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            vix_60_max vix.rolling(window=60).max()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            vix_60_min vix.rolling(window=60).min()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        if len(vix) >= 60:  # TODO: 将魔法数字提取到配置中
+            vix_60_max = vix.rolling(window=60).max()  # TODO: 将魔法数字提取到配置中
+            vix_60_min = vix.rolling(window=60).min()  # TODO: 将魔法数字提取到配置中
             vix_percentile = (vix - vix_60_min) / (vix_60_max - vix_60_min)
 
             patterns_df['VIX_HISTORICAL_HIGH'] = vix_percentile > 0.9  # TODO: 将魔法数字提取到配置中
@@ -247,7 +247,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 3. 基于信号的置信度  # TODO: 将魔法数字提取到配置中
         if signals:
             # 检查信号强度
-            signal_count sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
+            signal_count = sum(1 for signal in signals.values() if hasattr(signal, 'any') and signal.any())
             if signal_count > 0:
                 confidence += min(signal_count * 0.1, 0.15)  # TODO: 将魔法数字提取到配置中
 
@@ -302,10 +302,10 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df_copy['daily_range'] = (df_copy['high'] - df_copy['low']) / df_copy['close'] * 100
         
         # 计算N日平均波动率
-        df_copy['vix'] df_copy['daily_range'].rolling(window=self.period).mean()
+        df_copy['vix'] = df_copy['daily_range'].rolling(window=self.period).mean()
         
         # 计算平滑后的VIX
-        df_copy['vix_smooth'] df_copy['vix'].rolling(window=self.smooth_period).mean()
+        df_copy['vix_smooth'] = df_copy['vix'].rolling(window=self.smooth_period).mean()
 
         # 不调用可能导致递归的方法
 
@@ -340,21 +340,21 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # VIX见顶回落买入信号
         for i in range(2, len(vix)):
             if vix[i-2] < vix[i-1] and vix[i] < vix[i-1]:
-                result.iloc[i, result.columns.get_loc('buy_signal')] 1
-                result.iloc[i, result.columns.get_loc('vix_buy_signal')] 1
+                result.iloc[i, result.columns.get_loc('buy_signal')] = 1
+                result.iloc[i, result.columns.get_loc('vix_buy_signal')] = 1
         
         # VIX处于低位的买入信号
-        vix_avg result['vix'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
+        vix_avg = result['vix'].rolling(window=20).mean()  # TODO: 将魔法数字提取到配置中
         for i in range(20, len(vix)):  # TODO: 将魔法数字提取到配置中
             if vix[i] < vix_avg.iloc[i] * 0.7:  # VIX低于20日均值的70%  # TODO: 将魔法数字提取到配置中
-                result.iloc[i, result.columns.get_loc('buy_signal')] 1
-                result.iloc[i, result.columns.get_loc('vix_buy_signal')] 1
+                result.iloc[i, result.columns.get_loc('buy_signal')] = 1
+                result.iloc[i, result.columns.get_loc('vix_buy_signal')] = 1
         
         # VIX急剧上升的卖出信号
         for i in range(1, len(vix)):
             if vix[i] > vix[i-1] * 1.5:  # VIX上升超过50%  # TODO: 将魔法数字提取到配置中
-                result.iloc[i, result.columns.get_loc('sell_signal')] 1
-                result.iloc[i, result.columns.get_loc('vix_sell_signal')] 1
+                result.iloc[i, result.columns.get_loc('sell_signal')] = 1
+                result.iloc[i, result.columns.get_loc('vix_sell_signal')] = 1
         
         
         # 添加形态识别和信号生成
@@ -374,9 +374,9 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Raises:
             ValueError: 如果缺少必要的列
         """
-        missing_columns [col for col in required_columns if col not in df.columns]
+        missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
-            raise = ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)")
+            raise ValueError(f"输入数据缺少必要的列: {', '.join(missing_columns)}")
 
     def calculate_raw_score_Vix(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -392,7 +392,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         indicator_data = self.calculate_Vix(data)
         
         # 初始化评分
-        score pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
+        score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
         # 获取VIX值
         vix = indicator_data['vix'].fillna(0)
@@ -452,9 +452,9 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 4. VIX相对位置评分(-15到+15分)  # TODO: 将魔法数字提取到配置中
         # 计算VIX的历史分位数
-        if len(vix) >= 60:  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            vix_60_max vix.rolling(window=60).max()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            vix_60_min vix.rolling(window=60).min()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        if len(vix) >= 60:  # TODO: 将魔法数字提取到配置中
+            vix_60_max = vix.rolling(window=60).max()  # TODO: 将魔法数字提取到配置中
+            vix_60_min = vix.rolling(window=60).min()  # TODO: 将魔法数字提取到配置中
             vix_percentile = (vix - vix_60_min) / (vix_60_max - vix_60_min)
             vix_percentile = vix_percentile.fillna(0.5)  # TODO: 将魔法数字提取到配置中
             
@@ -469,17 +469,18 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 5. VIX与价格背离评分(-25到+25分)  # TODO: 将魔法数字提取到配置中
         if 'close' in data.columns:
             close_price = data['close']
-            close_price.pct_change().fillna(0)
+            price_change = close_price.pct_change().fillna(0)
+            vix_change = vix.pct_change().fillna(0)
             
             # 检测背离
             for i in range(5, len(vix)):  # TODO: 将魔法数字提取到配置中
                 # 价格下跌但VIX下降(负背离,风险信号)
-                if (.iloc[i] < -0.02 and 
+                if (price_change.iloc[i] < -0.02 and 
                     vix_change.iloc[i] < -0.1):
                     score.iloc[i] -= 25  # TODO: 将魔法数字提取到配置中
                 
                 # 价格上涨但VIX上升(正背离,买入机会)
-                if (.iloc[i] > 0.02 and 
+                if (price_change.iloc[i] > 0.02 and 
                     vix_change.iloc[i] > 0.1):
                     score.iloc[i] += 25  # TODO: 将魔法数字提取到配置中
         
@@ -513,7 +514,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             # 如果数据不足,返回中性评分
             if len(raw_scores) < 3:  # TODO: 将魔法数字提取到配置中
-                return {'score': 50.0, 'confidence': 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+                return {'score': 50.0, 'confidence': 0.5}  # TODO: 将魔法数字提取到配置中
 
             # 取最近的评分作为最终评分,但考虑近期趋势
             recent_scores = raw_scores.iloc[-3:]  # TODO: 将魔法数字提取到配置中
@@ -534,6 +535,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return {
                 'score': final_score,
                 'confidence': confidence
+            }
 
         except Exception as e:
             logger.error(f"为指标 {self.name} 计算评分时出错: {e}")
@@ -641,7 +643,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             List[str]: 识别出的形态列表
         """
-        patterns []
+        patterns = []
         
         # 计算指标值
         indicator_data = self.calculate_Vix(data)
@@ -723,14 +725,14 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 6. VIX背离形态  # TODO: 将魔法数字提取到配置中
         if 'close' in data.columns and len(data) >= 10:
             close_price = data['close']
-            close_price.pct_change()
+            price_change = close_price.pct_change()
             vix_change = vix.pct_change()
             
             # 检测最近的背离
-            if (pd.notna(.iloc[-1]) and pd.notna(vix_change.iloc[-1])):
-                if (.iloc[-1] < -0.02 and vix_change.iloc[-1] < -0.1):
+            if (pd.notna(price_change.iloc[-1]) and pd.notna(vix_change.iloc[-1])):
+                if (price_change.iloc[-1] < -0.02 and vix_change.iloc[-1] < -0.1):
                     patterns.append("VIX负背离")
-                elif (.iloc[-1] > 0.02 and vix_change.iloc[-1] > 0.1):
+                elif (price_change.iloc[-1] > 0.02 and vix_change.iloc[-1] > 0.1):
                     patterns.append("VIX正背离")
         
         # 7. VIX历史分位数形态  # TODO: 将魔法数字提取到配置中
@@ -762,9 +764,9 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             dict: 形态信息字典
         """
         # 默认形态信息映射
-        pattern_info_map {
+        pattern_info_map = {
             # 基础形态
-            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH',
+            'bullish': {'name': '看涨形态', 'description': '指标显示看涨信号', 'type': 'BULLISH'},
             'bearish': {'name': '看跌形态', 'description': '指标显示看跌信号', 'type': 'BEARISH'},
             'neutral': {'name': '中性形态', 'description': '指标显示中性信号', 'type': 'NEUTRAL'},
             
@@ -773,14 +775,16 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             'weak_signal': {'name': '弱信号', 'description': '较弱的技术信号', 'type': 'WEAK'},
             'trend_up': {'name': '上升趋势', 'description': '价格呈上升趋势', 'type': 'BULLISH'},
             'trend_down': {'name': '下降趋势', 'description': '价格呈下降趋势', 'type': 'BEARISH'},
+        }
 
         # 默认形态信息
-        default_pattern {
+        default_pattern = {
             'name': pattern_id.replace('_', ' ').title(),
-            'description': f'{pattern_id形态',
+            'description': f'{pattern_id}形态',
             'type': 'UNKNOWN'
+        }
 
-        return "pattern_info_map.get(pattern_id, default_pattern)"
+        return pattern_info_map.get(pattern_id, default_pattern)
 
 
 
@@ -798,7 +802,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-from db.sql_manager import SQLManager, QueryType
+            from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -806,9 +810,9 @@ from db.sql_manager import SQLManager, QueryType
             params.update(kwargs)
             
             # 验证参数
-            is_valid, errors validator.validate_indicator_parameters('VIX', params)
+            is_valid, errors = validator.validate_indicator_parameters('VIX', params)
             if not is_valid:
-                logger.warning(f"VIX参数验证失败: {'; '.join(errors)")
+                logger.warning(f"VIX参数验证失败: {'; '.join(errors)}")
                 # 使用默认参数
                 params = self._default_parameters.copy()
             
@@ -840,7 +844,7 @@ from db.sql_manager import SQLManager, QueryType
                 return "None"
 
             # 获取VIX值
-            vix_cols [col for col in result.columns if 'vix' in col.lower()]
+            vix_cols = [col for col in result.columns if 'vix' in col.lower()]
             if not vix_cols:
                 return "None"
 
@@ -869,7 +873,7 @@ from db.sql_manager import SQLManager, QueryType
             return "min(100, max(0, score))"
 
         except Exception as e:
-            logger.error(f"VIX calculate_raw_score计算失败: {e")
+            logger.error(f"VIX calculate_raw_score计算失败: {e}")
             return "None"
 
     @property
@@ -888,5 +892,5 @@ from db.sql_manager import SQLManager, QueryType
 
 
 # 添加类别名供注册系统使用
-VIX Vix
-VolatilityIndex Vix
+VIX = Vix
+VolatilityIndex = Vix
