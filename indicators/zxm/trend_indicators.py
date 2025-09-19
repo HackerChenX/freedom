@@ -87,6 +87,11 @@ class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZX
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
         """初始化ZXM趋势-日线上移指标"""
         super().__init__(name="ZXMDailyTrendUp", description="ZXM趋势-日线上移指标，判断日线均线是否向上")
+        
+        # ZXM日线趋势指标参数
+        self.ma60_period = 60
+        self.ma120_period = 120
+        self.trend_check_period = 5
 
     def _calculate_trendindicators(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -137,6 +142,20 @@ class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZX
         result.loc[:, "sell_signal"] = result["XG"] == False
         result.loc[:, "hold_signal"] = result["XG"] == False
 
+        return result
+
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        计算ZXM日线趋势上移指标（抽象方法实现）
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            pd.DataFrame: 包含指标计算结果的数据框
+        """
+        result = self._calculate_trendindicators(data)
+        self._result = result
         return result
 
     def calculate_raw_score_Indicators_trendindicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
@@ -625,17 +644,161 @@ class ZxmdailyTrendUp(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZX
         # 日线上移指标没有可调参数，保持默认实现
         pass
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM日线趋势上移交易信号（抽象方法实现）
+        
+        基于60日和120日均线上移判断趋势信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        if 'close' not in data.columns:
+            return self._get_default_signal("缺少必需的'close'列")
+        
+        if len(data) < self.minimum_periods:
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM日线趋势指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return self._get_default_signal("指标计算结果为空")
+                
+            # 3. 获取最新数据
+            latest_data = result.iloc[-1]
+            
+            # 4. 获取关键指标值
+            j1 = latest_data.get('J1', False)  # 60日均线上移
+            j2 = latest_data.get('J2', False)  # 120日均线上移  
+            xg = latest_data.get('XG', False)  # 趋势信号
+            ma60 = latest_data.get('MA60', 0)
+            ma120 = latest_data.get('MA120', 0)
+            close_price = latest_data.get('close', 0)
+            
+            # 5. 信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "ZXM日线趋势无明显信号"
+            
+            # 根据XG信号判断
+            if xg:
+                # 双均线同时上移：最强买入信号
+                if j1 and j2:
+                    signal_type = "buy"
+                    strength = 0.9
+                    confidence = 0.95
+                    reason = "60日和120日均线同时上移，强力买入信号"
+                # 单均线上移：一般买入信号
+                elif j1:
+                    signal_type = "buy"
+                    strength = 0.7
+                    confidence = 0.8
+                    reason = "60日均线上移，买入信号"
+                elif j2:
+                    signal_type = "buy"
+                    strength = 0.75
+                    confidence = 0.85
+                    reason = "120日均线上移，买入信号"
+                else:
+                    # 有信号但无明确均线上移，可能是边界情况
+                    signal_type = "hold"
+                    strength = 0.3
+                    confidence = 0.6
+                    reason = "趋势信号模糊"
+            else:
+                # 均线非上移：观望或谨慎信号
+                signal_type = "hold"
+                strength = 0.0
+                confidence = 0.5
+                reason = "均线非上移趋势，观望"
+            
+            # 6. 基于价格与均线关系的信号调整
+            price_above_ma60 = close_price > ma60 if ma60 > 0 else False
+            price_above_ma120 = close_price > ma120 if ma120 > 0 else False
+            
+            # 价格与均线关系增强信号
+            if signal_type == "buy":
+                if price_above_ma60 and price_above_ma120:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，价格站上双均线"
+                elif price_above_ma60 or price_above_ma120:
+                    strength = min(1.0, strength + 0.05)
+                    confidence = min(1.0, confidence + 0.03)
+                    reason += "，价格站上均线"
+            
+            # 7. 生成标准化信号
+            signal = {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': data.index[-1] if len(data) > 0 else None,
+                'price': round(close_price, 3) if close_price > 0 else None,
+                'reason': reason,
+                'metadata': {
+                    'indicator_type': 'zxm_daily_trend_up',
+                    'j1_ma60_up': bool(j1),
+                    'j2_ma120_up': bool(j2),
+                    'xg_trend_signal': bool(xg),
+                    'ma60_value': round(ma60, 3) if ma60 > 0 else None,
+                    'ma120_value': round(ma120, 3) if ma120 > 0 else None,
+                    'price_above_ma60': price_above_ma60,
+                    'price_above_ma120': price_above_ma120,
+                    'ma60_period': self.ma60_period,
+                    'ma120_period': self.ma120_period
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"ZXM日线趋势信号生成失败: {e}")
+            return self._get_default_signal(f"计算错误: {str(e)}")
+
+    def _get_default_signal(self, reason: str = "数据验证失败") -> Dict[str, Any]:
+        """
+        生成默认信号
+        
+        Args:
+            reason: 失败原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号字典
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': None,
+            'price': None,
+            'reason': reason,
+            'metadata': {}
+        }
+
     @property
     def minimum_periods(self) -> int:
         """
         ZxmdailyTrendUp指标所需的最少数据周期数
 
-        计算逻辑：使用默认值
+        计算逻辑：需要足够数据计算120日均线及其趋势判断
 
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30  # TODO: 将魔法数字提取到配置中
+        return max(self.ma60_period, self.ma120_period) + self.trend_check_period  # 120 + 5 = 125
 
 
 class ZxmweeklyTrendUp(BaseIndicator, PatternSignalMixin):
@@ -1404,6 +1567,21 @@ class ZxmweeklyMacd(BaseIndicator, PatternSignalMixin):
     特点是对中期趋势敏感，可靠性高于日线MACD
     """
 
+    def __init__(self):
+        """初始化ZXM周线MACD指标"""
+        super().__init__()
+        self.name = "ZXMWeeklyMACD"
+        self.description = "ZXM周线MACD指标，检测中期趋势变化和背离信号"
+        
+        # ZXM周线MACD参数
+        self.short_period = 12    # EMA短期
+        self.long_period = 26     # EMA长期  
+        self.signal_period = 9    # DEA周期
+        
+        # 周线MACD特有阈值（与日线不同，不使用买点阈值）
+        self.divergence_window = 8  # 背离检测窗口
+        self.trend_stability_period = 5  # 趋势稳定性回看期
+
     def _calculate_divergence_Trend_Indicators(self, data: pd.DataFrame) -> None:
         """
         计算MACD与价格的背离情况
@@ -1631,7 +1809,180 @@ class ZxmweeklyMacd(BaseIndicator, PatternSignalMixin):
         # 计算背离
         self._calculate_divergence_Trend_Indicators(result)
 
+        # 存储结果供get_signal使用
+        self._result = result
         return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM周线MACD交易信号（抽象方法实现）
+        
+        基于周线MACD的金叉死叉、背离和零轴位置判断
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        if 'close' not in data.columns:
+            return self._get_default_signal("缺少必需的'close'列")
+        
+        if len(data) < self.minimum_periods:
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM周线MACD指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) < 2:
+                return self._get_default_signal("ZXM周线MACD计算结果不足")
+            
+            # 3. 获取最新的指标值
+            latest_dif = result['DIF'].iloc[-1]
+            latest_dea = result['DEA'].iloc[-1]
+            latest_macd = result['MACD'].iloc[-1]
+            
+            prev_dif = result['DIF'].iloc[-2]
+            prev_dea = result['DEA'].iloc[-2]
+            prev_macd = result['MACD'].iloc[-2]
+            
+            # 检查背离信号
+            latest_bullish_div = result['bullish_divergence'].iloc[-1] if 'bullish_divergence' in result.columns else False
+            latest_bearish_div = result['bearish_divergence'].iloc[-1] if 'bearish_divergence' in result.columns else False
+            
+            # 4. ZXM周线MACD信号判断
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "ZXM周线MACD无明显信号"
+            
+            # 背离信号（最高优先级）
+            if latest_bullish_div:
+                signal_type = "buy"
+                strength = 0.9
+                confidence = 0.95
+                reason = f"ZXM周线MACD底背离信号(DIF={latest_dif:.3f}, DEA={latest_dea:.3f})"
+                
+                # 零轴位置加强
+                if latest_dif < 0:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，零轴下方"
+                    
+            elif latest_bearish_div:
+                signal_type = "sell"
+                strength = 0.9
+                confidence = 0.95
+                reason = f"ZXM周线MACD顶背离信号(DIF={latest_dif:.3f}, DEA={latest_dea:.3f})"
+                
+                # 零轴位置加强
+                if latest_dif > 0:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，零轴上方"
+                    
+            # 金叉信号（次优先级）
+            elif latest_dif > latest_dea and prev_dif <= prev_dea:
+                signal_type = "buy"
+                base_strength = 0.7
+                base_confidence = 0.8
+                reason = f"ZXM周线MACD金叉信号(DIF={latest_dif:.3f}>DEA={latest_dea:.3f})"
+                
+                # 位置判断
+                if latest_dif > 0:
+                    # 零轴上方金叉 - 强势信号
+                    strength = min(1.0, base_strength + 0.2)
+                    confidence = min(1.0, base_confidence + 0.15)
+                    reason += "，零轴上方，强势上涨"
+                else:
+                    # 零轴下方金叉 - 反弹信号
+                    strength = base_strength
+                    confidence = base_confidence
+                    reason += "，零轴下方，反弹向上"
+                    
+            # 死叉信号
+            elif latest_dif < latest_dea and prev_dif >= prev_dea:
+                signal_type = "sell"
+                base_strength = 0.7
+                base_confidence = 0.8
+                reason = f"ZXM周线MACD死叉信号(DIF={latest_dif:.3f}<DEA={latest_dea:.3f})"
+                
+                # 位置判断
+                if latest_dif < 0:
+                    # 零轴下方死叉 - 强势信号
+                    strength = min(1.0, base_strength + 0.2)
+                    confidence = min(1.0, base_confidence + 0.15)
+                    reason += "，零轴下方，强势下跌"
+                else:
+                    # 零轴上方死叉 - 回调信号
+                    strength = base_strength
+                    confidence = base_confidence
+                    reason += "，零轴上方，回调向下"
+            
+            # MACD柱状线分析
+            macd_trend = "up" if latest_macd > prev_macd else "down"
+            macd_acceleration = abs(latest_macd - prev_macd)
+            
+            # 如果有明确信号，根据MACD柱状线调整强度
+            if signal_type != "hold":
+                if signal_type == "buy" and macd_trend == "up":
+                    strength = min(1.0, strength + 0.05)
+                elif signal_type == "sell" and macd_trend == "down":
+                    strength = min(1.0, strength + 0.05)
+                    
+                # 加速度增强
+                if macd_acceleration > 0.1:
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，动能增强"
+            
+            # 5. 构建信号字典
+            signal_metadata = {
+                'indicator_type': 'zxm_weekly_macd',
+                'dif_value': latest_dif,
+                'dea_value': latest_dea,
+                'macd_value': latest_macd,
+                'golden_cross': latest_dif > latest_dea and prev_dif <= prev_dea,
+                'death_cross': latest_dif < latest_dea and prev_dif >= prev_dea,
+                'bullish_divergence': latest_bullish_div,
+                'bearish_divergence': latest_bearish_div,
+                'zero_axis_position': 'above' if latest_dif > 0 else 'below',
+                'macd_trend': macd_trend,
+                'macd_acceleration': macd_acceleration,
+                'dif_above_zero': latest_dif > 0,
+                'dea_above_zero': latest_dea > 0
+            }
+            
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': signal_metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"ZXM周线MACD信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+    
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认的持有信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

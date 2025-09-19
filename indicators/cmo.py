@@ -107,7 +107,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             包含CMO指标的DataFrame
         """
         # 🔧 Ultra Think修复:标准化接口调用
-        return "self._calculate_cmo(data, **kwargs)"
+        return self._calculate_cmo(data, **kwargs)
     
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -120,7 +120,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             pd.DataFrame: 包含CMO指标的DataFrame
         """
         # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
-        return "self._calculate_cmo(data, **kwargs)"
+        return self._calculate_cmo(data, **kwargs)
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -133,7 +133,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             pd.DataFrame: 计算结果
         """
         # 🔧 Ultra Think修复:实现必须的抽象方法,确保100%功能完整
-        return "self._calculate_cmo(data, **kwargs)"
+        return self._calculate_cmo(data, **kwargs)
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -169,7 +169,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             signals['buy_signal'] = False
             signals['sell_signal'] = False
             signals['signal_strength'] = 0.0
-            return "signals"
+            return signals
         
         cmo_values = result[cmo_col]
         
@@ -223,7 +223,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             patterns['oversold'] = False
             patterns['positive_momentum'] = False
             patterns['negative_momentum'] = False
-            return "patterns"
+            return patterns
         
         # 获取CMO数据
         cmo_col = None
@@ -239,7 +239,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             patterns['oversold'] = False
             patterns['positive_momentum'] = False
             patterns['negative_momentum'] = False
-            return "patterns"
+            return patterns
         
         cmo_values = result[cmo_col]
         
@@ -278,7 +278,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             float: 置信度值
         """
         # 🔧 Ultra Think修复:实现标准置信度计算,确保100%功能完整
-        return "self.calculate_confidence_Cmo(score, patterns, signals)"
+        return self.calculate_confidence_Cmo(score, patterns, signals)
     
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -301,10 +301,10 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 break
         
         if cmo_col is not None:
-            return "result[cmo_col]"
+            return result[cmo_col]
         else:
             # 如果找不到CMO列,返回默认得分
-            return "pd.Series(index=data.index, data=0.0)  # CMO中性值"
+            return pd.Series(index=data.index, data=0.0)  # CMO中性值
     
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -317,7 +317,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             pd.DataFrame: 形态数据
         """
         # 🔧 Ultra Think修复:实现标准形态识别,确保100%功能完整
-        return "self.get_patterns(data, **kwargs)"
+        return self.get_patterns(data, **kwargs)
     
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
@@ -340,7 +340,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             包含CMO列的Data_frame
         """
         if self._result is not None:
-            return "self._result"
+            return self._result
             
         result = data.copy()
         
@@ -389,7 +389,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         
         # 确保有足够的数据
         if len(result) < self.period + 5:  # TODO: 将魔法数字提取到配置中
-            return "signals"
+            return signals
             
         # 获取最新数据
         latest = result.iloc[-1]
@@ -638,7 +638,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 确保分数在0-100范围内
         score = score.clip(0, 100)
         
-        return "score"
+        return score
 
     def calculate_confidence_Cmo(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -653,7 +653,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return "0.5"  # TODO: 将魔法数字提取到配置中
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
         confidence = 0.5  # TODO: 将魔法数字提取到配置中
@@ -689,7 +689,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             score_stability = 1.0 - (recent_scores.std() / 50.0)  # TODO: 将魔法数字提取到配置中
             confidence += score_stability * 0.1
 
-        return "min(confidence, 1.0)"
+        return min(confidence, 1.0)
 
     def identify_patterns_Cmo(self, data: pd.DataFrame, **kwargs) -> List[str]:
         """
@@ -756,7 +756,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 if cmo_at_price_low > min_cmo_in_period * 0.9:  # CMO比之前最低点高10%以上  # TODO: 将魔法数字提取到配置中
                     patterns.append("CMO底背离")
 
-        return "patterns"
+        return patterns
 
     def get_patterns_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -774,7 +774,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
             self.calculate(data, **kwargs)
 
         if self._result is None:
-            return "pd.DataFrame(index=data.index)"
+            return pd.DataFrame(index=data.index)
 
         cmo = self._result['cmo']
         patterns_df = pd.DataFrame(index=data.index)
@@ -807,7 +807,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         for col in patterns_df.columns:
             patterns_df[col] = patterns_df[col].fillna(False).astype(bool)
 
-        return "patterns_df"
+        return patterns_df
 
     def register_patterns_Cmo(self):
         """
@@ -987,7 +987,7 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         }
 
         if pattern_id is None:
-            return "all_patterns"
+            return all_patterns
         else:
             return all_patterns.get(pattern_id, {
                 'name': 'CMO动量震荡',
@@ -995,6 +995,266 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 'type': 'neutral',
                 'strength': 'medium'
             })
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于CMO (Chande Momentum Oscillator) 指标数值生成最新的交易信号
+        
+        CMO交易信号逻辑：
+        - CMO > +40：超买区域，可能回调卖出信号
+        - CMO < -40：超卖区域，可能反弹买入信号
+        - CMO上穿0：动量转正，买入信号
+        - CMO下穿0：动量转负，卖出信号
+        - CMO从超卖区域上穿-40：买入信号
+        - CMO从超买区域下穿+40：卖出信号
+        - 信号强度基于CMO值偏离中性位置的程度
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("CMO计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取CMO相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("CMO数据不足")
+                
+            # 检查必要的列是否存在
+            if 'cmo' not in self._result.columns:
+                return self._get_default_signal("CMO结果列不存在")
+                
+            latest_cmo = self._result['cmo'].iloc[-1]
+            prev_cmo = self._result['cmo'].iloc[-2]
+            
+            # 5. CMO信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # CMO关键水平
+            overbought_level = self.overbought  # 默认40
+            oversold_level = self.oversold      # 默认-40
+            zero_level = 0.0
+            extreme_overbought = 60.0
+            extreme_oversold = -60.0
+            
+            # 零轴穿越信号（最高优先级）
+            if prev_cmo <= zero_level and latest_cmo > zero_level:
+                # CMO上穿零轴 - 动量转正
+                signal_type = "buy"
+                breakthrough_strength = min(latest_cmo / 20, 1.0)
+                strength = max(0.85, breakthrough_strength)
+                confidence = 0.9
+                reason = f"CMO上穿零轴({latest_cmo:.2f})，动量转正，强烈买入信号"
+                
+            elif prev_cmo >= zero_level and latest_cmo < zero_level:
+                # CMO下穿零轴 - 动量转负
+                signal_type = "sell"
+                breakthrough_strength = min(abs(latest_cmo) / 20, 1.0)
+                strength = max(0.85, breakthrough_strength)
+                confidence = 0.9
+                reason = f"CMO下穿零轴({latest_cmo:.2f})，动量转负，强烈卖出信号"
+            
+            # 超卖反弹信号
+            elif prev_cmo <= oversold_level and latest_cmo > oversold_level:
+                # CMO从超卖区域突破
+                signal_type = "buy"
+                breakthrough_strength = abs(latest_cmo - oversold_level) / 20
+                strength = max(0.8, min(1.0, breakthrough_strength))
+                confidence = 0.85
+                reason = f"CMO从超卖区域反弹({latest_cmo:.2f}>-40)，买入信号"
+                
+            elif prev_cmo >= overbought_level and latest_cmo < overbought_level:
+                # CMO从超买区域回落
+                signal_type = "sell"
+                breakthrough_strength = abs(latest_cmo - overbought_level) / 20
+                strength = max(0.8, min(1.0, breakthrough_strength))
+                confidence = 0.85
+                reason = f"CMO从超买区域回落({latest_cmo:.2f}<40)，卖出信号"
+            
+            # 极端超卖/超买信号
+            elif latest_cmo <= extreme_oversold:
+                # 极端超卖，强烈买入
+                signal_type = "buy"
+                extreme_strength = abs(latest_cmo - extreme_oversold) / 40
+                strength = max(0.9, min(1.0, 0.9 + extreme_strength))
+                confidence = 0.8
+                reason = f"CMO极端超卖({latest_cmo:.2f})，强烈买入信号"
+                
+            elif latest_cmo >= extreme_overbought:
+                # 极端超买，强烈卖出
+                signal_type = "sell"
+                extreme_strength = abs(latest_cmo - extreme_overbought) / 40
+                strength = max(0.9, min(1.0, 0.9 + extreme_strength))
+                confidence = 0.8
+                reason = f"CMO极端超买({latest_cmo:.2f})，强烈卖出信号"
+            
+            # 中等强度信号
+            elif latest_cmo <= oversold_level:
+                # 在超卖区域
+                signal_type = "buy"
+                oversold_depth = abs(latest_cmo - oversold_level) / 20
+                strength = max(0.65, min(0.8, 0.65 + oversold_depth))
+                confidence = 0.75
+                reason = f"CMO处于超卖区域({latest_cmo:.2f})，买入信号"
+                
+            elif latest_cmo >= overbought_level:
+                # 在超买区域
+                signal_type = "sell"
+                overbought_depth = abs(latest_cmo - overbought_level) / 20
+                strength = max(0.65, min(0.8, 0.65 + overbought_depth))
+                confidence = 0.75
+                reason = f"CMO处于超买区域({latest_cmo:.2f})，卖出信号"
+                
+            # 正动量区域信号
+            elif latest_cmo > zero_level:
+                # CMO在正值区域
+                signal_type = "buy"
+                positive_strength = min(latest_cmo / 40, 1.0)
+                strength = max(0.6, positive_strength * 0.7)
+                confidence = 0.65
+                reason = f"CMO处于正动量区域({latest_cmo:.2f})，弱买入信号"
+                
+            elif latest_cmo < zero_level and latest_cmo > oversold_level:
+                # CMO在负值但非超卖区域
+                signal_type = "sell"
+                negative_strength = min(abs(latest_cmo) / 40, 1.0)
+                strength = max(0.6, negative_strength * 0.7)
+                confidence = 0.65
+                reason = f"CMO处于负动量区域({latest_cmo:.2f})，弱卖出信号"
+            
+            # 计算CMO特有的元数据
+            cmo_change = latest_cmo - prev_cmo
+            cmo_momentum = "上升" if cmo_change > 0 else "下降" if cmo_change < 0 else "平稳"
+            
+            # 确定当前CMO所在区域
+            if latest_cmo >= extreme_overbought:
+                cmo_zone = "极端超买"
+            elif latest_cmo >= overbought_level:
+                cmo_zone = "超买"
+            elif latest_cmo > zero_level:
+                cmo_zone = "正动量"
+            elif latest_cmo > oversold_level:
+                cmo_zone = "负动量"
+            elif latest_cmo > extreme_oversold:
+                cmo_zone = "超卖"
+            else:
+                cmo_zone = "极端超卖"
+            
+            # 计算动量强度
+            momentum_strength = abs(latest_cmo) / 100.0  # CMO范围-100到+100
+            
+            metadata = {
+                'cmo_value': latest_cmo,
+                'cmo_previous': prev_cmo,
+                'cmo_change': cmo_change,
+                'cmo_momentum': cmo_momentum,
+                'cmo_zone': cmo_zone,
+                'momentum_strength': momentum_strength,
+                'overbought_level': overbought_level,
+                'oversold_level': oversold_level,
+                'zero_level': zero_level,
+                'distance_to_zero': abs(latest_cmo - zero_level),
+                'distance_to_overbought': abs(latest_cmo - overbought_level),
+                'distance_to_oversold': abs(latest_cmo - oversold_level),
+                'in_overbought': latest_cmo >= overbought_level,
+                'in_oversold': latest_cmo <= oversold_level,
+                'in_positive_momentum': latest_cmo > zero_level,
+                'in_negative_momentum': latest_cmo < zero_level,
+                'in_extreme_overbought': latest_cmo >= extreme_overbought,
+                'in_extreme_oversold': latest_cmo <= extreme_oversold,
+                'period': self.period
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"CMO信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # CMO需要足够的数据用于计算
+        min_periods = self.period + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'cmo' in self._result.columns)
+
     @property
     def minimum_periods(self) -> int:
         """
@@ -1005,4 +1265,4 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             int: 最少需要的数据周期数
         """
-        return "20"  # TODO: 将魔法数字提取到配置中
+        return 20  # TODO: 将魔法数字提取到配置中

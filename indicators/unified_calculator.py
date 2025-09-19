@@ -28,7 +28,7 @@ from enums.indicator_types import Indicatortype_indicator_types
 from db.sql_manager import SQLManager, QueryType
 
 # 创建兼容的枚举类
-class IndicatorType(BaseIndicator):
+class IndicatorType(Enum):
     TREND = "trend"
     MOMENTUM = "momentum" 
     VOLUME = "volume"
@@ -38,7 +38,7 @@ class IndicatorType(BaseIndicator):
 logger = get_logger(__name__)
 
 
-class CalculationMode(BaseIndicator,Enum):
+class CalculationMode(Enum):
     """计算模式"""
     SINGLE = "single"      # 单次计算
     BATCH = "batch"        # 批量计算
@@ -46,7 +46,7 @@ class CalculationMode(BaseIndicator,Enum):
 
 
 @dataclass
-class IndicatorResult(BaseIndicator):
+class IndicatorResult:
     """指标计算结果"""
     name: str
     data: Union[pd.Series, pd.DataFrame]
@@ -66,7 +66,7 @@ class IndicatorResult(BaseIndicator):
         }
 
 
-class UnifiedIndicatorCalculator(BaseIndicator,abc.ABC):
+class UnifiedIndicatorCalculator(abc.ABC):
     """
     统一指标计算基类
     
@@ -304,7 +304,7 @@ class UnifiedIndicatorCalculator(BaseIndicator,abc.ABC):
         self.cache_ttl = ttl
 
 
-class TrendIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
+class TrendIndicatorBase(BaseIndicator, UnifiedIndicatorCalculator):
     """趋势指标基类"""
     
     def __init__(self, name: str):
@@ -334,7 +334,7 @@ class TrendIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
             return pd.Series(dtype=float)
 
 
-class MomentumIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
+class MomentumIndicatorBase(BaseIndicator, UnifiedIndicatorCalculator):
     """动量指标基类"""
     
     def __init__(self, name: str):
@@ -373,7 +373,7 @@ class MomentumIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
         return signals
 
 
-class VolumeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
+class VolumeIndicatorBase(BaseIndicator, UnifiedIndicatorCalculator):
     """成交量指标基类"""
     
     def __init__(self, name: str):
@@ -409,7 +409,7 @@ class VolumeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
         return profile
 
 
-class VolatilityIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
+class VolatilityIndicatorBase(BaseIndicator, UnifiedIndicatorCalculator):
     """波动率指标基类"""
     
     def __init__(self, name: str):
@@ -439,7 +439,7 @@ class VolatilityIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
             return pd.Series(dtype=float)
 
 
-class CompositeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
+class CompositeIndicatorBase(BaseIndicator, UnifiedIndicatorCalculator):
     """复合指标基类"""
     
     def __init__(self, name: str, component_indicators: List[UnifiedIndicatorCalculator]):
@@ -488,7 +488,7 @@ class CompositeIndicatorBase(BaseIndicator,UnifiedIndicatorCalculator):
         return list(set(all_columns))  # 去重
 
 
-class IndicatorCalculatorFactory(BaseIndicator):
+class IndicatorCalculatorFactory:
     """指标计算器工厂"""
     
     _registry = {}
@@ -530,18 +530,41 @@ class IndicatorCalculatorFactory(BaseIndicator):
 
 
 # 示例:简单移动平均线指标
-class SimpleMovingAverageCalculator(BaseIndicator,TrendIndicatorBase):
+class SimpleMovingAverageCalculator(TrendIndicatorBase):
     """简单移动平均线"""
     
-    def __init__(self):
+    def __init__(self, period: int = 20):
+        # 先保存period，避免被super().__init__覆盖
+        self.period = period
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
         super().__init__("SMA")
+        # 确保period不被覆盖
+        self.period = period
     
-    def calculate(self, data: pd.DataFrame, **params) -> pd.Series:
-        period = params.get('period', 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        return data['close'].rolling(window=period).mean()
+    def calculate(self, data: pd.DataFrame, **params) -> pd.DataFrame:
+        period = params.get('period', self.period)  # 优先使用实例的period
+        sma_values = data['close'].rolling(window=period).mean()
+        
+        # 返回标准DataFrame格式
+        result_df = data.copy()
+        result_df['sma'] = sma_values
+        result_df['sma_signal'] = 0
+        
+        # 添加信号标记
+        if len(sma_values) > 1:
+            price_above_sma = data['close'] > sma_values
+            price_above_sma_prev = data['close'].shift(1) > sma_values.shift(1)
+            
+            # 上穿信号
+            result_df.loc[price_above_sma & ~price_above_sma_prev, 'sma_signal'] = 1
+            # 下穿信号  
+            result_df.loc[~price_above_sma & price_above_sma_prev, 'sma_signal'] = -1
+        
+        # 存储结果以供get_signal使用
+        self._result = result_df
+        return result_df
     
     def get_required_columns_unified_calculator(self) -> List[str]:
         return ['close']
@@ -558,29 +581,163 @@ class SimpleMovingAverageCalculator(BaseIndicator,TrendIndicatorBase):
         
         return len(errors) == 0, errors
 
+    def has_result(self) -> bool:
+        """检查指标是否有计算结果"""
+        return (hasattr(self, '_result') and 
+                self._result is not None and 
+                not self._result.empty and
+                'sma' in self._result.columns)
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于SMA指标数值生成最新的交易信号
+        
+        SMA交易信号逻辑：
+        - 价格上穿SMA：买入信号
+        - 价格下穿SMA：卖出信号  
+        - SMA趋势向上：支持买入
+        - SMA趋势向下：支持卖出
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 获取period并计算或使用存储的结果
+            period = getattr(self, 'period', 20)
+            if self.has_result():
+                result_df = self._result
+                sma_values = result_df['sma']
+            else:
+                sma_values = data['close'].rolling(window=period).mean()
+            
+            if len(sma_values) < 2 or sma_values.isna().iloc[-1]:
+                return self._get_default_signal("SMA数据不足")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            prev_close = data['close'].iloc[-2] if len(data) > 1 else latest_close
+            latest_sma = sma_values.iloc[-1]
+            prev_sma = sma_values.iloc[-2] if len(sma_values) > 1 else latest_sma
+            
+            # 4. SMA信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 检查价格与SMA的关系
+            price_above_sma_now = latest_close > latest_sma
+            price_above_sma_prev = prev_close > prev_sma
+            sma_rising = latest_sma > prev_sma
+            sma_falling = latest_sma < prev_sma
+            
+            # 价格上穿SMA - 买入信号
+            if price_above_sma_now and not price_above_sma_prev:
+                signal_type = "buy"
+                strength = 0.75
+                confidence = 0.8
+                reason = "价格上穿简单移动平均线，买入信号"
+                if sma_rising:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.9, confidence + 0.1)
+                    reason = "价格上穿上升趋势SMA，强烈买入信号"
+                    
+            # 价格下穿SMA - 卖出信号
+            elif not price_above_sma_now and price_above_sma_prev:
+                signal_type = "sell"
+                strength = 0.75
+                confidence = 0.8
+                reason = "价格下穿简单移动平均线，卖出信号"
+                if sma_falling:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.9, confidence + 0.1)
+                    reason = "价格下穿下降趋势SMA，强烈卖出信号"
+                    
+            # 价格持续在SMA上方且SMA上升 - 持续买入
+            elif price_above_sma_now and sma_rising:
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在上升SMA上方，持续买入信号"
+                
+            # 价格持续在SMA下方且SMA下降 - 持续卖出
+            elif not price_above_sma_now and sma_falling:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在下降SMA下方，持续卖出信号"
+            
+            # 计算价格相对SMA的偏离度
+            if latest_sma > 0:
+                price_deviation = abs(latest_close - latest_sma) / latest_sma
+                metadata['price_deviation'] = price_deviation
+                metadata['sma_value'] = latest_sma
+                metadata['sma_trend'] = 'rising' if sma_rising else 'falling' if sma_falling else 'flat'
+                metadata['sma_period'] = period
+                
+                # 基于偏离度调整信号强度
+                if price_deviation > 0.03:  # 偏离超过3%
+                    if signal_type in ['buy', 'sell']:
+                        strength = min(1.0, strength + price_deviation * 1.5)
+            
+            # 5. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"SMA信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """标准数据验证"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        if 'close' not in data.columns:
+            return False
+        
+        # 检查数据量
+        period = getattr(self, 'period', 20)
+        # 确保period是整数
+        if not isinstance(period, int):
+            period = 20
+        if len(data) < period:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """默认信号格式"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
 
 # 注册示例指标
 IndicatorCalculatorFactory.register('SMA', SimpleMovingAverageCalculator)
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        获取交易信号
-        
-        Args:
-            data: 包含指标计算结果的数据
-            
-        Returns:
-            Dict[str, Any]: 交易信号信息
-        """
-        if data.empty:
-            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
-        
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
-        
-        return {
-            'signal': 'hold',
-            'strength': 0.0,
-            'timestamp': data.index[-1] if not data.empty else None,
-            'price': latest_close,
-            'indicator': self.name
-        }

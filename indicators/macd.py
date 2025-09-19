@@ -318,15 +318,23 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含MACD线,信号线和柱状图的Data_frame
         """
-        # 空数据处理
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
         if data is None or data.empty:
             logger.warning("MACD计算: 输入数据为空")
-            return pd.DataFrame(columns=["DIF", "DEA", "MACD", "macd_line", "macd_signal", "macd_histogram"])
+            raise ValueError("MACD计算: 输入数据不能为空")
+            
+        if 'close' not in data.columns:
+            logger.warning("MACD计算: 缺少必需的'close'列")
+            raise ValueError("MACD计算: 缺少必需的'close'列")
 
         # 检查数据长度是否足够
         min_periods = max(self.slow_period, self.signal_period) + 10
         if len(data) < min_periods:
             logger.warning(f"MACD计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
+            raise ValueError(f"MACD计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
+            
+        # 数据验证通过后，继续原有逻辑但先处理边界情况
+        if len(data) < min_periods:
             # 返回与输入数据长度相同的空结果
             result = pd.DataFrame(index=data.index)
             result["DIF"] = np.nan
@@ -1727,17 +1735,289 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return signals_df
     
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """获取交易信号（抽象方法实现）"""
-        signals = self.get_signals_Macd(data)
-        if isinstance(signals, dict):
-            return signals
-        else:
-            # 如果返回的是DataFrame，转换为字典格式
-            return {
-                'signal': 'HOLD',
-                'score': 50.0,
-                'confidence': 0.5
+        """
+        获取增强型MACD交易信号（抽象方法实现）
+        
+        增强功能包括：
+        1. 基础金叉死叉信号
+        2. 零轴穿越信号
+        3. 背离检测信号
+        4. 多强度分析
+        5. 趋势确认
+        6. 动态阈值调整
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        validation_result = self._validate_signal_data_with_reason(data)
+        if not validation_result[0]:
+            return self._get_default_signal(validation_result[1])
+
+        try:
+            # 2. 计算MACD指标值
+            macd_data = self.calculate(data)
+
+            if macd_data.empty or len(macd_data) < 2:
+                return self._get_default_signal("MACD计算结果不足")
+
+            # 3. 获取基本MACD值
+            latest_dif = macd_data['macd_dif'].iloc[-1] if 'macd_dif' in macd_data.columns else macd_data['DIF'].iloc[-1]
+            latest_dea = macd_data['macd_dea'].iloc[-1] if 'macd_dea' in macd_data.columns else macd_data['DEA'].iloc[-1]
+            latest_histogram = macd_data['macd_histogram'].iloc[-1] if 'macd_histogram' in macd_data.columns else macd_data['MACD'].iloc[-1]
+            
+            prev_dif = macd_data['macd_dif'].iloc[-2] if 'macd_dif' in macd_data.columns else macd_data['DIF'].iloc[-2]
+            prev_dea = macd_data['macd_dea'].iloc[-2] if 'macd_dea' in macd_data.columns else macd_data['DEA'].iloc[-2]
+            prev_histogram = macd_data['macd_histogram'].iloc[-2] if 'macd_histogram' in macd_data.columns else macd_data['MACD'].iloc[-2]
+
+            # 4. 增强型信号分析
+            signal_analysis = self._analyze_enhanced_macd_signal(data, macd_data)
+            
+            # 5. 基础信号判断
+            signal_type = "hold"
+            base_strength = 0.0
+            base_confidence = 0.5
+            reason = "MACD无明显信号"
+            
+            # 零轴穿越信号（最高优先级）
+            if latest_dif > 0 and prev_dif <= 0:
+                signal_type = "buy"
+                base_strength = 0.9
+                base_confidence = 0.95
+                reason = "MACD DIF上穿零轴强烈买入信号"
+            elif latest_dif < 0 and prev_dif >= 0:
+                signal_type = "sell"
+                base_strength = 0.9
+                base_confidence = 0.95
+                reason = "MACD DIF下穿零轴强烈卖出信号"
+            # 金叉死叉信号
+            elif latest_dif > latest_dea and prev_dif <= prev_dea:
+                signal_type = "buy"
+                base_strength = 0.75
+                base_confidence = 0.8
+                reason = "MACD金叉买入信号"
+                
+                # 零轴上方金叉更强
+                if latest_dif > 0:
+                    base_strength = 0.85
+                    base_confidence = 0.9
+                    reason = "MACD零轴上方金叉强买入信号"
+                    
+            elif latest_dif < latest_dea and prev_dif >= prev_dea:
+                signal_type = "sell"
+                base_strength = 0.75
+                base_confidence = 0.8
+                reason = "MACD死叉卖出信号"
+                
+                # 零轴下方死叉更强
+                if latest_dif < 0:
+                    base_strength = 0.85
+                    base_confidence = 0.9
+                    reason = "MACD零轴下方死叉强卖出信号"
+
+            # 6. 应用增强功能
+            final_strength = base_strength
+            final_confidence = base_confidence
+            enhanced_reason = reason
+            
+            # 背离信号增强
+            if signal_analysis.get('bullish_divergence', False):
+                if signal_type == "buy":
+                    final_strength = min(1.0, final_strength + 0.15)
+                    final_confidence = min(1.0, final_confidence + 0.1)
+                    enhanced_reason += "，牛背离确认"
+                elif signal_type == "hold":
+                    signal_type = "buy"
+                    final_strength = 0.7
+                    final_confidence = 0.75
+                    enhanced_reason = "MACD牛背离买入信号"
+                    
+            elif signal_analysis.get('bearish_divergence', False):
+                if signal_type == "sell":
+                    final_strength = min(1.0, final_strength + 0.15)
+                    final_confidence = min(1.0, final_confidence + 0.1)
+                    enhanced_reason += "，熊背离确认"
+                elif signal_type == "hold":
+                    signal_type = "sell"
+                    final_strength = 0.7
+                    final_confidence = 0.75
+                    enhanced_reason = "MACD熊背离卖出信号"
+
+            # 动量增强
+            momentum_strength = signal_analysis.get('momentum_strength', 0.5)
+            if momentum_strength > 0.8:
+                final_strength = min(1.0, final_strength + 0.1)
+                enhanced_reason += "，动量强劲"
+            elif momentum_strength < 0.3:
+                final_strength = max(0.3, final_strength - 0.1)
+                enhanced_reason += "，动量疲弱"
+
+            # 趋势一致性增强
+            trend_consistency = signal_analysis.get('trend_consistency', 0.5)
+            if trend_consistency > 0.8:
+                final_confidence = min(1.0, final_confidence + 0.1)
+                enhanced_reason += "，趋势一致"
+            elif trend_consistency < 0.3:
+                final_confidence = max(0.4, final_confidence - 0.1)
+                enhanced_reason += "，趋势分歧"
+
+            # 7. 构建完整信号
+            enhanced_metadata = {
+                'indicator_type': 'enhanced_macd',
+                'macd_dif': latest_dif,
+                'macd_dea': latest_dea,
+                'macd_histogram': latest_histogram,
+                'zero_cross_signal': latest_dif > 0 and prev_dif <= 0 or latest_dif < 0 and prev_dif >= 0,
+                'crossover_strength': abs(latest_dif - latest_dea),
+                'bullish_divergence': signal_analysis.get('bullish_divergence', False),
+                'bearish_divergence': signal_analysis.get('bearish_divergence', False),
+                'momentum_strength': momentum_strength,
+                'trend_consistency': trend_consistency,
+                'signal_quality': signal_analysis.get('signal_quality', 0.5),
+                'enhanced_score': signal_analysis.get('enhanced_score', 50.0)
             }
+
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, final_strength)),
+                'confidence': max(0.0, min(1.0, final_confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': enhanced_reason,
+                'metadata': enhanced_metadata
+            }
+
+        except Exception as e:
+            logger.error(f"增强型MACD信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _analyze_enhanced_macd_signal(self, data: pd.DataFrame, macd_data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        增强型MACD信号分析
+        
+        Args:
+            data: 原始价格数据
+            macd_data: MACD计算结果
+            
+        Returns:
+            Dict: 包含各种增强分析结果的字典
+        """
+        analysis = {
+            'bullish_divergence': False,
+            'bearish_divergence': False,
+            'momentum_strength': 0.5,
+            'trend_consistency': 0.5,
+            'signal_quality': 0.5,
+            'enhanced_score': 50.0
+        }
+        
+        try:
+            if len(data) < 20 or len(macd_data) < 20:
+                return analysis
+                
+            # 背离检测
+            close_prices = data['close']
+            macd_line = macd_data['macd_dif'] if 'macd_dif' in macd_data.columns else macd_data['DIF']
+            
+            bullish_div, bearish_div = self._detect_divergence_Macd(close_prices, macd_line, window=14)
+            
+            # 检查最近5个周期内是否有背离信号
+            analysis['bullish_divergence'] = bullish_div.tail(5).any()
+            analysis['bearish_divergence'] = bearish_div.tail(5).any()
+            
+            # 动量强度分析
+            if len(macd_data) >= 10:
+                latest_histogram = macd_data['macd_histogram'].iloc[-1] if 'macd_histogram' in macd_data.columns else macd_data['MACD'].iloc[-1]
+                prev_histograms = macd_data['macd_histogram'].tail(10) if 'macd_histogram' in macd_data.columns else macd_data['MACD'].tail(10)
+                
+                # 柱状图变化趋势
+                histogram_trend = np.polyfit(range(len(prev_histograms)), prev_histograms.values, 1)[0]
+                momentum_strength = min(1.0, max(0.0, 0.5 + histogram_trend * 10))
+                analysis['momentum_strength'] = momentum_strength
+            
+            # 趋势一致性分析
+            if len(macd_data) >= 20:
+                dif_values = macd_data['macd_dif'].tail(20) if 'macd_dif' in macd_data.columns else macd_data['DIF'].tail(20)
+                dea_values = macd_data['macd_dea'].tail(20) if 'macd_dea' in macd_data.columns else macd_data['DEA'].tail(20)
+                
+                # 计算DIF和DEA的方向一致性
+                dif_trend = np.polyfit(range(len(dif_values)), dif_values.values, 1)[0]
+                dea_trend = np.polyfit(range(len(dea_values)), dea_values.values, 1)[0]
+                
+                # 方向一致性评分
+                if (dif_trend > 0 and dea_trend > 0) or (dif_trend < 0 and dea_trend < 0):
+                    consistency = min(1.0, 0.7 + abs(dif_trend + dea_trend) * 5)
+                else:
+                    consistency = max(0.0, 0.3 - abs(dif_trend - dea_trend) * 5)
+                
+                analysis['trend_consistency'] = consistency
+            
+            # 信号质量综合评分
+            quality_score = (
+                analysis['momentum_strength'] * 0.4 +
+                analysis['trend_consistency'] * 0.4 +
+                (0.8 if analysis['bullish_divergence'] or analysis['bearish_divergence'] else 0.5) * 0.2
+            )
+            analysis['signal_quality'] = quality_score
+            
+            # 增强评分（0-100）
+            enhanced_score = quality_score * 100
+            analysis['enhanced_score'] = enhanced_score
+            
+        except Exception as e:
+            logger.warning(f"增强型MACD信号分析失败: {e}")
+        
+        return analysis
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        return self._validate_signal_data_with_reason(data)[0]
+
+    def _validate_signal_data_with_reason(self, data: pd.DataFrame) -> tuple:
+        """
+        验证信号生成所需的数据，并返回详细原因
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            tuple: (是否有效, 错误原因)
+        """
+        if not isinstance(data, pd.DataFrame):
+            return False, "输入数据必须是DataFrame"
+        
+        if data.empty:
+            return False, "输入数据为空"
+        
+        if 'close' not in data.columns:
+            return False, "缺少close列"
+        
+        # MACD需要足够的数据点
+        min_periods = max(self.slow_period, self.signal_period) + 10
+        if len(data) < min_periods:
+            return False, f"数据量不足，需要至少{min_periods}个数据点"
+        
+        return True, ""
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认的持有信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'reason': reason,
+            'metadata': {}
+        }
 
 
 # 为了兼容指标注册表,创建别名

@@ -165,6 +165,199 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 重置计算结果
         self._result = None
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于WMA指标数值生成最新的交易信号
+        
+        WMA交易信号逻辑：
+        - 价格上穿WMA：买入信号
+        - 价格下穿WMA：卖出信号  
+        - WMA趋势向上：支持买入
+        - WMA趋势向下：支持卖出
+        - WMA线金叉：强烈买入信号
+        - WMA线死叉：强烈卖出信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("WMA计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            prev_close = data['close'].iloc[-2] if len(data) > 1 else latest_close
+            
+            # 4. 获取主要WMA值
+            main_period = self.periods[0]
+            wma_col = f"WMA{main_period}"
+            if wma_col not in self._result.columns or len(self._result) < 2:
+                return self._get_default_signal("WMA数据不足")
+                
+            latest_wma = self._result[wma_col].iloc[-1]
+            prev_wma = self._result[wma_col].iloc[-2]
+            
+            # 5. WMA信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 检查价格与WMA的关系
+            price_above_wma_now = latest_close > latest_wma
+            price_above_wma_prev = prev_close > prev_wma
+            wma_rising = latest_wma > prev_wma
+            wma_falling = latest_wma < prev_wma
+            
+            # 价格上穿WMA - 买入信号
+            if price_above_wma_now and not price_above_wma_prev:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.85
+                reason = "价格上穿WMA，买入信号"
+                if wma_rising:
+                    strength = min(0.9, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = "价格上穿上升趋势WMA，强烈买入信号"
+                    
+            # 价格下穿WMA - 卖出信号
+            elif not price_above_wma_now and price_above_wma_prev:
+                signal_type = "sell"
+                strength = 0.8
+                confidence = 0.85
+                reason = "价格下穿WMA，卖出信号"
+                if wma_falling:
+                    strength = min(0.9, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = "价格下穿下降趋势WMA，强烈卖出信号"
+                    
+            # 价格持续在WMA上方且WMA上升 - 持续买入
+            elif price_above_wma_now and wma_rising:
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在上升WMA上方，持续买入信号"
+                
+            # 价格持续在WMA下方且WMA下降 - 持续卖出
+            elif not price_above_wma_now and wma_falling:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在下降WMA下方，持续卖出信号"
+            
+            # 检查WMA多周期交叉信号
+            if len(self.periods) >= 2:
+                sorted_periods = sorted(self.periods)
+                short_wma_col = f"WMA{sorted_periods[0]}"
+                long_wma_col = f"WMA{sorted_periods[1]}"
+                
+                if (short_wma_col in self._result.columns and 
+                    long_wma_col in self._result.columns and len(self._result) >= 2):
+                    
+                    short_wma_now = self._result[short_wma_col].iloc[-1]
+                    short_wma_prev = self._result[short_wma_col].iloc[-2]
+                    long_wma_now = self._result[long_wma_col].iloc[-1]
+                    long_wma_prev = self._result[long_wma_col].iloc[-2]
+                    
+                    # WMA金叉 - 短期WMA上穿长期WMA
+                    if (short_wma_now > long_wma_now and short_wma_prev <= long_wma_prev):
+                        signal_type = "buy"
+                        strength = 0.9
+                        confidence = 0.9
+                        reason = f"WMA{sorted_periods[0]}上穿WMA{sorted_periods[1]}，WMA金叉强烈买入"
+                        metadata['wma_cross_type'] = 'golden'
+                        
+                    # WMA死叉 - 短期WMA下穿长期WMA
+                    elif (short_wma_now < long_wma_now and short_wma_prev >= long_wma_prev):
+                        signal_type = "sell"
+                        strength = 0.9
+                        confidence = 0.9
+                        reason = f"WMA{sorted_periods[0]}下穿WMA{sorted_periods[1]}，WMA死叉强烈卖出"
+                        metadata['wma_cross_type'] = 'death'
+            
+            # 计算价格相对WMA的偏离度
+            if latest_wma > 0:
+                price_deviation = abs(latest_close - latest_wma) / latest_wma
+                metadata['price_deviation'] = price_deviation
+                metadata['wma_value'] = latest_wma
+                metadata['wma_trend'] = 'rising' if wma_rising else 'falling' if wma_falling else 'flat'
+                metadata['wma_period'] = main_period
+                
+                # 基于偏离度调整信号强度
+                if price_deviation > 0.03:  # 偏离超过3%
+                    if signal_type in ['buy', 'sell']:
+                        strength = min(1.0, strength + price_deviation * 1.5)
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"WMA信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        if 'close' not in data.columns:
+            return False
+            
+        if len(data) < max(self.periods):
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
     def compute(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法:计算WMA"""
         return self.calculate(data, **kwargs)
@@ -244,10 +437,20 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了WMA指标列的Data_frame
         """
-        if df.empty:
-            return pd.DataFrame()
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
+        if df is None or df.empty:
+            raise ValueError("WMA计算: 输入数据不能为空")
 
         # 检查必需列是否存在
+        if 'close' not in df.columns:
+            raise ValueError("WMA计算: 缺少必需的'close'列")
+            
+        # 检查数据长度是否足够
+        max_period = max(self.periods) if self.periods else 20
+        if len(df) < max_period:
+            raise ValueError(f"WMA计算: 数据长度不足，需要至少{max_period}个数据点，实际{len(df)}个")
+
+        # 原有逻辑开始
         if 'close' not in df.columns:
             # 返回空的结果DataFrame,保持原有结构
             result = df.copy()

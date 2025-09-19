@@ -186,6 +186,272 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         return 30  # TODO: 将魔法数字提取到配置中
 
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 如果已有结果返回True,否则返回False
+        """
+        return self._result is not None and not self._result.empty
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于AD (Accumulation/Distribution Line) 指标数值生成最新的交易信号
+        
+        AD交易信号逻辑：
+        - AD上升 + 价格上升：累积买入信号
+        - AD下降 + 价格下降：分布卖出信号
+        - AD与均线的突破：趋势确认信号
+        - AD与价格背离：反转信号
+        - AD趋势强度：信号强度判断
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                result = self.calculate(data)
+                if result is not None:
+                    self._result = result
+            
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("AD计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取AD相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("AD数据不足")
+                
+            # 检查必要的列是否存在
+            if 'AD' not in self._result.columns:
+                return self._get_default_signal("AD结果列不存在")
+                
+            ad_values = self._result['AD'].dropna()
+            if len(ad_values) < 2:
+                return self._get_default_signal("AD有效数据不足")
+                
+            latest_ad = ad_values.iloc[-1]
+            prev_ad = ad_values.iloc[-2]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_ad) or pd.isna(prev_ad):
+                return self._get_default_signal("AD数据包含NaN值")
+            
+            # 5. 获取价格数据
+            close_values = data['close'].iloc[-2:]
+            if len(close_values) < 2:
+                return self._get_default_signal("价格数据不足")
+                
+            latest_price = close_values.iloc[-1]
+            prev_price = close_values.iloc[-2]
+            
+            # 6. AD信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算AD和价格变化
+            ad_change = latest_ad - prev_ad
+            price_change = latest_price - prev_price
+            ad_change_pct = (ad_change / abs(prev_ad)) * 100 if prev_ad != 0 else 0
+            price_change_pct = (price_change / prev_price) * 100 if prev_price != 0 else 0
+            
+            # 获取AD均线信息（如果存在）
+            ad_ma = None
+            if 'AD_MA' in self._result.columns:
+                ad_ma_values = self._result['AD_MA'].dropna()
+                if len(ad_ma_values) > 0:
+                    ad_ma = ad_ma_values.iloc[-1]
+            
+            # AD-价格累积分布分析（核心AD信号）
+            if ad_change > 0 and price_change > 0:
+                # AD和价格同时上升 - 累积买入信号
+                signal_type = "buy"
+                accumulation_strength = min(abs(ad_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.7 + accumulation_strength * 0.2)
+                confidence = 0.85
+                reason = f"AD累积买入({ad_change_pct:.2f}%, {price_change_pct:.2f}%)，资金流入确认"
+                
+            elif ad_change < 0 and price_change < 0:
+                # AD和价格同时下降 - 分布卖出信号
+                signal_type = "sell"
+                distribution_strength = min(abs(ad_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.7 + distribution_strength * 0.2)
+                confidence = 0.85
+                reason = f"AD分布卖出({ad_change_pct:.2f}%, {price_change_pct:.2f}%)，资金流出确认"
+                
+            elif ad_change > 0 and price_change < 0:
+                # AD上升但价格下降 - 正背离，潜在底部
+                signal_type = "buy"
+                divergence_strength = min(abs(ad_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.8, 0.6 + divergence_strength * 0.2)
+                confidence = 0.75
+                reason = f"AD正背离({ad_change_pct:.2f}% vs {price_change_pct:.2f}%)，资金暗中积累"
+                
+            elif ad_change < 0 and price_change > 0:
+                # AD下降但价格上升 - 负背离，潜在顶部
+                signal_type = "sell"
+                divergence_strength = min(abs(ad_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.8, 0.6 + divergence_strength * 0.2)
+                confidence = 0.75
+                reason = f"AD负背离({ad_change_pct:.2f}% vs {price_change_pct:.2f}%)，资金暗中流出"
+            
+            # AD均线突破信号
+            elif ad_ma is not None:
+                ad_ma_prev = None
+                if len(self._result) >= 2 and 'AD_MA' in self._result.columns:
+                    ad_ma_prev_values = self._result['AD_MA'].iloc[-2:-1]
+                    if len(ad_ma_prev_values) > 0 and not pd.isna(ad_ma_prev_values.iloc[0]):
+                        ad_ma_prev = ad_ma_prev_values.iloc[0]
+                
+                if ad_ma_prev is not None:
+                    # AD突破均线向上
+                    if prev_ad <= ad_ma_prev and latest_ad > ad_ma:
+                        signal_type = "buy"
+                        breakout_strength = min(abs(latest_ad - ad_ma) / abs(ad_ma), 0.2) if ad_ma != 0 else 0
+                        strength = min(0.75, 0.6 + breakout_strength * 5)
+                        confidence = 0.75
+                        reason = f"AD突破均线向上({latest_ad:.0f} > {ad_ma:.0f})，累积趋势确认"
+                        
+                    # AD跌破均线向下
+                    elif prev_ad >= ad_ma_prev and latest_ad < ad_ma:
+                        signal_type = "sell"
+                        breakdown_strength = min(abs(ad_ma - latest_ad) / abs(ad_ma), 0.2) if ad_ma != 0 else 0
+                        strength = min(0.75, 0.6 + breakdown_strength * 5)
+                        confidence = 0.75
+                        reason = f"AD跌破均线向下({latest_ad:.0f} < {ad_ma:.0f})，分布趋势确认"
+            
+            # AD趋势强度分析（基于20期趋势）
+            if len(ad_values) >= 20:
+                ad_trend_start = ad_values.iloc[-20]
+                ad_trend_slope = (latest_ad - ad_trend_start) / 20
+                
+                if abs(ad_trend_slope) > 0:
+                    # 计算趋势强度标准差
+                    try:
+                        ad_recent = ad_values.iloc[-20:]
+                        ad_volatility = ad_recent.diff().std()
+                        trend_strength_ratio = abs(ad_trend_slope) / ad_volatility if ad_volatility > 0 else 0
+                        
+                        if trend_strength_ratio > 2.0:  # 强趋势
+                            if ad_trend_slope > 0:
+                                if signal_type == "buy":
+                                    strength = min(strength + 0.15, 1.0)
+                                    confidence = min(confidence + 0.1, 1.0)
+                                    reason += "，强势累积趋势"
+                                elif signal_type == "hold":
+                                    signal_type = "buy"
+                                    strength = 0.65
+                                    confidence = 0.7
+                                    reason = f"AD强势上升趋势，资金持续流入"
+                            else:
+                                if signal_type == "sell":
+                                    strength = min(strength + 0.15, 1.0)
+                                    confidence = min(confidence + 0.1, 1.0)
+                                    reason += "，强势分布趋势"
+                                elif signal_type == "hold":
+                                    signal_type = "sell"
+                                    strength = 0.65
+                                    confidence = 0.7
+                                    reason = f"AD强势下降趋势，资金持续流出"
+                                    
+                    except Exception:
+                        pass  # 忽略趋势强度计算错误
+            
+            # 计算AD特有的元数据
+            ad_trend = "上升" if ad_change > 0 else "下降" if ad_change < 0 else "平稳"
+            price_trend = "上升" if price_change > 0 else "下降" if price_change < 0 else "平稳"
+            accumulation_distribution = "累积" if (ad_change > 0) == (price_change > 0) else "背离" if ad_change != 0 and price_change != 0 else "中性"
+            
+            metadata = {
+                'ad_value': latest_ad,
+                'ad_previous': prev_ad,
+                'ad_change': ad_change,
+                'ad_change_pct': ad_change_pct,
+                'ad_trend': ad_trend,
+                'price_change': price_change,
+                'price_change_pct': price_change_pct,
+                'price_trend': price_trend,
+                'accumulation_distribution': accumulation_distribution,
+                'ad_ma': ad_ma,
+                'above_ma': latest_ad > ad_ma if ad_ma is not None else None,
+                'indicator_type': 'volume_price_relationship',
+                'calculation_method': 'CLV_based'  # Close Location Value based
+            }
+            
+            # 7. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"AD信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # AD需要足够的数据用于计算
+        min_periods = max(getattr(self, 'period', 14), 2)
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
 
 class AccumulationDistribution(AD):
     """
@@ -1076,3 +1342,275 @@ class AccumulationDistribution(AD):
         except Exception:
             # 如果验证失败,静默处理
             pass
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 如果已有结果返回True,否则返回False
+        """
+        return self._result is not None and not self._result.empty
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于AD (Accumulation/Distribution Line) 指标数值生成最新的交易信号
+        
+        AD交易信号逻辑：
+        - AD上升 + 价格上升：累积买入信号
+        - AD下降 + 价格下降：分布卖出信号
+        - AD与均线的突破：趋势确认信号
+        - AD与价格背离：反转信号
+        - AD趋势强度：信号强度判断
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                result = self.calculate(data)
+                if result is not None:
+                    self._result = result
+            
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("AD计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取AD相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("AD数据不足")
+                
+            # 检查必要的列是否存在
+            if 'AD' not in self._result.columns:
+                return self._get_default_signal("AD结果列不存在")
+                
+            ad_values = self._result['AD'].dropna()
+            if len(ad_values) < 2:
+                return self._get_default_signal("AD有效数据不足")
+                
+            latest_ad = ad_values.iloc[-1]
+            prev_ad = ad_values.iloc[-2]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_ad) or pd.isna(prev_ad):
+                return self._get_default_signal("AD数据包含NaN值")
+            
+            # 5. 获取价格数据
+            close_values = data['close'].iloc[-2:]
+            if len(close_values) < 2:
+                return self._get_default_signal("价格数据不足")
+                
+            latest_price = close_values.iloc[-1]
+            prev_price = close_values.iloc[-2]
+            
+            # 6. AD信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算AD和价格变化
+            ad_change = latest_ad - prev_ad
+            price_change = latest_price - prev_price
+            ad_change_pct = (ad_change / abs(prev_ad)) * 100 if prev_ad != 0 else 0
+            price_change_pct = (price_change / prev_price) * 100 if prev_price != 0 else 0
+            
+            # 获取AD均线信息（如果存在）
+            ad_ma = None
+            if 'AD_MA' in self._result.columns:
+                ad_ma_values = self._result['AD_MA'].dropna()
+                if len(ad_ma_values) > 0:
+                    ad_ma = ad_ma_values.iloc[-1]
+            
+            # AD-价格累积分布分析（核心AD信号）
+            if ad_change > 0 and price_change > 0:
+                # AD和价格同时上升 - 累积买入信号
+                signal_type = "buy"
+                accumulation_strength = min(abs(ad_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.7 + accumulation_strength * 0.2)
+                confidence = 0.85
+                reason = f"AD累积买入({ad_change_pct:.2f}%, {price_change_pct:.2f}%)，资金流入确认"
+                
+            elif ad_change < 0 and price_change < 0:
+                # AD和价格同时下降 - 分布卖出信号
+                signal_type = "sell"
+                distribution_strength = min(abs(ad_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.7 + distribution_strength * 0.2)
+                confidence = 0.85
+                reason = f"AD分布卖出({ad_change_pct:.2f}%, {price_change_pct:.2f}%)，资金流出确认"
+                
+            elif ad_change > 0 and price_change < 0:
+                # AD上升但价格下降 - 正背离，潜在底部
+                signal_type = "buy"
+                divergence_strength = min(abs(ad_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.8, 0.6 + divergence_strength * 0.2)
+                confidence = 0.75
+                reason = f"AD正背离({ad_change_pct:.2f}% vs {price_change_pct:.2f}%)，资金暗中积累"
+                
+            elif ad_change < 0 and price_change > 0:
+                # AD下降但价格上升 - 负背离，潜在顶部
+                signal_type = "sell"
+                divergence_strength = min(abs(ad_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.8, 0.6 + divergence_strength * 0.2)
+                confidence = 0.75
+                reason = f"AD负背离({ad_change_pct:.2f}% vs {price_change_pct:.2f}%)，资金暗中流出"
+            
+            # AD均线突破信号
+            elif ad_ma is not None:
+                ad_ma_prev = None
+                if len(self._result) >= 2 and 'AD_MA' in self._result.columns:
+                    ad_ma_prev_values = self._result['AD_MA'].iloc[-2:-1]
+                    if len(ad_ma_prev_values) > 0 and not pd.isna(ad_ma_prev_values.iloc[0]):
+                        ad_ma_prev = ad_ma_prev_values.iloc[0]
+                
+                if ad_ma_prev is not None:
+                    # AD突破均线向上
+                    if prev_ad <= ad_ma_prev and latest_ad > ad_ma:
+                        signal_type = "buy"
+                        breakout_strength = min(abs(latest_ad - ad_ma) / abs(ad_ma), 0.2) if ad_ma != 0 else 0
+                        strength = min(0.75, 0.6 + breakout_strength * 5)
+                        confidence = 0.75
+                        reason = f"AD突破均线向上({latest_ad:.0f} > {ad_ma:.0f})，累积趋势确认"
+                        
+                    # AD跌破均线向下
+                    elif prev_ad >= ad_ma_prev and latest_ad < ad_ma:
+                        signal_type = "sell"
+                        breakdown_strength = min(abs(ad_ma - latest_ad) / abs(ad_ma), 0.2) if ad_ma != 0 else 0
+                        strength = min(0.75, 0.6 + breakdown_strength * 5)
+                        confidence = 0.75
+                        reason = f"AD跌破均线向下({latest_ad:.0f} < {ad_ma:.0f})，分布趋势确认"
+            
+            # AD趋势强度分析（基于20期趋势）
+            if len(ad_values) >= 20:
+                ad_trend_start = ad_values.iloc[-20]
+                ad_trend_slope = (latest_ad - ad_trend_start) / 20
+                
+                if abs(ad_trend_slope) > 0:
+                    # 计算趋势强度标准差
+                    try:
+                        ad_recent = ad_values.iloc[-20:]
+                        ad_volatility = ad_recent.diff().std()
+                        trend_strength_ratio = abs(ad_trend_slope) / ad_volatility if ad_volatility > 0 else 0
+                        
+                        if trend_strength_ratio > 2.0:  # 强趋势
+                            if ad_trend_slope > 0:
+                                if signal_type == "buy":
+                                    strength = min(strength + 0.15, 1.0)
+                                    confidence = min(confidence + 0.1, 1.0)
+                                    reason += "，强势累积趋势"
+                                elif signal_type == "hold":
+                                    signal_type = "buy"
+                                    strength = 0.65
+                                    confidence = 0.7
+                                    reason = f"AD强势上升趋势，资金持续流入"
+                            else:
+                                if signal_type == "sell":
+                                    strength = min(strength + 0.15, 1.0)
+                                    confidence = min(confidence + 0.1, 1.0)
+                                    reason += "，强势分布趋势"
+                                elif signal_type == "hold":
+                                    signal_type = "sell"
+                                    strength = 0.65
+                                    confidence = 0.7
+                                    reason = f"AD强势下降趋势，资金持续流出"
+                                    
+                    except Exception:
+                        pass  # 忽略趋势强度计算错误
+            
+            # 计算AD特有的元数据
+            ad_trend = "上升" if ad_change > 0 else "下降" if ad_change < 0 else "平稳"
+            price_trend = "上升" if price_change > 0 else "下降" if price_change < 0 else "平稳"
+            accumulation_distribution = "累积" if (ad_change > 0) == (price_change > 0) else "背离" if ad_change != 0 and price_change != 0 else "中性"
+            
+            metadata = {
+                'ad_value': latest_ad,
+                'ad_previous': prev_ad,
+                'ad_change': ad_change,
+                'ad_change_pct': ad_change_pct,
+                'ad_trend': ad_trend,
+                'price_change': price_change,
+                'price_change_pct': price_change_pct,
+                'price_trend': price_trend,
+                'accumulation_distribution': accumulation_distribution,
+                'ad_ma': ad_ma,
+                'above_ma': latest_ad > ad_ma if ad_ma is not None else None,
+                'indicator_type': 'volume_price_relationship',
+                'calculation_method': 'CLV_based'  # Close Location Value based
+            }
+            
+            # 7. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"AD信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # AD需要足够的数据用于计算
+        min_periods = max(getattr(self, 'period', 14), 2)
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+
+# 类别名,供指标注册系统使用
+A_D = AD
+AccDistribution = AD

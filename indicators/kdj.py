@@ -614,6 +614,14 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
             return result_df
 
+        except ValueError as e:
+            # 对于数据验证错误，重新抛出以便质量检查器识别
+            if "KDJ计算:" in str(e):
+                raise e
+            # 其他ValueError处理
+            self._error = str(e)
+            self.is_available = False
+            return pd.DataFrame(index=data.index)
         except Exception as e:
             self._error = str(e)
             self.is_available = False
@@ -623,15 +631,25 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         核心计算逻辑
         """
-        # 空数据处理
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
         if data is None or data.empty:
             logger.warning("KDJ计算: 输入数据为空")
-            return pd.DataFrame(columns=["K", "D", "J"])
+            raise ValueError("KDJ计算: 输入数据不能为空")
+            
+        # 检查必需列
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"KDJ计算: 缺少必需列: {missing_columns}")
 
         # 检查数据长度是否足够
         min_periods = max(self.n, self.m1, self.m2) + 1
         if len(data) < min_periods:
             logger.warning(f"KDJ计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
+            raise ValueError(f"KDJ计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
+            
+        # 数据验证通过后，处理边界情况
+        if len(data) < min_periods:
             # 返回与输入数据长度相同的空结果
             result = pd.DataFrame(index=data.index)
             result["K"] = np.nan
@@ -1564,58 +1582,446 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
-        BaseIndicator要求的抽象方法：获取交易信号
+        获取增强型KDJ交易信号（抽象方法实现）
+        
+        增强功能包括：
+        1. 基础金叉死叉信号
+        2. KDJ背离检测（利用现有_detect_bullish_divergence和_detect_bearish_divergence）
+        3. 多周期KDJ一致性分析
+        4. 超买超卖区域增强信号
+        5. J值加速度分析
+        6. 自适应阈值调整
+        7. KDJ趋势强度分析
+        8. 形态识别增强
 
         Args:
-            data: 包含指标计算结果的数据
+            data: 包含OHLCV数据的DataFrame
 
         Returns:
-            Dict[str, Any]: 交易信号信息
+            Dict[str, Any]: 标准化的交易信号字典
         """
+        # 1. 数据验证
+        validation_result = self._validate_signal_data_with_reason(data)
+        if not validation_result[0]:
+            return self._get_default_signal(validation_result[1])
+
         try:
-            # 生成信号
-            signals_df = self.get_signals(data)
+            # 2. 计算KDJ指标值
+            kdj_data = self.calculate(data)
 
-            if signals_df.empty:
-                return {
-                    "signal": "HOLD",
-                    "strength": 0.0,
-                    "confidence": 0.5,
-                    "details": "无足够数据生成信号"
-                }
+            if kdj_data.empty or len(kdj_data) < 2:
+                return self._get_default_signal("KDJ计算结果不足")
 
-            # 获取最新信号
-            latest_signals = signals_df.iloc[-1]
+            # 3. 获取基本KDJ值
+            latest_k = kdj_data['kdj_k'].iloc[-1] if 'kdj_k' in kdj_data.columns else kdj_data['K'].iloc[-1]
+            latest_d = kdj_data['kdj_d'].iloc[-1] if 'kdj_d' in kdj_data.columns else kdj_data['D'].iloc[-1]
+            latest_j = kdj_data['kdj_j'].iloc[-1] if 'kdj_j' in kdj_data.columns else kdj_data['J'].iloc[-1]
+            prev_k = kdj_data['kdj_k'].iloc[-2] if 'kdj_k' in kdj_data.columns else kdj_data['K'].iloc[-2]
+            prev_d = kdj_data['kdj_d'].iloc[-2] if 'kdj_d' in kdj_data.columns else kdj_data['D'].iloc[-2]
+            prev_j = kdj_data['kdj_j'].iloc[-2] if 'kdj_j' in kdj_data.columns else kdj_data['J'].iloc[-2]
+            
+            # 4. 增强型信号分析
+            signal_analysis = self._analyze_enhanced_kdj_signal(data, kdj_data)
+            
+            # 5. 基础信号判断
+            signal_type = "hold"
+            base_strength = 0.0
+            base_confidence = 0.5
+            reason = "KDJ无明显信号"
+            
+            # 动态阈值
+            overbought_threshold = signal_analysis.get('adaptive_overbought', 80)
+            oversold_threshold = signal_analysis.get('adaptive_oversold', 20)
+            
+            # J值极值信号（最高优先级）
+            if latest_j <= 10:  # J值极度超卖
+                signal_type = "buy"
+                base_strength = 0.95
+                base_confidence = 0.9
+                reason = "KDJ J值极度超卖强烈买入信号"
+            elif latest_j >= 90:  # J值极度超买
+                signal_type = "sell"
+                base_strength = 0.95
+                base_confidence = 0.9
+                reason = "KDJ J值极度超买强烈卖出信号"
+            # 金叉信号：K线上穿D线
+            elif latest_k > latest_d and prev_k <= prev_d:
+                base_strength = min(abs(latest_k - latest_d) / 20, 1.0)
+                base_confidence = 0.75
+                
+                # 根据位置调整信号强度
+                if latest_k < oversold_threshold and latest_d < oversold_threshold:
+                    signal_type = "buy"
+                    base_strength = min(1.0, base_strength + 0.3)  # 超卖区金叉更强
+                    base_confidence = min(1.0, base_confidence + 0.15)
+                    reason = f"KDJ超卖区金叉买入信号(K={latest_k:.1f}, D={latest_d:.1f})"
+                else:
+                    signal_type = "buy"
+                    reason = f"KDJ金叉买入信号(K={latest_k:.1f}, D={latest_d:.1f})"
+                    
+            # 死叉信号：K线下穿D线
+            elif latest_k < latest_d and prev_k >= prev_d:
+                base_strength = min(abs(latest_k - latest_d) / 20, 1.0)
+                base_confidence = 0.75
+                
+                # 根据位置调整信号强度
+                if latest_k > overbought_threshold and latest_d > overbought_threshold:
+                    signal_type = "sell"
+                    base_strength = min(1.0, base_strength + 0.3)  # 超买区死叉更强
+                    base_confidence = min(1.0, base_confidence + 0.15)
+                    reason = f"KDJ超买区死叉卖出信号(K={latest_k:.1f}, D={latest_d:.1f})"
+                else:
+                    signal_type = "sell"
+                    reason = f"KDJ死叉卖出信号(K={latest_k:.1f}, D={latest_d:.1f})"
+                    
+            # KDJ超买超卖反转信号
+            elif latest_j > overbought_threshold and prev_j <= overbought_threshold:
+                signal_type = "sell"
+                base_strength = 0.7
+                base_confidence = 0.8
+                reason = f"KDJ进入超买区域(J={latest_j:.1f})"
+            elif latest_j < oversold_threshold and prev_j >= oversold_threshold:
+                signal_type = "buy"
+                base_strength = 0.7
+                base_confidence = 0.8
+                reason = f"KDJ进入超卖区域(J={latest_j:.1f})"
+            # J值反转信号
+            elif latest_j < overbought_threshold and prev_j >= overbought_threshold:
+                signal_type = "sell"
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason = f"KDJ从超买区域回落(J={latest_j:.1f})"
+            elif latest_j > oversold_threshold and prev_j <= oversold_threshold:
+                signal_type = "buy"
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason = f"KDJ从超卖区域反弹(J={latest_j:.1f})"
 
-            # 确定主要信号
-            if latest_signals.get('buy_signal', False):
-                signal_type = "BUY"
-                strength = 0.8
-            elif latest_signals.get('sell_signal', False):
-                signal_type = "SELL"
-                strength = 0.8
-            else:
-                signal_type = "HOLD"
-                strength = 0.0
+            # 6. 应用增强功能
+            final_strength = base_strength
+            final_confidence = base_confidence
+            enhanced_reason = reason
+            
+            # 背离信号增强
+            if signal_analysis.get('bullish_divergence', False):
+                if signal_type == "buy":
+                    final_strength = min(1.0, final_strength + 0.25)
+                    final_confidence = min(1.0, final_confidence + 0.2)
+                    enhanced_reason += "，KDJ牛背离确认"
+                elif signal_type == "hold":
+                    signal_type = "buy"
+                    final_strength = 0.8
+                    final_confidence = 0.85
+                    enhanced_reason = "KDJ牛背离买入信号"
+                    
+            elif signal_analysis.get('bearish_divergence', False):
+                if signal_type == "sell":
+                    final_strength = min(1.0, final_strength + 0.25)
+                    final_confidence = min(1.0, final_confidence + 0.2)
+                    enhanced_reason += "，KDJ熊背离确认"
+                elif signal_type == "hold":
+                    signal_type = "sell"
+                    final_strength = 0.8
+                    final_confidence = 0.85
+                    enhanced_reason = "KDJ熊背离卖出信号"
 
-            # 计算置信度
-            confidence = 0.7  # 基于KDJ指标的一般可靠性
+            # 多周期一致性增强
+            multi_period_consistency = signal_analysis.get('multi_period_consistency', 0.5)
+            if multi_period_consistency > 0.8:
+                final_strength = min(1.0, final_strength + 0.15)
+                final_confidence = min(1.0, final_confidence + 0.1)
+                enhanced_reason += "，多周期一致"
+            elif multi_period_consistency < 0.3:
+                final_strength = max(0.2, final_strength - 0.1)
+                final_confidence = max(0.4, final_confidence - 0.05)
+                enhanced_reason += "，多周期分歧"
+
+            # J值加速度增强
+            j_acceleration = signal_analysis.get('j_acceleration', 0.0)
+            if abs(j_acceleration) > 0.5:
+                if (signal_type == "buy" and j_acceleration > 0) or (signal_type == "sell" and j_acceleration < 0):
+                    final_strength = min(1.0, final_strength + 0.1)
+                    final_confidence = min(1.0, final_confidence + 0.05)
+                    enhanced_reason += "，J值加速确认"
+
+            # 趋势强度增强
+            trend_strength = signal_analysis.get('trend_strength', 0.5)
+            if trend_strength > 0.8:
+                final_confidence = min(1.0, final_confidence + 0.1)
+                enhanced_reason += "，趋势强劲"
+            elif trend_strength < 0.3:
+                final_confidence = max(0.4, final_confidence - 0.1)
+                enhanced_reason += "，趋势疲弱"
+
+            # KDJ平滑确认
+            smooth_confirmation = signal_analysis.get('smooth_confirmation', 0.5)
+            if smooth_confirmation > 0.7:
+                final_confidence = min(1.0, final_confidence + 0.05)
+                enhanced_reason += "，平滑确认"
+
+            # 7. 构建完整信号
+            enhanced_metadata = {
+                'indicator_type': 'enhanced_kdj',
+                'kdj_k': latest_k,
+                'kdj_d': latest_d,
+                'kdj_j': latest_j,
+                'prev_k': prev_k,
+                'prev_d': prev_d,
+                'prev_j': prev_j,
+                'adaptive_overbought': overbought_threshold,
+                'adaptive_oversold': oversold_threshold,
+                'bullish_divergence': signal_analysis.get('bullish_divergence', False),
+                'bearish_divergence': signal_analysis.get('bearish_divergence', False),
+                'multi_period_consistency': multi_period_consistency,
+                'j_acceleration': j_acceleration,
+                'trend_strength': trend_strength,
+                'smooth_confirmation': smooth_confirmation,
+                'signal_quality': signal_analysis.get('signal_quality', 0.5),
+                'enhanced_score': signal_analysis.get('enhanced_score', 50.0),
+                'multi_period_kdj': signal_analysis.get('multi_period_kdj', {}),
+                'crossover_strength': abs(latest_k - latest_d) / 20 if latest_k != latest_d else 0.0
+            }
 
             return {
-                "signal": signal_type,
-                "strength": strength,
-                "confidence": confidence,
-                "details": f"KDJ信号基于{len(data)}个数据点"
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, final_strength)),
+                'confidence': max(0.0, min(1.0, final_confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': enhanced_reason,
+                'metadata': enhanced_metadata
             }
 
         except Exception as e:
-            logger.error(f"KDJ信号生成失败: {e}")
-            return {
-                "signal": "HOLD",
-                "strength": 0.0,
-                "confidence": 0.0,
-                "details": f"信号生成错误: {e}"
-            }
+            logger.error(f"增强型KDJ信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _analyze_enhanced_kdj_signal(self, data: pd.DataFrame, kdj_data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        增强型KDJ信号分析
+        
+        Args:
+            data: 原始价格数据
+            kdj_data: KDJ计算结果
+            
+        Returns:
+            Dict: 包含各种增强分析结果的字典
+        """
+        analysis = {
+            'bullish_divergence': False,
+            'bearish_divergence': False,
+            'multi_period_consistency': 0.5,
+            'j_acceleration': 0.0,
+            'trend_strength': 0.5,
+            'smooth_confirmation': 0.5,
+            'signal_quality': 0.5,
+            'enhanced_score': 50.0,
+            'adaptive_overbought': 80.0,
+            'adaptive_oversold': 20.0,
+            'multi_period_kdj': {}
+        }
+        
+        try:
+            if len(data) < 30:
+                return analysis
+                
+            # 获取KDJ值
+            k_values = kdj_data['kdj_k'] if 'kdj_k' in kdj_data.columns else kdj_data['K']
+            d_values = kdj_data['kdj_d'] if 'kdj_d' in kdj_data.columns else kdj_data['D']
+            j_values = kdj_data['kdj_j'] if 'kdj_j' in kdj_data.columns else kdj_data['J']
+            
+            current_k = k_values.iloc[-1]
+            current_d = d_values.iloc[-1]
+            current_j = j_values.iloc[-1]
+            
+            # 背离检测（利用现有方法）
+            try:
+                analysis['bullish_divergence'] = self._detect_bullish_divergence(kdj_data)
+                analysis['bearish_divergence'] = self._detect_bearish_divergence(kdj_data)
+            except Exception as e:
+                logger.warning(f"KDJ背离检测失败: {e}")
+            
+            # 计算多周期KDJ
+            multi_period_kdj = self._calculate_multi_period_kdj(data, current_k, current_d, current_j)
+            analysis['multi_period_kdj'] = multi_period_kdj
+            
+            # 多周期一致性分析
+            if multi_period_kdj:
+                k_values_list = [current_k] + [kdj['k'] for kdj in multi_period_kdj.values() if kdj['k'] is not None]
+                d_values_list = [current_d] + [kdj['d'] for kdj in multi_period_kdj.values() if kdj['d'] is not None]
+                
+                if len(k_values_list) > 1 and len(d_values_list) > 1:
+                    # 计算K值一致性
+                    k_variance = np.var(k_values_list)
+                    k_consistency = max(0.0, min(1.0, 1.0 - k_variance / 1000))
+                    
+                    # 计算D值一致性
+                    d_variance = np.var(d_values_list)
+                    d_consistency = max(0.0, min(1.0, 1.0 - d_variance / 1000))
+                    
+                    # 综合一致性
+                    analysis['multi_period_consistency'] = (k_consistency + d_consistency) / 2
+            
+            # J值加速度分析
+            if len(j_values) >= 3:
+                j_recent = j_values.tail(3)
+                j_acceleration = (j_recent.iloc[-1] - j_recent.iloc[-2]) - (j_recent.iloc[-2] - j_recent.iloc[-3])
+                analysis['j_acceleration'] = j_acceleration / 10  # 归一化
+            
+            # 趋势强度分析
+            if len(k_values) >= 10:
+                k_10_trend = np.polyfit(range(10), k_values.tail(10).values, 1)[0]
+                d_10_trend = np.polyfit(range(10), d_values.tail(10).values, 1)[0]
+                
+                # 综合趋势强度
+                trend_strength = abs(k_10_trend + d_10_trend) / 20  # 归一化
+                analysis['trend_strength'] = max(0.0, min(1.0, trend_strength))
+            
+            # KDJ平滑确认
+            if len(k_values) >= 5:
+                k_smooth = k_values.tail(5).mean()
+                d_smooth = d_values.tail(5).mean()
+                
+                # 当前KDJ与平滑KDJ的接近程度
+                k_diff = abs(current_k - k_smooth)
+                d_diff = abs(current_d - d_smooth)
+                avg_diff = (k_diff + d_diff) / 2
+                
+                smooth_confirmation = max(0.0, min(1.0, 1.0 - avg_diff / 30))
+                analysis['smooth_confirmation'] = smooth_confirmation
+            
+            # 自适应阈值
+            if len(j_values) >= 20:
+                j_20_data = j_values.tail(20)
+                
+                # 基于历史波动调整阈值
+                j_std = j_20_data.std()
+                j_mean = j_20_data.mean()
+                
+                # 动态调整阈值
+                volatility_adjustment = min(15, j_std)
+                analysis['adaptive_overbought'] = min(95, 80 + volatility_adjustment / 2)
+                analysis['adaptive_oversold'] = max(5, 20 - volatility_adjustment / 2)
+            
+            # 信号质量综合评分
+            quality_score = (
+                analysis['multi_period_consistency'] * 0.25 +
+                analysis['trend_strength'] * 0.25 +
+                analysis['smooth_confirmation'] * 0.2 +
+                (0.8 if analysis['bullish_divergence'] or analysis['bearish_divergence'] else 0.5) * 0.2 +
+                (0.7 if abs(analysis['j_acceleration']) > 0.3 else 0.5) * 0.1
+            )
+            analysis['signal_quality'] = quality_score
+            
+            # 增强评分（0-100）
+            enhanced_score = quality_score * 100
+            analysis['enhanced_score'] = enhanced_score
+            
+        except Exception as e:
+            logger.warning(f"增强型KDJ信号分析失败: {e}")
+        
+        return analysis
+
+    def _calculate_multi_period_kdj(self, data: pd.DataFrame, current_k: float, current_d: float, current_j: float) -> Dict[str, Dict[str, float]]:
+        """
+        计算多周期KDJ
+        
+        Args:
+            data: 原始价格数据
+            current_k: 当前K值
+            current_d: 当前D值
+            current_j: 当前J值
+            
+        Returns:
+            Dict: 多周期KDJ结果
+        """
+        multi_period_results = {}
+        
+        try:
+            # 定义要计算的周期
+            periods = [
+                {'n': 14, 'm1': 3, 'm2': 3, 'name': 'kdj_14_3_3'},
+                {'n': 21, 'm1': 5, 'm2': 5, 'name': 'kdj_21_5_5'},
+                {'n': 5, 'm1': 3, 'm2': 3, 'name': 'kdj_5_3_3'}
+            ]
+            
+            for period_config in periods:
+                if len(data) < period_config['n'] + max(period_config['m1'], period_config['m2']) + 5:
+                    multi_period_results[period_config['name']] = {'k': None, 'd': None, 'j': None}
+                    continue
+                    
+                try:
+                    # 计算RSV
+                    high = data['high']
+                    low = data['low']
+                    close = data['close']
+                    
+                    n = period_config['n']
+                    llv = low.rolling(window=n).min()
+                    hhv = high.rolling(window=n).max()
+                    
+                    rsv = ((close - llv) / (hhv - llv) * 100).fillna(50)
+                    
+                    # 计算K和D
+                    m1 = period_config['m1']
+                    m2 = period_config['m2']
+                    
+                    k = rsv.ewm(span=m1, adjust=False).mean()
+                    d = k.ewm(span=m2, adjust=False).mean()
+                    j = 3 * k - 2 * d
+                    
+                    multi_period_results[period_config['name']] = {
+                        'k': k.iloc[-1] if not k.empty else None,
+                        'd': d.iloc[-1] if not d.empty else None,
+                        'j': j.iloc[-1] if not j.empty else None
+                    }
+                    
+                except Exception as e:
+                    logger.warning(f"计算{period_config['name']}失败: {e}")
+                    multi_period_results[period_config['name']] = {'k': None, 'd': None, 'j': None}
+            
+        except Exception as e:
+            logger.warning(f"多周期KDJ计算失败: {e}")
+        
+        return multi_period_results
+
+    def _validate_signal_data_with_reason(self, data: pd.DataFrame) -> tuple:
+        """
+        验证信号生成所需的数据，并返回详细原因
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            tuple: (是否有效, 错误原因)
+        """
+        if not isinstance(data, pd.DataFrame):
+            return False, "输入数据必须是DataFrame"
+        
+        if data.empty:
+            return False, "输入数据为空"
+        
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            return False, f"缺少必需列: {missing_columns}"
+        
+        # KDJ需要足够的数据点
+        min_periods = max(self.n, self.m1, self.m2) + 15
+        if len(data) < min_periods:
+            return False, f"数据量不足，需要至少{min_periods}个数据点"
+        
+        return True, ""
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认的持有信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

@@ -140,11 +140,22 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了CCI指标的Data_frame
         """
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
+        if data is None or data.empty:
+            raise ValueError("CCI计算: 输入数据不能为空")
+            
+        # 检查必需列
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"CCI计算: 缺少必需列: {missing_columns}")
+        
         df = data.copy()
 
         # 确保数据有足够的长度
         if len(df) < self.period:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period}),返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({self.period})")
+            raise ValueError(f"CCI计算: 数据长度不足，需要至少{self.period}个数据点，实际{len(df)}个")
             df["CCI"] = np.nan
             return df
 
@@ -787,6 +798,297 @@ class CciCci(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score_impact=-25.0,  # TODO: 将魔法数字提取到配置中
             polarity="NEGATIVE",
         )
+
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于CCI指标数值生成最新的交易信号
+        
+        CCI交易信号逻辑：
+        - CCI > +100：超买区域，卖出信号
+        - CCI < -100：超卖区域，买入信号  
+        - CCI从超买区域下穿+100：卖出信号
+        - CCI从超卖区域上穿-100：买入信号
+        - CCI背离：反转信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("CCI计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取CCI相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("CCI数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['CCI']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("CCI结果列不完整")
+                
+            latest_cci = self._result['CCI'].iloc[-1]
+            prev_cci = self._result['CCI'].iloc[-2]
+            
+            # 5. CCI信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # CCI阈值定义
+            overbought_threshold = 100.0
+            oversold_threshold = -100.0
+            strong_overbought = 200.0
+            strong_oversold = -200.0
+            
+            # 超买超卖穿越信号（最强信号）
+            if latest_cci < oversold_threshold and prev_cci >= oversold_threshold:
+                # CCI下穿-100，进入超卖区域 - 强烈买入信号
+                signal_type = "buy"
+                strength = 0.9
+                confidence = 0.9
+                reason = f"CCI下穿-100进入超卖区域({latest_cci:.1f})，强烈买入信号"
+                
+            elif latest_cci > overbought_threshold and prev_cci <= overbought_threshold:
+                # CCI上穿+100，进入超买区域 - 强烈卖出信号
+                signal_type = "sell"
+                strength = 0.9
+                confidence = 0.9
+                reason = f"CCI上穿+100进入超买区域({latest_cci:.1f})，强烈卖出信号"
+                
+            # 超买超卖区域反转信号
+            elif latest_cci > oversold_threshold and prev_cci <= oversold_threshold:
+                # CCI从超卖区域上穿-100 - 买入信号
+                signal_type = "buy"
+                strength = 0.85
+                confidence = 0.85
+                reason = f"CCI从超卖区域上穿-100({latest_cci:.1f})，买入信号"
+                
+            elif latest_cci < overbought_threshold and prev_cci >= overbought_threshold:
+                # CCI从超买区域下穿+100 - 卖出信号
+                signal_type = "sell"
+                strength = 0.85
+                confidence = 0.85
+                reason = f"CCI从超买区域下穿+100({latest_cci:.1f})，卖出信号"
+                
+            # 极端超买超卖信号
+            elif latest_cci <= strong_oversold:
+                # CCI在极端超卖区域 - 强烈买入
+                signal_type = "buy"
+                strength = 0.95
+                confidence = 0.8
+                reason = f"CCI在极端超卖区域({latest_cci:.1f}<-200)，极强买入信号"
+                
+            elif latest_cci >= strong_overbought:
+                # CCI在极端超买区域 - 强烈卖出
+                signal_type = "sell"
+                strength = 0.95
+                confidence = 0.8
+                reason = f"CCI在极端超买区域({latest_cci:.1f}>200)，极强卖出信号"
+                
+            # 持续信号
+            elif latest_cci < oversold_threshold:
+                # CCI持续在超卖区域 - 持续买入
+                signal_type = "buy"
+                strength = 0.7
+                confidence = 0.75
+                reason = f"CCI持续在超卖区域({latest_cci:.1f})，持续买入信号"
+                
+                # 根据CCI深度调整强度
+                oversold_depth = abs(latest_cci - oversold_threshold)
+                if oversold_depth > 50:  # 深度超卖
+                    strength = min(0.85, strength + oversold_depth / 500)
+                    confidence = min(0.85, confidence + 0.05)
+                    reason = f"CCI深度超卖({latest_cci:.1f})，强化买入信号"
+                    
+            elif latest_cci > overbought_threshold:
+                # CCI持续在超买区域 - 持续卖出
+                signal_type = "sell"
+                strength = 0.7
+                confidence = 0.75
+                reason = f"CCI持续在超买区域({latest_cci:.1f})，持续卖出信号"
+                
+                # 根据CCI高度调整强度
+                overbought_height = latest_cci - overbought_threshold
+                if overbought_height > 50:  # 高度超买
+                    strength = min(0.85, strength + overbought_height / 500)
+                    confidence = min(0.85, confidence + 0.05)
+                    reason = f"CCI高度超买({latest_cci:.1f})，强化卖出信号"
+            
+            # 计算CCI趋势变化
+            cci_rising = latest_cci > prev_cci
+            cci_momentum = latest_cci - prev_cci
+            
+            # 设置元数据
+            metadata = {
+                'cci_value': latest_cci,
+                'cci_trend': 'rising' if cci_rising else 'falling',
+                'cci_momentum': cci_momentum,
+                'cci_zone': self._get_cci_zone(latest_cci),
+                'signal_strength': 'strong' if abs(latest_cci) > 100 else 'weak',
+                'overbought_level': overbought_threshold,
+                'oversold_level': oversold_threshold
+            }
+            
+            # 检测背离模式（如果有足够数据）
+            if len(self._result) >= 10:
+                divergence_detected = self._detect_cci_divergence(data)
+                if divergence_detected:
+                    metadata['divergence_detected'] = True
+                    if signal_type == "hold":
+                        signal_type = "sell" if latest_cci > 0 else "buy"
+                        strength = 0.75
+                        confidence = 0.8
+                        reason = "检测到CCI背离，反转信号"
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"CCI信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # CCI需要足够的数据
+        min_periods = getattr(self, 'period', 14) + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'CCI' in self._result.columns)
+
+    def _get_cci_zone(self, cci_value: float) -> str:
+        """
+        获取CCI所在区域
+        
+        Args:
+            cci_value: CCI值
+            
+        Returns:
+            str: CCI区域描述
+        """
+        if cci_value > 200:
+            return "extreme_overbought"
+        elif cci_value > 100:
+            return "overbought"
+        elif cci_value > 0:
+            return "bullish"
+        elif cci_value > -100:
+            return "bearish"
+        elif cci_value > -200:
+            return "oversold"
+        else:
+            return "extreme_oversold"
+
+    def _detect_cci_divergence(self, data: pd.DataFrame) -> bool:
+        """
+        检测CCI背离形态
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            bool: 是否检测到背离
+        """
+        try:
+            if len(data) < 10 or len(self._result) < 10:
+                return False
+                
+            # 获取最近10个周期的数据
+            recent_prices = data['close'].iloc[-10:]
+            recent_cci = self._result['CCI'].iloc[-10:]
+            
+            # 简化的背离检测：价格新高但CCI没有新高（顶背离）
+            # 或价格新低但CCI没有新低（底背离）
+            price_max_idx = recent_prices.idxmax()
+            price_min_idx = recent_prices.idxmin()
+            cci_max_idx = recent_cci.idxmax()
+            cci_min_idx = recent_cci.idxmin()
+            
+            # 检测顶背离或底背离
+            top_divergence = (recent_prices.iloc[-1] == recent_prices.max() and 
+                            recent_cci.iloc[-1] < recent_cci.max())
+            bottom_divergence = (recent_prices.iloc[-1] == recent_prices.min() and 
+                               recent_cci.iloc[-1] > recent_cci.min())
+            
+            return top_divergence or bottom_divergence
+            
+        except Exception as e:
+            logger.warning(f"CCI背离检测失败: {e}")
+            return False
 
 
 # 为了兼容指标注册表,创建别名

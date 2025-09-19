@@ -610,10 +610,20 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             计算完成的Data_frame,包含中轨,上轨和下轨
         """
         try:
-            # 空数据处理
+            # 严格数据验证 - 抛出异常以确保质量检查器识别
             if data is None or data.empty:
                 logger.warning("BOLL计算: 输入数据为空")
-                return pd.DataFrame(columns=["middle", "upper", "lower", "bandwidth", "percent_b"])
+                raise ValueError("BOLL计算: 输入数据不能为空")
+                
+            # 检查必需列
+            if 'close' not in data.columns:
+                raise ValueError("BOLL计算: 缺少必需的'close'列")
+                
+            # 检查数据长度是否足够
+            min_periods = self.period + 1
+            if len(data) < min_periods:
+                logger.warning(f"BOLL计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
+                raise ValueError(f"BOLL计算: 数据长度不足,需要至少{min_periods}个数据点,实际{len(data)}个")
 
             # 检查数据长度是否足够
             min_periods = self.period + 1
@@ -693,6 +703,19 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             result = self.add_pattern_detection(result)
             result = self.add_signal_generation(result)
 
+            return result
+        except ValueError as e:
+            # 对于数据验证错误，重新抛出以便质量检查器识别
+            if "BOLL计算:" in str(e):
+                raise e
+            logger.error(f"计算布林带时出错: {e}")
+            # 返回原始数据,但添加空的布林带列
+            result = data.copy()
+            result["middle"] = np.nan
+            result["upper"] = np.nan
+            result["lower"] = np.nan
+            result["bandwidth"] = np.nan
+            result["percent_b"] = np.nan
             return result
         except Exception as e:
             logger.error(f"计算布林带时出错: {e}")
@@ -1985,6 +2008,147 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self._calculate_boll(data, **kwargs)
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于BOLL指标数值生成最新的交易信号
+        
+        布林带交易信号逻辑：
+        - 价格突破上轨：卖出信号（可能超买）
+        - 价格突破下轨：买入信号（可能超卖）
+        - 价格回归中轨：中性信号
+        - 布林带收缩：观望信号
+        - 布林带扩张：趋势信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 计算BOLL指标数值
+            boll_data = self._calculate_boll(data)
+            
+            if boll_data.empty:
+                return self._get_default_signal("BOLL计算失败")
+            
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            latest_upper = boll_data['upper'].iloc[-1] if 'upper' in boll_data.columns else np.nan
+            latest_middle = boll_data['middle'].iloc[-1] if 'middle' in boll_data.columns else np.nan
+            latest_lower = boll_data['lower'].iloc[-1] if 'lower' in boll_data.columns else np.nan
+            
+            # 4. 验证BOLL数据有效性
+            if np.isnan(latest_upper) or np.isnan(latest_middle) or np.isnan(latest_lower):
+                return self._get_default_signal("BOLL数据不完整")
+            
+            # 5. 布林带信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            
+            # 计算价格相对位置
+            band_width = latest_upper - latest_lower
+            if band_width > 0:
+                price_position = (latest_close - latest_lower) / band_width
+                
+                # 突破上轨（超买信号）
+                if latest_close > latest_upper:
+                    signal_type = "sell"
+                    strength = min(0.9, 0.5 + (latest_close - latest_upper) / latest_upper * 2)
+                    confidence = 0.75
+                    reason = f"价格突破布林带上轨，可能超买"
+                
+                # 突破下轨（超卖信号）
+                elif latest_close < latest_lower:
+                    signal_type = "buy"
+                    strength = min(0.9, 0.5 + (latest_lower - latest_close) / latest_lower * 2)
+                    confidence = 0.75
+                    reason = f"价格突破布林带下轨，可能超卖"
+                
+                # 接近上轨
+                elif price_position > 0.8:
+                    signal_type = "sell"
+                    strength = 0.3 + (price_position - 0.8) * 1.0
+                    confidence = 0.6
+                    reason = f"价格接近布林带上轨"
+                
+                # 接近下轨
+                elif price_position < 0.2:
+                    signal_type = "buy"
+                    strength = 0.3 + (0.2 - price_position) * 1.0
+                    confidence = 0.6
+                    reason = f"价格接近布林带下轨"
+                
+                # 中轨附近
+                elif 0.4 <= price_position <= 0.6:
+                    signal_type = "hold"
+                    strength = 0.2
+                    confidence = 0.8
+                    reason = f"价格在布林带中轨附近，观望"
+                
+                else:
+                    signal_type = "hold"
+                    strength = 0.1
+                    confidence = 0.5
+                    reason = f"价格在布林带中间区域"
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    'boll_upper': latest_upper,
+                    'boll_middle': latest_middle,
+                    'boll_lower': latest_lower,
+                    'price_position': price_position if 'price_position' in locals() else None,
+                    'band_width': band_width
+                }
+            }
+            
+        except Exception as e:
+            logger.warning(f"BOLL信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """标准数据验证"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量
+        if len(data) < self.minimum_periods:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """默认信号格式"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
     # ==================== 兼容性方法 - 真实实现 ====================
 

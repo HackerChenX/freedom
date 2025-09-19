@@ -548,6 +548,349 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         self.set_parameters_Wr(**kwargs)
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于Enhanced Williams %R指标数值生成最新的交易信号
+        
+        Enhanced Williams %R交易信号逻辑（融合多重增强特性）：
+        - 基础WR信号：超买超卖区域信号
+        - 自适应阈值调整：根据市场波动性动态调整超买超卖阈值
+        - 多周期协同：结合多个周期的WR分析
+        - 背离检测：价格与WR背离信号
+        - 平滑处理：减少噪音信号
+        - 形态识别：WR特定形态信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                result = self.calculate(data, **kwargs)
+                if result is not None:
+                    self._result = result
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("Enhanced Williams %R计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取Enhanced Williams %R相关值
+            if len(self._result) < 3:
+                return self._get_default_signal("Enhanced Williams %R数据不足")
+                
+            # 检查必要的列是否存在
+            if 'wr' not in self._result.columns:
+                return self._get_default_signal("Enhanced Williams %R结果列不存在")
+                
+            wr_values = self._result['wr'].dropna()
+            if len(wr_values) < 3:
+                return self._get_default_signal("Enhanced Williams %R有效数据不足")
+                
+            latest_wr = wr_values.iloc[-1]
+            prev_wr = wr_values.iloc[-2]
+            prev2_wr = wr_values.iloc[-3]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_wr) or pd.isna(prev_wr) or pd.isna(prev2_wr):
+                return self._get_default_signal("Enhanced Williams %R数据包含NaN值")
+            
+            # 5. Enhanced Williams %R信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 获取自适应阈值（如果存在）
+            adaptive_overbought = self._result.get('wr_overbought', pd.Series([-20] * len(self._result))).iloc[-1]
+            adaptive_oversold = self._result.get('wr_oversold', pd.Series([-80] * len(self._result))).iloc[-1]
+            
+            # 如果自适应阈值无效，使用默认值
+            if pd.isna(adaptive_overbought):
+                adaptive_overbought = -20
+            if pd.isna(adaptive_oversold):
+                adaptive_oversold = -80
+                
+            # WR关键阈值
+            overbought_threshold = adaptive_overbought  # 自适应超买阈值
+            oversold_threshold = adaptive_oversold      # 自适应超卖阈值
+            extreme_overbought_threshold = -10
+            extreme_oversold_threshold = -90
+            
+            # 计算WR变化和趋势
+            wr_change = latest_wr - prev_wr
+            wr_change_prev = prev_wr - prev2_wr
+            
+            # 计算WR穿越状态
+            oversold_cross_up = prev_wr <= oversold_threshold and latest_wr > oversold_threshold
+            overbought_cross_down = prev_wr >= overbought_threshold and latest_wr < overbought_threshold
+            extreme_oversold_cross_up = prev_wr <= extreme_oversold_threshold and latest_wr > extreme_oversold_threshold
+            extreme_overbought_cross_down = prev_wr >= extreme_overbought_threshold and latest_wr < extreme_overbought_threshold
+            
+            # 获取增强特性数据
+            wr_momentum = self._result.get('wr_momentum', pd.Series([0] * len(self._result))).iloc[-1]
+            wr_divergence = self._result.get('wr_divergence', pd.Series([0] * len(self._result))).iloc[-1]
+            enhanced_wr_score = self._result.get('ENHANCED_WR_VALUE', pd.Series([0] * len(self._result))).iloc[-1]
+            
+            # 处理可能的NaN值
+            if pd.isna(wr_momentum):
+                wr_momentum = 0
+            if pd.isna(wr_divergence):
+                wr_divergence = 0
+            if pd.isna(enhanced_wr_score):
+                enhanced_wr_score = 0
+            
+            # 极值区域信号（最高优先级）
+            if latest_wr >= extreme_overbought_threshold:
+                # 极超买区域（-10以上）
+                if wr_change < 0:
+                    # 极超买且开始下降
+                    signal_type = "sell"
+                    extreme_strength = min((latest_wr - extreme_overbought_threshold) / 10 + 0.9, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"Enhanced WR极超买区域({latest_wr:.2f})开始回落，强烈卖出信号"
+                else:
+                    # 极超买但仍上升
+                    signal_type = "sell"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"Enhanced WR极超买区域({latest_wr:.2f})持续，卖出信号"
+                    
+            elif latest_wr <= extreme_oversold_threshold:
+                # 极超卖区域（-90以下）
+                if wr_change > 0:
+                    # 极超卖且开始上升
+                    signal_type = "buy"
+                    extreme_strength = min((extreme_oversold_threshold - latest_wr) / 10 + 0.9, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"Enhanced WR极超卖区域({latest_wr:.2f})开始反弹，强烈买入信号"
+                else:
+                    # 极超卖但仍下降
+                    signal_type = "buy"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"Enhanced WR极超卖区域({latest_wr:.2f})持续，买入信号"
+            
+            # WR区域突破信号
+            elif extreme_oversold_cross_up:
+                # 突破极超卖区域向上
+                signal_type = "buy"
+                breakout_strength = min(abs(latest_wr - extreme_oversold_threshold) / 20 + 0.85, 0.95)
+                strength = breakout_strength
+                confidence = 0.9
+                reason = f"Enhanced WR突破极超卖区域向上({latest_wr:.2f}>-90)，强买入信号"
+                
+            elif extreme_overbought_cross_down:
+                # 跌破极超买区域向下
+                signal_type = "sell"
+                breakout_strength = min(abs(extreme_overbought_threshold - latest_wr) / 20 + 0.85, 0.95)
+                strength = breakout_strength
+                confidence = 0.9
+                reason = f"Enhanced WR跌破极超买区域向下({latest_wr:.2f}<-10)，强卖出信号"
+                
+            elif oversold_cross_up:
+                # 突破超卖区域向上
+                signal_type = "buy"
+                adaptive_strength = min(abs(latest_wr - oversold_threshold) / 15 + 0.8, 0.9)
+                strength = adaptive_strength
+                confidence = 0.85
+                reason = f"Enhanced WR突破自适应超卖区域向上({latest_wr:.2f}>{oversold_threshold:.1f})，买入信号"
+                
+            elif overbought_cross_down:
+                # 跌破超买区域向下
+                signal_type = "sell"
+                adaptive_strength = min(abs(overbought_threshold - latest_wr) / 15 + 0.8, 0.9)
+                strength = adaptive_strength
+                confidence = 0.85
+                reason = f"Enhanced WR跌破自适应超买区域向下({latest_wr:.2f}<{overbought_threshold:.1f})，卖出信号"
+            
+            # WR区域持续信号
+            elif latest_wr >= overbought_threshold:
+                # 超买区域
+                if wr_change < 0:
+                    # 超买且下降
+                    signal_type = "sell"
+                    momentum_strength = min(abs(wr_change) / 5 + 0.7, 0.85)
+                    strength = momentum_strength
+                    confidence = 0.75
+                    reason = f"Enhanced WR超买区域({latest_wr:.2f})下降，卖出信号"
+                elif wr_change > -2:
+                    # 超买且稳定
+                    signal_type = "sell"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"Enhanced WR超买区域({latest_wr:.2f})稳定，弱卖出信号"
+                    
+            elif latest_wr <= oversold_threshold:
+                # 超卖区域
+                if wr_change > 0:
+                    # 超卖且上升
+                    signal_type = "buy"
+                    momentum_strength = min(abs(wr_change) / 5 + 0.7, 0.85)
+                    strength = momentum_strength
+                    confidence = 0.75
+                    reason = f"Enhanced WR超卖区域({latest_wr:.2f})上升，买入信号"
+                elif wr_change < 2:
+                    # 超卖且稳定
+                    signal_type = "buy"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"Enhanced WR超卖区域({latest_wr:.2f})稳定，弱买入信号"
+            
+            # WR中性区域增强信号
+            else:
+                # 在中性区域，利用增强特性
+                if wr_divergence > 0:
+                    # 正背离信号
+                    if latest_wr < -50:  # 偏向超卖
+                        signal_type = "buy"
+                        divergence_strength = min(abs(wr_divergence) / 2 + 0.6, 0.8)
+                        strength = divergence_strength
+                        confidence = 0.75
+                        reason = f"Enhanced WR正背离信号({latest_wr:.2f})，买入信号"
+                    else:  # 偏向超买
+                        signal_type = "sell"
+                        divergence_strength = min(abs(wr_divergence) / 2 + 0.6, 0.8)
+                        strength = divergence_strength
+                        confidence = 0.75
+                        reason = f"Enhanced WR负背离信号({latest_wr:.2f})，卖出信号"
+                
+                elif wr_momentum > 0 and wr_change > 0:
+                    # 正动量且上升
+                    signal_type = "buy"
+                    momentum_strength = min(abs(wr_momentum) / 3 + 0.6, 0.75)
+                    strength = momentum_strength
+                    confidence = 0.65
+                    reason = f"Enhanced WR正动量({latest_wr:.2f})上升，弱买入信号"
+                    
+                elif wr_momentum < 0 and wr_change < 0:
+                    # 负动量且下降
+                    signal_type = "sell"
+                    momentum_strength = min(abs(wr_momentum) / 3 + 0.6, 0.75)
+                    strength = momentum_strength
+                    confidence = 0.65
+                    reason = f"Enhanced WR负动量({latest_wr:.2f})下降，弱卖出信号"
+            
+            # 增强特性调整信号强度和置信度
+            if abs(enhanced_wr_score) > 0:
+                # 根据综合评分调整信号强度
+                score_adjustment = min(abs(enhanced_wr_score) / 100, 0.2)
+                strength = min(strength + score_adjustment, 1.0)
+                confidence = min(confidence + score_adjustment * 0.5, 1.0)
+            
+            # 计算Enhanced Williams %R特有的元数据
+            wr_zone = "极超买" if latest_wr >= extreme_overbought_threshold else \
+                     "超买" if latest_wr >= overbought_threshold else \
+                     "中性偏买" if latest_wr >= -50 else \
+                     "中性偏卖" if latest_wr >= oversold_threshold else \
+                     "超卖" if latest_wr >= extreme_oversold_threshold else "极超卖"
+            
+            wr_momentum_direction = "上升" if wr_change > 0 else "下降" if wr_change < 0 else "平稳"
+            wr_acceleration = "加速" if (wr_change > 0 and wr_change > wr_change_prev) or \
+                                     (wr_change < 0 and wr_change < wr_change_prev) else \
+                             "减速" if (wr_change > 0 and wr_change < wr_change_prev) or \
+                                      (wr_change < 0 and wr_change > wr_change_prev) else "平稳"
+            
+            metadata = {
+                'wr_value': latest_wr,
+                'wr_previous': prev_wr,
+                'wr_previous2': prev2_wr,
+                'wr_change': wr_change,
+                'wr_change_previous': wr_change_prev,
+                'wr_zone': wr_zone,
+                'wr_momentum_direction': wr_momentum_direction,
+                'wr_acceleration': wr_acceleration,
+                'adaptive_overbought_threshold': overbought_threshold,
+                'adaptive_oversold_threshold': oversold_threshold,
+                'oversold_cross_up': oversold_cross_up,
+                'overbought_cross_down': overbought_cross_down,
+                'extreme_oversold_cross_up': extreme_oversold_cross_up,
+                'extreme_overbought_cross_down': extreme_overbought_cross_down,
+                'in_overbought': latest_wr >= overbought_threshold,
+                'in_oversold': latest_wr <= oversold_threshold,
+                'in_extreme_overbought': latest_wr >= extreme_overbought_threshold,
+                'in_extreme_oversold': latest_wr <= extreme_oversold_threshold,
+                'wr_momentum': wr_momentum,
+                'wr_divergence': wr_divergence,
+                'enhanced_wr_score': enhanced_wr_score,
+                'adaptive_thresholds_enabled': self.adaptive_thresholds,
+                'multi_periods': getattr(self, 'multi_periods', [self.period]),
+                'smooth_period': getattr(self, 'smooth_period', 3)
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"Enhanced Williams %R信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # Enhanced Williams %R需要足够的数据用于计算
+        min_periods = max(getattr(self, 'period', 14), 
+                         max(getattr(self, 'multi_periods', [14]))) + 10
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
 
 # 🔧 Ultra Think修复:为了向后兼容,创建别名
 enhanced_wr = EnhancedWr

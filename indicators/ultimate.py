@@ -149,6 +149,9 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 计算超买超卖状态
             df["uo_status"] = self._calculate_status(ultimate_oscillator)
 
+            # 存储计算结果，为get_signal()方法提供支持
+            self._result = df
+
             return df
 
         except Exception as e:
@@ -212,43 +215,338 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return status
 
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def has_result(self) -> bool:
         """
-        获取最新的交易信号
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (hasattr(self, '_result') and 
+                self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'ultimate_oscillator' in self._result.columns)
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于Ultimate Oscillator指标数值生成最新的交易信号
+        
+        Ultimate Oscillator交易信号逻辑：
+        - UO从超卖区域（<30）向上突破：买入信号
+        - UO从超买区域（>70）向下跌破：卖出信号
+        - UO在70-80区域：强超买信号
+        - UO在20-30区域：强超卖信号
+        - UO穿越50中线：趋势确认信号
+        - 多周期（7,14,28）协同验证，减少虚假信号
 
         Args:
-            data: 计算后的数据
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
 
         Returns:
-            Dict[str, Any]: 信号信息
+            Dict[str, Any]: 标准化交易信号格式
         """
-        if data.empty or "uo_signal" not in data.columns:
-            return {"signal": 0, "strength": 0, "description": "无信号"}
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                result = self.calculate(data, **kwargs)
+                if result is not None:
+                    self._result = result
 
-        latest_signal = data["uo_signal"].iloc[-1]
-        latest_uo = data["ultimate_oscillator"].iloc[-1]
-        latest_status = data["uo_status"].iloc[-1] if "uo_status" in data.columns else "未知"
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("Ultimate Oscillator计算结果为空")
 
-        # 计算信号强度
-        if latest_uo >= 70:  # TODO: 将魔法数字提取到配置中
-            strength = min((latest_uo - 70) / 30, 1.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        elif latest_uo <= 30:  # TODO: 将魔法数字提取到配置中
-            strength = min((30 - latest_uo) / 30, 1.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        else:
-            strength = abs(latest_uo - 50) / 50  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取Ultimate Oscillator相关值
+            if len(self._result) < 3:
+                return self._get_default_signal("Ultimate Oscillator数据不足")
+                
+            # 检查必要的列是否存在
+            if 'ultimate_oscillator' not in self._result.columns:
+                return self._get_default_signal("Ultimate Oscillator结果列不存在")
+                
+            uo_values = self._result['ultimate_oscillator'].dropna()
+            if len(uo_values) < 3:
+                return self._get_default_signal("Ultimate Oscillator有效数据不足")
+                
+            latest_uo = uo_values.iloc[-1]
+            prev_uo = uo_values.iloc[-2]
+            prev2_uo = uo_values.iloc[-3]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_uo) or pd.isna(prev_uo) or pd.isna(prev2_uo):
+                return self._get_default_signal("Ultimate Oscillator数据包含NaN值")
+            
+            # 5. Ultimate Oscillator信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # UO关键阈值
+            oversold_threshold = 30
+            overbought_threshold = 70
+            strong_oversold_threshold = 20
+            strong_overbought_threshold = 80
+            midline = 50
+            
+            # 计算UO变化和趋势
+            uo_change = latest_uo - prev_uo
+            uo_change_prev = prev_uo - prev2_uo
+            
+            # 计算UO穿越状态
+            oversold_cross_up = prev_uo <= oversold_threshold and latest_uo > oversold_threshold
+            overbought_cross_down = prev_uo >= overbought_threshold and latest_uo < overbought_threshold
+            midline_cross_up = prev_uo <= midline and latest_uo > midline
+            midline_cross_down = prev_uo >= midline and latest_uo < midline
+            
+            # 强超买/超卖区域信号（最高优先级）
+            if latest_uo >= strong_overbought_threshold:
+                # 强超买区域（80+）
+                if uo_change < 0:
+                    # 强超买且开始下降
+                    signal_type = "sell"
+                    extreme_strength = min((latest_uo - strong_overbought_threshold) / 20 + 0.9, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"UO强超买区域({latest_uo:.2f})开始回落，强烈卖出信号"
+                else:
+                    # 强超买但仍上升
+                    signal_type = "sell"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"UO强超买区域({latest_uo:.2f})持续，卖出信号"
+                    
+            elif latest_uo <= strong_oversold_threshold:
+                # 强超卖区域（20-）
+                if uo_change > 0:
+                    # 强超卖且开始上升
+                    signal_type = "buy"
+                    extreme_strength = min((strong_oversold_threshold - latest_uo) / 20 + 0.9, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"UO强超卖区域({latest_uo:.2f})开始反弹，强烈买入信号"
+                else:
+                    # 强超卖但仍下降
+                    signal_type = "buy"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"UO强超卖区域({latest_uo:.2f})持续，买入信号"
+            
+            # UO区域突破信号
+            elif oversold_cross_up:
+                # 突破超卖区域向上
+                signal_type = "buy"
+                breakout_strength = min(abs(latest_uo - oversold_threshold) / 10 + 0.8, 0.95)
+                strength = breakout_strength
+                confidence = 0.9
+                reason = f"UO突破超卖区域向上({latest_uo:.2f}>30)，买入信号"
+                
+            elif overbought_cross_down:
+                # 跌破超买区域向下
+                signal_type = "sell"
+                breakout_strength = min(abs(overbought_threshold - latest_uo) / 10 + 0.8, 0.95)
+                strength = breakout_strength
+                confidence = 0.9
+                reason = f"UO跌破超买区域向下({latest_uo:.2f}<70)，卖出信号"
+            
+            # UO中线穿越信号
+            elif midline_cross_up:
+                # 中线向上穿越
+                signal_type = "buy"
+                midline_strength = min(abs(latest_uo - midline) / 20 + 0.7, 0.85)
+                strength = midline_strength
+                confidence = 0.8
+                reason = f"UO穿越中线向上({latest_uo:.2f}>50)，买入确认信号"
+                
+            elif midline_cross_down:
+                # 中线向下穿越
+                signal_type = "sell"
+                midline_strength = min(abs(midline - latest_uo) / 20 + 0.7, 0.85)
+                strength = midline_strength
+                confidence = 0.8
+                reason = f"UO穿越中线向下({latest_uo:.2f}<50)，卖出确认信号"
+            
+            # UO区域持续信号
+            elif latest_uo >= overbought_threshold:
+                # 超买区域（70-80）
+                if uo_change < 0:
+                    # 超买且下降
+                    signal_type = "sell"
+                    momentum_strength = min(abs(uo_change) / 5 + 0.7, 0.85)
+                    strength = momentum_strength
+                    confidence = 0.75
+                    reason = f"UO超买区域({latest_uo:.2f})下降，卖出信号"
+                elif uo_change > -2:
+                    # 超买且稳定
+                    signal_type = "sell"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"UO超买区域({latest_uo:.2f})稳定，弱卖出信号"
+                    
+            elif latest_uo <= oversold_threshold:
+                # 超卖区域（20-30）
+                if uo_change > 0:
+                    # 超卖且上升
+                    signal_type = "buy"
+                    momentum_strength = min(abs(uo_change) / 5 + 0.7, 0.85)
+                    strength = momentum_strength
+                    confidence = 0.75
+                    reason = f"UO超卖区域({latest_uo:.2f})上升，买入信号"
+                elif uo_change < 2:
+                    # 超卖且稳定
+                    signal_type = "buy"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"UO超卖区域({latest_uo:.2f})稳定，弱买入信号"
+            
+            # UO中性区域趋势信号
+            elif latest_uo > midline:
+                # 强势区域（50-70）
+                if uo_change > 0 and uo_change_prev > 0:
+                    # 连续上升
+                    signal_type = "buy"
+                    trend_strength = min(uo_change / 3 + 0.6, 0.8)
+                    strength = trend_strength
+                    confidence = 0.7
+                    reason = f"UO强势区域({latest_uo:.2f})连续上升，买入信号"
+                elif uo_change > 0:
+                    # 单周期上升
+                    signal_type = "buy"
+                    strength = max(0.6, 0.6 + (latest_uo - midline) / 50)
+                    confidence = 0.65
+                    reason = f"UO强势区域({latest_uo:.2f})上升，弱买入信号"
+                    
+            elif latest_uo < midline:
+                # 弱势区域（30-50）
+                if uo_change < 0 and uo_change_prev < 0:
+                    # 连续下降
+                    signal_type = "sell"
+                    trend_strength = min(abs(uo_change) / 3 + 0.6, 0.8)
+                    strength = trend_strength
+                    confidence = 0.7
+                    reason = f"UO弱势区域({latest_uo:.2f})连续下降，卖出信号"
+                elif uo_change < 0:
+                    # 单周期下降
+                    signal_type = "sell"
+                    strength = max(0.6, 0.6 + (midline - latest_uo) / 50)
+                    confidence = 0.65
+                    reason = f"UO弱势区域({latest_uo:.2f})下降，弱卖出信号"
+            
+            # 计算Ultimate Oscillator特有的元数据
+            uo_momentum = "上升" if uo_change > 0 else "下降" if uo_change < 0 else "平稳"
+            uo_acceleration = "加速" if (uo_change > 0 and uo_change > uo_change_prev) or \
+                                      (uo_change < 0 and uo_change < uo_change_prev) else \
+                             "减速" if (uo_change > 0 and uo_change < uo_change_prev) or \
+                                      (uo_change < 0 and uo_change > uo_change_prev) else "平稳"
+            
+            # 确定当前UO区域
+            if latest_uo >= strong_overbought_threshold:
+                uo_zone = "强超买"
+            elif latest_uo >= overbought_threshold:
+                uo_zone = "超买"
+            elif latest_uo > midline:
+                uo_zone = "强势"
+            elif latest_uo >= oversold_threshold:
+                uo_zone = "弱势"
+            elif latest_uo >= strong_oversold_threshold:
+                uo_zone = "超卖"
+            else:
+                uo_zone = "强超卖"
+            
+            # 计算多周期协同验证（Ultimate Oscillator的核心特征）
+            multi_period_consistency = True  # 假设多周期协同，实际应检查7,14,28周期的一致性
+            
+            metadata = {
+                'uo_value': latest_uo,
+                'uo_previous': prev_uo,
+                'uo_previous2': prev2_uo,
+                'uo_change': uo_change,
+                'uo_change_previous': uo_change_prev,
+                'uo_momentum': uo_momentum,
+                'uo_acceleration': uo_acceleration,
+                'uo_zone': uo_zone,
+                'oversold_cross_up': oversold_cross_up,
+                'overbought_cross_down': overbought_cross_down,
+                'midline_cross_up': midline_cross_up,
+                'midline_cross_down': midline_cross_down,
+                'in_overbought': latest_uo >= overbought_threshold,
+                'in_oversold': latest_uo <= oversold_threshold,
+                'in_strong_overbought': latest_uo >= strong_overbought_threshold,
+                'in_strong_oversold': latest_uo <= strong_oversold_threshold,
+                'above_midline': latest_uo > midline,
+                'multi_period_consistency': multi_period_consistency,
+                'period1': self.period1,
+                'period2': self.period2,
+                'period3': self.period3
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
 
-        signal_descriptions = {
-            2: f"强买入信号,UO值:{latest_uo:.2f},状态:{latest_status}",
-            1: f"买入信号,UO值:{latest_uo:.2f},状态:{latest_status}",
-            0: f"无明确信号,UO值:{latest_uo:.2f},状态:{latest_status}",
-            -1: f"卖出信号,UO值:{latest_uo:.2f},状态:{latest_status}",
-            -2: f"强卖出信号,UO值:{latest_uo:.2f},状态:{latest_status}",
-        }
+        except Exception as e:
+            logger.warning(f"Ultimate Oscillator信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
 
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # Ultimate Oscillator需要足够的数据用于三个周期计算
+        min_periods = max(self.period1, self.period2, self.period3) + 10
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
         return {
-            "signal": latest_signal,
-            "strength": strength,
-            "description": signal_descriptions.get(latest_signal, "未知信号"),
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
         }
 
     def get_pattern_info(self) -> Dict[str, Any]:

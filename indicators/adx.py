@@ -54,21 +54,34 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
                 - period: ADX计算周期,默认为14
                 - strong_trend: 强趋势阈值,默认为25
         """
-        super().__init__()
+        # 首先设置必要的属性
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        self.name = "ADX"
+        self.name = "ADX"  
         self.description = "平均方向指数"
-        super().__init__()
+        
+        # 预先设置params以避免setter问题
+        self.params = {}
         
         # 设置默认参数
-        self.params = {
+        default_params = {
             "period": 14,  # TODO: 将魔法数字提取到配置中
             "strong_trend": 25  # TODO: 将魔法数字提取到配置中
         }
         
-        # 更新自定义参数
+        # 合并传入的参数
         if params:
-            self.params.update(params)
+            default_params.update(params)
+        
+        # 更新params
+        self.params.update(default_params)
+        
+        # 调用父类初始化（传递period但不在kwargs中）
+        period_value = default_params.pop("period", 14)
+        super().__init__(name="ADX", period=period_value, **default_params)
+        
+        # 最终确保params完整
+        self.params["period"] = period_value
+        self.params.update(default_params)
 
         # 处理kwargs中的参数
         if 'period' in kwargs:
@@ -83,6 +96,191 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         from indicators.common import crossover, crossunder
         self.crossover = crossover
         self.crossunder = crossunder
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于ADX指标数值生成最新的交易信号
+        
+        ADX交易信号逻辑：
+        - +DI上穿-DI：买入信号
+        - -DI上穿+DI：卖出信号  
+        - ADX上升：趋势加强
+        - ADX下降：趋势减弱
+        - ADX>25：强趋势确认
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("ADX计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取ADX相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("ADX数据不足")
+                
+            latest_pdi = self._result['PDI'].iloc[-1]
+            latest_mdi = self._result['MDI'].iloc[-1]
+            latest_adx = self._result['ADX'].iloc[-1]
+            prev_pdi = self._result['PDI'].iloc[-2]
+            prev_mdi = self._result['MDI'].iloc[-2]
+            prev_adx = self._result['ADX'].iloc[-2]
+            
+            # 5. ADX信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 获取强趋势阈值
+            strong_threshold = self.params.get('strong_trend', 25)
+            
+            # +DI上穿-DI - 买入信号
+            if latest_pdi > latest_mdi and prev_pdi <= prev_mdi:
+                signal_type = "buy"
+                strength = 0.75
+                confidence = 0.8
+                reason = "+DI上穿-DI，买入信号"
+                
+                # ADX强趋势确认
+                if latest_adx > strong_threshold:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.15)
+                    reason = f"+DI上穿-DI且ADX>{strong_threshold}，强趋势买入信号"
+                    
+            # -DI上穿+DI - 卖出信号
+            elif latest_mdi > latest_pdi and prev_mdi <= prev_pdi:
+                signal_type = "sell"
+                strength = 0.75
+                confidence = 0.8
+                reason = "-DI上穿+DI，卖出信号"
+                
+                # ADX强趋势确认
+                if latest_adx > strong_threshold:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.15)
+                    reason = f"-DI上穿+DI且ADX>{strong_threshold}，强趋势卖出信号"
+                    
+            # 趋势强度持续信号
+            elif latest_adx > strong_threshold:
+                if latest_pdi > latest_mdi:
+                    signal_type = "buy"
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = f"+DI占优且ADX>{strong_threshold}，持续买入信号"
+                elif latest_mdi > latest_pdi:
+                    signal_type = "sell"
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = f"-DI占优且ADX>{strong_threshold}，持续卖出信号"
+            
+            # 计算ADX趋势变化
+            adx_rising = latest_adx > prev_adx
+            adx_falling = latest_adx < prev_adx
+            
+            # 基于ADX趋势调整信号强度
+            if signal_type in ['buy', 'sell']:
+                if adx_rising:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                elif adx_falling:
+                    strength = max(0.3, strength - 0.1)
+                    confidence = max(0.5, confidence - 0.05)
+            
+            # 设置元数据
+            metadata = {
+                'pdi_value': latest_pdi,
+                'mdi_value': latest_mdi,
+                'adx_value': latest_adx,
+                'adx_trend': 'rising' if adx_rising else 'falling' if adx_falling else 'flat',
+                'trend_strength': 'strong' if latest_adx > strong_threshold else 'weak',
+                'di_spread': abs(latest_pdi - latest_mdi)
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"ADX信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        if len(data) < self.params.get('period', 14):
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty)
 
     @property
     def period(self) -> int:
@@ -131,6 +329,16 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         Returns:
             添加了ADX指标的Data_frame
         """
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
+        if data is None or data.empty:
+            raise ValueError("ADX计算: 输入数据不能为空")
+            
+        # 检查必需列
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"ADX计算: 缺少必需列: {missing_columns}")
+        
         df = data.copy()
         
         # 提取参数
@@ -139,7 +347,8 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         
         # 确保数据有足够的长度
         if len(df) < period + 1:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({period + 1}),返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({period + 1})")
+            raise ValueError(f"ADX计算: 数据长度不足，需要至少{period + 1}个数据点，实际{len(df)}个")
             df[f'ADX{period}'] = np.nan
             df[f'PDI{period}'] = np.nan
             df[f'MDI{period}'] = np.nan

@@ -155,45 +155,127 @@ class Rectangle(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             data: 计算结果数据
 
         Returns:
-            包含交易信号的字典
+            包含交易信号的标准化字典
         """
         try:
-            if data.empty:
-                return {"signal": "HOLD", "strength": 0, "message": "数据不足"}
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算矩形形态（如果数据不是计算结果）
+            if 'rectangle' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
 
             # 获取最新信号
-            latest_rectangle = data["rectangle"].iloc[-1] if "rectangle" in data.columns else False
-            latest_breakout_up = data["breakout_up"].iloc[-1] if "breakout_up" in data.columns else False
-            latest_breakout_down = data["breakout_down"].iloc[-1] if "breakout_down" in data.columns else False
+            latest_rectangle = result_data["rectangle"].iloc[-1] if "rectangle" in result_data.columns else False
+            latest_breakout_up = result_data["breakout_up"].iloc[-1] if "breakout_up" in result_data.columns else False
+            latest_breakout_down = result_data["breakout_down"].iloc[-1] if "breakout_down" in result_data.columns else False
 
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到矩形形态"
+            metadata = {}
+
+            # 分析矩形形态信号
             if latest_breakout_up:
-                return {
-                    "signal": "BUY",
-                    "strength": 0.8,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    "message": "矩形形态向上突破，建议买入",
+                signal_type = "buy"
+                strength = 0.85
+                confidence = 0.8
+                reason = "矩形形态向上突破，形成买入信号"
+                metadata = {
+                    "pattern_type": "rectangle_breakout_up",
+                    "breakout_strength": "strong",
+                    "expected_move": "upward"
                 }
             elif latest_breakout_down:
-                return {
-                    "signal": "SELL",
-                    "strength": 0.8,  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    "message": "矩形形态向下突破，建议卖出",
+                signal_type = "sell"
+                strength = 0.85
+                confidence = 0.8
+                reason = "矩形形态向下突破，形成卖出信号"
+                metadata = {
+                    "pattern_type": "rectangle_breakout_down",
+                    "breakout_strength": "strong",
+                    "expected_move": "downward"
                 }
             elif latest_rectangle:
-                return {
-                    "signal": "HOLD",
-                    "strength": 0.6,  # TODO: 将魔法数字提取到配置中
-                    "message": "处于矩形整理形态，等待突破",
+                signal_type = "hold"
+                strength = 0.6
+                confidence = 0.7
+                reason = "处于矩形整理形态，等待突破方向确认"
+                metadata = {
+                    "pattern_type": "rectangle_consolidation",
+                    "consolidation_stage": "active",
+                    "breakout_pending": True
                 }
-            else:
-                return {
-                    "signal": "HOLD",
-                    "strength": 0.5,  # TODO: 将魔法数字提取到配置中
-                    "message": "未检测到矩形形态",
+
+            # 计算支撑阻力信息
+            if 'support' in result_data.columns and 'resistance' in result_data.columns:
+                latest_support = result_data["support"].iloc[-1]
+                latest_resistance = result_data["resistance"].iloc[-1]
+                latest_close = data["close"].iloc[-1]
+                
+                if not pd.isna(latest_support) and not pd.isna(latest_resistance):
+                    range_position = (latest_close - latest_support) / (latest_resistance - latest_support)
+                    metadata.update({
+                        "support_level": float(latest_support),
+                        "resistance_level": float(latest_resistance),
+                        "range_position": float(range_position)
+                    })
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'consolidation',
+                    **metadata
                 }
+            }
 
         except Exception as e:
             logger.error(f"矩形形态信号生成失败: {e}")
-            return {"signal": "HOLD", "strength": 0, "message": f"信号生成失败: {e}"}
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量
+        if len(data) < self.minimum_periods():
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'consolidation'
+            }
+        }
 
     def minimum_periods(self) -> int:
         """

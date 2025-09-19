@@ -1687,6 +1687,208 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         return 30  # TODO: 将魔法数字提取到配置中
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于DMI指标数值生成最新的交易信号
+        
+        DMI交易信号逻辑：
+        - +DI上穿-DI：买入信号
+        - -DI上穿+DI：卖出信号  
+        - ADX上升趋势加强：信号增强
+        - ADX下降趋势减弱：信号减弱
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("DMI计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取DMI相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("DMI数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['PDI', 'MDI', 'ADX']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("DMI结果列不完整")
+                
+            latest_pdi = self._result['PDI'].iloc[-1]
+            latest_mdi = self._result['MDI'].iloc[-1]
+            latest_adx = self._result['ADX'].iloc[-1]
+            prev_pdi = self._result['PDI'].iloc[-2]
+            prev_mdi = self._result['MDI'].iloc[-2]
+            prev_adx = self._result['ADX'].iloc[-2]
+            
+            # 5. DMI信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 获取ADX强趋势阈值
+            adx_threshold = 25.0
+            
+            # +DI上穿-DI - 买入信号
+            if latest_pdi > latest_mdi and prev_pdi <= prev_mdi:
+                signal_type = "buy"
+                strength = 0.75
+                confidence = 0.8
+                reason = "+DI上穿-DI，买入信号"
+                
+                # ADX强趋势确认
+                if latest_adx > adx_threshold:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.15)
+                    reason = f"+DI上穿-DI且ADX>{adx_threshold}，强趋势买入信号"
+                    
+            # -DI上穿+DI - 卖出信号
+            elif latest_mdi > latest_pdi and prev_mdi <= prev_pdi:
+                signal_type = "sell"
+                strength = 0.75
+                confidence = 0.8
+                reason = "-DI上穿+DI，卖出信号"
+                
+                # ADX强趋势确认
+                if latest_adx > adx_threshold:
+                    strength = min(0.9, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.15)
+                    reason = f"-DI上穿+DI且ADX>{adx_threshold}，强趋势卖出信号"
+                    
+            # 持续趋势信号
+            elif latest_adx > adx_threshold:
+                if latest_pdi > latest_mdi:
+                    signal_type = "buy"
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = f"+DI占优且ADX>{adx_threshold}，持续买入信号"
+                elif latest_mdi > latest_pdi:
+                    signal_type = "sell"
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = f"-DI占优且ADX>{adx_threshold}，持续卖出信号"
+            
+            # 计算ADX趋势变化
+            adx_rising = latest_adx > prev_adx
+            adx_falling = latest_adx < prev_adx
+            di_spread = abs(latest_pdi - latest_mdi)
+            
+            # 基于ADX趋势调整信号强度
+            if signal_type in ['buy', 'sell']:
+                if adx_rising:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                elif adx_falling:
+                    strength = max(0.3, strength - 0.1)
+                    confidence = max(0.5, confidence - 0.05)
+                
+                # 基于DI差值调整信号强度
+                if di_spread > 5.0:  # DI差值较大
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+            
+            # 设置元数据
+            metadata = {
+                'pdi_value': latest_pdi,
+                'mdi_value': latest_mdi,
+                'adx_value': latest_adx,
+                'adx_trend': 'rising' if adx_rising else 'falling' if adx_falling else 'flat',
+                'trend_strength': 'strong' if latest_adx > adx_threshold else 'weak',
+                'di_spread': di_spread,
+                'dominant_di': '+DI' if latest_pdi > latest_mdi else '-DI'
+            }
+            
+            # 添加ADXR（如果存在）
+            if 'ADXR' in self._result.columns:
+                metadata['adxr_value'] = self._result['ADXR'].iloc[-1]
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"DMI信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # DMI需要足够的数据
+        min_periods = getattr(self, 'period', 14)
+        if len(data) < min_periods + 1:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty)
+
 
 def get_directionalmovementindex():
     """获取DirectionalMovementIndex实例(通过依赖注入)"""

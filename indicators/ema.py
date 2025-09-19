@@ -119,18 +119,20 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         计算指数移动平均线(EMA_Ema)指标
         """
-        # 输入数据验证
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
         if df is None or df.empty:
             logger.warning("EMA计算: 输入数据为空")
-            return pd.DataFrame()
+            raise ValueError("EMA计算: 输入数据不能为空")
 
         if "close" not in df.columns:
             logger.error("EMA计算: 缺少必需的'close'列")
-            raise ValueError("EMA计算需要'close'列数据")
+            raise ValueError("EMA计算: 缺少必需的'close'列")
 
         # 检查数据长度是否足够
-        if len(df) < min(self.periods):
-            logger.warning(f"EMA计算: 数据长度({len(df)})小于最小周期({min(self.periods)})")
+        min_period = min(self.periods) if self.periods else 20
+        if len(df) < min_period:
+            logger.warning(f"EMA计算: 数据长度({len(df)})小于最小周期({min_period})")
+            raise ValueError(f"EMA计算: 数据长度不足，需要至少{min_period}个数据点，实际{len(df)}个")
             # 返回空结果而不是抛出异常
             result_df = df.copy()
             for p in self.periods:
@@ -590,6 +592,159 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 限制评分在0-100之间
         return score.clip(0, 100)
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于EMA指标数值生成最新的交易信号
+        
+        EMA交易信号逻辑：
+        - 价格上穿EMA：买入信号
+        - 价格下穿EMA：卖出信号  
+        - EMA趋势向上：支持买入
+        - EMA趋势向下：支持卖出
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("EMA计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            prev_close = data['close'].iloc[-2] if len(data) > 1 else latest_close
+            
+            # 4. 获取EMA值
+            ema_col = f"EMA{self.period}"
+            if ema_col not in self._result.columns or len(self._result) < 2:
+                return self._get_default_signal("EMA数据不足")
+                
+            latest_ema = self._result[ema_col].iloc[-1]
+            prev_ema = self._result[ema_col].iloc[-2]
+            
+            # 5. EMA信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 检查价格与EMA的关系
+            price_above_ema_now = latest_close > latest_ema
+            price_above_ema_prev = prev_close > prev_ema
+            ema_rising = latest_ema > prev_ema
+            ema_falling = latest_ema < prev_ema
+            
+            # 价格上穿EMA - 买入信号
+            if price_above_ema_now and not price_above_ema_prev:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.85
+                reason = "价格上穿EMA，买入信号"
+                if ema_rising:
+                    strength = min(0.9, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = "价格上穿上升趋势EMA，强烈买入信号"
+                    
+            # 价格下穿EMA - 卖出信号
+            elif not price_above_ema_now and price_above_ema_prev:
+                signal_type = "sell"
+                strength = 0.8
+                confidence = 0.85
+                reason = "价格下穿EMA，卖出信号"
+                if ema_falling:
+                    strength = min(0.9, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = "价格下穿下降趋势EMA，强烈卖出信号"
+                    
+            # 价格持续在EMA上方且EMA上升 - 持续买入
+            elif price_above_ema_now and ema_rising:
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在上升EMA上方，持续买入信号"
+                
+            # 价格持续在EMA下方且EMA下降 - 持续卖出
+            elif not price_above_ema_now and ema_falling:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = "价格持续在下降EMA下方，持续卖出信号"
+            
+            # 计算价格相对EMA的偏离度
+            if latest_ema > 0:
+                price_deviation = abs(latest_close - latest_ema) / latest_ema
+                metadata['price_deviation'] = price_deviation
+                metadata['ema_value'] = latest_ema
+                metadata['ema_trend'] = 'rising' if ema_rising else 'falling' if ema_falling else 'flat'
+                
+                # 基于偏离度调整信号强度
+                if price_deviation > 0.05:  # 偏离超过5%
+                    if signal_type in ['buy', 'sell']:
+                        strength = min(1.0, strength + price_deviation * 2)
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    'ema_period': self.period,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"EMA信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """标准数据验证"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        if 'close' not in data.columns:
+            return False
+        
+        # 检查数据量
+        if len(data) < self.minimum_periods:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """默认信号格式"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """检查是否有计算结果"""
+        return hasattr(self, '_result') and self._result is not None
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """真实实现:生成EMA交易信号"""

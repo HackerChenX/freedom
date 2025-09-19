@@ -269,112 +269,225 @@ class BaseIndicator(abc.ABC):
     @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        计算指标值 - 核心计算方法
+        【核心抽象方法1】计算技术指标的数值结果
 
-        职责说明：
-        1. 执行指标的核心计算逻辑
-        2. 返回包含指标计算结果的DataFrame
-        3. 列名应遵循项目统一命名标准
+        🎯 使用场景：
+        - L5买点分析：获取MACD、RSI、KDJ等指标的具体数值用于买点判断
+        - L5策略选股：批量计算多个股票的技术指标数值进行筛选
+        - L5回测分析：计算历史时间序列的指标数值用于策略回测
+        - L5实时监控：计算最新的指标数值用于实时监控和预警
 
-        返回格式标准：
-        - 必须返回pandas.DataFrame格式
-        - 列名建议使用指标名前缀，如：macd_dif, rsi_value, kdj_k
-        - 索引应与输入数据保持一致
-        - 对于复合指标，应包含所有核心计算值
+        📊 方法职责：
+        1. 接收标准化的股票OHLCV数据
+        2. 执行指标的核心数学计算逻辑（如移动平均、RSI计算等）
+        3. 返回包含指标数值的标准化DataFrame
+        4. 确保输出列名遵循项目统一命名标准
 
-        示例：
-        - MACD指标应返回：macd_dif, macd_dea, macd_histogram列
-        - RSI指标应返回：rsi_value列
-        - KDJ指标应返回：kdj_k, kdj_d, kdj_j列
+        📋 输入数据要求：
+        - 必须包含的列：'close'（收盘价）
+        - 推荐包含的列：'open', 'high', 'low', 'close', 'volume'
+        - 数据格式：pandas.DataFrame，索引为日期或时间
+        - 数据量要求：至少包含指标计算周期所需的最小数据点数
+
+        📈 输出格式标准：
+        - 返回类型：pandas.DataFrame
+        - 索引：与输入数据保持一致（通常是日期时间索引）
+        - 列名规范：使用指标名前缀，如 'macd_dif', 'rsi_value', 'kdj_k'
+        - 数据类型：float64（数值型指标）
+
+        💡 实现示例：
+        ```python
+        # MACD指标实现示例
+        def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
+            close = data['close']
+            ema12 = close.ewm(span=12).mean()
+            ema26 = close.ewm(span=26).mean()
+
+            result = pd.DataFrame(index=data.index)
+            result['macd_dif'] = ema12 - ema26
+            result['macd_dea'] = result['macd_dif'].ewm(span=9).mean()
+            result['macd_histogram'] = result['macd_dif'] - result['macd_dea']
+
+            return result
+        ```
 
         Args:
-            data: 输入数据,必须包含OHLCV等字段
-                 最低要求：包含'close'列
-                 完整要求：包含'open','high','low','close','volume'列
+            data (pd.DataFrame): 标准化股票数据
+                - 必需列：'close'
+                - 可选列：'open', 'high', 'low', 'volume', 'turnover_rate'
+                - 索引：日期时间索引
 
         Returns:
-            pd.DataFrame: 包含指标计算结果的数据框
-                         列名应遵循统一命名标准
-                         索引与输入数据一致
+            pd.DataFrame: 指标计算结果数据框
+                - 索引：与输入数据一致
+                - 列：指标特定的数值列（如macd_dif, rsi_value等）
+                - 数据类型：float64
 
         Raises:
-            ValueError: 当输入数据不符合要求时
-            InsufficientDataError: 当数据量不足以计算指标时
+            ValueError: 输入数据缺少必需列或格式不正确
+            InsufficientDataError: 数据量不足以计算指标（少于最小周期要求）
+            CalculationError: 指标计算过程中出现数学错误
         """
         pass
 
     @abc.abstractmethod
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
-        获取最新交易信号 - 单一信号获取方法
+        【核心抽象方法2】基于指标数值生成最新的交易信号
 
-        职责说明：
-        1. 基于指标计算结果生成最新的交易信号
-        2. 返回结构化的信号字典
-        3. 主要用于实时交易决策
+        🎯 使用场景：
+        - L5买点分析：判断当前是否出现买点信号（如MACD金叉、RSI超卖反弹）
+        - L5策略选股：为每只股票生成买入/卖出/持有的投资建议
+        - L5实时交易：为交易系统提供实时的交易信号和强度评估
+        - L5风险控制：生成止损、止盈等风险控制信号
+        - L5组合管理：为投资组合调整提供信号依据
 
-        与get_signals()的区别：
-        - get_signal(): 返回Dict，包含最新单一信号，用于实时决策
-        - get_signals(): 返回DataFrame，包含历史信号序列，用于回测分析
+        📊 方法职责：
+        1. 分析指标数值的最新状态和变化趋势
+        2. 应用指标特定的信号生成规则（如金叉死叉、超买超卖等）
+        3. 计算信号的强度和置信度
+        4. 返回标准化的交易信号字典
 
-        返回格式标准：
+        🔄 与其他方法的关系：
+        - calculate() → get_signal()：先计算数值，再生成信号
+        - get_signal() vs get_signals()：
+          * get_signal()：返回最新单一信号，用于实时决策
+          * get_signals()：返回历史信号序列，用于回测分析
+
+        📋 输入数据说明：
+        - 通常是 calculate() 的返回结果
+        - 也可以是包含指标列的原始股票数据
+        - 必须包含足够的历史数据以判断趋势和形态
+
+        📈 输出信号标准：
+        ```python
         {
-            'signal_type': str,      # 'buy', 'sell', 'hold'
-            'strength': float,       # 信号强度 0.0-1.0
-            'confidence': float,     # 信号置信度 0.0-1.0
-            'timestamp': datetime,   # 信号时间
-            'price': float,         # 触发价格
-            'metadata': dict        # 额外信息
+            'signal_type': 'buy',           # 信号类型：'buy', 'sell', 'hold'
+            'strength': 0.85,               # 信号强度：0.0-1.0（0=最弱，1=最强）
+            'confidence': 0.92,             # 信号置信度：0.0-1.0（0=不确定，1=非常确定）
+            'timestamp': datetime.now(),    # 信号生成时间
+            'price': 12.34,                # 触发价格（当前价格或建议价格）
+            'reason': 'MACD金叉确认',        # 信号生成原因
+            'metadata': {                   # 额外的信号信息
+                'indicator_values': {...},   # 关键指标数值
+                'pattern_detected': '...',   # 检测到的技术形态
+                'risk_level': 'medium'       # 风险等级
+            }
         }
+        ```
+
+        💡 实现示例：
+        ```python
+        # RSI指标信号生成示例
+        def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+            latest_rsi = data['rsi_value'].iloc[-1]
+            prev_rsi = data['rsi_value'].iloc[-2]
+
+            if latest_rsi < 30 and prev_rsi >= 30:  # 进入超卖区域
+                return {
+                    'signal_type': 'buy',
+                    'strength': min((30 - latest_rsi) / 10, 1.0),
+                    'confidence': 0.8,
+                    'reason': 'RSI进入超卖区域',
+                    'metadata': {'rsi_value': latest_rsi}
+                }
+            elif latest_rsi > 70 and prev_rsi <= 70:  # 进入超买区域
+                return {
+                    'signal_type': 'sell',
+                    'strength': min((latest_rsi - 70) / 10, 1.0),
+                    'confidence': 0.8,
+                    'reason': 'RSI进入超买区域',
+                    'metadata': {'rsi_value': latest_rsi}
+                }
+            else:
+                return {
+                    'signal_type': 'hold',
+                    'strength': 0.0,
+                    'confidence': 0.5,
+                    'reason': 'RSI处于正常区间',
+                    'metadata': {'rsi_value': latest_rsi}
+                }
+        ```
 
         Args:
-            data: 包含指标计算结果的数据
-                 可以是原始OHLCV数据或calculate()的返回结果
+            data (pd.DataFrame): 包含指标计算结果的数据
+                - 可以是 calculate() 的返回结果
+                - 也可以是包含指标列的原始股票数据
+                - 必须包含足够的历史数据点以进行趋势判断
 
         Returns:
-            Dict[str, Any]: 标准化的交易信号信息字典
-                           必须包含signal_type, strength, confidence字段
+            Dict[str, Any]: 标准化交易信号字典，必须包含以下字段：
+                - signal_type (str): 'buy', 'sell', 'hold'
+                - strength (float): 信号强度 0.0-1.0
+                - confidence (float): 信号置信度 0.0-1.0
+                - timestamp (datetime): 信号时间（可选，默认当前时间）
+                - price (float): 触发价格（可选）
+                - reason (str): 信号原因说明（可选）
+                - metadata (dict): 额外信息（可选）
+
+        Raises:
+            ValueError: 输入数据格式不正确或缺少必需的指标列
+            InsufficientDataError: 数据量不足以生成可靠信号
+            SignalGenerationError: 信号生成逻辑执行失败
         """
         pass
 
+    # ==================== 扩展功能方法 ====================
+
+    # ==================== 扩展功能方法 ====================
     def get_signals(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        生成批量交易信号 - 历史信号序列方法
+        【扩展方法】生成历史交易信号序列
 
-        职责说明：
-        1. 基于指标计算结果生成完整的信号序列
-        2. 返回包含历史信号的DataFrame
-        3. 主要用于回测分析和策略验证
+        🎯 使用场景：
+        - L5策略回测：生成完整的历史信号序列用于回测分析
+        - L5策略验证：验证策略在历史数据上的表现
+        - L5信号统计：统计信号的频率、准确率等指标
+        - L5可视化分析：在图表上标注历史买卖点
 
-        与get_signal()的区别：
-        - get_signal(): 返回Dict，包含最新单一信号，用于实时决策
-        - get_signals(): 返回DataFrame，包含历史信号序列，用于回测分析
+        📊 方法职责：
+        1. 基于指标数值生成完整的历史信号序列
+        2. 为每个时间点计算信号强度和置信度
+        3. 返回标准化的信号DataFrame用于回测分析
 
-        返回格式标准：
+        🔄 与其他方法的关系：
+        - calculate() → get_signals()：先计算数值，再生成信号序列
+        - get_signal() vs get_signals()：
+          * get_signal()：返回最新单一信号，用于实时决策
+          * get_signals()：返回历史信号序列，用于回测分析
+
+        📈 输出格式标准：
+        ```python
         DataFrame包含以下标准列：
-        - buy_signal: bool, 买入信号
-        - sell_signal: bool, 卖出信号
-        - hold_signal: bool, 持有信号
-        - signal_strength: float, 信号强度(0-1)
-        - signal_confidence: float, 信号置信度(0-1)
+        - buy_signal (bool): 买入信号标记
+        - sell_signal (bool): 卖出信号标记
+        - hold_signal (bool): 持有信号标记
+        - signal_strength (float): 信号强度 0.0-1.0
+        - signal_confidence (float): 信号置信度 0.0-1.0
+        - signal_reason (str): 信号原因（可选）
+        ```
 
-        默认实现：
-        子类可以重写此方法以实现特定的信号生成逻辑
-        如果不重写，将基于get_signal()生成简单的信号序列
+        💡 默认实现说明：
+        - 子类可以重写此方法实现特定的历史信号生成逻辑
+        - 默认实现基于 get_signal() 生成简单信号序列
+        - 建议子类实现更精细的历史信号分析逻辑
 
         Args:
-            data: 包含指标计算结果的数据
-                 可以是原始OHLCV数据或calculate()的返回结果
+            data (pd.DataFrame): 包含指标计算结果的数据
+                - 通常是 calculate() 的返回结果
+                - 必须包含完整的历史时间序列数据
 
         Returns:
-            pd.DataFrame: 包含标准信号列的DataFrame
-                         索引与输入数据一致
+            pd.DataFrame: 历史信号序列DataFrame
+                - 索引：与输入数据一致（时间序列）
+                - 列：标准信号列（buy_signal, sell_signal等）
+                - 每行代表一个时间点的信号状态
         """
-        # 默认实现：基于get_signal()生成简单信号
+        # 默认实现：基于 get_signal() 生成简单信号序列
         if data.empty:
             return pd.DataFrame()
 
-        # 创建信号DataFrame
+        # 创建标准信号DataFrame
         signals_df = pd.DataFrame(index=data.index)
         signals_df['buy_signal'] = False
         signals_df['sell_signal'] = False
@@ -382,7 +495,7 @@ class BaseIndicator(abc.ABC):
         signals_df['signal_strength'] = 0.0
         signals_df['signal_confidence'] = 0.0
 
-        # 获取最新信号并应用到最后一行
+        # 获取最新信号并应用到最后一行（默认实现）
         try:
             latest_signal = self.get_signal(data)
             if latest_signal and isinstance(latest_signal, dict):
@@ -399,19 +512,100 @@ class BaseIndicator(abc.ABC):
                 signals_df.loc[last_idx, 'signal_strength'] = latest_signal.get('strength', 0.0)
                 signals_df.loc[last_idx, 'signal_confidence'] = latest_signal.get('confidence', 0.0)
         except Exception as e:
-            logger.warning(f"生成信号序列时出错: {e}")
+            logger.warning(f"生成历史信号序列时出错: {e}")
 
         return signals_df
 
     def get_patterns(self, data: pd.DataFrame) -> List[Dict[str, Any]]:
         """
-        获取指标形态
+        【扩展方法】检测技术形态和图表模式
+
+        🎯 使用场景：
+        - L5买点分析：识别经典的买点形态（如双底、头肩底、上升三角形等）
+        - L5策略选股：筛选出现特定技术形态的股票
+        - L5形态分析：为技术分析师提供形态识别和强度评估
+        - L5风险评估：识别可能的反转形态或持续形态
+        - L5教育培训：为学习者展示各种技术形态的实例
+
+        📊 方法职责：
+        1. 基于指标数值识别经典的技术分析形态
+        2. 计算每个形态的强度分数和置信度
+        3. 提供形态的详细描述和预期影响
+        4. 返回标准化的形态信息列表
+
+        🔍 形态类型示例：
+        - 趋势形态：上升趋势、下降趋势、横盘整理
+        - 反转形态：双顶、双底、头肩顶、头肩底
+        - 持续形态：三角形、楔形、旗形、矩形
+        - 指标形态：金叉、死叉、背离、收敛
+
+        📈 输出格式标准：
+        ```python
+        [
+            {
+                'pattern_name': 'MACD金叉',           # 形态名称
+                'pattern_type': 'bullish_reversal',   # 形态类型
+                'strength': 0.85,                     # 形态强度 0.0-1.0
+                'confidence': 0.92,                   # 识别置信度 0.0-1.0
+                'signal_type': 'buy',                 # 信号方向
+                'duration': 3,                        # 形态持续天数
+                'start_date': '2024-01-15',          # 形态开始日期
+                'end_date': '2024-01-18',            # 形态结束日期
+                'description': 'MACD线上穿信号线，确认上涨趋势',
+                'price_target': 12.50,               # 价格目标（可选）
+                'risk_level': 'medium',              # 风险等级
+                'metadata': {                        # 额外信息
+                    'macd_dif': 0.15,
+                    'macd_dea': 0.08,
+                    'crossover_strength': 0.85
+                }
+            }
+        ]
+        ```
+
+        💡 实现示例：
+        ```python
+        # MACD指标形态检测示例
+        def detect_technical_patterns(self, indicator_data: pd.DataFrame) -> List[Dict[str, Any]]:
+            patterns = []
+
+            if 'macd_dif' in indicator_data.columns and 'macd_dea' in indicator_data.columns:
+                # 检测金叉形态
+                dif = indicator_data['macd_dif']
+                dea = indicator_data['macd_dea']
+
+                # 金叉：DIF上穿DEA
+                if len(dif) >= 2 and dif.iloc[-2] <= dea.iloc[-2] and dif.iloc[-1] > dea.iloc[-1]:
+                    crossover_strength = abs(dif.iloc[-1] - dea.iloc[-1])
+                    patterns.append({
+                        'pattern_name': 'MACD金叉',
+                        'pattern_type': 'bullish_crossover',
+                        'strength': min(crossover_strength * 10, 1.0),
+                        'confidence': 0.8,
+                        'signal_type': 'buy',
+                        'description': 'MACD DIF线上穿DEA线，看涨信号'
+                    })
+
+            return patterns
+        ```
 
         Args:
-            data: 包含指标计算结果的数据
+            data (pd.DataFrame): 包含指标计算结果的数据
+                - 通常是 calculate() 的返回结果
+                - 必须包含足够的历史数据以识别形态
 
         Returns:
-            List[Dict[str, Any]]: 形态信息列表
+            List[Dict[str, Any]]: 检测到的技术形态列表
+                每个形态字典必须包含：
+                - pattern_name (str): 形态名称
+                - strength (float): 形态强度 0.0-1.0
+                - confidence (float): 识别置信度 0.0-1.0
+                - signal_type (str): 'buy', 'sell', 'neutral'
+                可选字段：
+                - pattern_type (str): 形态类型分类
+                - duration (int): 形态持续天数
+                - description (str): 形态描述
+                - metadata (dict): 额外的形态信息
         """
         return [pattern.to_dict() for pattern in self._patterns]
 

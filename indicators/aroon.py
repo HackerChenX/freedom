@@ -514,6 +514,208 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period + 5, 20
         )  # AROON周期 + 缓冲,最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于AROON指标数值生成最新的交易信号
+        
+        AROON交易信号逻辑：
+        - AROON UP > 70且上升：买入信号
+        - AROON DOWN > 70且上升：卖出信号  
+        - AROON UP上穿AROON DOWN：买入信号
+        - AROON DOWN上穿AROON UP：卖出信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate_Aroon(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("AROON计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取AROON相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("AROON数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['aroon_up', 'aroon_down']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("AROON结果列不完整")
+                
+            latest_aroon_up = self._result['aroon_up'].iloc[-1]
+            latest_aroon_down = self._result['aroon_down'].iloc[-1]
+            prev_aroon_up = self._result['aroon_up'].iloc[-2]
+            prev_aroon_down = self._result['aroon_down'].iloc[-2]
+            
+            # 5. AROON信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 设置AROON阈值
+            strong_threshold = 70.0
+            weak_threshold = 30.0
+            
+            # AROON UP上穿AROON DOWN - 买入信号
+            if latest_aroon_up > latest_aroon_down and prev_aroon_up <= prev_aroon_down:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.85
+                reason = "AROON UP上穿AROON DOWN，买入信号"
+                
+                # 如果AROON UP在强势区域，增强信号
+                if latest_aroon_up > strong_threshold:
+                    strength = min(0.95, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = f"AROON UP上穿AROON DOWN且进入强势区({latest_aroon_up:.1f}>{strong_threshold})，强烈买入信号"
+                    
+            # AROON DOWN上穿AROON UP - 卖出信号
+            elif latest_aroon_down > latest_aroon_up and prev_aroon_down <= prev_aroon_up:
+                signal_type = "sell"
+                strength = 0.8
+                confidence = 0.85
+                reason = "AROON DOWN上穿AROON UP，卖出信号"
+                
+                # 如果AROON DOWN在强势区域，增强信号
+                if latest_aroon_down > strong_threshold:
+                    strength = min(0.95, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = f"AROON DOWN上穿AROON UP且进入强势区({latest_aroon_down:.1f}>{strong_threshold})，强烈卖出信号"
+                    
+            # AROON UP持续强势 - 持续买入
+            elif latest_aroon_up > strong_threshold and latest_aroon_up > latest_aroon_down:
+                if latest_aroon_up > prev_aroon_up:  # 继续上升
+                    signal_type = "buy"
+                    strength = 0.7
+                    confidence = 0.8
+                    reason = f"AROON UP持续强势上升({latest_aroon_up:.1f}>{strong_threshold})，持续买入信号"
+                    
+            # AROON DOWN持续强势 - 持续卖出
+            elif latest_aroon_down > strong_threshold and latest_aroon_down > latest_aroon_up:
+                if latest_aroon_down > prev_aroon_down:  # 继续上升
+                    signal_type = "sell"
+                    strength = 0.7
+                    confidence = 0.8
+                    reason = f"AROON DOWN持续强势上升({latest_aroon_down:.1f}>{strong_threshold})，持续卖出信号"
+            
+            # 计算AROON趋势变化
+            aroon_up_rising = latest_aroon_up > prev_aroon_up
+            aroon_down_rising = latest_aroon_down > prev_aroon_down
+            aroon_spread = abs(latest_aroon_up - latest_aroon_down)
+            
+            # 基于AROON差值调整信号强度
+            if signal_type in ['buy', 'sell']:
+                if aroon_spread > 50.0:  # AROON差值较大
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                
+                # 基于AROON绝对值调整
+                dominant_aroon = max(latest_aroon_up, latest_aroon_down)
+                if dominant_aroon > 80.0:  # 极强势
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+            
+            # 设置元数据
+            metadata = {
+                'aroon_up': latest_aroon_up,
+                'aroon_down': latest_aroon_down,
+                'aroon_up_trend': 'rising' if aroon_up_rising else 'falling',
+                'aroon_down_trend': 'rising' if aroon_down_rising else 'falling',
+                'aroon_spread': aroon_spread,
+                'dominant_direction': 'bullish' if latest_aroon_up > latest_aroon_down else 'bearish',
+                'trend_strength': 'strong' if max(latest_aroon_up, latest_aroon_down) > strong_threshold else 'weak'
+            }
+            
+            # 添加oscillator值（如果存在）
+            if 'aroon_oscillator' in self._result.columns:
+                metadata['aroon_oscillator'] = self._result['aroon_oscillator'].iloc[-1]
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"AROON信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # AROON需要足够的数据
+        min_periods = getattr(self, 'period', 14)
+        if len(data) < min_periods + 1:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty)
+
 
 # 类别名
 AROON = Aroon

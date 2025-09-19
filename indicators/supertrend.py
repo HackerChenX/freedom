@@ -177,6 +177,9 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 计算信号
             df["st_signal"] = self._generate_signals(df)
 
+            # 保存结果到_result属性
+            self._result = df
+
             return df
 
         except Exception as e:
@@ -236,39 +239,210 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return signals
 
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        获取最新的交易信号
-
+        【核心抽象方法2】基于SuperTrend指标数值生成最新的交易信号
+        
+        SuperTrend交易信号逻辑：
+        - 价格突破SuperTrend上轨：买入信号（趋势转为上升）
+        - 价格跌破SuperTrend下轨：卖出信号（趋势转为下降）
+        - 价格在SuperTrend上方：持续买入确认
+        - 价格在SuperTrend下方：持续卖出确认
+        - 信号强度基于价格与SuperTrend线的距离
+        
         Args:
-            data: 计算后的数据
-
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
         Returns:
-            Dict[str, Any]: 信号信息
+            Dict[str, Any]: 标准化交易信号格式
         """
-        if data.empty or "st_signal" not in data.columns:
-            return {"signal": 0, "strength": 0, "description": "无信号"}
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
 
-        latest_signal = data["st_signal"].iloc[-1]
-        latest_trend = data["trend_direction"].iloc[-1] if "trend_direction" in data.columns else 0
-        latest_close = data["close"].iloc[-1]
-        latest_supertrend = data["supertrend"].iloc[-1] if "supertrend" in data.columns else 0
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("SuperTrend计算结果为空")
 
-        # 计算价格与SuperTrend线的距离作为信号强度
-        if latest_supertrend != 0:
-            distance_ratio = abs(latest_close - latest_supertrend) / latest_supertrend
-            strength = min(distance_ratio * 10, 1.0)  # 标准化强度
-        else:
-            strength = 0
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取SuperTrend相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("SuperTrend数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['supertrend', 'trend_direction', 'st_signal']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("SuperTrend结果列不完整")
+                
+            latest_supertrend = self._result['supertrend'].iloc[-1]
+            latest_trend = self._result['trend_direction'].iloc[-1]
+            latest_signal = self._result['st_signal'].iloc[-1]
+            prev_trend = self._result['trend_direction'].iloc[-2]
+            
+            # 获取额外的SuperTrend数据
+            latest_upper_band = self._result.get('final_upper_band', pd.Series([latest_supertrend])).iloc[-1] if 'final_upper_band' in self._result.columns else latest_supertrend
+            latest_lower_band = self._result.get('final_lower_band', pd.Series([latest_supertrend])).iloc[-1] if 'final_lower_band' in self._result.columns else latest_supertrend
+            latest_atr = self._result.get('atr', pd.Series([1])).iloc[-1] if 'atr' in self._result.columns else 1
+            
+            # 5. SuperTrend信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算价格与SuperTrend线的距离作为信号强度基础
+            if latest_supertrend != 0:
+                distance_ratio = abs(latest_close - latest_supertrend) / latest_supertrend
+                base_strength = min(distance_ratio * 8, 1.0)  # 标准化强度
+            else:
+                base_strength = 0.0
+            
+            # 趋势转换信号（最高优先级）
+            if latest_signal == 1 and latest_trend == 1:
+                # SuperTrend买入信号 - 趋势转为上升
+                signal_type = "buy"
+                strength = max(0.85, base_strength)
+                confidence = 0.9
+                reason = f"SuperTrend趋势转为上升({latest_close:.2f}>{latest_supertrend:.2f})，强烈买入信号"
+                
+            elif latest_signal == -1 and latest_trend == -1:
+                # SuperTrend卖出信号 - 趋势转为下降
+                signal_type = "sell"
+                strength = max(0.85, base_strength)
+                confidence = 0.9
+                reason = f"SuperTrend趋势转为下降({latest_close:.2f}<{latest_supertrend:.2f})，强烈卖出信号"
+            
+            # 趋势持续信号
+            elif latest_trend == 1 and latest_close > latest_supertrend:
+                # 价格在SuperTrend上方 - 持续买入
+                signal_type = "buy"
+                strength = max(0.7, base_strength * 0.8)
+                confidence = 0.8
+                reason = f"价格持续在SuperTrend上方({latest_close:.2f}>{latest_supertrend:.2f})，持续买入"
+                
+            elif latest_trend == -1 and latest_close < latest_supertrend:
+                # 价格在SuperTrend下方 - 持续卖出
+                signal_type = "sell"
+                strength = max(0.7, base_strength * 0.8)
+                confidence = 0.8
+                reason = f"价格持续在SuperTrend下方({latest_close:.2f}<{latest_supertrend:.2f})，持续卖出"
+            
+            # 弱信号：接近但未突破
+            elif latest_trend == 1 and latest_close > latest_lower_band:
+                # 价格接近但在支撑线上方
+                signal_type = "buy"
+                strength = base_strength * 0.6
+                confidence = 0.65
+                reason = f"价格接近SuperTrend支撑线({latest_close:.2f})，弱买入信号"
+                
+            elif latest_trend == -1 and latest_close < latest_upper_band:
+                # 价格接近但在阻力线下方
+                signal_type = "sell"
+                strength = base_strength * 0.6
+                confidence = 0.65
+                reason = f"价格接近SuperTrend阻力线({latest_close:.2f})，弱卖出信号"
+            
+            # 计算SuperTrend特有的元数据
+            trend_change = latest_trend != prev_trend
+            trend_stability = abs(latest_trend)  # 1或-1表示明确趋势
+            
+            metadata = {
+                'supertrend_value': latest_supertrend,
+                'trend_direction': latest_trend,
+                'signal_raw': latest_signal,
+                'upper_band': latest_upper_band,
+                'lower_band': latest_lower_band,
+                'atr': latest_atr,
+                'price_distance': latest_close - latest_supertrend,
+                'distance_ratio': abs(latest_close - latest_supertrend) / latest_supertrend if latest_supertrend != 0 else 0,
+                'trend_change': trend_change,
+                'trend_stability': trend_stability,
+                'trend_description': "上升趋势" if latest_trend == 1 else "下降趋势" if latest_trend == -1 else "无趋势",
+                'signal_quality': 'strong' if abs(latest_signal) == 1 else 'weak',
+                'multiplier': self.multiplier,
+                'period': self.period
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
 
-        trend_desc = "上升趋势" if latest_trend == 1 else "下降趋势" if latest_trend == -1 else "未知趋势"
+        except Exception as e:
+            logger.warning(f"SuperTrend信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
 
-        if latest_signal == 1:
-            return {"signal": 1, "strength": strength, "description": f"买入信号:趋势转为上升,当前{trend_desc}"}
-        elif latest_signal == -1:
-            return {"signal": -1, "strength": strength, "description": f"卖出信号:趋势转为下降,当前{trend_desc}"}
-        else:
-            return {"signal": 0, "strength": 0, "description": f"趋势持续,当前{trend_desc}"}
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # SuperTrend需要足够的数据用于ATR计算
+        min_periods = self.period + 10
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'supertrend' in self._result.columns and
+                'trend_direction' in self._result.columns)
 
     def get_pattern_info(self) -> Dict[str, Any]:
         """获取指标模式信息"""

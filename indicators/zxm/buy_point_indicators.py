@@ -27,14 +27,20 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAb
     """
 
     def __init__(self):
+        """初始化ZXM买点-日MACD指标"""
+        super().__init__()
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
-        """初始化ZXM买点-日MACD指标"""
-        # 移除super().__init__调用，直接设置属性
         self.name = "ZXMDailyMACD"
-        self.description = "ZXM买点-日MACD指标，判断日线MACD值是否小于0.9"  # TODO: 将魔法数字提取到配置中
+        self.description = "ZXM买点-日MACD指标，判断日线MACD值是否小于0.9"
+        
+        # ZXM特有参数
+        self.buy_threshold = 0.9  # ZXM买点阈值
+        self.short_period = 12    # EMA短期
+        self.long_period = 26     # EMA长期
+        self.signal_period = 9    # DEA周期
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -81,7 +87,162 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAb
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
+        # 存储结果供get_signal使用
+        self._result = result
         return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM日线MACD交易信号（抽象方法实现）
+        
+        基于ZXM体系的核心买点信号：MACD < 0.9
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        if 'close' not in data.columns:
+            return self._get_default_signal("缺少必需的'close'列")
+        
+        if len(data) < max(self.long_period, self.signal_period) + 5:
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM MACD指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) < 2:
+                return self._get_default_signal("ZXM MACD计算结果不足")
+            
+            # 3. 获取最新的指标值
+            latest_macd = result['MACD'].iloc[-1]
+            latest_diff = result['DIFF'].iloc[-1]
+            latest_dea = result['DEA'].iloc[-1]
+            latest_xg = result['XG'].iloc[-1]
+            
+            prev_macd = result['MACD'].iloc[-2]
+            prev_diff = result['DIFF'].iloc[-2]
+            prev_dea = result['DEA'].iloc[-2]
+            
+            # 4. ZXM信号判断
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "ZXM MACD无明显信号"
+            
+            # ZXM核心买点信号：MACD < 0.9（最高优先级）
+            if latest_xg:  # latest_macd < self.buy_threshold
+                signal_type = "buy"
+                base_strength = 0.8
+                base_confidence = 0.85
+                reason = f"ZXM买点信号(MACD={latest_macd:.3f}<{self.buy_threshold})"
+                
+                # 增强判断
+                strength_factors = []
+                confidence_factors = []
+                
+                # MACD值越小，信号越强
+                if latest_macd < 0.5:
+                    strength_factors.append(0.15)
+                    confidence_factors.append(0.1)
+                    reason += "，强烈买点"
+                elif latest_macd < 0.7:
+                    strength_factors.append(0.1)
+                    confidence_factors.append(0.05)
+                    reason += "，较强买点"
+                
+                # MACD上升趋势增强
+                if latest_macd > prev_macd:
+                    strength_factors.append(0.1)
+                    confidence_factors.append(0.05)
+                    reason += "，MACD上升"
+                
+                # 金叉确认
+                if latest_diff > latest_dea and prev_diff <= prev_dea:
+                    strength_factors.append(0.15)
+                    confidence_factors.append(0.1)
+                    reason += "，金叉确认"
+                
+                # 计算最终强度和置信度
+                strength = min(1.0, base_strength + sum(strength_factors))
+                confidence = min(1.0, base_confidence + sum(confidence_factors))
+                
+            # MACD金叉信号（次优先级）
+            elif latest_diff > latest_dea and prev_diff <= prev_dea:
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = f"ZXM MACD金叉信号(DIFF={latest_diff:.3f}>DEA={latest_dea:.3f})"
+                
+                # 位置加分
+                if latest_macd > 0:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，零轴上方"
+                
+            # MACD死叉信号
+            elif latest_diff < latest_dea and prev_diff >= prev_dea:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = f"ZXM MACD死叉信号(DIFF={latest_diff:.3f}<DEA={latest_dea:.3f})"
+                
+                # 位置加分
+                if latest_macd < 0:
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，零轴下方"
+            
+            # 5. 构建信号字典
+            signal_metadata = {
+                'indicator_type': 'zxm_daily_macd',
+                'macd_value': latest_macd,
+                'diff_value': latest_diff,
+                'dea_value': latest_dea,
+                'buy_signal_active': latest_xg,
+                'buy_threshold': self.buy_threshold,
+                'golden_cross': latest_diff > latest_dea and prev_diff <= prev_dea,
+                'death_cross': latest_diff < latest_dea and prev_diff >= prev_dea,
+                'macd_trend': 'up' if latest_macd > prev_macd else 'down',
+                'zero_axis_position': 'above' if latest_macd > 0 else 'below'
+            }
+            
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': signal_metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"ZXM日线MACD信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+    
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认的持有信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """公共计算接口"""
+        return self._calculate(data, **kwargs)
 
     def calculate_raw_score_buy_point_indicators(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -539,9 +700,14 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
         # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
         """初始化ZXM买点-换手率指标"""
-        # 移除super().__init__调用，直接设置属性
-        self.name = "ZXMTurnover"
-        self.description = "ZXM买点-换手率指标，判断日线换手率是否大于0.7%  # TODO: 将魔法数字提取到配置中"
+        # 正确调用父类初始化
+        super().__init__(name="ZXMTurnover", description="ZXM买点-换手率指标，判断日线换手率是否大于0.7%")
+        
+        # ZXM换手率指标参数
+        self.turnover_threshold = 0.7  # 换手率阈值
+        self.high_activity_threshold = 1.0  # 高活跃度阈值
+        self.extreme_activity_threshold = 5.0  # 极度活跃阈值
+        self.relative_window = 20  # 相对活跃度计算窗口
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -962,7 +1128,192 @@ class ZXMTurnover(BaseIndicator, PatternSignalMixin):
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """公共计算接口"""
-        return self._calculate(data, **kwargs)
+        result = self._calculate(data, **kwargs)
+        self._result = result
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM换手率交易信号（抽象方法实现）
+        
+        基于换手率活跃度判断买卖时机
+        
+        Args:
+            data: 包含OHLCV和换手率数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        # 检查换手率列
+        if 'turnover_rate' not in data.columns and 'turnover' not in data.columns:
+            return self._get_default_signal("缺少必需的'turnover_rate'或'turnover'列")
+        
+        if len(data) < 5:  # 需要足够数据计算相对活跃度
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM换手率指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return self._get_default_signal("指标计算结果为空")
+                
+            # 3. 获取最新数据
+            latest_data = result.iloc[-1]
+            
+            # 4. 获取关键指标值
+            turnover = latest_data.get('Turnover', 0)
+            xg_signal = latest_data.get('XG', False)
+            buy_signal = latest_data.get('buy_signal', False)
+            close_price = latest_data.get('close', 0)
+            
+            # 5. 计算相对活跃度（如果数据足够）
+            relative_activity = 1.0  # 默认值
+            if len(result) >= self.relative_window:
+                avg_turnover = result['Turnover'].tail(self.relative_window).mean()
+                if avg_turnover > 0:
+                    relative_activity = turnover / avg_turnover
+            
+            # 6. 信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "换手率观望"
+            
+            # 换手率达到阈值：买入信号
+            if xg_signal and turnover >= self.turnover_threshold:
+                signal_type = "buy"
+                
+                # 根据换手率活跃度调整信号强度
+                if turnover >= self.extreme_activity_threshold:
+                    # 极度活跃：可能是炒作，降低强度
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = f"换手率极度活跃({turnover:.2f}%)，谨慎买入"
+                elif turnover >= self.high_activity_threshold * 2:
+                    # 非常活跃：强烈买入
+                    strength = 0.9
+                    confidence = 0.9
+                    reason = f"换手率非常活跃({turnover:.2f}%)，强烈买入信号"
+                elif turnover >= self.high_activity_threshold:
+                    # 活跃：一般买入
+                    strength = 0.8
+                    confidence = 0.85
+                    reason = f"换手率活跃({turnover:.2f}%)，买入信号"
+                else:
+                    # 达到阈值但不够活跃：谨慎买入
+                    strength = 0.7
+                    confidence = 0.75
+                    reason = f"换手率达标({turnover:.2f}%)，谨慎买入"
+            
+            # 换手率低于阈值：观望或卖出
+            elif turnover < self.turnover_threshold * 0.5:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = f"换手率过低({turnover:.2f}%)，流动性不足"
+            
+            else:
+                # 换手率不足但不算太低：观望
+                signal_type = "hold"
+                strength = 0.0
+                confidence = 0.5
+                reason = f"换手率不足({turnover:.2f}%)，观望"
+            
+            # 7. 基于相对活跃度的信号调整
+            if relative_activity > 2.0:
+                if signal_type == "buy":
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，相对历史极度活跃"
+            elif relative_activity > 1.5:
+                if signal_type == "buy":
+                    strength = min(1.0, strength + 0.05)
+                    reason += "，相对历史活跃"
+            elif relative_activity < 0.5:
+                if signal_type == "buy":
+                    strength = max(0.0, strength - 0.2)
+                    confidence = max(0.3, confidence - 0.1)
+                    reason += "，相对历史低迷"
+                elif signal_type == "hold":
+                    signal_type = "sell"
+                    strength = 0.5
+                    confidence = 0.6
+                    reason = "换手率相对历史低迷，转为卖出信号"
+            
+            # 8. 趋势确认（最近5日换手率趋势）
+            if len(result) >= 5:
+                recent_trend = result['Turnover'].tail(5).mean()
+                if turnover > recent_trend * 1.3 and signal_type == "buy":
+                    strength = min(1.0, strength + 0.1)
+                    reason += "，换手率突然放大"
+                elif turnover < recent_trend * 0.7 and signal_type == "buy":
+                    strength = max(0.0, strength - 0.1)
+                    reason += "，换手率缩减"
+            
+            # 9. 生成标准化信号
+            signal = {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': data.index[-1] if len(data) > 0 else None,
+                'price': round(close_price, 3) if close_price > 0 else None,
+                'reason': reason,
+                'metadata': {
+                    'indicator_type': 'zxm_turnover',
+                    'turnover_rate': round(turnover, 3),
+                    'xg_signal': bool(xg_signal),
+                    'buy_signal': bool(buy_signal),
+                    'relative_activity': round(relative_activity, 3),
+                    'turnover_threshold': self.turnover_threshold,
+                    'high_activity_threshold': self.high_activity_threshold,
+                    'extreme_activity_threshold': self.extreme_activity_threshold,
+                    'relative_window': self.relative_window
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"ZXM换手率信号生成失败: {e}")
+            return self._get_default_signal(f"计算错误: {str(e)}")
+
+    def _get_default_signal(self, reason: str = "数据验证失败") -> Dict[str, Any]:
+        """
+        生成默认信号
+        
+        Args:
+            reason: 失败原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号字典
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': None,
+            'price': None,
+            'reason': reason,
+            'metadata': {}
+        }
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM换手率指标所需的最少数据周期数
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.relative_window, 5)  # 至少需要20个周期计算相对活跃度
 
 
 class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
@@ -978,9 +1329,14 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
         # self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
         """初始化ZXM买点-缩量指标"""
-        # 移除super().__init__调用，直接设置属性
-        self.name = "ZXMVolumeShrink"
-        self.description = "ZXM买点-缩量指标，判断成交量是否缩量"
+        # 正确调用父类初始化
+        super().__init__(name="ZXMVolumeShrink", description="ZXM买点-缩量指标，判断成交量是否缩量")
+        
+        # ZXM缩量指标参数
+        self.ma_period = 2  # 均量计算周期
+        self.shrink_threshold = 0.9  # 缩量阈值
+        self.consecutive_days = 3  # 连续缩量天数判断
+        self.price_stable_threshold = 0.05  # 价格稳定阈值
 
     def _calculate(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
@@ -1360,7 +1716,190 @@ class ZXMVolumeShrink(BaseIndicator, PatternSignalMixin):
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """公共计算接口"""
-        return self._calculate(data, **kwargs)
+        result = self._calculate(data, **kwargs)
+        self._result = result
+        return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM缩量交易信号（抽象方法实现）
+        
+        基于成交量缩量情况判断买卖时机
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        # 检查成交量列
+        if 'volume' not in data.columns:
+            return self._get_default_signal("缺少必需的'volume'列")
+        
+        if len(data) < self.ma_period + 1:  # 需要足够数据计算均量
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM缩量指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return self._get_default_signal("指标计算结果为空")
+                
+            # 3. 获取最新数据
+            latest_data = result.iloc[-1]
+            
+            # 4. 获取关键指标值
+            vol_ratio = latest_data.get('VOL_RATIO', 1.0)
+            xg_signal = latest_data.get('XG', False)
+            buy_signal = latest_data.get('buy_signal', False)
+            close_price = latest_data.get('close', 0)
+            ma_vol_2 = latest_data.get('MA_VOL_2', 0)
+            
+            # 5. 计算连续缩量情况
+            consecutive_shrink = False
+            if len(result) >= self.consecutive_days:
+                consecutive_shrink = all(result['XG'].tail(self.consecutive_days))
+            
+            # 6. 计算价格稳定情况
+            price_stable = False
+            if 'close' in data.columns and len(data) >= self.consecutive_days:
+                price_change = abs(data['close'].pct_change(self.consecutive_days).iloc[-1])
+                price_stable = price_change < self.price_stable_threshold
+            
+            # 7. 信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "成交量观望"
+            
+            # 缩量买点信号
+            if xg_signal and vol_ratio < self.shrink_threshold:
+                signal_type = "buy"
+                
+                # 根据缩量程度调整信号强度
+                if vol_ratio < 0.5:
+                    # 严重缩量：最强买入信号
+                    strength = 0.9
+                    confidence = 0.9
+                    reason = f"严重缩量({vol_ratio:.2f})，强烈买入信号"
+                elif vol_ratio < 0.7:
+                    # 明显缩量：强买入信号
+                    strength = 0.8
+                    confidence = 0.85
+                    reason = f"明显缩量({vol_ratio:.2f})，买入信号"
+                else:
+                    # 轻微缩量：一般买入信号
+                    strength = 0.7
+                    confidence = 0.75
+                    reason = f"轻微缩量({vol_ratio:.2f})，谨慎买入"
+            
+            # 成交量正常或放量：观望或卖出
+            elif vol_ratio >= 1.2:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = f"成交量放大({vol_ratio:.2f})，可能见顶"
+            
+            else:
+                # 成交量正常：观望
+                signal_type = "hold"
+                strength = 0.0
+                confidence = 0.5
+                reason = f"成交量正常({vol_ratio:.2f})，观望"
+            
+            # 8. 基于连续缩量的信号增强
+            if consecutive_shrink and signal_type == "buy":
+                strength = min(1.0, strength + 0.1)
+                confidence = min(1.0, confidence + 0.05)
+                reason += "，连续缩量"
+            
+            # 9. 基于价格稳定的信号调整
+            if price_stable and signal_type == "buy":
+                strength = min(1.0, strength + 0.1)
+                confidence = min(1.0, confidence + 0.05)
+                reason += "，价格整理"
+            elif not price_stable and signal_type == "buy":
+                # 价格不稳定时降低买入强度
+                strength = max(0.0, strength - 0.1)
+                confidence = max(0.3, confidence - 0.05)
+                reason += "，价格波动"
+            
+            # 10. 成交量异常检查
+            if ma_vol_2 > 0:
+                volume = latest_data.get('volume', 0)
+                volume_abnormal = volume > ma_vol_2 * 3  # 异常放量
+                if volume_abnormal and signal_type == "buy":
+                    signal_type = "hold"
+                    strength = 0.0
+                    confidence = 0.4
+                    reason = "异常放量，暂停买入"
+            
+            # 11. 生成标准化信号
+            signal = {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': data.index[-1] if len(data) > 0 else None,
+                'price': round(close_price, 3) if close_price > 0 else None,
+                'reason': reason,
+                'metadata': {
+                    'indicator_type': 'zxm_volume_shrink',
+                    'vol_ratio': round(vol_ratio, 3),
+                    'xg_signal': bool(xg_signal),
+                    'buy_signal': bool(buy_signal),
+                    'consecutive_shrink': bool(consecutive_shrink),
+                    'price_stable': bool(price_stable),
+                    'ma_vol_2': round(ma_vol_2, 0) if ma_vol_2 > 0 else None,
+                    'shrink_threshold': self.shrink_threshold,
+                    'ma_period': self.ma_period,
+                    'consecutive_days': self.consecutive_days,
+                    'price_stable_threshold': self.price_stable_threshold
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"ZXM缩量信号生成失败: {e}")
+            return self._get_default_signal(f"计算错误: {str(e)}")
+
+    def _get_default_signal(self, reason: str = "数据验证失败") -> Dict[str, Any]:
+        """
+        生成默认信号
+        
+        Args:
+            reason: 失败原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号字典
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': None,
+            'price': None,
+            'reason': reason,
+            'metadata': {}
+        }
+
+    @property
+    def minimum_periods(self) -> int:
+        """
+        ZXM缩量指标所需的最少数据周期数
+        
+        Returns:
+            int: 最少需要的数据周期数
+        """
+        return max(self.ma_period + 1, self.consecutive_days)  # 至少需要3个周期计算缩量
 
 
 class ZXMMACallback(BaseIndicator, PatternSignalMixin):

@@ -297,49 +297,123 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        获取MA信号 - 实现抽象方法
-
+        【核心抽象方法2】基于MA指标数值生成最新的交易信号
+        
+        MA交易信号逻辑：
+        - 价格上穿MA：买入信号
+        - 价格下穿MA：卖出信号  
+        - 多周期MA黄金交叉：强烈买入信号
+        - 多周期MA死亡交叉：强烈卖出信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
         Returns:
-            Dict[str, Any]: 包含signal, score, confidence的字典
+            Dict[str, Any]: 标准化交易信号格式
         """
         try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
             if not self.has_result():
                 self.calculate(data, **kwargs)
 
             if self._result is None or len(self._result) == 0:
-                return {
-                    'signal': 'HOLD',
-                    'score': 50.0,
-                    'confidence': 0.5
-                }
+                return self._get_default_signal("MA计算结果为空")
 
-            # 获取最新的买卖信号
-            signal = "HOLD"
-            score = 50.0
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. MA信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
             confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
             
-            if 'buy_signal' in self._result.columns and self._result['buy_signal'].iloc[-1]:
-                signal = "BUY"
-                score = 75.0
-                confidence = 0.8
-            elif 'sell_signal' in self._result.columns and self._result['sell_signal'].iloc[-1]:
-                signal = "SELL"
-                score = 25.0
-                confidence = 0.8
+            # 检查买卖信号
+            if 'buy_signal' in self._result.columns and len(self._result['buy_signal']) > 0:
+                if self._result['buy_signal'].iloc[-1]:
+                    signal_type = "buy"
+                    strength = 0.75
+                    confidence = 0.8
+                    reason = "价格上穿移动平均线，买入信号"
+                    
+            elif 'sell_signal' in self._result.columns and len(self._result['sell_signal']) > 0:
+                if self._result['sell_signal'].iloc[-1]:
+                    signal_type = "sell"
+                    strength = 0.75
+                    confidence = 0.8
+                    reason = "价格下穿移动平均线，卖出信号"
             
+            # 获取MA值用于元数据
+            ma_columns = [col for col in self._result.columns if col.startswith('MA_')]
+            if ma_columns:
+                for col in ma_columns[:3]:  # 最多记录3个MA值
+                    if len(self._result[col]) > 0:
+                        metadata[col.lower()] = self._result[col].iloc[-1]
+            
+            # 计算价格相对MA位置
+            if ma_columns and len(self._result[ma_columns[0]]) > 0:
+                main_ma = self._result[ma_columns[0]].iloc[-1]
+                if main_ma > 0:
+                    price_to_ma_ratio = latest_close / main_ma
+                    metadata['price_to_ma_ratio'] = price_to_ma_ratio
+                    
+                    # 基于价格相对MA位置调整信号强度
+                    if signal_type == "buy" and price_to_ma_ratio > 1.0:
+                        strength = min(0.9, strength + (price_to_ma_ratio - 1.0) * 0.5)
+                    elif signal_type == "sell" and price_to_ma_ratio < 1.0:
+                        strength = min(0.9, strength + (1.0 - price_to_ma_ratio) * 0.5)
+            
+            # 5. 标准化输出
             return {
-                'signal': signal,
-                'score': score,
-                'confidence': confidence
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
             }
 
         except Exception as e:
-            logger.warning(f"MA信号获取失败: {e}")
-            return {
-                'signal': 'HOLD',
-                'score': 50.0,
-                'confidence': 0.5
-            }
+            logger.warning(f"MA信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """标准数据验证"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        if 'close' not in data.columns:
+            return False
+        
+        # 检查数据量
+        if len(data) < self.minimum_periods:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """默认信号格式"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
     def has_result(self) -> bool:
         """检查是否有计算结果"""

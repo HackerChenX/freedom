@@ -35,9 +35,8 @@ class ZXMAlphaGeneration(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
         Args:
             **kwargs: 指标参数
         """
-        # 移除super().__init__调用，直接设置属性
-        self.name = "ZXMAlphaGeneration"
-        self.description = "ZXM Alpha生成指标，分析投资组合Alpha生成能力"
+        # 正确调用父类初始化
+        super().__init__(name="ZXMAlphaGeneration", description="ZXM Alpha生成指标，分析投资组合Alpha生成能力")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_zxmalphagenerati()
@@ -109,8 +108,182 @@ class ZXMAlphaGeneration(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin)
 
         # 生成Alpha信号
         result = self._generate_alpha_signals(result)
+        
+        # 保存结果
+        self._result = result
 
         return result
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取ZXM Alpha生成交易信号（抽象方法实现）
+        
+        基于Alpha生成能力判断投资价值
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            return self._get_default_signal("输入数据必须是DataFrame")
+        
+        if data.empty:
+            return self._get_default_signal("输入数据为空")
+        
+        if 'close' not in data.columns:
+            return self._get_default_signal("缺少必需的'close'列")
+        
+        if len(data) < self.minimum_periods:
+            return self._get_default_signal("数据量不足")
+        
+        try:
+            # 2. 计算ZXM Alpha生成指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return self._get_default_signal("指标计算结果为空")
+                
+            # 3. 获取最新数据
+            latest_data = result.iloc[-1]
+            
+            # 4. 获取关键指标值
+            alpha_score = latest_data.get('AlphaScore', 50)
+            rolling_alpha = latest_data.get('RollingAlpha', 0)
+            information_ratio = latest_data.get('InformationRatio', 0)
+            alpha_signal = latest_data.get('AlphaSignal', False)
+            positive_alpha = latest_data.get('PositiveAlphaSignal', False)
+            is_good_alpha = latest_data.get('IsGoodAlpha', False)
+            is_poor_alpha = latest_data.get('IsPoorAlpha', False)
+            close_price = latest_data.get('close', 0)
+            factor_contribution = latest_data.get('FactorContribution', 0)
+            
+            # 5. 信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "ZXM Alpha生成无明显信号"
+            
+            # Alpha评分优秀：强力买入信号
+            if alpha_score >= 85 and positive_alpha:
+                signal_type = "buy"
+                strength = 0.95
+                confidence = 0.95
+                reason = "Alpha评分优秀且正Alpha，强力买入信号"
+            
+            # Alpha评分良好：一般买入信号
+            elif alpha_score >= 70 and is_good_alpha:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.85
+                reason = "Alpha评分良好，买入信号"
+            
+            # Alpha评分中等但有正向信号：谨慎买入
+            elif alpha_score >= 60 and (alpha_signal or positive_alpha):
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = "Alpha评分中等但有正向信号，谨慎买入"
+            
+            # Alpha评分差：卖出信号
+            elif alpha_score <= 30 or is_poor_alpha:
+                signal_type = "sell"
+                strength = 0.7
+                confidence = 0.8
+                reason = "Alpha评分差，卖出信号"
+            
+            # Alpha评分极差：强力卖出
+            elif alpha_score <= 15:
+                signal_type = "sell"
+                strength = 0.9
+                confidence = 0.9
+                reason = "Alpha评分极差，强力卖出"
+            
+            else:
+                # 其他情况：观望
+                signal_type = "hold"
+                strength = 0.0
+                confidence = 0.5
+                reason = "Alpha表现平平，观望"
+            
+            # 6. 基于信息比率的信号调整
+            if information_ratio > 0.8:
+                if signal_type == "buy":
+                    strength = min(1.0, strength + 0.1)
+                    confidence = min(1.0, confidence + 0.05)
+                    reason += "，信息比率优异"
+            elif information_ratio < -0.5:
+                if signal_type == "buy":
+                    strength = max(0.0, strength - 0.2)
+                    confidence = max(0.3, confidence - 0.1)
+                    reason += "，信息比率较差"
+                elif signal_type == "hold":
+                    signal_type = "sell"
+                    strength = 0.6
+                    confidence = 0.7
+                    reason = "信息比率差，转为卖出信号"
+            
+            # 7. 基于因子贡献的信号调整
+            if abs(factor_contribution) > 0.01:
+                if factor_contribution > 0 and signal_type == "buy":
+                    strength = min(1.0, strength + 0.05)
+                    reason += "，因子贡献正向"
+                elif factor_contribution < 0 and signal_type == "sell":
+                    strength = min(1.0, strength + 0.05)
+                    reason += "，因子贡献负向"
+            
+            # 8. 生成标准化信号
+            signal = {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': data.index[-1] if len(data) > 0 else None,
+                'price': round(close_price, 3) if close_price > 0 else None,
+                'reason': reason,
+                'metadata': {
+                    'indicator_type': 'zxm_alpha_generation',
+                    'alpha_score': round(alpha_score, 3),
+                    'rolling_alpha': round(rolling_alpha, 6),
+                    'information_ratio': round(information_ratio, 3),
+                    'alpha_signal': bool(alpha_signal),
+                    'positive_alpha': bool(positive_alpha),
+                    'is_good_alpha': bool(is_good_alpha),
+                    'is_poor_alpha': bool(is_poor_alpha),
+                    'factor_contribution': round(factor_contribution, 6),
+                    'alpha_threshold': self.alpha_threshold,
+                    'lookback_period': self.lookback_period,
+                    'benchmark_period': self.benchmark_period,
+                    'risk_free_rate': self.risk_free_rate
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"ZXM Alpha生成信号生成失败: {e}")
+            return self._get_default_signal(f"计算错误: {str(e)}")
+
+    def _get_default_signal(self, reason: str = "数据验证失败") -> Dict[str, Any]:
+        """
+        生成默认信号
+        
+        Args:
+            reason: 失败原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号字典
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': None,
+            'price': None,
+            'reason': reason,
+            'metadata': {}
+        }
 
     def _calculate_returns_and_benchmark(self, data: pd.DataFrame) -> pd.DataFrame:
         """计算收益率和基准"""

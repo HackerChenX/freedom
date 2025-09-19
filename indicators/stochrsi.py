@@ -140,12 +140,21 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了STOCHRSI指标的Data_frame
         """
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
+        if data is None or data.empty:
+            raise ValueError("STOCHRSI计算: 输入数据不能为空")
+            
+        # 检查必需列
+        if 'close' not in data.columns:
+            raise ValueError("STOCHRSI计算: 缺少必需的'close'列")
+        
         df = data.copy()
 
         # 确保数据有足够的长度
         min_length = max(self.rsi_period, self.stoch_period) + self.k_period + self.d_period
         if len(df) < min_length:
-            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length}),返回原始数据")
+            logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length})")
+            raise ValueError(f"STOCHRSI计算: 数据长度不足，需要至少{min_length}个数据点，实际{len(df)}个")
             df["STOCHRSI_K"] = np.nan
             df["STOCHRSI_D"] = np.nan
             return df
@@ -501,6 +510,373 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             pd.DataFrame: 交易信号DataFrame
         """
         return self.get_signals(data, **kwargs)
+
+    def register_patterns_Stochrsi(self):
+        """
+        注册STOCHRSI指标的技术形态到全局形态注册表
+        """
+        try:
+            # 注册STOCHRSI超买形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_OVERBOUGHT",
+                display_name="STOCHRSI超买",
+                description=f"STOCHRSI %K值超过80，进入超买区域",
+                pattern_type="BEARISH",
+                default_strength="MEDIUM",
+                score_impact=-15.0,
+                polarity="NEGATIVE"
+            )
+
+            # 注册STOCHRSI超卖形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_OVERSOLD",
+                display_name="STOCHRSI超卖",
+                description=f"STOCHRSI %K值低于20，进入超卖区域",
+                pattern_type="BULLISH",
+                default_strength="MEDIUM",
+                score_impact=15.0,
+                polarity="POSITIVE"
+            )
+
+            # 注册STOCHRSI金叉形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_GOLDEN_CROSS",
+                display_name="STOCHRSI金叉",
+                description="STOCHRSI %K线上穿%D线，看涨信号",
+                pattern_type="BULLISH",
+                default_strength="STRONG",
+                score_impact=20.0,
+                polarity="POSITIVE"
+            )
+
+            # 注册STOCHRSI死叉形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_DEATH_CROSS",
+                display_name="STOCHRSI死叉",
+                description="STOCHRSI %K线下穿%D线，看跌信号",
+                pattern_type="BEARISH",
+                default_strength="STRONG",
+                score_impact=-20.0,
+                polarity="NEGATIVE"
+            )
+
+            # 注册STOCHRSI顶背离形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_BEARISH_DIVERGENCE",
+                display_name="STOCHRSI顶背离",
+                description="价格创新高而STOCHRSI未创新高，上涨动能不足",
+                pattern_type="BEARISH",
+                default_strength="STRONG",
+                score_impact=-18.0,
+                polarity="NEGATIVE"
+            )
+
+            # 注册STOCHRSI底背离形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_BULLISH_DIVERGENCE",
+                display_name="STOCHRSI底背离",
+                description="价格创新低而STOCHRSI未创新低，下跌动能不足",
+                pattern_type="BULLISH",
+                default_strength="STRONG",
+                score_impact=18.0,
+                polarity="POSITIVE"
+            )
+
+            # 注册STOCHRSI上升趋势形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_UPTREND",
+                display_name="STOCHRSI上升趋势",
+                description="STOCHRSI处于上升趋势，动量向上",
+                pattern_type="BULLISH",
+                default_strength="MEDIUM",
+                score_impact=12.0,
+                polarity="POSITIVE"
+            )
+
+            # 注册STOCHRSI下降趋势形态
+            self.register_pattern_to_registry(
+                pattern_id="STOCHRSI_DOWNTREND",
+                display_name="STOCHRSI下降趋势",
+                description="STOCHRSI处于下降趋势，动量向下",
+                pattern_type="BEARISH",
+                default_strength="MEDIUM",
+                score_impact=-12.0,
+                polarity="NEGATIVE"
+            )
+
+            logger.info("STOCHRSI形态注册完成")
+
+        except Exception as e:
+            logger.warning(f"STOCHRSI形态注册失败: {e}")
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于STOCHRSI (Stochastic RSI) 指标数值生成最新的交易信号
+        
+        STOCHRSI交易信号逻辑：
+        - %K > 80且%K下穿%D：超买区域卖出信号
+        - %K < 20且%K上穿%D：超卖区域买入信号
+        - %K上穿%D（中性区域）：金叉买入信号
+        - %K下穿%D（中性区域）：死叉卖出信号
+        - %K和%D同向移动：趋势确认信号
+        - 背离检测：价格与STOCHRSI背离的反转信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate_Stochrsi(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("STOCHRSI计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取STOCHRSI相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("STOCHRSI数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['STOCHRSI_K', 'STOCHRSI_D']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("STOCHRSI结果列不完整")
+                
+            latest_k = self._result['STOCHRSI_K'].iloc[-1]
+            latest_d = self._result['STOCHRSI_D'].iloc[-1]
+            prev_k = self._result['STOCHRSI_K'].iloc[-2]
+            prev_d = self._result['STOCHRSI_D'].iloc[-2]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_k) or pd.isna(latest_d) or pd.isna(prev_k) or pd.isna(prev_d):
+                return self._get_default_signal("STOCHRSI数据包含NaN值")
+            
+            # 5. STOCHRSI信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # STOCHRSI关键水平
+            overbought_level = 80.0
+            oversold_level = 20.0
+            extreme_overbought = 90.0
+            extreme_oversold = 10.0
+            middle_level = 50.0
+            
+            # 计算交叉状态
+            k_cross_up_d = prev_k <= prev_d and latest_k > latest_d
+            k_cross_down_d = prev_k >= prev_d and latest_k < latest_d
+            
+            # 极端超卖区域反弹信号（最高优先级）
+            if latest_k <= extreme_oversold and k_cross_up_d:
+                # 极端超卖区域金叉
+                signal_type = "buy"
+                extreme_strength = (extreme_oversold - latest_k) / 10 + 0.9
+                strength = min(1.0, extreme_strength)
+                confidence = 0.95
+                reason = f"STOCHRSI极端超卖区域金叉({latest_k:.2f}>={latest_d:.2f})，强烈买入信号"
+                
+            elif latest_k >= extreme_overbought and k_cross_down_d:
+                # 极端超买区域死叉
+                signal_type = "sell"
+                extreme_strength = (latest_k - extreme_overbought) / 10 + 0.9
+                strength = min(1.0, extreme_strength)
+                confidence = 0.95
+                reason = f"STOCHRSI极端超买区域死叉({latest_k:.2f}<{latest_d:.2f})，强烈卖出信号"
+            
+            # 超卖/超买区域穿越信号
+            elif latest_k <= oversold_level and k_cross_up_d:
+                # 超卖区域金叉
+                signal_type = "buy"
+                oversold_strength = (oversold_level - latest_k) / 20 + 0.8
+                strength = max(0.8, min(1.0, oversold_strength))
+                confidence = 0.9
+                reason = f"STOCHRSI超卖区域金叉({latest_k:.2f}>={latest_d:.2f})，买入信号"
+                
+            elif latest_k >= overbought_level and k_cross_down_d:
+                # 超买区域死叉
+                signal_type = "sell"
+                overbought_strength = (latest_k - overbought_level) / 20 + 0.8
+                strength = max(0.8, min(1.0, overbought_strength))
+                confidence = 0.9
+                reason = f"STOCHRSI超买区域死叉({latest_k:.2f}<{latest_d:.2f})，卖出信号"
+            
+            # 中性区域交叉信号
+            elif k_cross_up_d and latest_k < middle_level:
+                # 中低位金叉
+                signal_type = "buy"
+                cross_strength = 0.7 + (middle_level - latest_k) / 100
+                strength = max(0.7, min(0.85, cross_strength))
+                confidence = 0.8
+                reason = f"STOCHRSI中低位金叉({latest_k:.2f}>={latest_d:.2f})，买入信号"
+                
+            elif k_cross_down_d and latest_k > middle_level:
+                # 中高位死叉
+                signal_type = "sell"
+                cross_strength = 0.7 + (latest_k - middle_level) / 100
+                strength = max(0.7, min(0.85, cross_strength))
+                confidence = 0.8
+                reason = f"STOCHRSI中高位死叉({latest_k:.2f}<{latest_d:.2f})，卖出信号"
+            
+            # 极端区域持有信号
+            elif latest_k <= oversold_level:
+                # 在超卖区域
+                signal_type = "buy"
+                oversold_depth = (oversold_level - latest_k) / 20
+                strength = max(0.65, min(0.8, 0.65 + oversold_depth))
+                confidence = 0.75
+                reason = f"STOCHRSI处于超卖区域({latest_k:.2f})，买入信号"
+                
+            elif latest_k >= overbought_level:
+                # 在超买区域
+                signal_type = "sell"
+                overbought_depth = (latest_k - overbought_level) / 20
+                strength = max(0.65, min(0.8, 0.65 + overbought_depth))
+                confidence = 0.75
+                reason = f"STOCHRSI处于超买区域({latest_k:.2f})，卖出信号"
+            
+            # 趋势延续信号
+            elif latest_k > latest_d and latest_k > middle_level:
+                # K线在D线上方且处于上半区
+                signal_type = "buy"
+                trend_strength = min((latest_k - middle_level) / 30, 0.4) + 0.6
+                strength = max(0.6, trend_strength)
+                confidence = 0.65
+                reason = f"STOCHRSI上升趋势({latest_k:.2f}>{latest_d:.2f})，弱买入信号"
+                
+            elif latest_k < latest_d and latest_k < middle_level:
+                # K线在D线下方且处于下半区
+                signal_type = "sell"
+                trend_strength = min((middle_level - latest_k) / 30, 0.4) + 0.6
+                strength = max(0.6, trend_strength)
+                confidence = 0.65
+                reason = f"STOCHRSI下降趋势({latest_k:.2f}<{latest_d:.2f})，弱卖出信号"
+            
+            # 计算STOCHRSI特有的元数据
+            k_change = latest_k - prev_k
+            d_change = latest_d - prev_d
+            k_momentum = "上升" if k_change > 0 else "下降" if k_change < 0 else "平稳"
+            d_momentum = "上升" if d_change > 0 else "下降" if d_change < 0 else "平稳"
+            
+            # 确定当前STOCHRSI所在区域
+            if latest_k >= extreme_overbought:
+                stochrsi_zone = "极端超买"
+            elif latest_k >= overbought_level:
+                stochrsi_zone = "超买"
+            elif latest_k > middle_level:
+                stochrsi_zone = "中性偏强"
+            elif latest_k > oversold_level:
+                stochrsi_zone = "中性偏弱"
+            elif latest_k > extreme_oversold:
+                stochrsi_zone = "超卖"
+            else:
+                stochrsi_zone = "极端超卖"
+            
+            # 计算相对位置
+            relative_position = latest_k / 100.0  # STOCHRSI范围0-100
+            kd_diff = latest_k - latest_d
+            kd_distance = abs(kd_diff)
+            
+            metadata = {
+                'stochrsi_k': latest_k,
+                'stochrsi_d': latest_d,
+                'stochrsi_k_previous': prev_k,
+                'stochrsi_d_previous': prev_d,
+                'k_change': k_change,
+                'd_change': d_change,
+                'k_momentum': k_momentum,
+                'd_momentum': d_momentum,
+                'stochrsi_zone': stochrsi_zone,
+                'relative_position': relative_position,
+                'kd_diff': kd_diff,
+                'kd_distance': kd_distance,
+                'k_cross_up_d': k_cross_up_d,
+                'k_cross_down_d': k_cross_down_d,
+                'distance_to_overbought': abs(latest_k - overbought_level),
+                'distance_to_oversold': abs(latest_k - oversold_level),
+                'distance_to_middle': abs(latest_k - middle_level),
+                'in_overbought': latest_k >= overbought_level,
+                'in_oversold': latest_k <= oversold_level,
+                'in_extreme_overbought': latest_k >= extreme_overbought,
+                'in_extreme_oversold': latest_k <= extreme_oversold,
+                'k_above_d': latest_k > latest_d,
+                'rsi_period': self.rsi_period,
+                'stoch_period': self.stoch_period,
+                'k_period': self.k_period,
+                'd_period': self.d_period
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"STOCHRSI信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # STOCHRSI需要足够的数据用于计算
+        min_periods = max(self.rsi_period, self.stoch_period) + self.k_period + self.d_period + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
 
 # 类别名

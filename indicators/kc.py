@@ -41,12 +41,14 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         multiplier: float = 2.0,  # TODO: 将魔法数字提取到配置中
         name: str = "KC",
         description: str = "肯特纳通道指标",
+        **kwargs
     ):
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
         """初始化KC指标"""
-        # 不调用super().__init__(),直接初始化属性
+        # 正确调用父类初始化
+        super().__init__(**kwargs)
         self.name = name
         self.description = description
         self.indicator_type = Indicator_enum.KC.name
@@ -80,6 +82,297 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """基类抽象方法实现"""
         return self._calculate_kc(data)
+    
+    def has_result(self) -> bool:
+        """检查是否已计算结果"""
+        return self._result is not None and not self._result.empty
+    
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        生成KC指标的标准化交易信号
+        
+        KC (Keltner Channel) 特有信号逻辑:
+        1. 通道突破: 价格突破上轨为买入信号，跌破下轨为卖出信号
+        2. 通道回归: 价格从极端位置回归中轨
+        3. 通道宽度: 宽度变化反映波动性变化
+        4. 价格位置: 价格在通道中的相对位置
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化信号格式
+            {
+                'signal_type': 'buy'/'sell'/'hold',
+                'strength': 0.0-1.0,
+                'confidence': 0.0-1.0, 
+                'timestamp': datetime,
+                'price': float,
+                'reason': str,
+                'metadata': dict
+            }
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 确保已计算KC指标
+            if not self.has_result():
+                self.calculate(data)
+                
+            if not self.has_result():
+                return self._get_default_signal("KC计算结果为空")
+                
+            # 获取KC相关数据
+            kc_result = self._result
+            if 'kc_upper' not in kc_result.columns or 'kc_lower' not in kc_result.columns or 'kc_middle' not in kc_result.columns:
+                return self._get_default_signal("KC通道数据不完整")
+            
+            kc_upper = kc_result['kc_upper']
+            kc_lower = kc_result['kc_lower'] 
+            kc_middle = kc_result['kc_middle']
+            
+            # 获取最新的有效数据点
+            latest_idx = -1
+            while latest_idx >= -len(kc_upper) and (pd.isna(kc_upper.iloc[latest_idx]) or pd.isna(kc_lower.iloc[latest_idx])):
+                latest_idx -= 1
+                
+            if latest_idx < -len(kc_upper) or latest_idx < -1:
+                return self._get_default_signal("KC数据不足")
+                
+            latest_upper = kc_upper.iloc[latest_idx]
+            latest_lower = kc_lower.iloc[latest_idx]
+            latest_middle = kc_middle.iloc[latest_idx]
+            prev_upper = kc_upper.iloc[latest_idx - 1] if latest_idx - 1 >= -len(kc_upper) else latest_upper
+            prev_lower = kc_lower.iloc[latest_idx - 1] if latest_idx - 1 >= -len(kc_lower) else latest_lower
+            
+            # 获取当前价格
+            current_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            prev_price = data['close'].iloc[-2] if len(data) >= 2 and 'close' in data.columns else current_price
+            
+            # 信号强度和置信度初始化
+            base_strength = 0.0
+            base_confidence = 0.5
+            signal_type = 'hold'
+            reason_parts = []
+            
+            # 1. 通道突破信号分析 (最高优先级)
+            if current_price > latest_upper and prev_price <= prev_upper:  # 向上突破上轨
+                signal_type = 'buy'
+                base_strength = 0.9
+                base_confidence = 0.9
+                breakthrough_ratio = (current_price - latest_upper) / latest_upper
+                reason_parts.append(f"向上突破KC上轨(突破幅度{breakthrough_ratio:.2%}，强烈看涨)")
+                
+            elif current_price < latest_lower and prev_price >= prev_lower:  # 向下跌破下轨
+                signal_type = 'sell'
+                base_strength = 0.9
+                base_confidence = 0.9
+                breakdown_ratio = (latest_lower - current_price) / latest_lower
+                reason_parts.append(f"向下跌破KC下轨(跌破幅度{breakdown_ratio:.2%}，强烈看跌)")
+                
+            # 2. 价格在通道中的位置分析
+            elif current_price > latest_upper:  # 价格在上轨之上
+                signal_type = 'buy'
+                base_strength = 0.7
+                base_confidence = 0.8
+                distance_ratio = (current_price - latest_upper) / (latest_upper - latest_middle)
+                reason_parts.append(f"价格处于KC上轨上方(距离{distance_ratio:.1f}倍通道宽度)")
+                
+            elif current_price < latest_lower:  # 价格在下轨之下
+                signal_type = 'sell'
+                base_strength = 0.7
+                base_confidence = 0.8
+                distance_ratio = (latest_lower - current_price) / (latest_middle - latest_lower)
+                reason_parts.append(f"价格处于KC下轨下方(距离{distance_ratio:.1f}倍通道宽度)")
+                
+            # 3. 通道回归信号
+            elif current_price > latest_middle:  # 价格在中轨上方
+                # 计算相对位置 (0.5-1.0)
+                position_ratio = (current_price - latest_middle) / (latest_upper - latest_middle)
+                
+                if position_ratio > 0.8:  # 接近上轨
+                    signal_type = 'sell'
+                    base_strength = 0.6
+                    base_confidence = 0.7
+                    reason_parts.append(f"价格接近KC上轨({position_ratio:.1%}位置，可能回调)")
+                elif position_ratio > 0.5:  # 中上区域
+                    signal_type = 'buy'
+                    base_strength = 0.4
+                    base_confidence = 0.6
+                    reason_parts.append(f"价格位于KC中上区域({position_ratio:.1%}位置)")
+                    
+            elif current_price < latest_middle:  # 价格在中轨下方
+                # 计算相对位置 (0.0-0.5)
+                position_ratio = (current_price - latest_lower) / (latest_middle - latest_lower)
+                
+                if position_ratio < 0.2:  # 接近下轨
+                    signal_type = 'buy'
+                    base_strength = 0.6
+                    base_confidence = 0.7
+                    reason_parts.append(f"价格接近KC下轨({position_ratio:.1%}位置，可能反弹)")
+                elif position_ratio < 0.5:  # 中下区域
+                    signal_type = 'sell'
+                    base_strength = 0.4
+                    base_confidence = 0.6
+                    reason_parts.append(f"价格位于KC中下区域({position_ratio:.1%}位置)")
+                    
+            # 4. 通道宽度分析
+            channel_width = latest_upper - latest_lower
+            prev_channel_width = prev_upper - prev_lower if not pd.isna(prev_upper) and not pd.isna(prev_lower) else channel_width
+            width_change_ratio = (channel_width - prev_channel_width) / prev_channel_width if prev_channel_width > 0 else 0
+            
+            # 5. 信号强度调整
+            strength_multiplier = 1.0
+            confidence_adjustment = 0.0
+            
+            # 通道宽度变化调整
+            if width_change_ratio > 0.1:  # 通道快速扩张
+                strength_multiplier *= 1.3
+                confidence_adjustment += 0.15
+                reason_parts.append(f"KC通道快速扩张({width_change_ratio:.1%}，波动性增加)")
+            elif width_change_ratio < -0.1:  # 通道快速收缩
+                strength_multiplier *= 0.8
+                confidence_adjustment -= 0.1
+                reason_parts.append(f"KC通道快速收缩({abs(width_change_ratio):.1%}，波动性减少)")
+            elif abs(width_change_ratio) < 0.02:  # 通道宽度稳定
+                confidence_adjustment += 0.05
+                reason_parts.append("KC通道宽度稳定")
+            
+            # 价格相对通道宽度的调整
+            price_channel_ratio = (current_price - latest_lower) / channel_width if channel_width > 0 else 0.5
+            
+            if signal_type in ['buy', 'sell']:
+                # 极端位置增强信号
+                if price_channel_ratio > 0.9 or price_channel_ratio < 0.1:
+                    strength_multiplier *= 1.2
+                    confidence_adjustment += 0.1
+                    reason_parts.append("价格处于KC通道极端位置")
+                    
+                # 价格动量检查
+                if len(data) >= 3:
+                    price_momentum = (current_price - data['close'].iloc[-3]) / data['close'].iloc[-3]
+                    if (signal_type == 'buy' and price_momentum > 0.02) or \
+                       (signal_type == 'sell' and price_momentum < -0.02):
+                        confidence_adjustment += 0.1
+                        reason_parts.append("价格动量与信号一致")
+            
+            # 应用调整因子
+            final_strength = min(1.0, base_strength * strength_multiplier)
+            final_confidence = min(1.0, max(0.0, base_confidence + confidence_adjustment))
+            
+            # 如果没有明确信号，保持持有状态
+            if not reason_parts:
+                signal_type = 'hold'
+                final_strength = 0.0
+                final_confidence = 0.5
+                reason_parts.append(f"价格位于KC通道中部({price_channel_ratio:.1%}位置)")
+            
+            # 构建元数据
+            metadata = {
+                'kc_upper': float(latest_upper),
+                'kc_middle': float(latest_middle),
+                'kc_lower': float(latest_lower),
+                'channel_width': float(channel_width),
+                'channel_width_change': float(width_change_ratio),
+                'price_position_ratio': float(price_channel_ratio),
+                'signal_source': 'KC_indicator',
+                'calculation_method': 'keltner_channel_analysis',
+                'data_points_used': len(kc_upper.dropna()),
+                'period': self.period,
+                'atr_period': self.atr_period,
+                'multiplier': self.multiplier
+            }
+            
+            # 添加通道位置分析
+            if price_channel_ratio >= 0.8:
+                metadata['channel_position'] = 'upper_extreme'
+            elif price_channel_ratio >= 0.6:
+                metadata['channel_position'] = 'upper_area'
+            elif price_channel_ratio >= 0.4:
+                metadata['channel_position'] = 'middle_area'
+            elif price_channel_ratio >= 0.2:
+                metadata['channel_position'] = 'lower_area'
+            else:
+                metadata['channel_position'] = 'lower_extreme'
+            
+            # 添加价格相关信息到元数据
+            if 'close' in data.columns:
+                metadata['current_price'] = float(current_price)
+                metadata['price_vs_upper'] = float((current_price - latest_upper) / latest_upper) if latest_upper > 0 else 0.0
+                metadata['price_vs_lower'] = float((current_price - latest_lower) / latest_lower) if latest_lower > 0 else 0.0
+            
+            return {
+                'signal_type': signal_type,
+                'strength': round(final_strength, 3),
+                'confidence': round(final_confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'price': float(current_price),
+                'reason': '; '.join(reason_parts),
+                'metadata': metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"KC信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成异常: {str(e)}")
+    
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        try:
+            if data is None or data.empty:
+                return False
+                
+            # 检查必需的列
+            required_columns = ['high', 'low', 'close']
+            for col in required_columns:
+                if col not in data.columns:
+                    logger.warning(f"KC信号生成缺少必需列: {col}")
+                    return False
+                    
+            # 检查数据量
+            min_periods = max(self.period, self.atr_period)
+            if len(data) < min_periods:
+                logger.warning(f"KC信号生成数据量不足: {len(data)} < {min_periods}")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"KC数据验证失败: {e}")
+            return False
+    
+    def _get_default_signal(self, reason: str = "无明确信号") -> Dict[str, Any]:
+        """
+        获取默认的持有信号
+        
+        Args:
+            reason: 信号原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'price': 0.0,
+            'reason': reason,
+            'metadata': {
+                'signal_source': 'KC_indicator',
+                'default_signal': True,
+                'indicator_name': 'KC'
+            }
+        }
 
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """生成交易信号"""

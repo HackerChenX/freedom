@@ -338,31 +338,245 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.warning(f"OBV置信度计算失败: {e}")
             return 0.0
 
-    def get_signal(self, data: pd.DataFrame, **kwargs) -> str:
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        获取OBV信号 - 实现抽象方法
+        【核心抽象方法2】基于OBV (On-Balance Volume) 指标数值生成最新的交易信号
         
+        OBV交易信号逻辑：
+        - OBV上升 + 价格上升：量价配合买入信号
+        - OBV下降 + 价格下降：量价配合卖出信号
+        - OBV突破均线：趋势确认信号
+        - OBV背离价格：潜在反转信号
+        - OBV强度评估：信号强度判断
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
         Returns:
-            str: BUY, SELL, 或 HOLD
+            Dict[str, Any]: 标准化交易信号格式
         """
         try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
             if not self.has_result():
-                self.calculate_Obv(data, **kwargs)
+                result = self.calculate_Obv(data, **kwargs)
+                if result is not None:
+                    self._result = result
             
             if self._result is None or len(self._result) == 0:
-                return "HOLD"
+                return self._get_default_signal("OBV计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
             
-            # 获取最新的买卖信号
-            if 'buy_signal' in self._result.columns and self._result['buy_signal'].iloc[-1]:
-                return "BUY"
-            elif 'sell_signal' in self._result.columns and self._result['sell_signal'].iloc[-1]:
-                return "SELL"
-            else:
-                return "HOLD"
+            # 4. 获取OBV相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("OBV数据不足")
                 
+            # 检查必要的列是否存在
+            if 'OBV' not in self._result.columns:
+                return self._get_default_signal("OBV结果列不存在")
+                
+            obv_values = self._result['OBV'].dropna()
+            if len(obv_values) < 2:
+                return self._get_default_signal("OBV有效数据不足")
+                
+            latest_obv = obv_values.iloc[-1]
+            prev_obv = obv_values.iloc[-2]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_obv) or pd.isna(prev_obv):
+                return self._get_default_signal("OBV数据包含NaN值")
+            
+            # 5. 获取价格数据
+            close_values = data['close'].iloc[-2:]
+            if len(close_values) < 2:
+                return self._get_default_signal("价格数据不足")
+                
+            latest_price = close_values.iloc[-1]
+            prev_price = close_values.iloc[-2]
+            
+            # 6. OBV信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算OBV和价格变化
+            obv_change = latest_obv - prev_obv
+            price_change = latest_price - prev_price
+            obv_change_pct = (obv_change / abs(prev_obv)) * 100 if prev_obv != 0 else 0
+            price_change_pct = (price_change / prev_price) * 100 if prev_price != 0 else 0
+            
+            # 获取OBV均线和强度信息（如果存在）
+            obv_ma = None
+            obv_strength = 0
+            if 'obv_ma' in self._result.columns:
+                obv_ma_values = self._result['obv_ma'].dropna()
+                if len(obv_ma_values) > 0:
+                    obv_ma = obv_ma_values.iloc[-1]
+            
+            if 'obv_strength' in self._result.columns:
+                obv_strength_values = self._result['obv_strength'].dropna()
+                if len(obv_strength_values) > 0:
+                    obv_strength = obv_strength_values.iloc[-1]
+            
+            # 量价配合分析（核心OBV信号）
+            if obv_change > 0 and price_change > 0:
+                # OBV和价格同时上升 - 强烈买入信号
+                signal_type = "buy"
+                volume_price_strength = min(abs(obv_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.8 + volume_price_strength * 0.1)
+                confidence = 0.9
+                reason = f"OBV量价配合上升({obv_change_pct:.2f}%, {price_change_pct:.2f}%)，强烈买入信号"
+                
+            elif obv_change < 0 and price_change < 0:
+                # OBV和价格同时下降 - 强烈卖出信号
+                signal_type = "sell"
+                volume_price_strength = min(abs(obv_change_pct) + abs(price_change_pct), 100) / 100
+                strength = min(0.9, 0.8 + volume_price_strength * 0.1)
+                confidence = 0.9
+                reason = f"OBV量价配合下降({obv_change_pct:.2f}%, {price_change_pct:.2f}%)，强烈卖出信号"
+                
+            elif obv_change > 0 and price_change < 0:
+                # OBV上升但价格下降 - 潜在底部，谨慎买入
+                signal_type = "buy"
+                divergence_strength = min(abs(obv_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.7, 0.6 + divergence_strength * 0.1)
+                confidence = 0.7
+                reason = f"OBV正背离({obv_change_pct:.2f}% vs {price_change_pct:.2f}%)，潜在反转买入信号"
+                
+            elif obv_change < 0 and price_change > 0:
+                # OBV下降但价格上升 - 潜在顶部，谨慎卖出
+                signal_type = "sell"
+                divergence_strength = min(abs(obv_change_pct) + abs(price_change_pct), 80) / 100
+                strength = min(0.7, 0.6 + divergence_strength * 0.1)
+                confidence = 0.7
+                reason = f"OBV负背离({obv_change_pct:.2f}% vs {price_change_pct:.2f}%)，潜在反转卖出信号"
+            
+            # OBV均线突破信号
+            elif obv_ma is not None:
+                obv_ma_prev = None
+                if len(self._result) >= 2 and 'obv_ma' in self._result.columns:
+                    obv_ma_prev_values = self._result['obv_ma'].iloc[-2:-1]
+                    if len(obv_ma_prev_values) > 0 and not pd.isna(obv_ma_prev_values.iloc[0]):
+                        obv_ma_prev = obv_ma_prev_values.iloc[0]
+                
+                if obv_ma_prev is not None:
+                    # OBV突破均线向上
+                    if prev_obv <= obv_ma_prev and latest_obv > obv_ma:
+                        signal_type = "buy"
+                        breakout_strength = min(abs(latest_obv - obv_ma) / abs(obv_ma), 0.2) if obv_ma != 0 else 0
+                        strength = min(0.8, 0.7 + breakout_strength * 5)
+                        confidence = 0.8
+                        reason = f"OBV突破均线向上({latest_obv:.0f} > {obv_ma:.0f})，买入信号"
+                        
+                    # OBV跌破均线向下
+                    elif prev_obv >= obv_ma_prev and latest_obv < obv_ma:
+                        signal_type = "sell"
+                        breakdown_strength = min(abs(obv_ma - latest_obv) / abs(obv_ma), 0.2) if obv_ma != 0 else 0
+                        strength = min(0.8, 0.7 + breakdown_strength * 5)
+                        confidence = 0.8
+                        reason = f"OBV跌破均线向下({latest_obv:.0f} < {obv_ma:.0f})，卖出信号"
+            
+            # OBV强度调整
+            if abs(obv_strength) > 0:
+                if obv_strength > 1.5:  # 强势OBV
+                    strength = min(strength + 0.1, 1.0)
+                    confidence = min(confidence + 0.05, 1.0)
+                elif obv_strength < -1.5:  # 弱势OBV
+                    if signal_type == "buy":
+                        strength = max(strength - 0.1, 0.0)
+                        confidence = max(confidence - 0.05, 0.0)
+                    elif signal_type == "sell":
+                        strength = min(strength + 0.1, 1.0)
+                        confidence = min(confidence + 0.05, 1.0)
+            
+            # 计算OBV特有的元数据
+            obv_trend = "上升" if obv_change > 0 else "下降" if obv_change < 0 else "平稳"
+            price_trend = "上升" if price_change > 0 else "下降" if price_change < 0 else "平稳"
+            volume_price_relationship = "配合" if (obv_change > 0) == (price_change > 0) else "背离" if obv_change != 0 and price_change != 0 else "中性"
+            
+            metadata = {
+                'obv_value': latest_obv,
+                'obv_previous': prev_obv,
+                'obv_change': obv_change,
+                'obv_change_pct': obv_change_pct,
+                'obv_trend': obv_trend,
+                'price_change': price_change,
+                'price_change_pct': price_change_pct,
+                'price_trend': price_trend,
+                'volume_price_relationship': volume_price_relationship,
+                'obv_ma': obv_ma,
+                'obv_strength': obv_strength,
+                'above_ma': latest_obv > obv_ma if obv_ma is not None else None,
+                'signal_period': getattr(self, 'signal_period', 10)
+            }
+            
+            # 7. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
         except Exception as e:
-            logger.warning(f"OBV信号获取失败: {e}")
-            return "HOLD"
+            logger.warning(f"OBV信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # OBV需要足够的数据用于计算
+        min_periods = max(getattr(self, 'signal_period', 10), 2)
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
 
     def has_result(self) -> bool:
         """检查是否有计算结果"""

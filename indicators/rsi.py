@@ -102,12 +102,17 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         Returns:
             pd.DataFrame: 添加了RSI指标的Data_frame
         """
-        if data.empty:
-            return data
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
+        if data is None or data.empty:
+            raise ValueError("RSI计算: 输入数据不能为空")
             
         # 确保数据包含所需的列
         if 'close' not in data.columns:
-            raise ValueError("输入数据必须包含'close'列")
+            raise ValueError("RSI计算: 输入数据必须包含'close'列")
+            
+        # 检查数据量是否足够
+        if len(data) < self.period + 1:
+            raise ValueError(f"RSI计算: 数据量不足，需要至少{self.period + 1}个数据点，实际{len(data)}个")
             
         result_df = pd.DataFrame(index=data.index)
         
@@ -584,61 +589,365 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
-        BaseIndicator要求的抽象方法：获取交易信号
+        获取增强型RSI交易信号（抽象方法实现）
+        
+        增强功能包括：
+        1. 基础超买超卖信号
+        2. 多周期RSI一致性分析
+        3. RSI背离检测
+        4. 自适应阈值
+        5. 趋势强度分析
+        6. RSI平滑确认
 
         Args:
-            data: 包含指标计算结果的数据
+            data: 包含OHLCV数据的DataFrame
 
         Returns:
-            Dict[str, Any]: 交易信号信息
+            Dict[str, Any]: 标准化的交易信号字典
         """
+        # 1. 数据验证
+        validation_result = self._validate_signal_data_with_reason(data)
+        if not validation_result[0]:
+            return self._get_default_signal(validation_result[1])
+
         try:
-            # 生成信号
-            signals_df = self.generate_signals_Rsi(data)
+            # 2. 计算RSI指标值
+            rsi_data = self.calculate(data)
 
-            if signals_df.empty:
-                return {
-                    "signal": "HOLD",
-                    "strength": 0.0,
-                    "confidence": 0.5,
-                    "details": "无足够数据生成信号"
-                }
+            if rsi_data.empty or len(rsi_data) < 2:
+                return self._get_default_signal("RSI计算结果不足")
 
-            # 获取最新信号
-            latest_signals = signals_df.iloc[-1]
+            # 3. 获取基本RSI值
+            latest_rsi = rsi_data['rsi_value'].iloc[-1] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}'].iloc[-1]
+            prev_rsi = rsi_data['rsi_value'].iloc[-2] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}'].iloc[-2]
+            
+            # 4. 增强型信号分析
+            signal_analysis = self._analyze_enhanced_rsi_signal(data, rsi_data)
+            
+            # 5. 基础信号判断
+            signal_type = "hold"
+            base_strength = 0.0
+            base_confidence = 0.5
+            reason = "RSI处于正常区间"
+            
+            # 动态阈值
+            overbought_threshold = signal_analysis.get('adaptive_overbought', self.overbought)
+            oversold_threshold = signal_analysis.get('adaptive_oversold', self.oversold)
+            
+            # 超强超卖信号（最高优先级）
+            if latest_rsi <= 20:
+                signal_type = "buy"
+                base_strength = 0.95
+                base_confidence = 0.9
+                reason = "RSI极度超卖强烈买入信号"
+            elif latest_rsi >= 80:
+                signal_type = "sell"
+                base_strength = 0.95
+                base_confidence = 0.9
+                reason = "RSI极度超买强烈卖出信号"
+            # 超卖反弹信号
+            elif latest_rsi < oversold_threshold and prev_rsi >= oversold_threshold:
+                signal_type = "buy"
+                base_strength = min((oversold_threshold - latest_rsi) / 10, 1.0)
+                base_confidence = 0.8
+                reason = f"RSI进入超卖区域(<{oversold_threshold})"
+            # 超买回调信号
+            elif latest_rsi > overbought_threshold and prev_rsi <= overbought_threshold:
+                signal_type = "sell"
+                base_strength = min((latest_rsi - overbought_threshold) / 10, 1.0)
+                base_confidence = 0.8
+                reason = f"RSI进入超买区域(>{overbought_threshold})"
+            # RSI反转信号
+            elif latest_rsi > oversold_threshold and prev_rsi <= oversold_threshold:
+                signal_type = "buy"
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason = "RSI从超卖区域反弹"
+            elif latest_rsi < overbought_threshold and prev_rsi >= overbought_threshold:
+                signal_type = "sell"
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason = "RSI从超买区域回落"
 
-            # 确定主要信号
-            if latest_signals.get('buy_signal', False):
-                signal_type = "BUY"
-                strength = 0.8
-            elif latest_signals.get('sell_signal', False):
-                signal_type = "SELL"
-                strength = 0.8
-            else:
-                signal_type = "HOLD"
-                strength = 0.0
+            # 6. 应用增强功能
+            final_strength = base_strength
+            final_confidence = base_confidence
+            enhanced_reason = reason
+            
+            # 背离信号增强
+            if signal_analysis.get('bullish_divergence', False):
+                if signal_type == "buy":
+                    final_strength = min(1.0, final_strength + 0.2)
+                    final_confidence = min(1.0, final_confidence + 0.15)
+                    enhanced_reason += "，RSI牛背离确认"
+                elif signal_type == "hold":
+                    signal_type = "buy"
+                    final_strength = 0.75
+                    final_confidence = 0.8
+                    enhanced_reason = "RSI牛背离买入信号"
+                    
+            elif signal_analysis.get('bearish_divergence', False):
+                if signal_type == "sell":
+                    final_strength = min(1.0, final_strength + 0.2)
+                    final_confidence = min(1.0, final_confidence + 0.15)
+                    enhanced_reason += "，RSI熊背离确认"
+                elif signal_type == "hold":
+                    signal_type = "sell"
+                    final_strength = 0.75
+                    final_confidence = 0.8
+                    enhanced_reason = "RSI熊背离卖出信号"
 
-            # 计算置信度
-            patterns = self.get_patterns_Rsi_Rsi(data)
-            confidence = self.calculate_confidence_Rsi_Rsi(
-                pd.Series([50.0]), patterns, signals_df.to_dict('series')
-            )
+            # 多周期一致性增强
+            multi_period_consistency = signal_analysis.get('multi_period_consistency', 0.5)
+            if multi_period_consistency > 0.8:
+                final_strength = min(1.0, final_strength + 0.1)
+                final_confidence = min(1.0, final_confidence + 0.05)
+                enhanced_reason += "，多周期一致"
+            elif multi_period_consistency < 0.3:
+                final_strength = max(0.2, final_strength - 0.1)
+                final_confidence = max(0.4, final_confidence - 0.05)
+                enhanced_reason += "，多周期分歧"
+
+            # 趋势强度增强
+            trend_strength = signal_analysis.get('trend_strength', 0.5)
+            if trend_strength > 0.8:
+                final_confidence = min(1.0, final_confidence + 0.1)
+                enhanced_reason += "，趋势强劲"
+            elif trend_strength < 0.3:
+                final_confidence = max(0.4, final_confidence - 0.1)
+                enhanced_reason += "，趋势疲弱"
+
+            # RSI平滑确认
+            smooth_confirmation = signal_analysis.get('smooth_confirmation', 0.5)
+            if smooth_confirmation > 0.7:
+                final_confidence = min(1.0, final_confidence + 0.05)
+                enhanced_reason += "，平滑确认"
+
+            # 7. 构建完整信号
+            enhanced_metadata = {
+                'indicator_type': 'enhanced_rsi',
+                'rsi_value': latest_rsi,
+                'prev_rsi': prev_rsi,
+                'adaptive_overbought': overbought_threshold,
+                'adaptive_oversold': oversold_threshold,
+                'bullish_divergence': signal_analysis.get('bullish_divergence', False),
+                'bearish_divergence': signal_analysis.get('bearish_divergence', False),
+                'multi_period_consistency': multi_period_consistency,
+                'trend_strength': trend_strength,
+                'smooth_confirmation': smooth_confirmation,
+                'signal_quality': signal_analysis.get('signal_quality', 0.5),
+                'enhanced_score': signal_analysis.get('enhanced_score', 50.0),
+                'multi_period_rsi': signal_analysis.get('multi_period_rsi', {})
+            }
 
             return {
-                "signal": signal_type,
-                "strength": strength,
-                "confidence": confidence,
-                "details": f"RSI信号基于{len(data)}个数据点"
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, final_strength)),
+                'confidence': max(0.0, min(1.0, final_confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': enhanced_reason,
+                'metadata': enhanced_metadata
             }
 
         except Exception as e:
-            logger.error(f"RSI信号生成失败: {e}")
-            return {
-                "signal": "HOLD",
-                "strength": 0.0,
-                "confidence": 0.0,
-                "details": f"信号生成错误: {e}"
+            logger.error(f"增强型RSI信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _analyze_enhanced_rsi_signal(self, data: pd.DataFrame, rsi_data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        增强型RSI信号分析
+        
+        Args:
+            data: 原始价格数据
+            rsi_data: RSI计算结果
+            
+        Returns:
+            Dict: 包含各种增强分析结果的字典
+        """
+        analysis = {
+            'bullish_divergence': False,
+            'bearish_divergence': False,
+            'multi_period_consistency': 0.5,
+            'trend_strength': 0.5,
+            'smooth_confirmation': 0.5,
+            'signal_quality': 0.5,
+            'enhanced_score': 50.0,
+            'adaptive_overbought': self.overbought,
+            'adaptive_oversold': self.oversold,
+            'multi_period_rsi': {}
+        }
+        
+        try:
+            if len(data) < 30:
+                return analysis
+                
+            # 计算多周期RSI
+            close_prices = data['close']
+            current_rsi = rsi_data['rsi_value'].iloc[-1] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}'].iloc[-1]
+            
+            # 计算不同周期的RSI
+            rsi_9 = self._calculate_single_rsi(close_prices, 9)
+            rsi_21 = self._calculate_single_rsi(close_prices, 21)
+            
+            analysis['multi_period_rsi'] = {
+                f'rsi_{self.period}': current_rsi,
+                'rsi_9': rsi_9.iloc[-1] if not rsi_9.empty else current_rsi,
+                'rsi_21': rsi_21.iloc[-1] if not rsi_21.empty else current_rsi
             }
+            
+            # 多周期一致性分析
+            if not rsi_9.empty and not rsi_21.empty:
+                rsi_values = [current_rsi, rsi_9.iloc[-1], rsi_21.iloc[-1]]
+                # 计算方差，方差越小越一致
+                rsi_variance = np.var(rsi_values)
+                consistency = max(0.0, min(1.0, 1.0 - rsi_variance / 500))  # 归一化到0-1
+                analysis['multi_period_consistency'] = consistency
+            
+            # RSI背离检测（简化版）
+            if len(close_prices) >= 20 and len(rsi_data) >= 20:
+                price_recent = close_prices.tail(10)
+                rsi_recent = (rsi_data['rsi_value'] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}']).tail(10)
+                
+                # 简化的背离检测：价格和RSI趋势对比
+                price_trend = np.polyfit(range(len(price_recent)), price_recent.values, 1)[0]
+                rsi_trend = np.polyfit(range(len(rsi_recent)), rsi_recent.values, 1)[0]
+                
+                # 牛背离：价格下降，RSI上升或平稳
+                if price_trend < -0.01 and rsi_trend > 0.01:
+                    analysis['bullish_divergence'] = True
+                # 熊背离：价格上升，RSI下降或平稳
+                elif price_trend > 0.01 and rsi_trend < -0.01:
+                    analysis['bearish_divergence'] = True
+            
+            # 趋势强度分析
+            if len(rsi_data) >= 10:
+                rsi_series = rsi_data['rsi_value'] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}']
+                rsi_10_avg = rsi_series.tail(10).mean()
+                
+                # 基于RSI均值位置判断趋势强度
+                if rsi_10_avg > 70:
+                    trend_strength = min(1.0, (rsi_10_avg - 50) / 30)
+                elif rsi_10_avg < 30:
+                    trend_strength = min(1.0, (50 - rsi_10_avg) / 30)
+                else:
+                    trend_strength = 0.5
+                    
+                analysis['trend_strength'] = trend_strength
+            
+            # RSI平滑确认
+            if len(rsi_data) >= 5:
+                rsi_series = rsi_data['rsi_value'] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}']
+                rsi_smooth = rsi_series.tail(5).mean()
+                current_rsi_val = rsi_series.iloc[-1]
+                
+                # 当前RSI与平滑RSI的接近程度
+                smooth_diff = abs(current_rsi_val - rsi_smooth)
+                smooth_confirmation = max(0.0, min(1.0, 1.0 - smooth_diff / 20))
+                analysis['smooth_confirmation'] = smooth_confirmation
+            
+            # 自适应阈值
+            if len(rsi_data) >= 20:
+                rsi_series = rsi_data['rsi_value'] if 'rsi_value' in rsi_data.columns else rsi_data[f'rsi_{self.period}']
+                rsi_20_data = rsi_series.tail(20)
+                
+                # 基于历史波动调整阈值
+                rsi_std = rsi_20_data.std()
+                rsi_mean = rsi_20_data.mean()
+                
+                # 动态调整阈值
+                volatility_adjustment = min(10, rsi_std)
+                analysis['adaptive_overbought'] = min(85, self.overbought + volatility_adjustment / 2)
+                analysis['adaptive_oversold'] = max(15, self.oversold - volatility_adjustment / 2)
+            
+            # 信号质量综合评分
+            quality_score = (
+                analysis['multi_period_consistency'] * 0.3 +
+                analysis['trend_strength'] * 0.3 +
+                analysis['smooth_confirmation'] * 0.2 +
+                (0.8 if analysis['bullish_divergence'] or analysis['bearish_divergence'] else 0.5) * 0.2
+            )
+            analysis['signal_quality'] = quality_score
+            
+            # 增强评分（0-100）
+            enhanced_score = quality_score * 100
+            analysis['enhanced_score'] = enhanced_score
+            
+        except Exception as e:
+            logger.warning(f"增强型RSI信号分析失败: {e}")
+        
+        return analysis
+
+    def _calculate_single_rsi(self, close_prices: pd.Series, period: int) -> pd.Series:
+        """
+        计算单个周期的RSI
+        
+        Args:
+            close_prices: 收盘价序列
+            period: RSI周期
+            
+        Returns:
+            pd.Series: RSI值序列
+        """
+        try:
+            if len(close_prices) < period + 1:
+                return pd.Series()
+                
+            # 计算价格变化
+            delta = close_prices.diff()
+            
+            # 分离涨跌
+            gain = delta.where(delta > 0, 0)
+            loss = -delta.where(delta < 0, 0)
+            
+            # 计算平均涨跌幅
+            avg_gain = gain.rolling(window=period).mean()
+            avg_loss = loss.rolling(window=period).mean()
+            
+            # 计算RS和RSI
+            rs = avg_gain / avg_loss
+            rsi = 100 - (100 / (1 + rs))
+            
+            return rsi
+            
+        except Exception as e:
+            logger.warning(f"单周期RSI计算失败: {e}")
+            return pd.Series()
+
+    def _validate_signal_data_with_reason(self, data: pd.DataFrame) -> tuple:
+        """
+        验证信号生成所需的数据，并返回详细原因
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            tuple: (是否有效, 错误原因)
+        """
+        if not isinstance(data, pd.DataFrame):
+            return False, "输入数据必须是DataFrame"
+        
+        if data.empty:
+            return False, "输入数据为空"
+        
+        if 'close' not in data.columns:
+            return False, "缺少close列"
+        
+        # RSI需要足够的数据点
+        min_periods = self.period + 10
+        if len(data) < min_periods:
+            return False, f"数据量不足，需要至少{min_periods}个数据点"
+        
+        return True, ""
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认的持有信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'reason': reason,
+            'metadata': {}
+        }
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法：计算评分"""

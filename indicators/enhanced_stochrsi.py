@@ -55,8 +55,9 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_enhancedstochrsi()
 
-        # 应用用户参数
-        self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
+        # 应用用户参数，但保留构造函数中已设置的参数
+        if kwargs:
+            self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
 
     def _get_default_parameters_enhancedstochrsi(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -365,8 +366,7 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
             if len(stochrsi_values) > 1:
                 # 计算StochRSI值的标准差，标准差越小一致性越高
                 std_dev = np.std(stochrsi_values)
-                # consistency = max(0, 1 - std_dev / 50)  # 归一化到0-1
-                pass
+                consistency = max(0, 1 - std_dev / 50)  # 归一化到0-1
             else:
                 consistency = 0.5
             consistency_scores.append(consistency)
@@ -644,6 +644,434 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
             **kwargs: 参数字典
         """
         self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取增强型StochRSI交易信号
+        
+        增强型StochRSI结合了多周期分析、自适应阈值、背离检测等功能，
+        提供更精确的超买超卖信号和趋势反转信号。
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        # 数据验证
+        if not self._validate_signal_data(data):
+            return self._get_default_signal()
+        
+        # 确保有增强型StochRSI计算结果，如果没有则先计算
+        required_columns = ['ENHANCED_STOCHRSI_VALUE', 'stochrsi_k', 'stochrsi_d']
+        has_stochrsi_data = any(col in data.columns for col in required_columns)
+        
+        if not has_stochrsi_data:
+            try:
+                data = self.calculate_Stochrsi_Enhanced_Stochrsi(data)
+            except Exception as e:
+                logger.warning(f"计算增强型StochRSI失败: {e}")
+                return self._get_default_signal()
+        
+        if data.empty:
+            return self._get_default_signal()
+        
+        # 初始化信号参数
+        signal_type = "hold"
+        strength = 0.5
+        confidence = 0.6
+        reason = "无明确StochRSI信号"
+        
+        # 分析增强型StochRSI信号
+        stochrsi_analysis = self._analyze_enhanced_stochrsi_signal(data)
+        
+        if stochrsi_analysis['signal_detected']:
+            signal_type = stochrsi_analysis['signal_type']
+            base_strength = stochrsi_analysis['base_strength']
+            base_confidence = stochrsi_analysis['base_confidence']
+            base_reason = stochrsi_analysis['reason']
+            
+            strength = base_strength
+            confidence = base_confidence
+            reason = base_reason
+            
+            # 多周期一致性增强
+            consistency_score = stochrsi_analysis.get('consistency_score', 0.5)
+            if consistency_score > 0.8:
+                strength = min(1.0, strength + 0.15)
+                confidence = min(1.0, confidence + 0.15)
+                reason += "，多周期一致性强"
+            elif consistency_score < 0.3:
+                strength = max(0.3, strength - 0.1)
+                confidence = max(0.4, confidence - 0.1)
+                reason += "，多周期分歧"
+            
+            # 背离检测增强
+            if stochrsi_analysis.get('bullish_divergence', False):
+                if signal_type == "buy":
+                    strength = min(1.0, strength + 0.2)
+                    confidence = min(1.0, confidence + 0.2)
+                    reason += "，牛背离确认"
+                else:
+                    strength = max(0.3, strength - 0.1)
+                    confidence = max(0.4, confidence - 0.1)
+            elif stochrsi_analysis.get('bearish_divergence', False):
+                if signal_type == "sell":
+                    strength = min(1.0, strength + 0.2)
+                    confidence = min(1.0, confidence + 0.2)
+                    reason += "，熊背离确认"
+                else:
+                    strength = max(0.3, strength - 0.1)
+                    confidence = max(0.4, confidence - 0.1)
+            
+            # 自适应阈值优化
+            adaptive_quality = stochrsi_analysis.get('adaptive_quality', 0.5)
+            if adaptive_quality > 0.8:
+                confidence = min(1.0, confidence + 0.1)
+                reason += "，自适应阈值精确"
+            elif adaptive_quality < 0.3:
+                strength = max(0.3, strength - 0.1)
+                confidence = max(0.4, confidence - 0.1)
+                reason += "，阈值适应性差"
+            
+            # 趋势强度评估
+            trend_strength = stochrsi_analysis.get('trend_strength', 0.5)
+            if trend_strength > 0.85:
+                strength = min(1.0, strength + 0.1)
+                confidence = min(1.0, confidence + 0.1)
+                reason += "，趋势强劲"
+            elif trend_strength < 0.3:
+                strength = max(0.3, strength - 0.1)
+                confidence = max(0.4, confidence - 0.1)
+                reason += "，趋势疲弱"
+            
+            # 区间突破评估
+            breakthrough_strength = stochrsi_analysis.get('breakthrough_strength', 0.0)
+            if breakthrough_strength > 0.8:
+                strength = min(1.0, strength + 0.15)
+                confidence = min(1.0, confidence + 0.15)
+                reason += "，强势突破"
+            elif breakthrough_strength > 0.5:
+                strength = min(1.0, strength + 0.05)
+                confidence = min(1.0, confidence + 0.05)
+                reason += "，温和突破"
+        
+        # 构建标准化信号字典
+        metadata = {
+            'indicator_type': 'enhanced_stochrsi',
+            'signal_detected': stochrsi_analysis.get('signal_detected', False),
+            'stochrsi_k': stochrsi_analysis.get('stochrsi_k', 50.0),
+            'stochrsi_d': stochrsi_analysis.get('stochrsi_d', 50.0),
+            'overbought_threshold': stochrsi_analysis.get('overbought_threshold', self.overbought),
+            'oversold_threshold': stochrsi_analysis.get('oversold_threshold', self.oversold),
+            'consistency_score': stochrsi_analysis.get('consistency_score', 0.5),
+            'adaptive_quality': stochrsi_analysis.get('adaptive_quality', 0.5),
+            'trend_strength': stochrsi_analysis.get('trend_strength', 0.5),
+            'bullish_divergence': stochrsi_analysis.get('bullish_divergence', False),
+            'bearish_divergence': stochrsi_analysis.get('bearish_divergence', False),
+            'breakthrough_strength': stochrsi_analysis.get('breakthrough_strength', 0.0),
+            'multi_period_signals': stochrsi_analysis.get('multi_period_signals', []),
+            'enhanced_score': stochrsi_analysis.get('enhanced_score', 50.0)
+        }
+        
+        return {
+            'signal_type': signal_type,
+            'strength': max(0.0, min(1.0, strength)),
+            'confidence': max(0.0, min(1.0, confidence)),
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': metadata
+        }
+
+    def _analyze_enhanced_stochrsi_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        分析增强型StochRSI信号
+        
+        Args:
+            data: 包含StochRSI数据的DataFrame
+            
+        Returns:
+            Dict: 包含信号分析结果的字典
+        """
+        analysis = {
+            'signal_detected': False,
+            'signal_type': 'hold',
+            'base_strength': 0.5,
+            'base_confidence': 0.6,
+            'reason': '无明确信号',
+            'stochrsi_k': 50.0,
+            'stochrsi_d': 50.0,
+            'overbought_threshold': self.overbought,
+            'oversold_threshold': self.oversold,
+            'consistency_score': 0.5,
+            'adaptive_quality': 0.5,
+            'trend_strength': 0.5,
+            'bullish_divergence': False,
+            'bearish_divergence': False,
+            'breakthrough_strength': 0.0,
+            'multi_period_signals': [],
+            'enhanced_score': 50.0
+        }
+        
+        try:
+            if len(data) < 10:
+                return analysis
+            
+            # 获取最新的StochRSI值
+            latest_k = data['stochrsi_k'].iloc[-1] if 'stochrsi_k' in data.columns else 50.0
+            latest_d = data['stochrsi_d'].iloc[-1] if 'stochrsi_d' in data.columns else 50.0
+            enhanced_value = data['ENHANCED_STOCHRSI_VALUE'].iloc[-1] if 'ENHANCED_STOCHRSI_VALUE' in data.columns else 50.0
+            
+            # 获取自适应阈值
+            current_overbought = data['stochrsi_overbought'].iloc[-1] if 'stochrsi_overbought' in data.columns else self.overbought
+            current_oversold = data['stochrsi_oversold'].iloc[-1] if 'stochrsi_oversold' in data.columns else self.oversold
+            
+            analysis.update({
+                'stochrsi_k': latest_k,
+                'stochrsi_d': latest_d,
+                'overbought_threshold': current_overbought,
+                'oversold_threshold': current_oversold,
+                'enhanced_score': enhanced_value
+            })
+            
+            # 1. 基本超买超卖信号
+            signal_type = "hold"
+            base_strength = 0.5
+            base_confidence = 0.6
+            reason = "StochRSI中性区域"
+            
+            # K线与D线交叉分析
+            if len(data) >= 2:
+                prev_k = data['stochrsi_k'].iloc[-2] if 'stochrsi_k' in data.columns else latest_k
+                prev_d = data['stochrsi_d'].iloc[-2] if 'stochrsi_d' in data.columns else latest_d
+                
+                # 金叉买入信号（超卖区域K线上穿D线）
+                if (latest_k > latest_d and prev_k <= prev_d and 
+                    latest_k < current_oversold + 10):  # 在超卖区域附近
+                    signal_type = "buy"
+                    base_strength = 0.75
+                    base_confidence = 0.8
+                    reason = "StochRSI超卖区金叉买入信号"
+                    analysis['signal_detected'] = True
+                
+                # 死叉卖出信号（超买区域K线下穿D线）
+                elif (latest_k < latest_d and prev_k >= prev_d and 
+                      latest_k > current_overbought - 10):  # 在超买区域附近
+                    signal_type = "sell"
+                    base_strength = 0.75
+                    base_confidence = 0.8
+                    reason = "StochRSI超买区死叉卖出信号"
+                    analysis['signal_detected'] = True
+                
+                # 极端超卖反弹信号
+                elif latest_k < current_oversold and latest_k > prev_k:
+                    signal_type = "buy"
+                    base_strength = 0.7
+                    base_confidence = 0.75
+                    reason = "StochRSI极端超卖反弹信号"
+                    analysis['signal_detected'] = True
+                
+                # 极端超买回落信号
+                elif latest_k > current_overbought and latest_k < prev_k:
+                    signal_type = "sell"
+                    base_strength = 0.7
+                    base_confidence = 0.75
+                    reason = "StochRSI极端超买回落信号"
+                    analysis['signal_detected'] = True
+            
+            analysis.update({
+                'signal_type': signal_type,
+                'base_strength': base_strength,
+                'base_confidence': base_confidence,
+                'reason': reason
+            })
+            
+            # 2. 多周期一致性分析
+            consistency_score = self._calculate_multi_period_consistency(data)
+            analysis['consistency_score'] = consistency_score
+            
+            # 3. 背离检测
+            bullish_div, bearish_div = self._detect_stochrsi_divergence(data)
+            analysis['bullish_divergence'] = bullish_div
+            analysis['bearish_divergence'] = bearish_div
+            
+            # 4. 自适应阈值质量评估
+            adaptive_quality = self._evaluate_adaptive_threshold_quality(data)
+            analysis['adaptive_quality'] = adaptive_quality
+            
+            # 5. 趋势强度评估
+            trend_strength = self._calculate_trend_strength(data)
+            analysis['trend_strength'] = trend_strength
+            
+            # 6. 突破强度分析
+            breakthrough_strength = self._analyze_breakthrough_strength(data, latest_k, current_overbought, current_oversold)
+            analysis['breakthrough_strength'] = breakthrough_strength
+            
+        except Exception as e:
+            logger.warning(f"增强型StochRSI信号分析失败: {e}")
+        
+        return analysis
+
+    def _calculate_multi_period_consistency(self, data: pd.DataFrame) -> float:
+        """计算多周期一致性评分"""
+        try:
+            # 检查是否有多周期数据
+            multi_period_columns = [col for col in data.columns if 'stochrsi_' in col and ('_k' in col or '_d' in col)]
+            if len(multi_period_columns) < 4:  # 至少需要主周期的K和D线
+                return 0.5
+            
+            # 简化的一致性计算：检查各周期的方向一致性
+            signals = []
+            for col in multi_period_columns:
+                if col.endswith('_k') and len(data) >= 2:
+                    current = data[col].iloc[-1]
+                    previous = data[col].iloc[-2]
+                    signals.append(1 if current > previous else -1)
+            
+            if not signals:
+                return 0.5
+            
+            # 计算方向一致性
+            positive_signals = sum(1 for s in signals if s > 0)
+            negative_signals = sum(1 for s in signals if s < 0)
+            
+            consistency = max(positive_signals, negative_signals) / len(signals)
+            return consistency
+            
+        except Exception:
+            return 0.5
+
+    def _detect_stochrsi_divergence(self, data: pd.DataFrame) -> Tuple[bool, bool]:
+        """检测StochRSI背离"""
+        try:
+            if len(data) < 20 or 'stochrsi_divergence' not in data.columns:
+                return False, False
+            
+            recent_divergence = data['stochrsi_divergence'].tail(5).values
+            
+            # 检查是否有明显的背离信号
+            bullish_divergence = any(val > 0.5 for val in recent_divergence if not pd.isna(val))
+            bearish_divergence = any(val < -0.5 for val in recent_divergence if not pd.isna(val))
+            
+            return bullish_divergence, bearish_divergence
+            
+        except Exception:
+            return False, False
+
+    def _evaluate_adaptive_threshold_quality(self, data: pd.DataFrame) -> float:
+        """评估自适应阈值质量"""
+        try:
+            if not self.adaptive_thresholds or len(data) < 10:
+                return 0.5
+            
+            # 检查阈值的稳定性和有效性
+            if 'stochrsi_overbought' in data.columns and 'stochrsi_oversold' in data.columns:
+                overbought_values = data['stochrsi_overbought'].tail(10).values
+                oversold_values = data['stochrsi_oversold'].tail(10).values
+                
+                # 计算阈值稳定性（变化幅度小表示质量高）
+                ob_stability = 1.0 - min(1.0, np.std(overbought_values) / 10)
+                os_stability = 1.0 - min(1.0, np.std(oversold_values) / 10)
+                
+                return (ob_stability + os_stability) / 2
+            
+            return 0.5
+            
+        except Exception:
+            return 0.5
+
+    def _calculate_trend_strength(self, data: pd.DataFrame) -> float:
+        """计算趋势强度"""
+        try:
+            if 'stochrsi_trend_strength' in data.columns and len(data) >= 1:
+                return min(1.0, max(0.0, data['stochrsi_trend_strength'].iloc[-1]))
+            return 0.5
+        except Exception:
+            return 0.5
+
+    def _analyze_breakthrough_strength(self, data: pd.DataFrame, current_k: float, 
+                                     overbought: float, oversold: float) -> float:
+        """分析突破强度"""
+        try:
+            if len(data) < 5:
+                return 0.0
+            
+            # 检查是否突破关键阈值
+            if current_k > overbought:
+                # 超买突破强度
+                excess = (current_k - overbought) / (100 - overbought)
+                return min(1.0, excess * 2)
+            elif current_k < oversold:
+                # 超卖突破强度
+                excess = (oversold - current_k) / oversold
+                return min(1.0, excess * 2)
+            
+            return 0.0
+            
+        except Exception:
+            return 0.0
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据长度（增强型StochRSI需要更多数据）
+        min_length = max(self.rsi_period, self.stoch_period) + max(self.k_period, self.d_period) + 10
+        if len(data) < min_length:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足或无StochRSI信号") -> Dict[str, Any]:
+        """
+        生成默认的持有信号
+        
+        Args:
+            reason: 默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号字典
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.5,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_type': 'enhanced_stochrsi',
+                'signal_detected': False,
+                'stochrsi_k': 50.0,
+                'stochrsi_d': 50.0,
+                'overbought_threshold': self.overbought,
+                'oversold_threshold': self.oversold,
+                'consistency_score': 0.5,
+                'adaptive_quality': 0.5,
+                'trend_strength': 0.5,
+                'bullish_divergence': False,
+                'bearish_divergence': False,
+                'breakthrough_strength': 0.0,
+                'multi_period_signals': [],
+                'enhanced_score': 50.0
+            }
+        }
 
 
 # 为了向后兼容，创建别名

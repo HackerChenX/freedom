@@ -1039,5 +1039,191 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         
         return signals_list
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于DMA指标数值生成最新的交易信号
+        
+        DMA交易信号逻辑：
+        - DMA上穿AMA：买入信号
+        - DMA下穿AMA：卖出信号  
+        - DMA > 0 且上升：持续买入信号
+        - DMA < 0 且下降：持续卖出信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("DMA计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取DMA相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("DMA数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['DMA', 'AMA']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("DMA结果列不完整")
+                
+            latest_dma = self._result['DMA'].iloc[-1]
+            latest_ama = self._result['AMA'].iloc[-1]
+            prev_dma = self._result['DMA'].iloc[-2]
+            prev_ama = self._result['AMA'].iloc[-2]
+            
+            # 5. DMA信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # DMA上穿AMA - 买入信号
+            if latest_dma > latest_ama and prev_dma <= prev_ama:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.85
+                reason = "DMA上穿AMA，买入信号"
+                
+                # 如果DMA绝对值较大，增强信号强度
+                if abs(latest_dma) > 1.0:
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.05)
+                    reason = "DMA强势上穿AMA，强烈买入信号"
+                    
+            # DMA下穿AMA - 卖出信号
+            elif latest_dma < latest_ama and prev_dma >= prev_ama:
+                signal_type = "sell"
+                strength = 0.8
+                confidence = 0.85
+                reason = "DMA下穿AMA，卖出信号"
+                
+                # 如果DMA绝对值较大，增强信号强度
+                if abs(latest_dma) > 1.0:
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.05)
+                    reason = "DMA强势下穿AMA，强烈卖出信号"
+                    
+            # DMA > 0 且持续上升 - 持续买入
+            elif latest_dma > 0 and latest_dma > prev_dma and latest_dma > latest_ama:
+                signal_type = "buy"
+                strength = 0.6
+                confidence = 0.7
+                reason = "DMA持续上升且位于AMA上方，持续买入信号"
+                
+            # DMA < 0 且持续下降 - 持续卖出
+            elif latest_dma < 0 and latest_dma < prev_dma and latest_dma < latest_ama:
+                signal_type = "sell"
+                strength = 0.6
+                confidence = 0.7
+                reason = "DMA持续下降且位于AMA下方，持续卖出信号"
+            
+            # 计算DMA趋势变化
+            dma_rising = latest_dma > prev_dma
+            dma_falling = latest_dma < prev_dma
+            dma_spread = abs(latest_dma - latest_ama)
+            
+            # 基于DMA与AMA的差值调整信号强度
+            if signal_type in ['buy', 'sell']:
+                spread_factor = min(0.2, dma_spread * 0.1)
+                strength = min(1.0, strength + spread_factor)
+                confidence = min(1.0, confidence + spread_factor * 0.5)
+            
+            # 设置元数据
+            metadata = {
+                'dma_value': latest_dma,
+                'ama_value': latest_ama,
+                'dma_trend': 'rising' if dma_rising else 'falling' if dma_falling else 'flat',
+                'dma_ama_spread': dma_spread,
+                'dma_position': 'above_ama' if latest_dma > latest_ama else 'below_ama'
+            }
+            
+            # 添加百分比指标（如果存在）
+            if 'DMA_PCT' in self._result.columns:
+                metadata['dma_pct'] = self._result['DMA_PCT'].iloc[-1]
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"DMA信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        if len(data) < self.slow_period:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty)
+
 # 类别名
 DMA = DisplacedMovingAverage

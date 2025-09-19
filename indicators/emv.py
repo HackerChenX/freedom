@@ -365,6 +365,303 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def has_result(self) -> bool:
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
+    
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        生成EMV指标的标准化交易信号
+        
+        EMV (Ease of Movement) 特有信号逻辑:
+        1. EMV零轴交叉: EMV从负值转正值为买入信号，从正值转负值为卖出信号
+        2. EMV与均线交叉: EMV上穿均线为买入信号，下穿均线为卖出信号  
+        3. EMV极值区域: EMV达到极高/极低值时的反转信号
+        4. EMV背离分析: EMV与价格的背离现象
+        5. EMV变动速率: EMV快速变化的动量信号
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化信号格式
+            {
+                'signal_type': 'buy'/'sell'/'hold',
+                'strength': 0.0-1.0,
+                'confidence': 0.0-1.0, 
+                'timestamp': datetime,
+                'price': float,
+                'reason': str,
+                'metadata': dict
+            }
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 确保已计算EMV指标
+            if not self.has_result():
+                self.calculate(data)
+                
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("EMV计算结果为空")
+                
+            # 获取EMV相关数据
+            emv_values = self._result['EMV_Emv']
+            emv_ma = self._result['EMV_MA']
+            
+            # 获取最新的有效数据点
+            latest_idx = -1
+            while latest_idx >= -len(emv_values) and pd.isna(emv_values.iloc[latest_idx]):
+                latest_idx -= 1
+                
+            if latest_idx < -len(emv_values) or latest_idx < -1:
+                return self._get_default_signal("EMV数据不足")
+                
+            latest_emv = emv_values.iloc[latest_idx]
+            latest_emv_ma = emv_ma.iloc[latest_idx]
+            prev_emv = emv_values.iloc[latest_idx - 1] if latest_idx - 1 >= -len(emv_values) else latest_emv
+            prev_emv_ma = emv_ma.iloc[latest_idx - 1] if latest_idx - 1 >= -len(emv_ma) else latest_emv_ma
+            
+            # 获取当前价格
+            current_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            
+            # 信号强度和置信度初始化
+            base_strength = 0.0
+            base_confidence = 0.5
+            signal_type = 'hold'
+            reason_parts = []
+            
+            # 1. EMV零轴交叉信号 (最高优先级)
+            if prev_emv <= 0 < latest_emv:  # EMV上穿零轴
+                signal_type = 'buy'
+                base_strength = 0.8
+                base_confidence = 0.85
+                reason_parts.append("EMV上穿零轴(价格上涨阻力减小)")
+                
+            elif prev_emv >= 0 > latest_emv:  # EMV下穿零轴
+                signal_type = 'sell'
+                base_strength = 0.8  
+                base_confidence = 0.85
+                reason_parts.append("EMV下穿零轴(价格下跌阻力减小)")
+                
+            # 2. EMV与均线交叉信号
+            elif prev_emv <= prev_emv_ma < latest_emv_ma < latest_emv:  # EMV上穿均线
+                signal_type = 'buy'
+                base_strength = 0.7
+                base_confidence = 0.75
+                reason_parts.append("EMV上穿移动平均线")
+                
+            elif prev_emv >= prev_emv_ma > latest_emv_ma > latest_emv:  # EMV下穿均线  
+                signal_type = 'sell'
+                base_strength = 0.7
+                base_confidence = 0.75
+                reason_parts.append("EMV下穿移动平均线")
+                
+            # 3. EMV极值区域信号
+            else:
+                # 计算EMV的历史分位数
+                emv_values_clean = emv_values.dropna()
+                if len(emv_values_clean) >= 20:
+                    emv_percentile_90 = emv_values_clean.quantile(0.9)
+                    emv_percentile_10 = emv_values_clean.quantile(0.1)
+                    emv_median = emv_values_clean.median()
+                    
+                    # EMV极高位置
+                    if latest_emv > emv_percentile_90:
+                        signal_type = 'buy'
+                        base_strength = 0.6
+                        base_confidence = 0.7
+                        reason_parts.append(f"EMV处于极高位({latest_emv:.4f})")
+                        
+                    # EMV极低位置
+                    elif latest_emv < emv_percentile_10:
+                        signal_type = 'sell' 
+                        base_strength = 0.6
+                        base_confidence = 0.7
+                        reason_parts.append(f"EMV处于极低位({latest_emv:.4f})")
+                        
+                    # EMV中性区域
+                    else:
+                        # 检查EMV变化趋势
+                        if len(emv_values_clean) >= 5:
+                            recent_emv = emv_values_clean.iloc[-5:]
+                            emv_trend = recent_emv.diff().mean()
+                            
+                            if emv_trend > 0.001:  # EMV上升趋势
+                                signal_type = 'buy'
+                                base_strength = 0.4
+                                base_confidence = 0.6
+                                reason_parts.append("EMV呈上升趋势")
+                            elif emv_trend < -0.001:  # EMV下降趋势
+                                signal_type = 'sell'
+                                base_strength = 0.4
+                                base_confidence = 0.6
+                                reason_parts.append("EMV呈下降趋势")
+            
+            # 4. 信号强度调整因子
+            strength_multiplier = 1.0
+            confidence_adjustment = 0.0
+            
+            # EMV绝对值大小调整(表示移动的容易程度)
+            emv_abs = abs(latest_emv)
+            if emv_abs > 0.01:  # EMV绝对值较大
+                strength_multiplier *= 1.2
+                confidence_adjustment += 0.1
+                reason_parts.append("EMV绝对值较大(移动阻力明显)")
+            elif emv_abs < 0.001:  # EMV绝对值很小
+                strength_multiplier *= 0.8
+                confidence_adjustment -= 0.1
+                reason_parts.append("EMV绝对值很小(移动阻力不明显)")
+                
+            # EMV与均线的相对位置
+            if signal_type in ['buy', 'sell']:
+                if latest_emv > latest_emv_ma:
+                    strength_multiplier *= 1.1
+                    confidence_adjustment += 0.05
+                    reason_parts.append("EMV高于均线")
+                else:
+                    strength_multiplier *= 0.9
+                    confidence_adjustment -= 0.05
+                    reason_parts.append("EMV低于均线")
+            
+            # 5. 背离检测 (简化版)
+            if len(data) >= 10 and 'high' in data.columns and 'low' in data.columns:
+                try:
+                    recent_highs = data['high'].iloc[-5:]
+                    recent_lows = data['low'].iloc[-5:]  
+                    recent_emv = emv_values.iloc[-5:].dropna()
+                    
+                    if len(recent_emv) >= 3:
+                        price_trend = (recent_highs.iloc[-1] - recent_highs.iloc[0]) / recent_highs.iloc[0]
+                        emv_trend = (recent_emv.iloc[-1] - recent_emv.iloc[0]) / abs(recent_emv.iloc[0] + 1e-8)
+                        
+                        # 顶背离：价格新高但EMV走低
+                        if price_trend > 0.02 and emv_trend < -0.02:
+                            if signal_type == 'buy':
+                                strength_multiplier *= 0.7  # 降低买入信号强度
+                            else:
+                                signal_type = 'sell'
+                                base_strength = 0.6
+                                base_confidence = 0.7
+                            reason_parts.append("检测到顶背离")
+                            
+                        # 底背离：价格新低但EMV走高  
+                        elif price_trend < -0.02 and emv_trend > 0.02:
+                            if signal_type == 'sell':
+                                strength_multiplier *= 0.7  # 降低卖出信号强度
+                            else:
+                                signal_type = 'buy'
+                                base_strength = 0.6
+                                base_confidence = 0.7
+                            reason_parts.append("检测到底背离")
+                except:
+                    pass  # 背离检测失败，继续其他逻辑
+            
+            # 应用调整因子
+            final_strength = min(1.0, base_strength * strength_multiplier)
+            final_confidence = min(1.0, max(0.0, base_confidence + confidence_adjustment))
+            
+            # 如果没有明确信号，保持持有状态
+            if not reason_parts:
+                signal_type = 'hold'
+                final_strength = 0.0
+                final_confidence = 0.5
+                reason_parts.append("EMV处于中性状态")
+            
+            # 构建元数据
+            metadata = {
+                'emv_value': float(latest_emv),
+                'emv_ma': float(latest_emv_ma), 
+                'emv_previous': float(prev_emv),
+                'emv_change': float(latest_emv - prev_emv),
+                'emv_abs': float(abs(latest_emv)),
+                'signal_source': 'EMV_indicator',
+                'calculation_method': 'ease_of_movement_analysis',
+                'data_points_used': len(emv_values.dropna()),
+                'volume_divisor': self.volume_divisor,
+                'period': self.period
+            }
+            
+            # 添加价格相关信息到元数据
+            if 'close' in data.columns:
+                metadata['current_price'] = float(current_price)
+                if 'volume' in data.columns:
+                    latest_volume = data['volume'].iloc[-1]
+                    metadata['current_volume'] = float(latest_volume)
+            
+            return {
+                'signal_type': signal_type,
+                'strength': round(final_strength, 3),
+                'confidence': round(final_confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'price': float(current_price),
+                'reason': '; '.join(reason_parts),
+                'metadata': metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"EMV信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成异常: {str(e)}")
+    
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        try:
+            if data is None or data.empty:
+                return False
+                
+            # 检查必需的列
+            required_columns = ['high', 'low', 'volume']
+            for col in required_columns:
+                if col not in data.columns:
+                    logger.warning(f"EMV信号生成缺少必需列: {col}")
+                    return False
+                    
+            # 检查数据量
+            if len(data) < self.period:
+                logger.warning(f"EMV信号生成数据量不足: {len(data)} < {self.period}")
+                return False
+                
+            # 检查成交量数据
+            if data['volume'].isnull().all():
+                logger.warning("EMV信号生成: 所有成交量数据都为空")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"EMV数据验证失败: {e}")
+            return False
+    
+    def _get_default_signal(self, reason: str = "无明确信号") -> Dict[str, Any]:
+        """
+        获取默认的持有信号
+        
+        Args:
+            reason: 信号原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'price': 0.0,
+            'reason': reason,
+            'metadata': {
+                'signal_source': 'EMV_indicator',
+                'default_signal': True,
+                'indicator_name': self.name
+            }
+        }
 
     def generate_signals_Emv(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """

@@ -97,7 +97,7 @@ class CompleteIndicatorRegistry:
         trend_indicators = {
             "DMA": "indicators.dma.DMA",
             "DMI": "indicators.dmi.DMI",
-            "ADX": "indicators.adx.ADX",
+            "ADX": "indicators.adx.AverageDirectionalIndex",
             "AROON": "indicators.aroon.AROON",
             "SAR": "indicators.sar.Sar",
             "PSAR": "indicators.sar.Sar",  # 别名
@@ -107,6 +107,7 @@ class CompleteIndicatorRegistry:
             "ENHANCED_TRIX": "indicators.trend.enhanced_trix.EnhancedTrix",
             "WMA": "indicators.wma.WMA",
             "SUPERTREND": "indicators.supertrend.SuperTrend",
+            "SMA": "indicators.unified_calculator.SimpleMovingAverageCalculator",
         }
 
         return self._batch_register(trend_indicators, "趋势指标")

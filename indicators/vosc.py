@@ -51,6 +51,310 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.short_period = short_period
         self.long_period = long_period
         
+        # 初始化结果存储
+        self._result = None
+    
+    def has_result(self) -> bool:
+        """检查是否已计算结果"""
+        return self._result is not None and not self._result.empty
+    
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        生成VOSC指标的标准化交易信号
+        
+        VOSC (Volume Oscillator) 特有信号逻辑:
+        1. VOSC零轴交叉: VOSC从负值转正值为买入信号，从正值转负值为卖出信号
+        2. VOSC与信号线交叉: VOSC上穿信号线为买入信号，下穿信号线为卖出信号  
+        3. VOSC极值区域: VOSC达到极高/极低值时的成交量异常信号
+        4. VOSC背离分析: VOSC与价格的背离现象
+        5. VOSC趋势分析: VOSC连续上升/下降的动量信号
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化信号格式
+            {
+                'signal_type': 'buy'/'sell'/'hold',
+                'strength': 0.0-1.0,
+                'confidence': 0.0-1.0, 
+                'timestamp': datetime,
+                'price': float,
+                'reason': str,
+                'metadata': dict
+            }
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 确保已计算VOSC指标
+            if not self.has_result():
+                self.calculate_Vosc(data)
+                
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("VOSC计算结果为空")
+                
+            # 获取VOSC相关数据
+            vosc_values = self._result['vosc']
+            vosc_signal = self._result['vosc_signal']
+            
+            # 获取最新的有效数据点
+            latest_idx = -1
+            while latest_idx >= -len(vosc_values) and pd.isna(vosc_values.iloc[latest_idx]):
+                latest_idx -= 1
+                
+            if latest_idx < -len(vosc_values) or latest_idx < -1:
+                return self._get_default_signal("VOSC数据不足")
+                
+            latest_vosc = vosc_values.iloc[latest_idx]
+            latest_vosc_signal = vosc_signal.iloc[latest_idx]
+            prev_vosc = vosc_values.iloc[latest_idx - 1] if latest_idx - 1 >= -len(vosc_values) else latest_vosc
+            prev_vosc_signal = vosc_signal.iloc[latest_idx - 1] if latest_idx - 1 >= -len(vosc_signal) else latest_vosc_signal
+            
+            # 获取当前价格
+            current_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            
+            # 信号强度和置信度初始化
+            base_strength = 0.0
+            base_confidence = 0.5
+            signal_type = 'hold'
+            reason_parts = []
+            
+            # 1. VOSC零轴交叉信号 (最高优先级)
+            if prev_vosc <= 0 < latest_vosc:  # VOSC上穿零轴
+                signal_type = 'buy'
+                base_strength = 0.8
+                base_confidence = 0.85
+                reason_parts.append("VOSC上穿零轴(短期成交量超过长期成交量)")
+                
+            elif prev_vosc >= 0 > latest_vosc:  # VOSC下穿零轴
+                signal_type = 'sell'
+                base_strength = 0.8  
+                base_confidence = 0.85
+                reason_parts.append("VOSC下穿零轴(短期成交量低于长期成交量)")
+                
+            # 2. VOSC与信号线交叉信号
+            elif prev_vosc <= prev_vosc_signal < latest_vosc_signal < latest_vosc:  # VOSC上穿信号线
+                signal_type = 'buy'
+                base_strength = 0.7
+                base_confidence = 0.75
+                reason_parts.append("VOSC上穿信号线(成交量动量增强)")
+                
+            elif prev_vosc >= prev_vosc_signal > latest_vosc_signal > latest_vosc:  # VOSC下穿信号线  
+                signal_type = 'sell'
+                base_strength = 0.7
+                base_confidence = 0.75
+                reason_parts.append("VOSC下穿信号线(成交量动量减弱)")
+                
+            # 3. VOSC极值区域信号
+            else:
+                # 计算VOSC的历史分位数
+                vosc_values_clean = vosc_values.dropna()
+                if len(vosc_values_clean) >= 20:
+                    vosc_percentile_90 = vosc_values_clean.quantile(0.9)
+                    vosc_percentile_10 = vosc_values_clean.quantile(0.1)
+                    
+                    # VOSC极高位置(成交量异常活跃)
+                    if latest_vosc > vosc_percentile_90:
+                        signal_type = 'buy'
+                        base_strength = 0.6
+                        base_confidence = 0.7
+                        reason_parts.append(f"VOSC处于极高位({latest_vosc:.2f}%，成交量异常活跃)")
+                        
+                    # VOSC极低位置(成交量异常萎缩)
+                    elif latest_vosc < vosc_percentile_10:
+                        signal_type = 'sell' 
+                        base_strength = 0.6
+                        base_confidence = 0.7
+                        reason_parts.append(f"VOSC处于极低位({latest_vosc:.2f}%，成交量异常萎缩)")
+                        
+                    # VOSC中性区域
+                    else:
+                        # 检查VOSC变化趋势
+                        if len(vosc_values_clean) >= 5:
+                            recent_vosc = vosc_values_clean.iloc[-5:]
+                            vosc_trend = recent_vosc.diff().mean()
+                            
+                            if vosc_trend > 1.0:  # VOSC上升趋势
+                                signal_type = 'buy'
+                                base_strength = 0.4
+                                base_confidence = 0.6
+                                reason_parts.append("VOSC呈上升趋势(成交量持续增加)")
+                            elif vosc_trend < -1.0:  # VOSC下降趋势
+                                signal_type = 'sell'
+                                base_strength = 0.4
+                                base_confidence = 0.6
+                                reason_parts.append("VOSC呈下降趋势(成交量持续萎缩)")
+            
+            # 4. 信号强度调整因子
+            strength_multiplier = 1.0
+            confidence_adjustment = 0.0
+            
+            # VOSC绝对值大小调整(表示成交量变化幅度)
+            vosc_abs = abs(latest_vosc)
+            if vosc_abs > 50:  # VOSC绝对值很大
+                strength_multiplier *= 1.3
+                confidence_adjustment += 0.15
+                reason_parts.append("VOSC绝对值很大(成交量变化剧烈)")
+            elif vosc_abs > 20:  # VOSC绝对值较大
+                strength_multiplier *= 1.1
+                confidence_adjustment += 0.1
+                reason_parts.append("VOSC绝对值较大(成交量变化明显)")
+            elif vosc_abs < 5:  # VOSC绝对值很小
+                strength_multiplier *= 0.8
+                confidence_adjustment -= 0.1
+                reason_parts.append("VOSC绝对值很小(成交量变化不明显)")
+                
+            # VOSC与信号线的相对位置
+            if signal_type in ['buy', 'sell']:
+                if latest_vosc > latest_vosc_signal:
+                    strength_multiplier *= 1.1
+                    confidence_adjustment += 0.05
+                    reason_parts.append("VOSC高于信号线")
+                else:
+                    strength_multiplier *= 0.9
+                    confidence_adjustment -= 0.05
+                    reason_parts.append("VOSC低于信号线")
+            
+            # 5. 量价背离检测 (简化版)
+            if len(data) >= 10 and 'close' in data.columns:
+                try:
+                    recent_prices = data['close'].iloc[-5:]
+                    recent_vosc = vosc_values.iloc[-5:].dropna()
+                    
+                    if len(recent_vosc) >= 3:
+                        price_trend = (recent_prices.iloc[-1] - recent_prices.iloc[0]) / recent_prices.iloc[0]
+                        vosc_trend = (recent_vosc.iloc[-1] - recent_vosc.iloc[0]) / abs(recent_vosc.iloc[0] + 1e-8)
+                        
+                        # 量价背离：价格上涨但VOSC走低
+                        if price_trend > 0.02 and vosc_trend < -0.1:
+                            if signal_type == 'buy':
+                                strength_multiplier *= 0.6  # 降低买入信号强度
+                            else:
+                                signal_type = 'sell'
+                                base_strength = 0.7
+                                base_confidence = 0.75
+                            reason_parts.append("检测到量价背离(价格上涨但成交量萎缩)")
+                            
+                        # 量价配合：价格上涨且VOSC走高  
+                        elif price_trend > 0.02 and vosc_trend > 0.1:
+                            if signal_type == 'buy':
+                                strength_multiplier *= 1.2  # 增强买入信号强度
+                                confidence_adjustment += 0.1
+                            reason_parts.append("检测到量价配合(价格上涨且成交量放大)")
+                except:
+                    pass  # 背离检测失败，继续其他逻辑
+            
+            # 应用调整因子
+            final_strength = min(1.0, base_strength * strength_multiplier)
+            final_confidence = min(1.0, max(0.0, base_confidence + confidence_adjustment))
+            
+            # 如果没有明确信号，保持持有状态
+            if not reason_parts:
+                signal_type = 'hold'
+                final_strength = 0.0
+                final_confidence = 0.5
+                reason_parts.append("VOSC处于中性状态")
+            
+            # 构建元数据
+            metadata = {
+                'vosc_value': float(latest_vosc),
+                'vosc_signal': float(latest_vosc_signal), 
+                'vosc_previous': float(prev_vosc),
+                'vosc_change': float(latest_vosc - prev_vosc),
+                'vosc_abs': float(abs(latest_vosc)),
+                'signal_source': 'VOSC_indicator',
+                'calculation_method': 'volume_oscillator_analysis',
+                'data_points_used': len(vosc_values.dropna()),
+                'short_period': self.short_period,
+                'long_period': self.long_period
+            }
+            
+            # 添加价格相关信息到元数据
+            if 'close' in data.columns:
+                metadata['current_price'] = float(current_price)
+                if 'volume' in data.columns:
+                    latest_volume = data['volume'].iloc[-1]
+                    metadata['current_volume'] = float(latest_volume)
+            
+            return {
+                'signal_type': signal_type,
+                'strength': round(final_strength, 3),
+                'confidence': round(final_confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'price': float(current_price),
+                'reason': '; '.join(reason_parts),
+                'metadata': metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"VOSC信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成异常: {str(e)}")
+    
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        try:
+            if data is None or data.empty:
+                return False
+                
+            # 检查必需的列
+            required_columns = ['volume']
+            for col in required_columns:
+                if col not in data.columns:
+                    logger.warning(f"VOSC信号生成缺少必需列: {col}")
+                    return False
+                    
+            # 检查数据量
+            min_periods = max(self.short_period, self.long_period)
+            if len(data) < min_periods:
+                logger.warning(f"VOSC信号生成数据量不足: {len(data)} < {min_periods}")
+                return False
+                
+            # 检查成交量数据
+            if data['volume'].isnull().all():
+                logger.warning("VOSC信号生成: 所有成交量数据都为空")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"VOSC数据验证失败: {e}")
+            return False
+    
+    def _get_default_signal(self, reason: str = "无明确信号") -> Dict[str, Any]:
+        """
+        获取默认的持有信号
+        
+        Args:
+            reason: 信号原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'price': 0.0,
+            'reason': reason,
+            'metadata': {
+                'signal_source': 'VOSC_indicator',
+                'default_signal': True,
+                'indicator_name': 'VOSC'
+            }
+        }
+        
     def set_parameters_Vosc_Vosc_Vosc_vosc(self, short_period: int = None, long_period: int = None):
         """
         设置指标参数
@@ -71,7 +375,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VOSC指标的Data_frame
         """
-        return "self._calculate_vosc(data)"
+        return self._calculate_vosc(data)
 
     def calculate_confidence_Vosc(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -86,10 +390,10 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return "0.5"  # TODO: 将魔法数字提取到配置中
+            return 0.5  # TODO: 将魔法数字提取到配置中
 
         # 基础置信度
-            confidence = 0.5  # TODO: 将魔法数字提取到配置中
+        confidence = 0.5  # TODO: 将魔法数字提取到配置中
 
         # 1. 基于评分的置信度
         last_score = score.iloc[-1]
@@ -154,7 +458,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VOSC指标的Data_frame
         """
-        return "self.calculate_Vosc(df)"
+        return self.calculate_Vosc(df)
         
     def _calculate_vosc(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -169,7 +473,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             添加了VOSC指标列的Data_frame
         """
         if df.empty:
-            return "pd.DataFrame()"
+            return pd.DataFrame()
 
         # 确保数据包含必要的列
         required_columns = ['volume']
@@ -195,7 +499,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 存储结果
         self._result = df_copy[['vosc', 'vosc_signal']]
 
-        return "df_copy"
+        return df_copy
 
     def get_signals_Vosc(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -211,7 +515,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             - vosc_sell_signal: 1=卖出信号, 0=无信号
         """
         if df.empty:
-            return "df"
+            return df
             
         # 检查必要的指标列是否存在
         required_columns = ['vosc', 'vosc_signal']
@@ -239,7 +543,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df_copy = self.add_pattern_detection(df_copy)
         df_copy = self.add_signal_generation(df_copy)
 
-        return "df_copy"
+        return df_copy
     
     def calculate_raw_score_Vosc(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -257,7 +561,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Vosc(data, **kwargs)
         
         if self._result is None:
-            return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
+            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         score = pd.Series(50.0, index=data.index)  # 基础分50分  # TODO: 将魔法数字提取到配置中
         
@@ -421,7 +725,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             )
             trend_score -= consecutive_falling * 15  # TODO: 将魔法数字提取到配置中
         
-        return "trend_score"
+        return trend_score
     
     def _calculate_vosc_extreme_score(self) -> pd.Series:
         """
@@ -443,14 +747,14 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         extreme_score += vosc_extreme_oversold * 20  # TODO: 将魔法数字提取到配置中
         
         # VOSC超买(>20)-10分  # TODO: 将魔法数字提取到配置中
-        vosc_overbought (vosc_values > 20) & (vosc_values <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        vosc_overbought = (vosc_values > 20) & (vosc_values <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         extreme_score -= vosc_overbought * 10
         
         # VOSC超卖(<-20)+10分  # TODO: 将魔法数字提取到配置中
-        vosc_oversold (vosc_values < -20) & (vosc_values >= -50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        vosc_oversold = (vosc_values < -20) & (vosc_values >= -50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         extreme_score += vosc_oversold * 10
         
-        return "extreme_score"
+        return extreme_score
     
     def _calculate_vosc_price_relation_score(self, data: pd.DataFrame) -> pd.Series:
         """
@@ -465,7 +769,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         price_relation_score = pd.Series(0.0, index=self._result.index)
         
         if 'close' not in data.columns:
-            return "price_relation_score"
+            return price_relation_score
         
         close_price = data['close']
         vosc_values = self._result['vosc']
@@ -489,7 +793,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         price_down_vosc_positive = (price_change < 0) & (vosc_values > 0)
         price_relation_score += price_down_vosc_positive * 15  # TODO: 将魔法数字提取到配置中
         
-        return "price_relation_score"
+        return price_relation_score
     
     def _detect_vosc_zero_cross_patterns(self) -> List[str]:
         """
@@ -523,7 +827,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 else:
                     patterns.append("VOSC零轴位置")
         
-        return "patterns"
+        return patterns
     
     def _detect_vosc_signal_cross_patterns(self) -> List[str]:
         """
@@ -561,7 +865,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 else:
                     patterns.append("VOSC信号线重合")
         
-        return "patterns"
+        return patterns
     
     def _detect_vosc_trend_patterns(self) -> List[str]:
         """
@@ -596,7 +900,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 else:
                     patterns.append("VOSC平稳")
         
-        return "patterns"
+        return patterns
     
     def _detect_vosc_extreme_patterns(self) -> List[str]:
         """
@@ -613,7 +917,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             current_vosc = vosc_values.iloc[-1]
             
             if pd.isna(current_vosc):
-                return "patterns"
+                return patterns
             
             if current_vosc > 50:  # TODO: 将魔法数字提取到配置中
                 patterns.append("VOSC极度超买")
@@ -626,7 +930,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             elif -10 <= current_vosc <= 10:
                 patterns.append("VOSC中性区域")
         
-        return "patterns"
+        return patterns
     
     def _detect_vosc_price_relation_patterns(self, data: pd.DataFrame) -> List[str]:
         """
@@ -641,7 +945,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         patterns = []
         
         if 'close' not in data.columns:
-            return "patterns"
+            return patterns
         
         close_price = data['close']
         vosc_values = self._result['vosc']
@@ -668,7 +972,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             else:
                 patterns.append("量价关系中性")
         
-        return "patterns"
+        return patterns
         
     def generate_trading_signals_Vosc(self, data: pd.DataFrame, **kwargs) -> Dict[str, pd.Series]:
         """
@@ -694,7 +998,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 在这里实现指标特定的信号生成逻辑
         # 此处提供默认实现
     
-        return "signals"
+        return signals
         
     def get_patterns_Vosc(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -712,7 +1016,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Vosc(data)
 
         if self._result is None or 'vosc' not in self._result.columns:
-            return "pd.DataFrame(index=data.index)"
+            return pd.DataFrame(index=data.index)
 
         # 获取VOSC数据
         vosc = self._result['vosc']
@@ -769,7 +1073,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             patterns_df['VOSC_PRICE_CONFIRMATION'] = False
             patterns_df['VOSC_PRICE_DIVERGENCE'] = False
 
-        return "patterns_df"
+        return patterns_df
 
     def calculate_score_Vosc(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
@@ -1173,7 +1477,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         short_period = self._parameters.get('short_period', 12)  # TODO: 将魔法数字提取到配置中
         long_period = self._parameters.get('long_period', 26)  # TODO: 将魔法数字提取到配置中
-        return "max(short_period, long_period) + 10"
+        return max(short_period, long_period) + 10
 
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -1186,7 +1490,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VOSC指标的DataFrame
         """
-        return "self.calculate_Vosc(data, **kwargs)"
+        return self.calculate_Vosc(data, **kwargs)
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -1199,7 +1503,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VOSC指标的DataFrame
         """
-        return "self._calculate_vosc(data)"
+        return self._calculate_vosc(data)
 
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """
@@ -1213,7 +1517,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             float: 置信度分数 (0-1)
         """
-        return "self.calculate_confidence_Vosc(score, patterns, signals)"
+        return self.calculate_confidence_Vosc(score, patterns, signals)
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -1226,7 +1530,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.Series: 原始评分序列
         """
-        return "self.calculate_raw_score_Vosc(data, **kwargs)"
+        return self.calculate_raw_score_Vosc(data, **kwargs)
 
     def get_patterns_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -1239,7 +1543,7 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 形态DataFrame
         """
-        return "self.get_patterns_Vosc(data, **kwargs)"
+        return self.get_patterns_Vosc(data, **kwargs)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """

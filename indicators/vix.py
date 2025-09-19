@@ -27,7 +27,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述:通过价格波动幅度衡量市场恐慌程度
     """
     
-    def __init__(self, period: int = 10, smooth_period: int = 5):  # TODO: 将魔法数字提取到配置中
+    def __init__(self, period: int = 10, smooth_period: int = 5, **kwargs):  # TODO: 将魔法数字提取到配置中
         # 依赖注入示例:
         # self.data_access = container.resolve("DataAccessInterface")
         # self.cache_service = container.resolve("ICacheService")
@@ -38,7 +38,8 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 计算周期,默认为10
             smooth_period: 平滑周期,默认为5
         """
-        # 不调用super().__init__(),直接初始化属性
+        # 正确调用父类初始化
+        super().__init__(**kwargs)
         self.name = "VIX"
         self.description = "VIX恐慌指数,通过价格波动幅度衡量市场恐慌程度"
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
@@ -58,11 +59,299 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # Ultra Think标准方法实现
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """通用计算接口"""
-        return "self.calculate_Vix(data, **kwargs)"
+        return self.calculate_Vix(data, **kwargs)
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """基类抽象方法实现"""
-        return "self._calculate_vix(data)"
+        return self._calculate_vix(data)
+    
+    def has_result(self) -> bool:
+        """检查是否已计算结果"""
+        return self._result is not None and not self._result.empty
+    
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        生成VIX指标的标准化交易信号
+        
+        VIX (Volatility Index) 特有信号逻辑:
+        1. 恐慌水平: VIX高位表示市场恐慌，通常是买入机会
+        2. 平静警告: VIX低位表示市场过于平静，需警惕风险
+        3. 极值反转: 极高或极低VIX值的反转信号
+        4. 趋势变化: VIX快速变化反映市场情绪转换
+        
+        Args:
+            data: 包含价格数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化信号格式
+            {
+                'signal_type': 'buy'/'sell'/'hold',
+                'strength': 0.0-1.0,
+                'confidence': 0.0-1.0, 
+                'timestamp': datetime,
+                'price': float,
+                'reason': str,
+                'metadata': dict
+            }
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 确保已计算VIX指标
+            if not self.has_result():
+                self.calculate(data)
+                
+            if not self.has_result():
+                return self._get_default_signal("VIX计算结果为空")
+                
+            # 获取VIX相关数据
+            vix_result = self._result
+            if 'vix' not in vix_result.columns:
+                return self._get_default_signal("VIX数据不完整")
+            
+            vix_values = vix_result['vix']
+            
+            # 获取最新的有效数据点
+            latest_idx = -1
+            while latest_idx >= -len(vix_values) and pd.isna(vix_values.iloc[latest_idx]):
+                latest_idx -= 1
+                
+            if latest_idx < -len(vix_values) or latest_idx < -1:
+                return self._get_default_signal("VIX数据不足")
+                
+            latest_vix = vix_values.iloc[latest_idx]
+            prev_vix = vix_values.iloc[latest_idx - 1] if latest_idx - 1 >= -len(vix_values) else latest_vix
+            
+            # 获取当前价格
+            current_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            
+            # 信号强度和置信度初始化
+            base_strength = 0.0
+            base_confidence = 0.5
+            signal_type = 'hold'
+            reason_parts = []
+            
+            # 1. VIX恐慌水平分析 (最高优先级)
+            if latest_vix >= 40:  # 极度恐慌
+                signal_type = 'buy'
+                base_strength = 0.9
+                base_confidence = 0.9
+                reason_parts.append(f"市场极度恐慌(VIX={latest_vix:.1f}，历史性买入机会)")
+                
+            elif latest_vix >= 30:  # 高度恐慌
+                signal_type = 'buy'
+                base_strength = 0.8
+                base_confidence = 0.85
+                reason_parts.append(f"市场高度恐慌(VIX={latest_vix:.1f}，买入机会)")
+                
+            elif latest_vix >= 20:  # 中等恐慌
+                signal_type = 'buy'
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason_parts.append(f"市场中等恐慌(VIX={latest_vix:.1f}，谨慎买入)")
+                
+            elif latest_vix <= 10:  # 极度平静
+                signal_type = 'sell'
+                base_strength = 0.8
+                base_confidence = 0.8
+                reason_parts.append(f"市场极度平静(VIX={latest_vix:.1f}，风险警告)")
+                
+            elif latest_vix <= 15:  # 过度平静
+                signal_type = 'sell'
+                base_strength = 0.6
+                base_confidence = 0.7
+                reason_parts.append(f"市场过度平静(VIX={latest_vix:.1f}，注意风险)")
+                
+            # 2. VIX变化趋势分析
+            vix_change = latest_vix - prev_vix
+            vix_change_ratio = vix_change / prev_vix if prev_vix > 0 else 0
+            
+            if abs(vix_change_ratio) > 0.2:  # VIX快速变化20%+
+                if vix_change > 0:  # VIX快速上升
+                    if signal_type != 'buy':
+                        signal_type = 'buy'
+                        base_strength = 0.7
+                        base_confidence = 0.75
+                    reason_parts.append(f"恐慌情绪快速上升(VIX上升{vix_change_ratio:.1%})")
+                else:  # VIX快速下降
+                    if signal_type != 'sell':
+                        signal_type = 'sell'
+                        base_strength = 0.6
+                        base_confidence = 0.7
+                    reason_parts.append(f"恐慌情绪快速缓解(VIX下降{abs(vix_change_ratio):.1%})")
+            
+            # 3. VIX历史分位数分析
+            if len(vix_values.dropna()) >= 20:
+                vix_percentile = (vix_values.dropna() <= latest_vix).mean() * 100
+                
+                if vix_percentile >= 90:  # VIX历史高位
+                    if signal_type == 'buy':
+                        base_strength *= 1.2  # 增强买入信号
+                    reason_parts.append(f"VIX历史高位({vix_percentile:.0f}%分位)")
+                    
+                elif vix_percentile <= 10:  # VIX历史低位
+                    if signal_type == 'sell':
+                        base_strength *= 1.2  # 增强卖出信号
+                    reason_parts.append(f"VIX历史低位({vix_percentile:.0f}%分位)")
+            
+            # 4. VIX均值回归分析
+            if len(vix_values) >= 10:
+                vix_ma = vix_values.rolling(window=min(10, len(vix_values))).mean().iloc[-1]
+                if not pd.isna(vix_ma):
+                    deviation_ratio = (latest_vix - vix_ma) / vix_ma
+                    
+                    if deviation_ratio > 0.5:  # VIX显著高于均值
+                        if signal_type == 'buy':
+                            base_confidence += 0.1
+                        reason_parts.append(f"VIX显著高于均值({deviation_ratio:.1%})")
+                        
+                    elif deviation_ratio < -0.3:  # VIX显著低于均值
+                        if signal_type == 'sell':
+                            base_confidence += 0.1
+                        reason_parts.append(f"VIX显著低于均值({abs(deviation_ratio):.1%})")
+            
+            # 5. 信号强度调整
+            strength_multiplier = 1.0
+            confidence_adjustment = 0.0
+            
+            # VIX绝对值调整
+            if latest_vix > 50:  # 极端高VIX
+                strength_multiplier *= 1.4
+                confidence_adjustment += 0.2
+                reason_parts.append("VIX处于极端高位")
+            elif latest_vix < 8:  # 极端低VIX
+                strength_multiplier *= 1.3
+                confidence_adjustment += 0.15
+                reason_parts.append("VIX处于极端低位")
+            
+            # VIX变化幅度调整
+            if abs(vix_change) > 5:  # VIX剧烈变化
+                strength_multiplier *= 1.3
+                confidence_adjustment += 0.15
+                reason_parts.append(f"VIX剧烈变化({vix_change:+.1f})")
+            elif abs(vix_change) < 1:  # VIX变化很小
+                strength_multiplier *= 0.8
+                confidence_adjustment -= 0.1
+                reason_parts.append("VIX变化平缓")
+            
+            # 应用调整因子
+            final_strength = min(1.0, base_strength * strength_multiplier)
+            final_confidence = min(1.0, max(0.0, base_confidence + confidence_adjustment))
+            
+            # 如果没有明确信号，保持持有状态
+            if not reason_parts:
+                signal_type = 'hold'
+                final_strength = 0.0
+                final_confidence = 0.5
+                reason_parts.append(f"VIX处于中性水平({latest_vix:.1f})")
+            
+            # 构建元数据
+            metadata = {
+                'vix_value': float(latest_vix),
+                'vix_previous': float(prev_vix),
+                'vix_change': float(vix_change),
+                'vix_change_ratio': float(vix_change_ratio),
+                'signal_source': 'VIX_indicator',
+                'calculation_method': 'volatility_fear_index',
+                'data_points_used': len(vix_values.dropna()),
+                'period': self.period,
+                'smooth_period': self.smooth_period
+            }
+            
+            # 添加VIX恐慌水平分类
+            if latest_vix >= 40:
+                metadata['panic_level'] = 'extreme_panic'
+            elif latest_vix >= 30:
+                metadata['panic_level'] = 'high_panic'
+            elif latest_vix >= 20:
+                metadata['panic_level'] = 'moderate_panic'
+            elif latest_vix >= 15:
+                metadata['panic_level'] = 'normal'
+            elif latest_vix >= 10:
+                metadata['panic_level'] = 'low_volatility'
+            else:
+                metadata['panic_level'] = 'extremely_calm'
+            
+            # 添加VIX历史分位数
+            if len(vix_values.dropna()) >= 20:
+                metadata['vix_percentile'] = float(vix_percentile)
+            
+            # 添加价格相关信息到元数据
+            if 'close' in data.columns:
+                metadata['current_price'] = float(current_price)
+            
+            return {
+                'signal_type': signal_type,
+                'strength': round(final_strength, 3),
+                'confidence': round(final_confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'price': float(current_price),
+                'reason': '; '.join(reason_parts),
+                'metadata': metadata
+            }
+            
+        except Exception as e:
+            logger.error(f"VIX信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成异常: {str(e)}")
+    
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        try:
+            if data is None or data.empty:
+                return False
+                
+            # 检查必需的列
+            required_columns = ['open', 'high', 'low', 'close']
+            for col in required_columns:
+                if col not in data.columns:
+                    logger.warning(f"VIX信号生成缺少必需列: {col}")
+                    return False
+                    
+            # 检查数据量
+            min_periods = max(self.period, self.smooth_period)
+            if len(data) < min_periods:
+                logger.warning(f"VIX信号生成数据量不足: {len(data)} < {min_periods}")
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"VIX数据验证失败: {e}")
+            return False
+    
+    def _get_default_signal(self, reason: str = "无明确信号") -> Dict[str, Any]:
+        """
+        获取默认的持有信号
+        
+        Args:
+            reason: 信号原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'price': 0.0,
+            'reason': reason,
+            'metadata': {
+                'signal_source': 'VIX_indicator',
+                'default_signal': True,
+                'indicator_name': 'VIX'
+            }
+        }
     
     def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """生成交易信号"""
@@ -81,11 +370,11 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             signals_df['sell_signal'] = 0
             signals_df['signal_strength'] = 'weak'
         
-        return "signals_df"
+        return signals_df
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """通用形态识别接口"""
-        return "self.get_patterns_Vix(data, **kwargs)"
+        return self.get_patterns_Vix(data, **kwargs)
 
     def get_signals(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """通用信号生成接口"""
@@ -130,7 +419,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VIX指标的Data_frame
         """
-        return "self._calculate_vix(data)"
+        return self._calculate_vix(data)
 
     def get_patterns_Vix(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -148,7 +437,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.calculate_Vix(data)
 
         if self._result is None or 'vix' not in self._result.columns:
-            return "pd.DataFrame(index=data.index)"
+            return pd.DataFrame(index=data.index)
 
         # 获取VIX数据
         vix = self._result['vix']
@@ -159,11 +448,11 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 1. VIX水平形态
         patterns_df['VIX_EXTREME_PANIC'] = vix > 50  # TODO: 将魔法数字提取到配置中
-        patterns_df['VIX_HIGH_PANIC'] (vix > 30) & (vix <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        patterns_df['VIX_MODERATE_PANIC'] (vix > 20) & (vix <= 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        patterns_df['VIX_LOW_PANIC'] (vix >= 15) & (vix <= 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df['VIX_HIGH_PANIC'] = (vix > 30) & (vix <= 50)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df['VIX_MODERATE_PANIC'] = (vix > 20) & (vix <= 30)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        patterns_df['VIX_LOW_PANIC'] = (vix >= 15) & (vix <= 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         patterns_df['VIX_EXTREME_OPTIMISM'] = vix < 10
-        patterns_df['VIX_LOW_FEAR'] (vix >= 10) & (vix < 15)  # TODO: 将魔法数字提取到配置中
+        patterns_df['VIX_LOW_FEAR'] = (vix >= 10) & (vix < 15)  # TODO: 将魔法数字提取到配置中
 
         # 2. VIX趋势形态
         patterns_df['VIX_RISING'] = vix > vix.shift(1)
@@ -273,7 +562,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含VIX指标的Data_frame
         """
-        return "self._calculate_vix(df)"
+        return self._calculate_vix(df)
         
     def _calculate_vix(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -290,10 +579,10 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             添加了VIX指标列的Data_frame
         """
         if df.empty:
-            return "pd.DataFrame()"
+            return pd.DataFrame()
 
         # 确保数据包含必要的列
-        required_columns ['high', 'low', 'close']
+        required_columns = ['high', 'low', 'close']
         self._validate_dataframe(df, required_columns)
         
         df_copy = df.copy()
@@ -312,7 +601,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 存储结果
         self._result = df_copy[['vix', 'vix_smooth']]
 
-        return "df_copy"
+        return df_copy
 
     def generate_signals_Vix(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -802,7 +1091,6 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-            from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -870,11 +1158,11 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             else:
                 score = max(0, 20 - (current_vix - 35) * 20 / 15)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
-            return "min(100, max(0, score))"
+            return min(100, max(0, score))
 
         except Exception as e:
             logger.error(f"VIX calculate_raw_score计算失败: {e}")
-            return "None"
+            return None
 
     @property
     def minimum_periods(self) -> int:
@@ -888,7 +1176,7 @@ class Vix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         period = getattr(self, 'period', 10)
         smooth_period = getattr(self, 'smooth_period', 5)  # TODO: 将魔法数字提取到配置中
-        return "max(period, smooth_period) + 10"
+        return max(period, smooth_period) + 10
 
 
 # 添加类别名供注册系统使用

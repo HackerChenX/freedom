@@ -1519,6 +1519,252 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.error(f"WR形态注册失败: {e}")
             return False
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于Williams %R指标数值生成最新的交易信号
+        
+        Williams %R交易信号逻辑：
+        - WR <= -80：超卖区域，可能反弹买入信号
+        - WR >= -20：超买区域，可能回落卖出信号
+        - WR从超卖区域突破-80：强烈买入信号
+        - WR从超买区域跌破-20：强烈卖出信号
+        - 信号强度基于WR值距离关键水平的程度
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate_Wr_Wr(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("WR计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取WR相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("WR数据不足")
+                
+            # 检查必要的列是否存在
+            wr_column = None
+            for col in ['wr', 'WR', 'williams_r', 'WILLIAMS_R']:
+                if col in self._result.columns:
+                    wr_column = col
+                    break
+                    
+            if wr_column is None:
+                return self._get_default_signal("WR结果列不存在")
+                
+            latest_wr = self._result[wr_column].iloc[-1]
+            prev_wr = self._result[wr_column].iloc[-2]
+            
+            # 5. Williams %R信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # Williams %R关键水平
+            oversold_level = -80
+            overbought_level = -20
+            neutral_level = -50
+            extreme_oversold = -90
+            extreme_overbought = -10
+            
+            # 超卖反弹信号（最高优先级）
+            if prev_wr <= oversold_level and latest_wr > oversold_level:
+                # WR从超卖区域突破-80
+                signal_type = "buy"
+                breakthrough_strength = abs(latest_wr - oversold_level) / 10
+                strength = max(0.85, min(1.0, breakthrough_strength))
+                confidence = 0.9
+                reason = f"Williams %R从超卖区域反弹({latest_wr:.2f}>-80)，强烈买入信号"
+                
+            elif prev_wr >= overbought_level and latest_wr < overbought_level:
+                # WR从超买区域跌破-20
+                signal_type = "sell"
+                breakthrough_strength = abs(latest_wr - overbought_level) / 10
+                strength = max(0.85, min(1.0, breakthrough_strength))
+                confidence = 0.9
+                reason = f"Williams %R从超买区域回落({latest_wr:.2f}<-20)，强烈卖出信号"
+            
+            # 极端超卖/超买信号
+            elif latest_wr <= extreme_oversold:
+                # 极端超卖，强烈买入
+                signal_type = "buy"
+                extreme_strength = abs(latest_wr - extreme_oversold) / 10
+                strength = max(0.9, min(1.0, 0.9 + extreme_strength))
+                confidence = 0.85
+                reason = f"Williams %R极端超卖({latest_wr:.2f})，强烈买入信号"
+                
+            elif latest_wr >= extreme_overbought:
+                # 极端超买，强烈卖出
+                signal_type = "sell"
+                extreme_strength = abs(latest_wr - extreme_overbought) / 10
+                strength = max(0.9, min(1.0, 0.9 + extreme_strength))
+                confidence = 0.85
+                reason = f"Williams %R极端超买({latest_wr:.2f})，强烈卖出信号"
+            
+            # 中等强度信号
+            elif latest_wr <= oversold_level:
+                # 在超卖区域
+                signal_type = "buy"
+                oversold_depth = abs(latest_wr - oversold_level) / 20
+                strength = max(0.6, min(0.8, 0.6 + oversold_depth))
+                confidence = 0.75
+                reason = f"Williams %R处于超卖区域({latest_wr:.2f})，买入信号"
+                
+            elif latest_wr >= overbought_level:
+                # 在超买区域
+                signal_type = "sell"
+                overbought_depth = abs(latest_wr - overbought_level) / 20
+                strength = max(0.6, min(0.8, 0.6 + overbought_depth))
+                confidence = 0.75
+                reason = f"Williams %R处于超买区域({latest_wr:.2f})，卖出信号"
+                
+            # 中性突破信号
+            elif prev_wr <= neutral_level and latest_wr > neutral_level:
+                # 上穿中性线
+                signal_type = "buy"
+                strength = 0.65
+                confidence = 0.7
+                reason = f"Williams %R上穿中性线({latest_wr:.2f}>-50)，买入信号"
+                
+            elif prev_wr >= neutral_level and latest_wr < neutral_level:
+                # 下穿中性线
+                signal_type = "sell"
+                strength = 0.65
+                confidence = 0.7
+                reason = f"Williams %R下穿中性线({latest_wr:.2f}<-50)，卖出信号"
+            
+            # 计算Williams %R特有的元数据
+            wr_change = latest_wr - prev_wr
+            wr_momentum = "上升" if wr_change > 0 else "下降" if wr_change < 0 else "平稳"
+            
+            # 确定当前WR所在区域
+            if latest_wr <= extreme_oversold:
+                wr_zone = "极端超卖"
+            elif latest_wr <= oversold_level:
+                wr_zone = "超卖"
+            elif latest_wr <= neutral_level:
+                wr_zone = "弱势"
+            elif latest_wr <= overbought_level:
+                wr_zone = "强势"
+            elif latest_wr <= extreme_overbought:
+                wr_zone = "超买"
+            else:
+                wr_zone = "极端超买"
+            
+            metadata = {
+                'wr_value': latest_wr,
+                'wr_previous': prev_wr,
+                'wr_change': wr_change,
+                'wr_momentum': wr_momentum,
+                'wr_zone': wr_zone,
+                'oversold_level': oversold_level,
+                'overbought_level': overbought_level,
+                'neutral_level': neutral_level,
+                'distance_to_oversold': abs(latest_wr - oversold_level),
+                'distance_to_overbought': abs(latest_wr - overbought_level),
+                'distance_to_neutral': abs(latest_wr - neutral_level),
+                'in_oversold': latest_wr <= oversold_level,
+                'in_overbought': latest_wr >= overbought_level,
+                'in_extreme_oversold': latest_wr <= extreme_oversold,
+                'in_extreme_overbought': latest_wr >= extreme_overbought,
+                'period': getattr(self, 'period', 14)
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"Williams %R信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # Williams %R需要足够的数据用于计算
+        min_periods = getattr(self, 'period', 14) + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        if self._result is None:
+            return False
+            
+        if not hasattr(self._result, 'empty') or self._result.empty:
+            return False
+            
+        # 检查是否包含WR相关列
+        wr_columns = ['wr', 'WR', 'williams_r', 'WILLIAMS_R']
+        has_wr_column = any(col in self._result.columns for col in wr_columns)
+        
+        return has_wr_column
+
     @property
     def minimum_periods(self) -> int:
         """

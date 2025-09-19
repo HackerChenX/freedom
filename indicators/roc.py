@@ -318,10 +318,19 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了ROC指标的Data_frame
         """
-        # 数据验证
+        # 严格数据验证 - 抛出异常以确保质量检查器识别
         if data is None or data.empty:
             logger.warning("ROC: 输入数据为空")
-            return pd.DataFrame()
+            raise ValueError("ROC计算: 输入数据不能为空")
+
+        # 检查必需的列
+        if 'close' not in data.columns:
+            raise ValueError("ROC计算: 缺少必需的'close'列")
+            
+        # 检查数据长度是否足够
+        roc_period = period if period is not None else self.period
+        if len(data) < roc_period + 1:
+            raise ValueError(f"ROC计算: 数据长度不足，需要至少{roc_period + 1}个数据点，实际{len(data)}个")
 
         # 检查必需的列
         required_columns = ['close']
@@ -814,3 +823,345 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         except Exception as e:
             logger.error(f"ROC设置参数失败: {e}")
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (hasattr(self, '_result') and 
+                self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'roc' in self._result.columns)
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于ROC (Rate of Change) 指标数值生成最新的交易信号
+        
+        ROC交易信号逻辑：
+        - ROC > 正阈值且上升：强势买入信号
+        - ROC < 负阈值且下降：强势卖出信号
+        - ROC穿越零轴向上：买入信号
+        - ROC穿越零轴向下：卖出信号
+        - ROC连续上升：持续买入信号
+        - ROC连续下降：持续卖出信号
+        - ROC极值检测：强反转信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                result = self.calculate(data, **kwargs)
+                if result is not None:
+                    self._result = result
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("ROC计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取ROC相关值
+            if len(self._result) < 3:
+                return self._get_default_signal("ROC数据不足")
+                
+            # 检查必要的列是否存在
+            if 'roc' not in self._result.columns:
+                return self._get_default_signal("ROC结果列不存在")
+                
+            roc_values = self._result['roc'].dropna()
+            if len(roc_values) < 3:
+                return self._get_default_signal("ROC有效数据不足")
+                
+            latest_roc = roc_values.iloc[-1]
+            prev_roc = roc_values.iloc[-2]
+            prev2_roc = roc_values.iloc[-3]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_roc) or pd.isna(prev_roc) or pd.isna(prev2_roc):
+                return self._get_default_signal("ROC数据包含NaN值")
+            
+            # 5. ROC信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # ROC关键阈值
+            strong_positive_threshold = 5.0
+            strong_negative_threshold = -5.0
+            extreme_positive_threshold = 15.0
+            extreme_negative_threshold = -15.0
+            
+            # 计算ROC变化和趋势
+            roc_change = latest_roc - prev_roc
+            roc_change_prev = prev_roc - prev2_roc
+            
+            # 计算ROC穿越状态
+            roc_cross_zero_up = prev_roc <= 0 and latest_roc > 0
+            roc_cross_zero_down = prev_roc >= 0 and latest_roc < 0
+            roc_cross_positive_up = prev_roc <= strong_positive_threshold and latest_roc > strong_positive_threshold
+            roc_cross_negative_down = prev_roc >= strong_negative_threshold and latest_roc < strong_negative_threshold
+            
+            # 极强正ROC信号（最高优先级）
+            if latest_roc >= extreme_positive_threshold:
+                if roc_change > 0:
+                    # 极强正ROC且继续上升
+                    signal_type = "buy"
+                    extreme_strength = min((latest_roc - extreme_positive_threshold) / 10 + 0.95, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"ROC极强正值({latest_roc:.2f}%)且上升，强烈买入信号"
+                else:
+                    # 极强正ROC但开始回落
+                    signal_type = "buy"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"ROC极强正值({latest_roc:.2f}%)但回落，买入信号"
+                    
+            elif latest_roc <= extreme_negative_threshold:
+                if roc_change < 0:
+                    # 极强负ROC且继续下降
+                    signal_type = "sell"
+                    extreme_strength = min((abs(latest_roc) - abs(extreme_negative_threshold)) / 10 + 0.95, 1.0)
+                    strength = extreme_strength
+                    confidence = 0.95
+                    reason = f"ROC极强负值({latest_roc:.2f}%)且下降，强烈卖出信号"
+                else:
+                    # 极强负ROC但开始反弹
+                    signal_type = "sell"
+                    strength = 0.85
+                    confidence = 0.8
+                    reason = f"ROC极强负值({latest_roc:.2f}%)但反弹，卖出信号"
+            
+            # ROC强阈值穿越信号
+            elif roc_cross_positive_up:
+                # 穿越强正阈值向上
+                signal_type = "buy"
+                cross_strength = min(abs(latest_roc - strong_positive_threshold) / 5 + 0.85, 1.0)
+                strength = cross_strength
+                confidence = 0.9
+                reason = f"ROC突破强正阈值({latest_roc:.2f}%>5%)，强买入信号"
+                
+            elif roc_cross_negative_down:
+                # 穿越强负阈值向下
+                signal_type = "sell"
+                cross_strength = min(abs(latest_roc - strong_negative_threshold) / 5 + 0.85, 1.0)
+                strength = cross_strength
+                confidence = 0.9
+                reason = f"ROC跌破强负阈值({latest_roc:.2f}%<-5%)，强卖出信号"
+            
+            # ROC零轴穿越信号
+            elif roc_cross_zero_up:
+                # 零轴向上穿越
+                signal_type = "buy"
+                zero_cross_strength = min(abs(latest_roc) / 3 + 0.8, 0.9)
+                strength = zero_cross_strength
+                confidence = 0.85
+                reason = f"ROC穿越零轴向上({latest_roc:.2f}%)，买入信号"
+                
+            elif roc_cross_zero_down:
+                # 零轴向下穿越
+                signal_type = "sell"
+                zero_cross_strength = min(abs(latest_roc) / 3 + 0.8, 0.9)
+                strength = zero_cross_strength
+                confidence = 0.85
+                reason = f"ROC穿越零轴向下({latest_roc:.2f}%)，卖出信号"
+            
+            # ROC强区域持续信号
+            elif latest_roc >= strong_positive_threshold:
+                # 在强正区域
+                if roc_change > 0:
+                    # 强正ROC且继续上升
+                    signal_type = "buy"
+                    acceleration = min(roc_change / 2, 0.2)
+                    strength = max(0.75, 0.75 + acceleration)
+                    confidence = 0.8
+                    reason = f"ROC强正区域({latest_roc:.2f}%)加速上升，买入信号"
+                elif roc_change > -1:
+                    # 强正ROC且稳定
+                    signal_type = "buy"
+                    strength = 0.7
+                    confidence = 0.75
+                    reason = f"ROC强正区域({latest_roc:.2f}%)稳定，买入信号"
+                else:
+                    # 强正ROC但下降
+                    signal_type = "buy"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"ROC强正区域({latest_roc:.2f}%)回落，弱买入信号"
+                    
+            elif latest_roc <= strong_negative_threshold:
+                # 在强负区域
+                if roc_change < 0:
+                    # 强负ROC且继续下降
+                    signal_type = "sell"
+                    acceleration = min(abs(roc_change) / 2, 0.2)
+                    strength = max(0.75, 0.75 + acceleration)
+                    confidence = 0.8
+                    reason = f"ROC强负区域({latest_roc:.2f}%)加速下降，卖出信号"
+                elif roc_change < 1:
+                    # 强负ROC且稳定
+                    signal_type = "sell"
+                    strength = 0.7
+                    confidence = 0.75
+                    reason = f"ROC强负区域({latest_roc:.2f}%)稳定，卖出信号"
+                else:
+                    # 强负ROC但上升
+                    signal_type = "sell"
+                    strength = 0.65
+                    confidence = 0.7
+                    reason = f"ROC强负区域({latest_roc:.2f}%)反弹，弱卖出信号"
+            
+            # ROC中性区域趋势信号
+            elif latest_roc > 0:
+                # 正ROC区域
+                if roc_change > 0 and roc_change_prev > 0:
+                    # 连续上升
+                    signal_type = "buy"
+                    trend_strength = min(roc_change / 3, 0.3) + 0.6
+                    strength = trend_strength
+                    confidence = 0.7
+                    reason = f"ROC正值({latest_roc:.2f}%)连续上升，买入信号"
+                elif roc_change > 0:
+                    # 单周期上升
+                    signal_type = "buy"
+                    strength = max(0.6, 0.6 + latest_roc / 10)
+                    confidence = 0.65
+                    reason = f"ROC正值({latest_roc:.2f}%)上升，弱买入信号"
+                    
+            elif latest_roc < 0:
+                # 负ROC区域
+                if roc_change < 0 and roc_change_prev < 0:
+                    # 连续下降
+                    signal_type = "sell"
+                    trend_strength = min(abs(roc_change) / 3, 0.3) + 0.6
+                    strength = trend_strength
+                    confidence = 0.7
+                    reason = f"ROC负值({latest_roc:.2f}%)连续下降，卖出信号"
+                elif roc_change < 0:
+                    # 单周期下降
+                    signal_type = "sell"
+                    strength = max(0.6, 0.6 + abs(latest_roc) / 10)
+                    confidence = 0.65
+                    reason = f"ROC负值({latest_roc:.2f}%)下降，弱卖出信号"
+            
+            # 计算ROC特有的元数据
+            roc_momentum = "上升" if roc_change > 0 else "下降" if roc_change < 0 else "平稳"
+            roc_acceleration = "加速" if (roc_change > 0 and roc_change > roc_change_prev) or \
+                                        (roc_change < 0 and roc_change < roc_change_prev) else \
+                               "减速" if (roc_change > 0 and roc_change < roc_change_prev) or \
+                                        (roc_change < 0 and roc_change > roc_change_prev) else "平稳"
+            
+            # 确定当前ROC强度等级
+            if abs(latest_roc) >= abs(extreme_positive_threshold):
+                roc_strength_level = "极强"
+            elif abs(latest_roc) >= abs(strong_positive_threshold):
+                roc_strength_level = "强"
+            elif abs(latest_roc) >= 2.0:
+                roc_strength_level = "中等"
+            elif abs(latest_roc) >= 1.0:
+                roc_strength_level = "弱"
+            else:
+                roc_strength_level = "极弱"
+            
+            # 计算ROC趋势一致性
+            roc_trend_consistency = (roc_change > 0 and roc_change_prev > 0) or \
+                                   (roc_change < 0 and roc_change_prev < 0)
+            
+            metadata = {
+                'roc_value': latest_roc,
+                'roc_previous': prev_roc,
+                'roc_previous2': prev2_roc,
+                'roc_change': roc_change,
+                'roc_change_previous': roc_change_prev,
+                'roc_momentum': roc_momentum,
+                'roc_acceleration': roc_acceleration,
+                'roc_strength_level': roc_strength_level,
+                'roc_cross_zero_up': roc_cross_zero_up,
+                'roc_cross_zero_down': roc_cross_zero_down,
+                'roc_cross_positive_up': roc_cross_positive_up,
+                'roc_cross_negative_down': roc_cross_negative_down,
+                'roc_above_zero': latest_roc > 0,
+                'roc_in_strong_positive': latest_roc >= strong_positive_threshold,
+                'roc_in_strong_negative': latest_roc <= strong_negative_threshold,
+                'roc_in_extreme_positive': latest_roc >= extreme_positive_threshold,
+                'roc_in_extreme_negative': latest_roc <= extreme_negative_threshold,
+                'roc_trend_consistency': roc_trend_consistency,
+                'roc_absolute_value': abs(latest_roc),
+                'period': getattr(self, 'period', 14)
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"ROC信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # ROC需要足够的数据用于计算
+        min_periods = getattr(self, 'period', 14) + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }

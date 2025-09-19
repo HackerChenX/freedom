@@ -583,6 +583,261 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return self.calculate_confidence_Momentum(score, patterns, signals)
 
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于MOMENTUM (动量指标) 指标数值生成最新的交易信号
+        
+        MOMENTUM交易信号逻辑：
+        - 动量上穿动量均线：买入信号
+        - 动量下穿动量均线：卖出信号
+        - 动量持续高于均线：强势持有信号
+        - 动量持续低于均线：弱势持有信号
+        - 动量极值分析：极强/极弱动量信号
+        - 动量背离检测：价格与动量背离的反转信号
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate_Momentum(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("MOMENTUM计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取MOMENTUM相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("MOMENTUM数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['momentum', 'momentum_ma']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("MOMENTUM结果列不完整")
+                
+            latest_momentum = self._result['momentum'].iloc[-1]
+            latest_momentum_ma = self._result['momentum_ma'].iloc[-1]
+            prev_momentum = self._result['momentum'].iloc[-2]
+            prev_momentum_ma = self._result['momentum_ma'].iloc[-2]
+            
+            # 检查是否有NaN值
+            if pd.isna(latest_momentum) or pd.isna(latest_momentum_ma) or pd.isna(prev_momentum) or pd.isna(prev_momentum_ma):
+                return self._get_default_signal("MOMENTUM数据包含NaN值")
+            
+            # 5. MOMENTUM信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算动量相对位置和变化
+            momentum_diff = latest_momentum - latest_momentum_ma
+            momentum_change = latest_momentum - prev_momentum
+            momentum_ma_change = latest_momentum_ma - prev_momentum_ma
+            
+            # 计算动量交叉状态
+            momentum_cross_up = prev_momentum <= prev_momentum_ma and latest_momentum > latest_momentum_ma
+            momentum_cross_down = prev_momentum >= prev_momentum_ma and latest_momentum < latest_momentum_ma
+            
+            # 动量上穿均线信号（最高优先级）
+            if momentum_cross_up:
+                # 动量上穿均线 - 买入信号
+                signal_type = "buy"
+                cross_strength = min(abs(momentum_diff) / (abs(latest_momentum_ma) + 1), 1.0)
+                strength = max(0.85, 0.85 + cross_strength * 0.15)
+                confidence = 0.9
+                reason = f"MOMENTUM上穿均线({latest_momentum:.4f}>{latest_momentum_ma:.4f})，强烈买入信号"
+                
+            elif momentum_cross_down:
+                # 动量下穿均线 - 卖出信号
+                signal_type = "sell"
+                cross_strength = min(abs(momentum_diff) / (abs(latest_momentum_ma) + 1), 1.0)
+                strength = max(0.85, 0.85 + cross_strength * 0.15)
+                confidence = 0.9
+                reason = f"MOMENTUM下穿均线({latest_momentum:.4f}<{latest_momentum_ma:.4f})，强烈卖出信号"
+            
+            # 动量加速信号
+            elif latest_momentum > latest_momentum_ma:
+                # 动量在均线上方
+                if momentum_change > 0 and momentum_ma_change > 0:
+                    # 动量和均线都在上升 - 强势买入
+                    signal_type = "buy"
+                    momentum_strength = min(momentum_diff / (abs(latest_momentum_ma) + 1), 2.0)
+                    acceleration = min(momentum_change / (abs(prev_momentum) + 1), 1.0)
+                    strength = max(0.75, min(1.0, 0.75 + momentum_strength * 0.15 + acceleration * 0.1))
+                    confidence = 0.85
+                    reason = f"MOMENTUM强势上升({latest_momentum:.4f}>{latest_momentum_ma:.4f})，买入信号"
+                elif momentum_change > 0:
+                    # 动量上升，均线可能滞后
+                    signal_type = "buy"
+                    momentum_strength = min(momentum_diff / (abs(latest_momentum_ma) + 1), 1.0)
+                    strength = max(0.7, 0.7 + momentum_strength * 0.2)
+                    confidence = 0.8
+                    reason = f"MOMENTUM上升动能({latest_momentum:.4f})，买入信号"
+                else:
+                    # 动量在均线上方但下降
+                    signal_type = "buy"
+                    momentum_strength = min(momentum_diff / (abs(latest_momentum_ma) + 1), 1.0)
+                    strength = max(0.6, 0.6 + momentum_strength * 0.15)
+                    confidence = 0.7
+                    reason = f"MOMENTUM高位回落({latest_momentum:.4f})，弱买入信号"
+                    
+            elif latest_momentum < latest_momentum_ma:
+                # 动量在均线下方
+                if momentum_change < 0 and momentum_ma_change < 0:
+                    # 动量和均线都在下降 - 强势卖出
+                    signal_type = "sell"
+                    momentum_strength = min(abs(momentum_diff) / (abs(latest_momentum_ma) + 1), 2.0)
+                    deceleration = min(abs(momentum_change) / (abs(prev_momentum) + 1), 1.0)
+                    strength = max(0.75, min(1.0, 0.75 + momentum_strength * 0.15 + deceleration * 0.1))
+                    confidence = 0.85
+                    reason = f"MOMENTUM强势下降({latest_momentum:.4f}<{latest_momentum_ma:.4f})，卖出信号"
+                elif momentum_change < 0:
+                    # 动量下降，均线可能滞后
+                    signal_type = "sell"
+                    momentum_strength = min(abs(momentum_diff) / (abs(latest_momentum_ma) + 1), 1.0)
+                    strength = max(0.7, 0.7 + momentum_strength * 0.2)
+                    confidence = 0.8
+                    reason = f"MOMENTUM下降动能({latest_momentum:.4f})，卖出信号"
+                else:
+                    # 动量在均线下方但上升
+                    signal_type = "sell"
+                    momentum_strength = min(abs(momentum_diff) / (abs(latest_momentum_ma) + 1), 1.0)
+                    strength = max(0.6, 0.6 + momentum_strength * 0.15)
+                    confidence = 0.7
+                    reason = f"MOMENTUM低位反弹({latest_momentum:.4f})，弱卖出信号"
+            
+            # 极值动量信号
+            if 'momentum_std' in self._result.columns:
+                momentum_std = self._result['momentum_std'].iloc[-1]
+                if not pd.isna(momentum_std) and momentum_std > 0:
+                    # 计算动量的标准化程度
+                    z_score = abs(momentum_diff) / momentum_std
+                    
+                    if z_score > 2.0:  # 极端动量
+                        if signal_type == "buy":
+                            strength = min(1.0, strength + 0.1)
+                            confidence = min(1.0, confidence + 0.05)
+                            reason += "（极强动量确认）"
+                        elif signal_type == "sell":
+                            strength = min(1.0, strength + 0.1)
+                            confidence = min(1.0, confidence + 0.05)
+                            reason += "（极弱动量确认）"
+            
+            # 计算MOMENTUM特有的元数据
+            momentum_momentum = "上升" if momentum_change > 0 else "下降" if momentum_change < 0 else "平稳"
+            momentum_ma_momentum = "上升" if momentum_ma_change > 0 else "下降" if momentum_ma_change < 0 else "平稳"
+            
+            # 确定当前MOMENTUM相对强度
+            if latest_momentum > latest_momentum_ma * 1.2:
+                momentum_strength_level = "极强"
+            elif latest_momentum > latest_momentum_ma * 1.1:
+                momentum_strength_level = "强"
+            elif latest_momentum > latest_momentum_ma:
+                momentum_strength_level = "中等偏强"
+            elif latest_momentum > latest_momentum_ma * 0.9:
+                momentum_strength_level = "中等偏弱"
+            elif latest_momentum > latest_momentum_ma * 0.8:
+                momentum_strength_level = "弱"
+            else:
+                momentum_strength_level = "极弱"
+            
+            # 计算动量趋势一致性
+            momentum_trend_consistency = (momentum_change > 0 and momentum_ma_change > 0) or \
+                                       (momentum_change < 0 and momentum_ma_change < 0)
+            
+            metadata = {
+                'momentum_value': latest_momentum,
+                'momentum_ma_value': latest_momentum_ma,
+                'momentum_previous': prev_momentum,
+                'momentum_ma_previous': prev_momentum_ma,
+                'momentum_change': momentum_change,
+                'momentum_ma_change': momentum_ma_change,
+                'momentum_diff': momentum_diff,
+                'momentum_momentum': momentum_momentum,
+                'momentum_ma_momentum': momentum_ma_momentum,
+                'momentum_strength_level': momentum_strength_level,
+                'momentum_cross_up': momentum_cross_up,
+                'momentum_cross_down': momentum_cross_down,
+                'momentum_above_ma': latest_momentum > latest_momentum_ma,
+                'momentum_trend_consistency': momentum_trend_consistency,
+                'momentum_relative_position': latest_momentum / (latest_momentum_ma + 1e-10),
+                'momentum_volatility': self._result.get('momentum_std', pd.Series([0])).iloc[-1] if 'momentum_std' in self._result.columns else 0,
+                'period': self.period
+            }
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"MOMENTUM信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # MOMENTUM需要足够的数据用于计算
+        min_periods = self.period + 5
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
 
 # 类别名
 MOMENTUM = MomentumMomentum

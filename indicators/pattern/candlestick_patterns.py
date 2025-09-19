@@ -41,6 +41,8 @@ class PatterntypePatterns(Enum):
     PIERCING_LINE = "曙光初现"  # 阴线后接长阳线，阳线开盘价低于前日最低价
     MORNING_STAR = "启明星"  # 长阴线+十字星+长阳线
     EVENING_STAR = "黄昏星"  # 长阳线+十字星+长阴线
+    THREE_BLACK_CROWS = "三只乌鸦"  # 三根连续的长阴线，极强看跌持续信号
+    THREE_WHITE_SOLDIERS = "三白兵"  # 三根连续的长阳线，极强看涨持续信号
     HARAMI_BULLISH = "好友反攻"  # 长阴线后第二天以低于前日收盘价开盘，收于前日开盘价之上
     SINGLE_NEEDLE_BOTTOM = "单针探底"  # 长下影线，表明下方有买盘支撑
 
@@ -1550,6 +1552,120 @@ class CandlestickPatterns(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
 
         return min(1.0, base_confidence)
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取K线形态交易信号
+        
+        CandlestickPatterns基类的默认信号实现
+        用于AdvancedCandlestickPatterns等需要实例化基类的场景
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not isinstance(data, pd.DataFrame) or data.empty:
+                return self._get_default_signal_base("数据验证失败")
+            
+            # 检查必需列
+            required_columns = ['open', 'high', 'low', 'close', 'volume']
+            if not all(col in data.columns for col in required_columns):
+                return self._get_default_signal_base("缺少必需列")
+            
+            # 计算形态结果
+            result_data = self.calculate(data)
+            
+            # 分析所有形态列，寻找最强信号
+            pattern_signals = []
+            
+            # 检查各种形态
+            if isinstance(result_data, pd.DataFrame) and len(result_data) > 0:
+                last_row = result_data.iloc[-1]
+                
+                # 看涨形态
+                bullish_patterns = ['hammer', 'morning_star', 'piercing_line', 'engulfing_bullish', 'three_white_soldiers']
+                bullish_count = sum(1 for pattern in bullish_patterns if pattern in last_row and last_row[pattern])
+                
+                # 看跌形态
+                bearish_patterns = ['shooting_star', 'evening_star', 'dark_cloud_cover', 'engulfing_bearish', 'three_black_crows']
+                bearish_count = sum(1 for pattern in bearish_patterns if pattern in last_row and last_row[pattern])
+                
+                # 中性形态
+                neutral_patterns = ['doji']
+                neutral_count = sum(1 for pattern in neutral_patterns if pattern in last_row and last_row[pattern])
+                
+                # 确定主要信号类型
+                if bullish_count > bearish_count and bullish_count > 0:
+                    signal_type = "buy"
+                    strength = min(0.8, 0.5 + bullish_count * 0.1)
+                    confidence = min(0.8, 0.6 + bullish_count * 0.05)
+                    reason = f"检测到{bullish_count}个看涨形态"
+                elif bearish_count > bullish_count and bearish_count > 0:
+                    signal_type = "sell"
+                    strength = min(0.8, 0.5 + bearish_count * 0.1)
+                    confidence = min(0.8, 0.6 + bearish_count * 0.05)
+                    reason = f"检测到{bearish_count}个看跌形态"
+                elif neutral_count > 0:
+                    signal_type = "hold"
+                    strength = 0.3
+                    confidence = 0.5
+                    reason = f"检测到{neutral_count}个中性形态，市场犹豫"
+                else:
+                    return self._get_default_signal_base("未检测到明确形态")
+                
+                # 构建元数据
+                metadata = {
+                    "bullish_patterns": bullish_count,
+                    "bearish_patterns": bearish_count,
+                    "neutral_patterns": neutral_count,
+                    "total_patterns": bullish_count + bearish_count + neutral_count
+                }
+            else:
+                return self._get_default_signal_base("形态计算失败")
+            
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name if hasattr(self, 'name') else 'CandlestickPatterns',
+                    'pattern_category': 'combined',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'mixed_signals',
+                    'requires_confirmation': 'pattern_specific',
+                    'signal_direction': 'bidirectional',
+                    **metadata
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"K线形态信号生成失败: {e}")
+            return self._get_default_signal_base(f"信号生成失败: {str(e)}")
+    
+    def _get_default_signal_base(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号（基类版本）"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name if hasattr(self, 'name') else 'CandlestickPatterns',
+                'pattern_category': 'combined',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'mixed_signals',
+                'requires_confirmation': 'pattern_specific',
+                'signal_direction': 'bidirectional'
+            }
+        }
+
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """抽象基类要求的参数设置方法"""
         for key, value in kwargs.items():
@@ -1581,6 +1697,201 @@ class Doji(CandlestickPatterns):
         self.name = "DOJI"
         self.pattern_type = PatterntypePatterns.DOJI
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取十字星形态交易信号
+        
+        十字星是一种犹豫形态，特征：
+        - 开盘价与收盘价接近（实体很小）
+        - 上下影线明显存在
+        - 表示市场犹豫不决，需要结合趋势背景判断
+        - 在上升趋势中可能是顶部反转信号
+        - 在下降趋势中可能是底部反转信号
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算十字星形态（如果数据不是计算结果）
+            if 'doji' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新十字星信号
+            latest_doji = result_data["doji"].iloc[-1] if "doji" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到十字星形态"
+            metadata = {}
+
+            if latest_doji:
+                # 十字星本身是犹豫信号，需要结合趋势判断方向
+                signal_type = "hold"  # 默认持有，等待确认
+                strength = 0.6
+                confidence = 0.7
+                reason = "检测到十字星形态，市场犹豫信号"
+                
+                # 计算十字星的具体特征
+                latest_open = data["open"].iloc[-1]
+                latest_high = data["high"].iloc[-1]
+                latest_low = data["low"].iloc[-1]
+                latest_close = data["close"].iloc[-1]
+                
+                # 计算形态强度指标
+                body_size = abs(latest_close - latest_open)
+                total_range = latest_high - latest_low
+                upper_shadow = latest_high - max(latest_close, latest_open)
+                lower_shadow = min(latest_close, latest_open) - latest_low
+                
+                # 计算十字星质量得分
+                if total_range > 0:
+                    body_to_range_ratio = body_size / total_range
+                    upper_shadow_ratio = upper_shadow / total_range
+                    lower_shadow_ratio = lower_shadow / total_range
+                    
+                    # 理想十字星特征评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 小实体加分
+                    if body_to_range_ratio < 0.1:
+                        quality_score += 0.3
+                    elif body_to_range_ratio < 0.2:
+                        quality_score += 0.2
+                    
+                    # 均衡影线加分
+                    shadow_balance = 1 - abs(upper_shadow_ratio - lower_shadow_ratio)
+                    quality_score += shadow_balance * 0.2
+                    
+                    # 影线长度加分
+                    if upper_shadow_ratio > 0.2 and lower_shadow_ratio > 0.2:
+                        quality_score += 0.1
+                    
+                    # 根据质量调整信号强度
+                    strength = min(0.9, 0.5 + quality_score * 0.4)
+                    confidence = min(0.9, 0.6 + quality_score * 0.3)
+                    
+                    metadata = {
+                        "pattern_type": "doji",
+                        "body_ratio": round(body_to_range_ratio, 3),
+                        "upper_shadow_ratio": round(upper_shadow_ratio, 3),
+                        "lower_shadow_ratio": round(lower_shadow_ratio, 3),
+                        "shadow_balance": round(shadow_balance, 3),
+                        "quality_score": round(quality_score, 3),
+                        "reversal_potential": "high" if quality_score > 0.8 else "medium"
+                    }
+
+                # 分析趋势环境，判断十字星的具体含义
+                if len(data) >= 5:
+                    recent_closes = data["close"].tail(5)
+                    price_trend = recent_closes.diff().mean()
+                    trend_threshold = 0.1  # 趋势判断阈值
+                    
+                    # 在上升趋势中的十字星 - 可能的顶部反转
+                    if price_trend > trend_threshold:
+                        signal_type = "sell"
+                        strength = min(0.85, strength + 0.2)
+                        confidence = min(0.85, confidence + 0.15)
+                        reason = "上升趋势中检测到十字星，潜在顶部反转信号"
+                        metadata["trend_context"] = "uptrend"
+                        metadata["signal_interpretation"] = "top_reversal"
+                    
+                    # 在下降趋势中的十字星 - 可能的底部反转
+                    elif price_trend < -trend_threshold:
+                        signal_type = "buy"
+                        strength = min(0.85, strength + 0.2)
+                        confidence = min(0.85, confidence + 0.15)
+                        reason = "下降趋势中检测到十字星，潜在底部反转信号"
+                        metadata["trend_context"] = "downtrend"
+                        metadata["signal_interpretation"] = "bottom_reversal"
+                    
+                    # 在横盘中的十字星 - 继续犹豫
+                    else:
+                        signal_type = "hold"
+                        reason = "横盘中检测到十字星，市场持续犹豫"
+                        metadata["trend_context"] = "sideways"
+                        metadata["signal_interpretation"] = "indecision"
+
+                # 检查成交量确认（十字星+放量更可靠）
+                if len(data) >= 2:
+                    current_volume = data["volume"].iloc[-1]
+                    avg_volume = data["volume"].tail(5).mean()
+                    volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                    
+                    if volume_ratio > 1.5:  # 放量确认
+                        strength = min(0.95, strength + 0.1)
+                        confidence = min(0.95, confidence + 0.1)
+                        metadata["volume_confirmation"] = "high"
+                        if signal_type in ["buy", "sell"]:
+                            reason += "，成交量放大确认"
+                    else:
+                        metadata["volume_confirmation"] = "normal"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'indecision',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"十字星形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（十字星至少需要1个数据点，但建议更多用于趋势分析）
+        if len(data) < 1:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'indecision'
+            }
+        }
+
 
 class Hammer(CandlestickPatterns):
     """锤子线形态识别"""
@@ -1594,6 +1905,165 @@ class Hammer(CandlestickPatterns):
         super().__init__(period=period)  # 正确传递period参数
         self.name = "HAMMER"
         self.pattern_type = PatterntypePatterns.HAMMER
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取锤子线形态交易信号
+        
+        锤子线是一种看涨反转形态，特征：
+        - 小实体（开盘价与收盘价接近）
+        - 长下影线（通常是实体的2倍以上）
+        - 几乎无上影线或很短的上影线
+        - 出现在下跌趋势中时具有反转意义
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算锤子线形态（如果数据不是计算结果）
+            if 'hammer' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新锤子线信号
+            latest_hammer = result_data["hammer"].iloc[-1] if "hammer" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到锤子线形态"
+            metadata = {}
+
+            if latest_hammer:
+                # 锤子线通常是看涨反转信号
+                signal_type = "buy"
+                strength = 0.75
+                confidence = 0.8
+                reason = "检测到锤子线形态，看涨反转信号"
+                
+                # 计算锤子线的具体特征
+                latest_open = data["open"].iloc[-1]
+                latest_high = data["high"].iloc[-1]
+                latest_low = data["low"].iloc[-1]
+                latest_close = data["close"].iloc[-1]
+                
+                # 计算形态强度指标
+                body_size = abs(latest_close - latest_open)
+                total_range = latest_high - latest_low
+                lower_shadow = min(latest_open, latest_close) - latest_low
+                upper_shadow = latest_high - max(latest_open, latest_close)
+                
+                # 计算形态质量得分
+                if total_range > 0:
+                    body_ratio = body_size / total_range
+                    lower_shadow_ratio = lower_shadow / total_range if total_range > 0 else 0
+                    upper_shadow_ratio = upper_shadow / total_range if total_range > 0 else 0
+                    
+                    # 理想锤子线特征评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 小实体加分
+                    if body_ratio < 0.3:
+                        quality_score += 0.2
+                    
+                    # 长下影线加分
+                    if lower_shadow_ratio > 0.5:
+                        quality_score += 0.2
+                    
+                    # 短上影线加分
+                    if upper_shadow_ratio < 0.1:
+                        quality_score += 0.1
+                    
+                    # 根据质量调整信号强度
+                    strength = min(0.9, 0.6 + quality_score * 0.3)
+                    confidence = min(0.9, 0.6 + quality_score * 0.3)
+                    
+                    metadata = {
+                        "pattern_type": "hammer",
+                        "body_ratio": round(body_ratio, 3),
+                        "lower_shadow_ratio": round(lower_shadow_ratio, 3),
+                        "upper_shadow_ratio": round(upper_shadow_ratio, 3),
+                        "quality_score": round(quality_score, 3),
+                        "reversal_potential": "high" if quality_score > 0.8 else "medium"
+                    }
+
+            # 检查趋势环境（锤子线在下跌趋势中更有效）
+            if len(data) >= 5:
+                recent_closes = data["close"].tail(5)
+                is_downtrend = (recent_closes.iloc[-1] < recent_closes.iloc[0]) and \
+                              (recent_closes.diff().mean() < 0)
+                
+                if latest_hammer and is_downtrend:
+                    strength = min(0.95, strength + 0.15)
+                    confidence = min(0.95, confidence + 0.1)
+                    reason = "在下跌趋势中检测到锤子线，强烈看涨反转信号"
+                    metadata["trend_context"] = "downtrend"
+                    metadata["signal_strength"] = "enhanced"
+                elif latest_hammer:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_strength"] = "normal"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"锤子线形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（锤子线至少需要1个数据点，但建议更多用于趋势分析）
+        if len(data) < 1:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick'
+            }
+        }
 
 
 class ShootingStar(CandlestickPatterns):
@@ -1609,6 +2079,239 @@ class ShootingStar(CandlestickPatterns):
         self.name = "SHOOTING_STAR"
         self.pattern_type = PatterntypePatterns.SHOOTING_STAR
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取射击之星形态交易信号
+        
+        射击之星形态是一种看跌反转信号，与锤子线完全对称，特征：
+        - 小实体：开盘价和收盘价接近，实体部分相对较小
+        - 长上影线：上影线长度至少是实体的2倍，显示上方抛压
+        - 短下影线：下影线很短或没有，显示下方支撑有限
+        - 位置要求：出现在上涨趋势的高位，预示看跌反转
+        - 与锤子线对称：锤子线是看涨反转（长下影线），射击之星是看跌反转（长上影线）
+        - 确认要求：需要下一个交易日的弱势确认
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算射击之星形态（如果数据不是计算结果）
+            if 'shooting_star' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新射击之星形态信号
+            latest_shooting_star = result_data["shooting_star"].iloc[-1] if "shooting_star" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到射击之星形态"
+            metadata = {}
+
+            # 处理射击之星形态
+            if latest_shooting_star:
+                signal_type = "sell"
+                strength = 0.75  # 射击之星是强看跌反转信号，强度低于锤子线（0.80）
+                confidence = 0.75
+                reason = "检测到射击之星形态，看跌反转信号"
+                
+                # 计算射击之星形态的具体特征
+                if len(data) >= 1:
+                    # 最新K线数据
+                    current_open = data["open"].iloc[-1]
+                    current_high = data["high"].iloc[-1]
+                    current_low = data["low"].iloc[-1]
+                    current_close = data["close"].iloc[-1]
+                    
+                    # 计算实体和影线
+                    body_size = abs(current_close - current_open)
+                    upper_shadow = current_high - max(current_open, current_close)
+                    lower_shadow = min(current_open, current_close) - current_low
+                    total_range = current_high - current_low
+                    
+                    # 射击之星质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    if body_size > 0 and total_range > 0:
+                        # 实体占比评分（实体越小越好）
+                        body_ratio = body_size / total_range
+                        if body_ratio <= 0.2:  # 实体占比小于20%
+                            quality_score += 0.2
+                        elif body_ratio <= 0.3:  # 实体占比小于30%
+                            quality_score += 0.1
+                        
+                        # 上影线长度评分（上影线是关键特征）
+                        if body_size > 0:
+                            upper_shadow_ratio = upper_shadow / body_size
+                            if upper_shadow_ratio >= 3.0:  # 上影线是实体的3倍以上
+                                quality_score += 0.2
+                            elif upper_shadow_ratio >= 2.0:  # 上影线是实体的2倍以上
+                                quality_score += 0.15
+                            elif upper_shadow_ratio >= 1.5:  # 上影线是实体的1.5倍以上
+                                quality_score += 0.1
+                        
+                        # 下影线短度评分（下影线越短越好）
+                        lower_shadow_ratio = lower_shadow / total_range if total_range > 0 else 0
+                        if lower_shadow_ratio <= 0.1:  # 下影线占比小于10%
+                            quality_score += 0.15
+                        elif lower_shadow_ratio <= 0.2:  # 下影线占比小于20%
+                            quality_score += 0.1
+                        elif lower_shadow_ratio <= 0.3:  # 下影线占比小于30%
+                            quality_score += 0.05
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.95, 0.65 + quality_score * 0.25)
+                        confidence = min(0.95, 0.65 + quality_score * 0.25)
+                        
+                        metadata = {
+                            "pattern_type": "shooting_star",
+                            "body_ratio": round(body_ratio, 3),
+                            "upper_shadow_ratio": round(upper_shadow_ratio if 'upper_shadow_ratio' in locals() else 0.0, 3),
+                            "lower_shadow_ratio": round(lower_shadow_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_potential": "high" if quality_score > 0.8 else "medium",
+                            "candle_type": "bearish" if current_close < current_open else "bullish",
+                            "upper_shadow_length": round(upper_shadow, 3),
+                            "lower_shadow_length": round(lower_shadow, 3),
+                            "body_size": round(body_size, 3),
+                            "total_range": round(total_range, 3)
+                        }
+
+            # 检查成交量确认（射击之星+放量更可靠）
+            if signal_type == "sell" and len(data) >= 5:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 明显放量
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 适度放量
+                    strength = min(0.90, strength + 0.05)
+                    confidence = min(0.90, confidence + 0.05)
+                    metadata["volume_confirmation"] = "moderate"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+
+            # 分析趋势背景，增强射击之星形态的信号强度
+            if signal_type == "sell" and len(data) >= 8:
+                recent_closes = data["close"].tail(8)
+                price_trend = recent_closes.diff().mean()
+                
+                # 射击之星在上涨趋势顶部最有效（顶部反转）
+                if price_trend > 0.1:
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    metadata["trend_context"] = "uptrend_reversal"
+                    metadata["signal_enhancement"] = "top_reversal"
+                    reason = reason.replace("看跌反转信号", "强顶部反转信号")
+                
+                # 射击之星在下跌趋势中效果一般（继续下跌信号）
+                elif price_trend < -0.05:
+                    strength = min(0.85, strength + 0.02)
+                    confidence = min(0.85, confidence + 0.02)
+                    metadata["trend_context"] = "downtrend_continuation"
+                    metadata["signal_enhancement"] = "bearish_continuation"
+                    reason = reason.replace("看跌反转信号", "下跌延续信号")
+                
+                else:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期阻力位确认
+            if signal_type == "sell" and len(data) >= 12:
+                # 检查是否在重要阻力位附近
+                recent_highs = data["high"].tail(12)
+                current_high_area = data["high"].iloc[-3:-1].max()  # 前两根K线的最高价区域
+                resistance_levels = recent_highs[recent_highs >= current_high_area * 0.98]  # 2%容忍度
+                
+                if len(resistance_levels) >= 3:  # 多次测试的阻力位
+                    strength = min(0.95, strength + 0.08)
+                    confidence = min(0.95, confidence + 0.08)
+                    metadata["resistance_confirmation"] = "strong"
+                    reason += "，重要阻力位确认"
+                elif len(resistance_levels) >= 2:
+                    metadata["resistance_confirmation"] = "moderate"
+                else:
+                    metadata["resistance_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'bearish_reversal',
+                    'requires_confirmation': 'single_candle',
+                    'signal_direction': 'bearish_only',
+                    'shadow_characteristic': 'long_upper_shadow',
+                    'position_requirement': 'uptrend_top',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"射击之星形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（射击之星形态至少需要1个数据点）
+        if len(data) < 1:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'bearish_reversal',
+                'requires_confirmation': 'single_candle',
+                'signal_direction': 'bearish_only',
+                'shadow_characteristic': 'long_upper_shadow',
+                'position_requirement': 'uptrend_top'
+            }
+        }
+
 
 class Engulfing(CandlestickPatterns):
     """吞没形态识别"""
@@ -1622,6 +2325,272 @@ class Engulfing(CandlestickPatterns):
         super().__init__(period=period)  # 正确传递period参数
         self.name = "ENGULFING"
         self.pattern_type = PatterntypePatterns.ENGULFING_BULLISH  # 修复：使用正确的枚举名称
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取包含形态交易信号
+        
+        包含形态是一种强烈的反转信号，特征：
+        - 看涨包含：前一天阴线被后一天阳线完全包含
+        - 看跌包含：前一天阳线被后一天阴线完全包含
+        - 包含的K线实体更大，显示出明确的趋势反转
+        - 需要至少两个K线来形成包含形态
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算包含形态（如果数据不是计算结果）
+            if 'engulfing_bullish' not in data.columns or 'engulfing_bearish' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新包含形态信号
+            latest_bullish = result_data["engulfing_bullish"].iloc[-1] if "engulfing_bullish" in result_data.columns else False
+            latest_bearish = result_data["engulfing_bearish"].iloc[-1] if "engulfing_bearish" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到包含形态"
+            metadata = {}
+
+            # 处理看涨包含形态
+            if latest_bullish:
+                signal_type = "buy"
+                strength = 0.8
+                confidence = 0.8
+                reason = "检测到看涨包含形态，强烈看涨反转信号"
+                
+                # 计算包含形态的具体特征
+                if len(data) >= 2:
+                    # 前一天（被包含的K线）
+                    prev_open = data["open"].iloc[-2]
+                    prev_high = data["high"].iloc[-2]
+                    prev_low = data["low"].iloc[-2]
+                    prev_close = data["close"].iloc[-2]
+                    
+                    # 当前天（包含的K线）
+                    curr_open = data["open"].iloc[-1]
+                    curr_high = data["high"].iloc[-1]
+                    curr_low = data["low"].iloc[-1]
+                    curr_close = data["close"].iloc[-1]
+                    
+                    # 计算包含程度
+                    prev_body = abs(prev_close - prev_open)
+                    curr_body = abs(curr_close - curr_open)
+                    body_ratio = curr_body / prev_body if prev_body > 0 else 2.0
+                    
+                    # 计算包含覆盖度
+                    prev_range = prev_high - prev_low
+                    curr_range = curr_high - curr_low
+                    range_expansion = curr_range / prev_range if prev_range > 0 else 1.5
+                    
+                    # 包含质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 实体大小比例加分
+                    if body_ratio > 2.0:
+                        quality_score += 0.3
+                    elif body_ratio > 1.5:
+                        quality_score += 0.2
+                    
+                    # 范围扩展加分
+                    if range_expansion > 1.3:
+                        quality_score += 0.2
+                    elif range_expansion > 1.1:
+                        quality_score += 0.1
+                    
+                    # 前一天是阴线加分
+                    if prev_close < prev_open:
+                        quality_score += 0.1
+                    
+                    # 根据质量调整信号强度
+                    strength = min(0.95, 0.7 + quality_score * 0.25)
+                    confidence = min(0.95, 0.7 + quality_score * 0.25)
+                    
+                    metadata = {
+                        "pattern_type": "bullish_engulfing",
+                        "engulfing_type": "bullish",
+                        "body_ratio": round(body_ratio, 3),
+                        "range_expansion": round(range_expansion, 3),
+                        "quality_score": round(quality_score, 3),
+                        "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                        "prev_candle_type": "bearish" if prev_close < prev_open else "bullish"
+                    }
+
+            # 处理看跌包含形态
+            elif latest_bearish:
+                signal_type = "sell"
+                strength = 0.8
+                confidence = 0.8
+                reason = "检测到看跌包含形态，强烈看跌反转信号"
+                
+                # 计算包含形态的具体特征
+                if len(data) >= 2:
+                    # 前一天（被包含的K线）
+                    prev_open = data["open"].iloc[-2]
+                    prev_high = data["high"].iloc[-2]
+                    prev_low = data["low"].iloc[-2]
+                    prev_close = data["close"].iloc[-2]
+                    
+                    # 当前天（包含的K线）
+                    curr_open = data["open"].iloc[-1]
+                    curr_high = data["high"].iloc[-1]
+                    curr_low = data["low"].iloc[-1]
+                    curr_close = data["close"].iloc[-1]
+                    
+                    # 计算包含程度
+                    prev_body = abs(prev_close - prev_open)
+                    curr_body = abs(curr_close - curr_open)
+                    body_ratio = curr_body / prev_body if prev_body > 0 else 2.0
+                    
+                    # 计算包含覆盖度
+                    prev_range = prev_high - prev_low
+                    curr_range = curr_high - curr_low
+                    range_expansion = curr_range / prev_range if prev_range > 0 else 1.5
+                    
+                    # 包含质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 实体大小比例加分
+                    if body_ratio > 2.0:
+                        quality_score += 0.3
+                    elif body_ratio > 1.5:
+                        quality_score += 0.2
+                    
+                    # 范围扩展加分
+                    if range_expansion > 1.3:
+                        quality_score += 0.2
+                    elif range_expansion > 1.1:
+                        quality_score += 0.1
+                    
+                    # 前一天是阳线加分
+                    if prev_close > prev_open:
+                        quality_score += 0.1
+                    
+                    # 根据质量调整信号强度
+                    strength = min(0.95, 0.7 + quality_score * 0.25)
+                    confidence = min(0.95, 0.7 + quality_score * 0.25)
+                    
+                    metadata = {
+                        "pattern_type": "bearish_engulfing",
+                        "engulfing_type": "bearish",
+                        "body_ratio": round(body_ratio, 3),
+                        "range_expansion": round(range_expansion, 3),
+                        "quality_score": round(quality_score, 3),
+                        "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                        "prev_candle_type": "bullish" if prev_close > prev_open else "bearish"
+                    }
+
+            # 检查成交量确认（包含形态+放量更可靠）
+            if signal_type in ["buy", "sell"] and len(data) >= 3:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 放量确认
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 轻微放量
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "medium"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+
+            # 分析趋势背景，增强包含形态的信号强度
+            if signal_type in ["buy", "sell"] and len(data) >= 5:
+                recent_closes = data["close"].tail(5)
+                price_trend = recent_closes.diff().mean()
+                
+                # 看涨包含在下跌趋势中更有效
+                if signal_type == "buy" and price_trend < -0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("看涨反转信号", "强势底部反转信号")
+                
+                # 看跌包含在上升趋势中更有效
+                elif signal_type == "sell" and price_trend > 0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("看跌反转信号", "强势顶部反转信号")
+                
+                else:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'strong_reversal',
+                    'requires_confirmation': 'two_candles',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"包含形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（包含形态至少需要2个数据点）
+        if len(data) < 2:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'strong_reversal',
+                'requires_confirmation': 'two_candles'
+            }
+        }
 
 
 class Harami(CandlestickPatterns):
@@ -1637,6 +2606,289 @@ class Harami(CandlestickPatterns):
         self.name = "HARAMI"
         self.pattern_type = PatterntypePatterns.HARAMI_BULLISH  # 修复：使用正确的枚举名称
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取孕线形态交易信号
+        
+        孕线形态（Harami）是一种温和的反转信号，特征：
+        - 看涨孕线：大阴线后跟小阳线，小阳线实体完全在大阴线实体内
+        - 看跌孕线：大阳线后跟小阴线，小阴线实体完全在大阳线实体内
+        - 子线（第二根K线）的实体要明显小于母线（第一根K线）
+        - 表示市场犹豫，但反转力度比包含形态温和
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算孕线形态（如果数据不是计算结果）
+            if 'harami_bullish' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新孕线形态信号
+            latest_bullish = result_data["harami_bullish"].iloc[-1] if "harami_bullish" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到孕线形态"
+            metadata = {}
+
+            # 处理看涨孕线形态
+            if latest_bullish:
+                signal_type = "buy"
+                strength = 0.7  # 孕线比包含形态温和
+                confidence = 0.7
+                reason = "检测到看涨孕线形态，温和看涨反转信号"
+                
+                # 计算孕线形态的具体特征
+                if len(data) >= 2:
+                    # 母线（前一天，第一根K线）
+                    mother_open = data["open"].iloc[-2]
+                    mother_high = data["high"].iloc[-2]
+                    mother_low = data["low"].iloc[-2]
+                    mother_close = data["close"].iloc[-2]
+                    
+                    # 子线（当前天，第二根K线）
+                    child_open = data["open"].iloc[-1]
+                    child_high = data["high"].iloc[-1]
+                    child_low = data["low"].iloc[-1]
+                    child_close = data["close"].iloc[-1]
+                    
+                    # 计算实体大小
+                    mother_body = abs(mother_close - mother_open)
+                    child_body = abs(child_close - child_open)
+                    body_ratio = child_body / mother_body if mother_body > 0 else 0.5
+                    
+                    # 计算包含程度（子线实体在母线实体内的程度）
+                    mother_body_high = max(mother_open, mother_close)
+                    mother_body_low = min(mother_open, mother_close)
+                    child_body_high = max(child_open, child_close)
+                    child_body_low = min(child_open, child_close)
+                    
+                    # 检查子线是否完全在母线实体内
+                    fully_contained = (child_body_high <= mother_body_high and 
+                                     child_body_low >= mother_body_low)
+                    
+                    # 计算包含度（子线在母线实体中的位置）
+                    if mother_body > 0:
+                        containment_ratio = 1.0 if fully_contained else 0.5
+                    else:
+                        containment_ratio = 0.5
+                    
+                    # 孕线质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 实体大小比例加分（子线越小越好）
+                    if body_ratio < 0.3:
+                        quality_score += 0.3
+                    elif body_ratio < 0.5:
+                        quality_score += 0.2
+                    elif body_ratio < 0.7:
+                        quality_score += 0.1
+                    
+                    # 完全包含加分
+                    if fully_contained:
+                        quality_score += 0.2
+                    
+                    # 母线是阴线加分（看涨孕线）
+                    if mother_close < mother_open:
+                        quality_score += 0.1
+                    
+                    # 子线是阳线加分（看涨孕线）
+                    if child_close > child_open:
+                        quality_score += 0.1
+                    
+                    # 根据质量调整信号强度
+                    strength = min(0.9, 0.6 + quality_score * 0.3)
+                    confidence = min(0.9, 0.6 + quality_score * 0.3)
+                    
+                    metadata = {
+                        "pattern_type": "bullish_harami",
+                        "harami_type": "bullish",
+                        "body_ratio": round(body_ratio, 3),
+                        "containment_ratio": round(containment_ratio, 3),
+                        "fully_contained": fully_contained,
+                        "quality_score": round(quality_score, 3),
+                        "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                        "mother_candle_type": "bearish" if mother_close < mother_open else "bullish",
+                        "child_candle_type": "bullish" if child_close > child_open else "bearish"
+                    }
+
+            # 检查是否有看跌孕线（如果数据中有对应列）
+            if not latest_bullish and "harami_bearish" in result_data.columns:
+                latest_bearish = result_data["harami_bearish"].iloc[-1]
+                
+                if latest_bearish:
+                    signal_type = "sell"
+                    strength = 0.7
+                    confidence = 0.7
+                    reason = "检测到看跌孕线形态，温和看跌反转信号"
+                    
+                    # 计算看跌孕线特征
+                    if len(data) >= 2:
+                        # 母线（前一天，第一根K线）
+                        mother_open = data["open"].iloc[-2]
+                        mother_close = data["close"].iloc[-2]
+                        
+                        # 子线（当前天，第二根K线）
+                        child_open = data["open"].iloc[-1]
+                        child_close = data["close"].iloc[-1]
+                        
+                        # 计算实体大小
+                        mother_body = abs(mother_close - mother_open)
+                        child_body = abs(child_close - child_open)
+                        body_ratio = child_body / mother_body if mother_body > 0 else 0.5
+                        
+                        # 类似的质量评分逻辑
+                        quality_score = 0.5
+                        
+                        if body_ratio < 0.3:
+                            quality_score += 0.3
+                        elif body_ratio < 0.5:
+                            quality_score += 0.2
+                        
+                        # 母线是阳线加分（看跌孕线）
+                        if mother_close > mother_open:
+                            quality_score += 0.1
+                        
+                        # 子线是阴线加分（看跌孕线）
+                        if child_close < child_open:
+                            quality_score += 0.1
+                        
+                        strength = min(0.9, 0.6 + quality_score * 0.3)
+                        confidence = min(0.9, 0.6 + quality_score * 0.3)
+                        
+                        metadata = {
+                            "pattern_type": "bearish_harami",
+                            "harami_type": "bearish",
+                            "body_ratio": round(body_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                            "mother_candle_type": "bullish" if mother_close > mother_open else "bearish",
+                            "child_candle_type": "bearish" if child_close < child_open else "bullish"
+                        }
+
+            # 检查成交量确认（孕线形态+缩量更符合特征）
+            if signal_type in ["buy", "sell"] and len(data) >= 3:
+                current_volume = data["volume"].iloc[-1]
+                prev_volume = data["volume"].iloc[-2]
+                avg_volume = data["volume"].tail(5).mean()
+                
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                volume_shrinkage = prev_volume / current_volume if current_volume > 0 else 1.0
+                
+                # 孕线形态通常伴随缩量
+                if volume_ratio < 0.8:  # 缩量确认
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    metadata["volume_confirmation"] = "shrinkage"
+                    reason += "，成交量萎缩确认"
+                elif volume_ratio < 1.0:  # 轻微缩量
+                    strength = min(0.9, strength + 0.05)
+                    confidence = min(0.9, confidence + 0.05)
+                    metadata["volume_confirmation"] = "slight_shrinkage"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                # 添加量能对比
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+                if volume_shrinkage > 1:
+                    metadata["volume_shrinkage"] = round(volume_shrinkage, 3)
+
+            # 分析趋势背景，增强孕线形态的信号强度
+            if signal_type in ["buy", "sell"] and len(data) >= 5:
+                recent_closes = data["close"].tail(5)
+                price_trend = recent_closes.diff().mean()
+                
+                # 看涨孕线在下跌趋势中更有效
+                if signal_type == "buy" and price_trend < -0.1:
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    metadata["trend_context"] = "downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("温和看涨反转信号", "趋势反转看涨信号")
+                
+                # 看跌孕线在上升趋势中更有效
+                elif signal_type == "sell" and price_trend > 0.1:
+                    strength = min(0.95, strength + 0.1)
+                    confidence = min(0.95, confidence + 0.1)
+                    metadata["trend_context"] = "uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("温和看跌反转信号", "趋势反转看跌信号")
+                
+                else:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'mild_reversal',
+                    'requires_confirmation': 'two_candles',
+                    'strength_comparison': 'milder_than_engulfing',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"孕线形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（孕线形态至少需要2个数据点）
+        if len(data) < 2:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'mild_reversal',
+                'requires_confirmation': 'two_candles',
+                'strength_comparison': 'milder_than_engulfing'
+            }
+        }
+
 
 class PiercingLine(CandlestickPatterns):
     """刺透线形态识别"""
@@ -1650,6 +2902,241 @@ class PiercingLine(CandlestickPatterns):
         super().__init__(period=period)  # 正确传递period参数
         self.name = "PIERCING_LINE"
         self.pattern_type = PatterntypePatterns.PIERCING_LINE
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取刺透线形态交易信号
+        
+        刺透线形态是一种强烈的看涨反转信号，特征：
+        - 第一天：阴线
+        - 第二天：阳线，开盘价低于前一天最低价
+        - 第二天阳线收盘价必须刺透前一天阴线实体的一半以上
+        - 刺透程度越深，信号越强
+        - 通常出现在下跌趋势中，表示强烈的底部反转
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算刺透线形态（如果数据不是计算结果）
+            if 'piercing_line' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新刺透线形态信号
+            latest_piercing = result_data["piercing_line"].iloc[-1] if "piercing_line" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到刺透线形态"
+            metadata = {}
+
+            # 处理刺透线形态
+            if latest_piercing:
+                signal_type = "buy"
+                strength = 0.8  # 刺透线是强反转信号
+                confidence = 0.8
+                reason = "检测到刺透线形态，强烈看涨反转信号"
+                
+                # 计算刺透线形态的具体特征
+                if len(data) >= 2:
+                    # 第一天（阴线）
+                    first_open = data["open"].iloc[-2]
+                    first_high = data["high"].iloc[-2]
+                    first_low = data["low"].iloc[-2]
+                    first_close = data["close"].iloc[-2]
+                    
+                    # 第二天（阳线）
+                    second_open = data["open"].iloc[-1]
+                    second_high = data["high"].iloc[-1]
+                    second_low = data["low"].iloc[-1]
+                    second_close = data["close"].iloc[-1]
+                    
+                    # 计算刺透程度
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    
+                    # 检查刺透程度（阳线收盘价刺透阴线实体的比例）
+                    if first_close < first_open and second_close > second_open:  # 确认阴线+阳线
+                        # 计算刺透比例
+                        first_body_range = first_open - first_close  # 阴线实体范围
+                        piercing_depth = second_close - first_close  # 刺透深度
+                        
+                        if first_body_range > 0:
+                            piercing_ratio = piercing_depth / first_body_range
+                        else:
+                            piercing_ratio = 0.5
+                        
+                        # 计算实体大小比例
+                        body_ratio = second_body / first_body if first_body > 0 else 1.0
+                        
+                        # 刺透线质量评分
+                        quality_score = 0.5  # 基础分
+                        
+                        # 刺透深度加分（刺透越深越好）
+                        if piercing_ratio > 0.7:
+                            quality_score += 0.3
+                        elif piercing_ratio > 0.5:
+                            quality_score += 0.2
+                        elif piercing_ratio > 0.3:
+                            quality_score += 0.1
+                        
+                        # 实体大小比例加分
+                        if body_ratio > 1.2:
+                            quality_score += 0.2
+                        elif body_ratio > 1.0:
+                            quality_score += 0.1
+                        
+                        # 开盘缺口加分（第二天开盘价低于第一天最低价）
+                        if second_open < first_low:
+                            quality_score += 0.2
+                        elif second_open < first_close:
+                            quality_score += 0.1
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.95, 0.7 + quality_score * 0.25)
+                        confidence = min(0.95, 0.7 + quality_score * 0.25)
+                        
+                        metadata = {
+                            "pattern_type": "piercing_line",
+                            "piercing_ratio": round(piercing_ratio, 3),
+                            "body_ratio": round(body_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                            "first_candle_type": "bearish",
+                            "second_candle_type": "bullish",
+                            "gap_down": second_open < first_low,
+                            "piercing_grade": "deep" if piercing_ratio > 0.7 else "standard" if piercing_ratio > 0.5 else "shallow"
+                        }
+
+            # 检查成交量确认（刺透线形态+放量更可靠）
+            if signal_type == "buy" and len(data) >= 3:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 放量确认
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 轻微放量
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "medium"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+
+            # 分析趋势背景，增强刺透线形态的信号强度
+            if signal_type == "buy" and len(data) >= 5:
+                recent_closes = data["close"].tail(5)
+                price_trend = recent_closes.diff().mean()
+                
+                # 刺透线在下跌趋势中更有效
+                if price_trend < -0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("强烈看涨反转信号", "强势底部反转信号")
+                
+                elif price_trend < 0:
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["trend_context"] = "mild_downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                
+                else:
+                    metadata["trend_context"] = "sideways_or_uptrend"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期支撑位确认
+            if signal_type == "buy" and len(data) >= 10:
+                # 检查是否在重要支撑位附近
+                recent_lows = data["low"].tail(10)
+                current_low = data["low"].iloc[-1]
+                support_levels = recent_lows[recent_lows <= current_low * 1.02]  # 2%容忍度
+                
+                if len(support_levels) >= 2:  # 多次测试的支撑位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["support_confirmation"] = "strong"
+                    reason += "，重要支撑位确认"
+                elif len(support_levels) >= 1:
+                    metadata["support_confirmation"] = "moderate"
+                else:
+                    metadata["support_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'strong_bullish_reversal',
+                    'requires_confirmation': 'two_candles',
+                    'signal_direction': 'bullish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"刺透线形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（刺透线形态至少需要2个数据点）
+        if len(data) < 2:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'strong_bullish_reversal',
+                'requires_confirmation': 'two_candles',
+                'signal_direction': 'bullish_only'
+            }
+        }
 
 
 class DarkCloudCover(CandlestickPatterns):
@@ -1665,6 +3152,242 @@ class DarkCloudCover(CandlestickPatterns):
         self.name = "DARK_CLOUD_COVER"
         self.pattern_type = PatterntypePatterns.DARK_CLOUD_COVER
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取乌云盖顶形态交易信号
+        
+        乌云盖顶形态是一种强烈的看跌反转信号，特征：
+        - 第一天：阳线
+        - 第二天：阴线，开盘价高于前一天最高价
+        - 第二天阴线收盘价必须覆盖前一天阳线实体的一半以上
+        - 覆盖程度越深，信号越强
+        - 通常出现在上升趋势中，表示强烈的顶部反转
+        - 与刺透线形态相对应，是其看跌版本
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算乌云盖顶形态（如果数据不是计算结果）
+            if 'dark_cloud_cover' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新乌云盖顶形态信号
+            latest_dark_cloud = result_data["dark_cloud_cover"].iloc[-1] if "dark_cloud_cover" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到乌云盖顶形态"
+            metadata = {}
+
+            # 处理乌云盖顶形态
+            if latest_dark_cloud:
+                signal_type = "sell"
+                strength = 0.8  # 乌云盖顶是强反转信号
+                confidence = 0.8
+                reason = "检测到乌云盖顶形态，强烈看跌反转信号"
+                
+                # 计算乌云盖顶形态的具体特征
+                if len(data) >= 2:
+                    # 第一天（阳线）
+                    first_open = data["open"].iloc[-2]
+                    first_high = data["high"].iloc[-2]
+                    first_low = data["low"].iloc[-2]
+                    first_close = data["close"].iloc[-2]
+                    
+                    # 第二天（阴线）
+                    second_open = data["open"].iloc[-1]
+                    second_high = data["high"].iloc[-1]
+                    second_low = data["low"].iloc[-1]
+                    second_close = data["close"].iloc[-1]
+                    
+                    # 计算覆盖程度
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    
+                    # 检查覆盖程度（阴线收盘价覆盖阳线实体的比例）
+                    if first_close > first_open and second_close < second_open:  # 确认阳线+阴线
+                        # 计算覆盖比例
+                        first_body_range = first_close - first_open  # 阳线实体范围
+                        covering_depth = first_close - second_close  # 覆盖深度
+                        
+                        if first_body_range > 0:
+                            covering_ratio = covering_depth / first_body_range
+                        else:
+                            covering_ratio = 0.5
+                        
+                        # 计算实体大小比例
+                        body_ratio = second_body / first_body if first_body > 0 else 1.0
+                        
+                        # 乌云盖顶质量评分
+                        quality_score = 0.5  # 基础分
+                        
+                        # 覆盖深度加分（覆盖越深越好）
+                        if covering_ratio > 0.7:
+                            quality_score += 0.3
+                        elif covering_ratio > 0.5:
+                            quality_score += 0.2
+                        elif covering_ratio > 0.3:
+                            quality_score += 0.1
+                        
+                        # 实体大小比例加分
+                        if body_ratio > 1.2:
+                            quality_score += 0.2
+                        elif body_ratio > 1.0:
+                            quality_score += 0.1
+                        
+                        # 开盘缺口加分（第二天开盘价高于第一天最高价）
+                        if second_open > first_high:
+                            quality_score += 0.2
+                        elif second_open > first_close:
+                            quality_score += 0.1
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.95, 0.7 + quality_score * 0.25)
+                        confidence = min(0.95, 0.7 + quality_score * 0.25)
+                        
+                        metadata = {
+                            "pattern_type": "dark_cloud_cover",
+                            "covering_ratio": round(covering_ratio, 3),
+                            "body_ratio": round(body_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_strength": "high" if quality_score > 0.8 else "medium",
+                            "first_candle_type": "bullish",
+                            "second_candle_type": "bearish",
+                            "gap_up": second_open > first_high,
+                            "covering_grade": "deep" if covering_ratio > 0.7 else "standard" if covering_ratio > 0.5 else "shallow"
+                        }
+
+            # 检查成交量确认（乌云盖顶形态+放量更可靠）
+            if signal_type == "sell" and len(data) >= 3:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 放量确认
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 轻微放量
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "medium"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+
+            # 分析趋势背景，增强乌云盖顶形态的信号强度
+            if signal_type == "sell" and len(data) >= 5:
+                recent_closes = data["close"].tail(5)
+                price_trend = recent_closes.diff().mean()
+                
+                # 乌云盖顶在上升趋势中更有效
+                if price_trend > 0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("强烈看跌反转信号", "强势顶部反转信号")
+                
+                elif price_trend > 0:
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["trend_context"] = "mild_uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                
+                else:
+                    metadata["trend_context"] = "sideways_or_downtrend"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期阻力位确认
+            if signal_type == "sell" and len(data) >= 10:
+                # 检查是否在重要阻力位附近
+                recent_highs = data["high"].tail(10)
+                current_high = data["high"].iloc[-1]
+                resistance_levels = recent_highs[recent_highs >= current_high * 0.98]  # 2%容忍度
+                
+                if len(resistance_levels) >= 2:  # 多次测试的阻力位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["resistance_confirmation"] = "strong"
+                    reason += "，重要阻力位确认"
+                elif len(resistance_levels) >= 1:
+                    metadata["resistance_confirmation"] = "moderate"
+                else:
+                    metadata["resistance_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'strong_bearish_reversal',
+                    'requires_confirmation': 'two_candles',
+                    'signal_direction': 'bearish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"乌云盖顶形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（乌云盖顶形态至少需要2个数据点）
+        if len(data) < 2:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'strong_bearish_reversal',
+                'requires_confirmation': 'two_candles',
+                'signal_direction': 'bearish_only'
+            }
+        }
+
 
 class MorningStar(CandlestickPatterns):
     """启明星形态识别"""
@@ -1678,6 +3401,257 @@ class MorningStar(CandlestickPatterns):
         super().__init__(period=period)  # 正确传递period参数
         self.name = "MORNING_STAR"
         self.pattern_type = PatterntypePatterns.MORNING_STAR
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取启明星形态交易信号
+        
+        启明星形态是一种强烈的看涨反转信号，特征：
+        - 第一天：阴线（下跌趋势的延续）
+        - 第二天：十字星或小实体K线，向下跳空开盘（市场犹豫）
+        - 第三天：阳线，向上跳空开盘，收盘价深入第一天阴线实体
+        - 三根K线形成明显的"V"形反转结构
+        - 第二天的跳空是关键特征，表示趋势的犹豫和可能反转
+        - 第三天的向上突破确认了反转的有效性
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算启明星形态（如果数据不是计算结果）
+            if 'morning_star' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新启明星形态信号
+            latest_morning_star = result_data["morning_star"].iloc[-1] if "morning_star" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到启明星形态"
+            metadata = {}
+
+            # 处理启明星形态
+            if latest_morning_star:
+                signal_type = "buy"
+                strength = 0.85  # 启明星是强反转信号，比双K线形态稍强
+                confidence = 0.85
+                reason = "检测到启明星形态，强烈看涨反转信号"
+                
+                # 计算启明星形态的具体特征
+                if len(data) >= 3:
+                    # 第一天（阴线）
+                    first_open = data["open"].iloc[-3]
+                    first_high = data["high"].iloc[-3]
+                    first_low = data["low"].iloc[-3]
+                    first_close = data["close"].iloc[-3]
+                    
+                    # 第二天（十字星/小实体）
+                    second_open = data["open"].iloc[-2]
+                    second_high = data["high"].iloc[-2]
+                    second_low = data["low"].iloc[-2]
+                    second_close = data["close"].iloc[-2]
+                    
+                    # 第三天（阳线）
+                    third_open = data["open"].iloc[-1]
+                    third_high = data["high"].iloc[-1]
+                    third_low = data["low"].iloc[-1]
+                    third_close = data["close"].iloc[-1]
+                    
+                    # 计算实体大小
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    third_body = abs(third_close - third_open)
+                    
+                    # 启明星质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 检查基本形态特征
+                    if first_close < first_open and third_close > third_open:  # 确认阴线+阳线
+                        
+                        # 跳空特征评分
+                        gap_down = second_high < first_low  # 向下跳空
+                        gap_up = third_low > second_high    # 向上跳空
+                        
+                        if gap_down and gap_up:
+                            quality_score += 0.3  # 双跳空是理想形态
+                        elif gap_down or gap_up:
+                            quality_score += 0.15  # 单跳空也有效
+                        
+                        # 中间K线特征评分（十字星或小实体）
+                        if first_body > 0:
+                            middle_body_ratio = second_body / first_body
+                        else:
+                            middle_body_ratio = 0.5
+                            
+                        if middle_body_ratio < 0.3:  # 中间K线实体很小
+                            quality_score += 0.2
+                        elif middle_body_ratio < 0.5:  # 中间K线实体较小
+                            quality_score += 0.1
+                        
+                        # 第三天阳线穿透深度评分
+                        if first_body > 0:
+                            penetration_ratio = (third_close - first_close) / first_body
+                        else:
+                            penetration_ratio = 0.5
+                            
+                        if penetration_ratio > 0.5:  # 深度穿透第一天实体
+                            quality_score += 0.2
+                        elif penetration_ratio > 0.3:  # 适度穿透
+                            quality_score += 0.1
+                        
+                        # 实体大小平衡评分
+                        if first_body > 0 and third_body > 0:
+                            body_balance = min(first_body, third_body) / max(first_body, third_body)
+                            if body_balance > 0.7:  # 实体大小相对平衡
+                                quality_score += 0.1
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.95, 0.75 + quality_score * 0.2)
+                        confidence = min(0.95, 0.75 + quality_score * 0.2)
+                        
+                        metadata = {
+                            "pattern_type": "morning_star",
+                            "gap_down": gap_down,
+                            "gap_up": gap_up,
+                            "middle_body_ratio": round(middle_body_ratio, 3),
+                            "penetration_ratio": round(penetration_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_strength": "high" if quality_score > 0.9 else "medium",
+                            "first_candle_type": "bearish",
+                            "middle_candle_type": "doji_or_small",
+                            "third_candle_type": "bullish",
+                            "pattern_grade": "perfect" if gap_down and gap_up else "standard"
+                        }
+
+            # 检查成交量确认（启明星形态+放量更可靠）
+            if signal_type == "buy" and len(data) >= 4:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 放量确认
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 轻微放量
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "medium"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+
+            # 分析趋势背景，增强启明星形态的信号强度
+            if signal_type == "buy" and len(data) >= 6:
+                recent_closes = data["close"].tail(6)
+                price_trend = recent_closes.diff().mean()
+                
+                # 启明星在下跌趋势中更有效
+                if price_trend < -0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("强烈看涨反转信号", "强势底部反转信号")
+                
+                elif price_trend < 0:
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["trend_context"] = "mild_downtrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                
+                else:
+                    metadata["trend_context"] = "sideways_or_uptrend"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期支撑位确认
+            if signal_type == "buy" and len(data) >= 10:
+                # 检查是否在重要支撑位附近
+                recent_lows = data["low"].tail(10)
+                current_low = data["low"].iloc[-2]  # 使用中间K线的最低价
+                support_levels = recent_lows[recent_lows <= current_low * 1.02]  # 2%容忍度
+                
+                if len(support_levels) >= 2:  # 多次测试的支撑位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["support_confirmation"] = "strong"
+                    reason += "，重要支撑位确认"
+                elif len(support_levels) >= 1:
+                    metadata["support_confirmation"] = "moderate"
+                else:
+                    metadata["support_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'strong_bullish_reversal',
+                    'requires_confirmation': 'three_candles',
+                    'signal_direction': 'bullish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"启明星形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（启明星形态至少需要3个数据点）
+        if len(data) < 3:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'strong_bullish_reversal',
+                'requires_confirmation': 'three_candles',
+                'signal_direction': 'bullish_only'
+            }
+        }
 
 
 class EveningStar(CandlestickPatterns):
@@ -1693,6 +3667,258 @@ class EveningStar(CandlestickPatterns):
         self.name = "EVENING_STAR"
         self.pattern_type = PatterntypePatterns.EVENING_STAR
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取黄昏星形态交易信号
+        
+        黄昏星形态是一种强烈的看跌反转信号，特征：
+        - 第一天：阳线（上涨趋势的延续）
+        - 第二天：十字星或小实体K线，向上跳空开盘（市场犹豫）
+        - 第三天：阴线，向下跳空开盘，收盘价深入第一天阳线实体
+        - 三根K线形成明显的"倒V"形反转结构
+        - 第二天的跳空是关键特征，表示趋势的犹豫和可能反转
+        - 第三天的向下突破确认了反转的有效性
+        - 与启明星形态形成完美的多空对称体系
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算黄昏星形态（如果数据不是计算结果）
+            if 'evening_star' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 获取最新黄昏星形态信号
+            latest_evening_star = result_data["evening_star"].iloc[-1] if "evening_star" in result_data.columns else False
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到黄昏星形态"
+            metadata = {}
+
+            # 处理黄昏星形态
+            if latest_evening_star:
+                signal_type = "sell"
+                strength = 0.85  # 黄昏星是强反转信号，与启明星相同强度
+                confidence = 0.85
+                reason = "检测到黄昏星形态，强烈看跌反转信号"
+                
+                # 计算黄昏星形态的具体特征
+                if len(data) >= 3:
+                    # 第一天（阳线）
+                    first_open = data["open"].iloc[-3]
+                    first_high = data["high"].iloc[-3]
+                    first_low = data["low"].iloc[-3]
+                    first_close = data["close"].iloc[-3]
+                    
+                    # 第二天（十字星/小实体）
+                    second_open = data["open"].iloc[-2]
+                    second_high = data["high"].iloc[-2]
+                    second_low = data["low"].iloc[-2]
+                    second_close = data["close"].iloc[-2]
+                    
+                    # 第三天（阴线）
+                    third_open = data["open"].iloc[-1]
+                    third_high = data["high"].iloc[-1]
+                    third_low = data["low"].iloc[-1]
+                    third_close = data["close"].iloc[-1]
+                    
+                    # 计算实体大小
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    third_body = abs(third_close - third_open)
+                    
+                    # 黄昏星质量评分
+                    quality_score = 0.5  # 基础分
+                    
+                    # 检查基本形态特征
+                    if first_close > first_open and third_close < third_open:  # 确认阳线+阴线
+                        
+                        # 跳空特征评分
+                        gap_up = second_low > first_high    # 向上跳空
+                        gap_down = third_high < second_low  # 向下跳空
+                        
+                        if gap_up and gap_down:
+                            quality_score += 0.3  # 双跳空是理想形态
+                        elif gap_up or gap_down:
+                            quality_score += 0.15  # 单跳空也有效
+                        
+                        # 中间K线特征评分（十字星或小实体）
+                        if first_body > 0:
+                            middle_body_ratio = second_body / first_body
+                        else:
+                            middle_body_ratio = 0.5
+                            
+                        if middle_body_ratio < 0.3:  # 中间K线实体很小
+                            quality_score += 0.2
+                        elif middle_body_ratio < 0.5:  # 中间K线实体较小
+                            quality_score += 0.1
+                        
+                        # 第三天阴线穿透深度评分
+                        if first_body > 0:
+                            penetration_ratio = (first_close - third_close) / first_body
+                        else:
+                            penetration_ratio = 0.5
+                            
+                        if penetration_ratio > 0.5:  # 深度穿透第一天实体
+                            quality_score += 0.2
+                        elif penetration_ratio > 0.3:  # 适度穿透
+                            quality_score += 0.1
+                        
+                        # 实体大小平衡评分
+                        if first_body > 0 and third_body > 0:
+                            body_balance = min(first_body, third_body) / max(first_body, third_body)
+                            if body_balance > 0.7:  # 实体大小相对平衡
+                                quality_score += 0.1
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.95, 0.75 + quality_score * 0.2)
+                        confidence = min(0.95, 0.75 + quality_score * 0.2)
+                        
+                        metadata = {
+                            "pattern_type": "evening_star",
+                            "gap_up": gap_up,
+                            "gap_down": gap_down,
+                            "middle_body_ratio": round(middle_body_ratio, 3),
+                            "penetration_ratio": round(penetration_ratio, 3),
+                            "quality_score": round(quality_score, 3),
+                            "reversal_strength": "high" if quality_score > 0.9 else "medium",
+                            "first_candle_type": "bullish",
+                            "middle_candle_type": "doji_or_small",
+                            "third_candle_type": "bearish",
+                            "pattern_grade": "perfect" if gap_up and gap_down else "standard"
+                        }
+
+            # 检查成交量确认（黄昏星形态+放量更可靠）
+            if signal_type == "sell" and len(data) >= 4:
+                current_volume = data["volume"].iloc[-1]
+                avg_volume = data["volume"].tail(5).mean()
+                volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_ratio > 1.5:  # 放量确认
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["volume_confirmation"] = "high"
+                    reason += "，成交量放大确认"
+                elif volume_ratio > 1.2:  # 轻微放量
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "medium"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["volume_ratio"] = round(volume_ratio, 3)
+
+            # 分析趋势背景，增强黄昏星形态的信号强度
+            if signal_type == "sell" and len(data) >= 6:
+                recent_closes = data["close"].tail(6)
+                price_trend = recent_closes.diff().mean()
+                
+                # 黄昏星在上涨趋势中更有效
+                if price_trend > 0.1:
+                    strength = min(0.98, strength + 0.1)
+                    confidence = min(0.98, confidence + 0.1)
+                    metadata["trend_context"] = "uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                    reason = reason.replace("强烈看跌反转信号", "强势顶部反转信号")
+                
+                elif price_trend > 0:
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["trend_context"] = "mild_uptrend"
+                    metadata["signal_enhancement"] = "trend_reversal"
+                
+                else:
+                    metadata["trend_context"] = "sideways_or_downtrend"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期阻力位确认
+            if signal_type == "sell" and len(data) >= 10:
+                # 检查是否在重要阻力位附近
+                recent_highs = data["high"].tail(10)
+                current_high = data["high"].iloc[-2]  # 使用中间K线的最高价
+                resistance_levels = recent_highs[recent_highs >= current_high * 0.98]  # 2%容忍度
+                
+                if len(resistance_levels) >= 2:  # 多次测试的阻力位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["resistance_confirmation"] = "strong"
+                    reason += "，重要阻力位确认"
+                elif len(resistance_levels) >= 1:
+                    metadata["resistance_confirmation"] = "moderate"
+                else:
+                    metadata["resistance_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'reversal',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'strong_bearish_reversal',
+                    'requires_confirmation': 'three_candles',
+                    'signal_direction': 'bearish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"黄昏星形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（黄昏星形态至少需要3个数据点）
+        if len(data) < 3:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'reversal',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'strong_bearish_reversal',
+                'requires_confirmation': 'three_candles',
+                'signal_direction': 'bearish_only'
+            }
+        }
+
 
 class ThreeBlackCrows(CandlestickPatterns):
     """三只乌鸦形态识别"""
@@ -1707,6 +3933,292 @@ class ThreeBlackCrows(CandlestickPatterns):
         self.name = "THREE_BLACK_CROWS"
         self.pattern_type = PatterntypePatterns.THREE_BLACK_CROWS
 
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取三只乌鸦形态交易信号
+        
+        三只乌鸦形态是一种极强的看跌持续信号，特征：
+        - 三根连续的长阴线，每一根都创新低
+        - 每根阴线的开盘价都在前一根阴线的实体内
+        - 每根阴线的收盘价都低于前一根阴线的收盘价
+        - 实体较大，影线较短，显示强烈的卖压
+        - 成交量通常逐步放大，确认卖出压力
+        - 通常出现在上涨趋势的顶部或下跌趋势的延续中
+        - 比黄昏星更强的看跌信号，预示持续下跌
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算三只乌鸦形态（如果数据不是计算结果）
+            if 'three_black_crows' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 查找三只乌鸦相关列（可能有不同的命名）
+            crow_column = None
+            possible_columns = ['three_black_crows', 'black_crows', 'three_crows']
+            for col in possible_columns:
+                if col in result_data.columns:
+                    crow_column = col
+                    break
+
+            # 获取最新三只乌鸦形态信号
+            latest_three_crows = False
+            if crow_column:
+                latest_three_crows = result_data[crow_column].iloc[-1]
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到三只乌鸦形态"
+            metadata = {}
+
+            # 处理三只乌鸦形态
+            if latest_three_crows:
+                signal_type = "sell"
+                strength = 0.90  # 三只乌鸦是极强看跌信号，比黄昏星更强
+                confidence = 0.90
+                reason = "检测到三只乌鸦形态，极强看跌持续信号"
+                
+                # 计算三只乌鸦形态的具体特征
+                if len(data) >= 3:
+                    # 第一只乌鸦（第一根阴线）
+                    first_open = data["open"].iloc[-3]
+                    first_high = data["high"].iloc[-3]
+                    first_low = data["low"].iloc[-3]
+                    first_close = data["close"].iloc[-3]
+                    
+                    # 第二只乌鸦（第二根阴线）
+                    second_open = data["open"].iloc[-2]
+                    second_high = data["high"].iloc[-2]
+                    second_low = data["low"].iloc[-2]
+                    second_close = data["close"].iloc[-2]
+                    
+                    # 第三只乌鸦（第三根阴线）
+                    third_open = data["open"].iloc[-1]
+                    third_high = data["high"].iloc[-1]
+                    third_low = data["low"].iloc[-1]
+                    third_close = data["close"].iloc[-1]
+                    
+                    # 计算实体大小
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    third_body = abs(third_close - third_open)
+                    
+                    # 三只乌鸦质量评分
+                    quality_score = 0.6  # 基础分较高，因为是强形态
+                    
+                    # 检查基本形态特征（三根阴线）
+                    is_bearish_candles = (first_close < first_open and 
+                                        second_close < second_open and 
+                                        third_close < third_open)
+                    
+                    if is_bearish_candles:
+                        
+                        # 递减低点评分（每根K线创新低）
+                        decreasing_lows = (second_low < first_low and third_low < second_low)
+                        decreasing_closes = (second_close < first_close and third_close < second_close)
+                        
+                        if decreasing_lows and decreasing_closes:
+                            quality_score += 0.2  # 标准递减模式
+                        elif decreasing_closes:
+                            quality_score += 0.1  # 至少收盘价递减
+                        
+                        # 开盘价位置评分（在前一根实体内开盘）
+                        second_open_in_first_body = (min(first_open, first_close) <= second_open <= max(first_open, first_close))
+                        third_open_in_second_body = (min(second_open, second_close) <= third_open <= max(second_open, second_close))
+                        
+                        if second_open_in_first_body and third_open_in_second_body:
+                            quality_score += 0.15  # 理想的开盘位置
+                        elif second_open_in_first_body or third_open_in_second_body:
+                            quality_score += 0.08  # 部分符合
+                        
+                        # 实体大小评分（长阴线特征）
+                        avg_body = (first_body + second_body + third_body) / 3
+                        if first_body > 0 and second_body > 0 and third_body > 0:
+                            body_consistency = min(first_body, second_body, third_body) / max(first_body, second_body, third_body)
+                            
+                            if body_consistency > 0.7:  # 实体大小相对一致
+                                quality_score += 0.1
+                            
+                            # 检查实体是否足够大（相对于价格范围）
+                            avg_price = (first_close + second_close + third_close) / 3
+                            if avg_body / avg_price > 0.02:  # 实体大于平均价格的2%
+                                quality_score += 0.1
+                        
+                        # 影线长度评分（短影线更佳）
+                        first_upper_shadow = first_high - max(first_open, first_close)
+                        first_lower_shadow = min(first_open, first_close) - first_low
+                        second_upper_shadow = second_high - max(second_open, second_close)
+                        second_lower_shadow = min(second_open, second_close) - second_low
+                        third_upper_shadow = third_high - max(third_open, third_close)
+                        third_lower_shadow = min(third_open, third_close) - third_low
+                        
+                        avg_upper_shadow = (first_upper_shadow + second_upper_shadow + third_upper_shadow) / 3
+                        
+                        if avg_body > 0 and avg_upper_shadow / avg_body < 0.3:  # 上影线较短
+                            quality_score += 0.05
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.98, 0.80 + quality_score * 0.15)
+                        confidence = min(0.98, 0.80 + quality_score * 0.15)
+                        
+                        metadata = {
+                            "pattern_type": "three_black_crows",
+                            "decreasing_lows": decreasing_lows,
+                            "decreasing_closes": decreasing_closes,
+                            "second_open_in_first_body": second_open_in_first_body,
+                            "third_open_in_second_body": third_open_in_second_body,
+                            "body_consistency": round(body_consistency if 'body_consistency' in locals() else 0.0, 3),
+                            "quality_score": round(quality_score, 3),
+                            "pattern_strength": "extreme" if quality_score > 0.9 else "high",
+                            "first_candle_type": "strong_bearish",
+                            "second_candle_type": "strong_bearish", 
+                            "third_candle_type": "strong_bearish",
+                            "pattern_grade": "perfect" if quality_score > 0.9 else "standard"
+                        }
+
+            # 检查成交量确认（三只乌鸦形态+递增成交量更可靠）
+            if signal_type == "sell" and len(data) >= 5:
+                volume_1 = data["volume"].iloc[-3]  # 第一只乌鸦
+                volume_2 = data["volume"].iloc[-2]  # 第二只乌鸦  
+                volume_3 = data["volume"].iloc[-1]  # 第三只乌鸦
+                avg_volume = data["volume"].tail(7).mean()  # 前7天平均
+                
+                # 检查成交量递增趋势
+                volume_increasing = volume_2 > volume_1 and volume_3 > volume_2
+                high_volume_ratio = volume_3 / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_increasing and high_volume_ratio > 1.5:  # 递增且放量
+                    strength = min(0.98, strength + 0.08)
+                    confidence = min(0.98, confidence + 0.08)
+                    metadata["volume_confirmation"] = "strong_increasing"
+                    reason += "，成交量递增放大确认"
+                elif volume_increasing:  # 仅递增
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "increasing"
+                elif high_volume_ratio > 1.3:  # 仅放量
+                    strength = min(0.95, strength + 0.03)
+                    confidence = min(0.95, confidence + 0.03)
+                    metadata["volume_confirmation"] = "high"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["final_volume_ratio"] = round(high_volume_ratio, 3)
+                metadata["volume_trend"] = "increasing" if volume_increasing else "normal"
+
+            # 分析趋势背景，增强三只乌鸦形态的信号强度
+            if signal_type == "sell" and len(data) >= 8:
+                recent_closes = data["close"].tail(8)
+                price_trend = recent_closes.diff().mean()
+                
+                # 三只乌鸦在上涨趋势顶部更有效（顶部反转）
+                if price_trend > 0.1:
+                    strength = min(0.98, strength + 0.08)
+                    confidence = min(0.98, confidence + 0.08)
+                    metadata["trend_context"] = "uptrend_reversal"
+                    metadata["signal_enhancement"] = "top_reversal"
+                    reason = reason.replace("极强看跌持续信号", "极强顶部反转信号")
+                
+                # 三只乌鸦在下跌趋势中作为持续信号也很强
+                elif price_trend < -0.05:
+                    strength = min(0.96, strength + 0.05)
+                    confidence = min(0.96, confidence + 0.05)
+                    metadata["trend_context"] = "downtrend_continuation"
+                    metadata["signal_enhancement"] = "bearish_continuation"
+                    reason = reason.replace("极强看跌持续信号", "极强下跌延续信号")
+                
+                else:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期阻力位确认
+            if signal_type == "sell" and len(data) >= 12:
+                # 检查是否在重要阻力位附近
+                recent_highs = data["high"].tail(12)
+                current_high_area = data["high"].iloc[-3:-1].max()  # 前两根K线的最高价区域
+                resistance_levels = recent_highs[recent_highs >= current_high_area * 0.98]  # 2%容忍度
+                
+                if len(resistance_levels) >= 3:  # 多次测试的阻力位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["resistance_confirmation"] = "strong"
+                    reason += "，重要阻力位确认"
+                elif len(resistance_levels) >= 2:
+                    metadata["resistance_confirmation"] = "moderate"
+                else:
+                    metadata["resistance_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'continuation',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'extreme_bearish_continuation',
+                    'requires_confirmation': 'three_candles',
+                    'signal_direction': 'bearish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"三只乌鸦形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（三只乌鸦形态至少需要3个数据点）
+        if len(data) < 3:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'continuation',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'extreme_bearish_continuation',
+                'requires_confirmation': 'three_candles',
+                'signal_direction': 'bearish_only'
+            }
+        }
+
 
 class ThreeWhiteSoldiers(CandlestickPatterns):
     """三个白武士形态识别"""
@@ -1720,3 +4232,289 @@ class ThreeWhiteSoldiers(CandlestickPatterns):
         super().__init__(period=period)  # 正确传递period参数
         self.name = "THREE_WHITE_SOLDIERS"
         self.pattern_type = PatterntypePatterns.THREE_WHITE_SOLDIERS
+
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        获取三白兵形态交易信号
+        
+        三白兵形态是一种极强的看涨持续信号，与三只乌鸦完全对称，特征：
+        - 三根连续的长阳线，每一根都创新高
+        - 每根阳线的开盘价都在前一根阳线的实体内
+        - 每根阳线的收盘价都高于前一根阳线的收盘价
+        - 实体较大，影线较短，显示强烈的买压
+        - 成交量通常逐步放大，确认买入压力
+        - 通常出现在下跌趋势的底部或上涨趋势的延续中
+        - 与三只乌鸦相对，是极强的看涨信号，预示持续上涨
+
+        Args:
+            data: 包含OHLCV数据的DataFrame
+
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+
+            # 计算三白兵形态（如果数据不是计算结果）
+            if 'three_white_soldiers' not in data.columns:
+                result_data = self.calculate(data)
+            else:
+                result_data = data
+
+            # 查找三白兵相关列（可能有不同的命名）
+            soldiers_column = None
+            possible_columns = ['three_white_soldiers', 'white_soldiers', 'three_soldiers']
+            for col in possible_columns:
+                if col in result_data.columns:
+                    soldiers_column = col
+                    break
+
+            # 获取最新三白兵形态信号
+            latest_three_soldiers = False
+            if soldiers_column:
+                latest_three_soldiers = result_data[soldiers_column].iloc[-1]
+
+            # 初始化信号参数
+            signal_type = "hold"
+            strength = 0.5
+            confidence = 0.6
+            reason = "未检测到三白兵形态"
+            metadata = {}
+
+            # 处理三白兵形态
+            if latest_three_soldiers:
+                signal_type = "buy"
+                strength = 0.90  # 三白兵是极强看涨信号，与三只乌鸦对称
+                confidence = 0.90
+                reason = "检测到三白兵形态，极强看涨持续信号"
+                
+                # 计算三白兵形态的具体特征
+                if len(data) >= 3:
+                    # 第一个白兵（第一根阳线）
+                    first_open = data["open"].iloc[-3]
+                    first_high = data["high"].iloc[-3]
+                    first_low = data["low"].iloc[-3]
+                    first_close = data["close"].iloc[-3]
+                    
+                    # 第二个白兵（第二根阳线）
+                    second_open = data["open"].iloc[-2]
+                    second_high = data["high"].iloc[-2]
+                    second_low = data["low"].iloc[-2]
+                    second_close = data["close"].iloc[-2]
+                    
+                    # 第三个白兵（第三根阳线）
+                    third_open = data["open"].iloc[-1]
+                    third_high = data["high"].iloc[-1]
+                    third_low = data["low"].iloc[-1]
+                    third_close = data["close"].iloc[-1]
+                    
+                    # 计算实体大小
+                    first_body = abs(first_close - first_open)
+                    second_body = abs(second_close - second_open)
+                    third_body = abs(third_close - third_open)
+                    
+                    # 三白兵质量评分
+                    quality_score = 0.6  # 基础分较高，因为是强形态
+                    
+                    # 检查基本形态特征（三根阳线）
+                    is_bullish_candles = (first_close > first_open and 
+                                        second_close > second_open and 
+                                        third_close > third_open)
+                    
+                    if is_bullish_candles:
+                        
+                        # 递增高点评分（每根K线创新高）
+                        increasing_highs = (second_high > first_high and third_high > second_high)
+                        increasing_closes = (second_close > first_close and third_close > second_close)
+                        
+                        if increasing_highs and increasing_closes:
+                            quality_score += 0.2  # 标准递增模式
+                        elif increasing_closes:
+                            quality_score += 0.1  # 至少收盘价递增
+                        
+                        # 开盘价位置评分（在前一根实体内开盘）
+                        second_open_in_first_body = (min(first_open, first_close) <= second_open <= max(first_open, first_close))
+                        third_open_in_second_body = (min(second_open, second_close) <= third_open <= max(second_open, second_close))
+                        
+                        if second_open_in_first_body and third_open_in_second_body:
+                            quality_score += 0.15  # 理想的开盘位置
+                        elif second_open_in_first_body or third_open_in_second_body:
+                            quality_score += 0.08  # 部分符合
+                        
+                        # 实体大小评分（长阳线特征）
+                        avg_body = (first_body + second_body + third_body) / 3
+                        if first_body > 0 and second_body > 0 and third_body > 0:
+                            body_consistency = min(first_body, second_body, third_body) / max(first_body, second_body, third_body)
+                            
+                            if body_consistency > 0.7:  # 实体大小相对一致
+                                quality_score += 0.1
+                            
+                            # 检查实体是否足够大（相对于价格范围）
+                            avg_price = (first_close + second_close + third_close) / 3
+                            if avg_body / avg_price > 0.02:  # 实体大于平均价格的2%
+                                quality_score += 0.1
+                        
+                        # 影线长度评分（短影线更佳）
+                        first_lower_shadow = min(first_open, first_close) - first_low
+                        first_upper_shadow = first_high - max(first_open, first_close)
+                        second_lower_shadow = min(second_open, second_close) - second_low
+                        second_upper_shadow = second_high - max(second_open, second_close)
+                        third_lower_shadow = min(third_open, third_close) - third_low
+                        third_upper_shadow = third_high - max(third_open, third_close)
+                        
+                        avg_lower_shadow = (first_lower_shadow + second_lower_shadow + third_lower_shadow) / 3
+                        
+                        if avg_body > 0 and avg_lower_shadow / avg_body < 0.3:  # 下影线较短
+                            quality_score += 0.05
+                        
+                        # 根据质量调整信号强度
+                        strength = min(0.98, 0.80 + quality_score * 0.15)
+                        confidence = min(0.98, 0.80 + quality_score * 0.15)
+                        
+                        metadata = {
+                            "pattern_type": "three_white_soldiers",
+                            "increasing_highs": increasing_highs,
+                            "increasing_closes": increasing_closes,
+                            "second_open_in_first_body": second_open_in_first_body,
+                            "third_open_in_second_body": third_open_in_second_body,
+                            "body_consistency": round(body_consistency if 'body_consistency' in locals() else 0.0, 3),
+                            "quality_score": round(quality_score, 3),
+                            "pattern_strength": "extreme" if quality_score > 0.9 else "high",
+                            "first_candle_type": "strong_bullish",
+                            "second_candle_type": "strong_bullish", 
+                            "third_candle_type": "strong_bullish",
+                            "pattern_grade": "perfect" if quality_score > 0.9 else "standard"
+                        }
+
+            # 检查成交量确认（三白兵形态+递增成交量更可靠）
+            if signal_type == "buy" and len(data) >= 5:
+                volume_1 = data["volume"].iloc[-3]  # 第一个白兵
+                volume_2 = data["volume"].iloc[-2]  # 第二个白兵  
+                volume_3 = data["volume"].iloc[-1]  # 第三个白兵
+                avg_volume = data["volume"].tail(7).mean()  # 前7天平均
+                
+                # 检查成交量递增趋势
+                volume_increasing = volume_2 > volume_1 and volume_3 > volume_2
+                high_volume_ratio = volume_3 / avg_volume if avg_volume > 0 else 1.0
+                
+                if volume_increasing and high_volume_ratio > 1.5:  # 递增且放量
+                    strength = min(0.98, strength + 0.08)
+                    confidence = min(0.98, confidence + 0.08)
+                    metadata["volume_confirmation"] = "strong_increasing"
+                    reason += "，成交量递增放大确认"
+                elif volume_increasing:  # 仅递增
+                    strength = min(0.95, strength + 0.05)
+                    confidence = min(0.95, confidence + 0.05)
+                    metadata["volume_confirmation"] = "increasing"
+                elif high_volume_ratio > 1.3:  # 仅放量
+                    strength = min(0.95, strength + 0.03)
+                    confidence = min(0.95, confidence + 0.03)
+                    metadata["volume_confirmation"] = "high"
+                else:
+                    metadata["volume_confirmation"] = "normal"
+                
+                metadata["final_volume_ratio"] = round(high_volume_ratio, 3)
+                metadata["volume_trend"] = "increasing" if volume_increasing else "normal"
+
+            # 分析趋势背景，增强三白兵形态的信号强度
+            if signal_type == "buy" and len(data) >= 8:
+                recent_closes = data["close"].tail(8)
+                price_trend = recent_closes.diff().mean()
+                
+                # 三白兵在下跌趋势底部更有效（底部反转）
+                if price_trend < -0.1:
+                    strength = min(0.98, strength + 0.08)
+                    confidence = min(0.98, confidence + 0.08)
+                    metadata["trend_context"] = "downtrend_reversal"
+                    metadata["signal_enhancement"] = "bottom_reversal"
+                    reason = reason.replace("极强看涨持续信号", "极强底部反转信号")
+                
+                # 三白兵在上涨趋势中作为持续信号也很强
+                elif price_trend > 0.05:
+                    strength = min(0.96, strength + 0.05)
+                    confidence = min(0.96, confidence + 0.05)
+                    metadata["trend_context"] = "uptrend_continuation"
+                    metadata["signal_enhancement"] = "bullish_continuation"
+                    reason = reason.replace("极强看涨持续信号", "极强上涨延续信号")
+                
+                else:
+                    metadata["trend_context"] = "sideways"
+                    metadata["signal_enhancement"] = "normal"
+
+            # 检查前期支撑位确认
+            if signal_type == "buy" and len(data) >= 12:
+                # 检查是否在重要支撑位附近
+                recent_lows = data["low"].tail(12)
+                current_low_area = data["low"].iloc[-3:-1].min()  # 前两根K线的最低价区域
+                support_levels = recent_lows[recent_lows <= current_low_area * 1.02]  # 2%容忍度
+                
+                if len(support_levels) >= 3:  # 多次测试的支撑位
+                    strength = min(0.98, strength + 0.05)
+                    confidence = min(0.98, confidence + 0.05)
+                    metadata["support_confirmation"] = "strong"
+                    reason += "，重要支撑位确认"
+                elif len(support_levels) >= 2:
+                    metadata["support_confirmation"] = "moderate"
+                else:
+                    metadata["support_confirmation"] = "none"
+
+            # 返回标准化信号格式
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator_name': self.name,
+                    'pattern_category': 'continuation',
+                    'pattern_family': 'candlestick',
+                    'pattern_characteristic': 'extreme_bullish_continuation',
+                    'requires_confirmation': 'three_candles',
+                    'signal_direction': 'bullish_only',
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"三白兵形态信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """验证输入数据"""
+        if not isinstance(data, pd.DataFrame):
+            return False
+        
+        if data.empty:
+            return False
+        
+        # 检查必需列
+        required_columns = ['open', 'high', 'low', 'close', 'volume']
+        if not all(col in data.columns for col in required_columns):
+            return False
+        
+        # 检查数据量（三白兵形态至少需要3个数据点）
+        if len(data) < 3:
+            return False
+        
+        return True
+
+    def _get_default_signal(self, reason: str = "默认持有") -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.5,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator_name': self.name,
+                'pattern_category': 'continuation',
+                'pattern_family': 'candlestick',
+                'pattern_characteristic': 'extreme_bullish_continuation',
+                'requires_confirmation': 'three_candles',
+                'signal_direction': 'bullish_only'
+            }
+        }

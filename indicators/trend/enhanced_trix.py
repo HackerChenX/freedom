@@ -69,6 +69,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.multi_periods = multi_periods or [6, 12, 24, 48]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
         self.adaptive_period = adaptive_period
         self.volatility_lookback = volatility_lookback
+        self.use_smoothed_trix = use_smoothed_trix
+        self.smoothing_period = smoothing_period
         self.market_environment = "normal"
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         
@@ -1753,3 +1755,368 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             **kwargs: 参数字典
         """
         self.set_parameters_Trix_Enhanced_Trix(**kwargs)
+
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于Enhanced TRIX指标数值生成最新的交易信号
+        
+        Enhanced TRIX交易信号逻辑（融合多重增强特性）：
+        - 基础TRIX信号：零轴穿越、金叉死叉信号
+        - 自适应周期调整：根据市场波动率优化信号
+        - 多周期协同：结合主周期和次要周期TRIX
+        - 背离检测：价格与TRIX背离信号
+        - 零轴交叉质量评估：评估穿越的可靠性
+        - 趋势强度分析：基于TRIX斜率和动量
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if not self.has_result():
+                self.calculate(data, **kwargs)
+
+            if self._result is None or len(self._result) == 0:
+                return self._get_default_signal("Enhanced TRIX计算结果为空")
+
+            # 3. 获取最新数据
+            latest_close = data['close'].iloc[-1]
+            
+            # 4. 获取Enhanced TRIX相关值
+            if len(self._result) < 2:
+                return self._get_default_signal("Enhanced TRIX数据不足")
+                
+            # 检查必要的列是否存在
+            required_columns = ['TRIX', 'MATRIX']
+            if not all(col in self._result.columns for col in required_columns):
+                return self._get_default_signal("Enhanced TRIX结果列不完整")
+                
+            latest_trix = self._result['TRIX'].iloc[-1]
+            latest_matrix = self._result['MATRIX'].iloc[-1]
+            prev_trix = self._result['TRIX'].iloc[-2]
+            prev_matrix = self._result['MATRIX'].iloc[-2]
+            
+            # 获取增强特性数据
+            latest_trix_secondary = self._result.get('trix_secondary', pd.Series([latest_trix])).iloc[-1] if 'trix_secondary' in self._result.columns else latest_trix
+            latest_trix_momentum = self._result.get('trix_momentum', pd.Series([0])).iloc[-1] if 'trix_momentum' in self._result.columns else 0
+            latest_trix_slope = self._result.get('trix_slope', pd.Series([0])).iloc[-1] if 'trix_slope' in self._result.columns else 0
+            latest_trix_volatility = self._result.get('trix_volatility', pd.Series([1])).iloc[-1] if 'trix_volatility' in self._result.columns else 1
+            
+            # 5. Enhanced TRIX信号生成逻辑
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "无明确信号"
+            metadata = {}
+            
+            # 计算增强信号强度因子
+            # 自适应周期因子：自适应周期偏离原始周期越多，信号越强
+            adaptive_factor = 1.0
+            if hasattr(self, '_adaptive_n') and hasattr(self, 'n'):
+                period_deviation = abs(self._adaptive_n - self.n) / self.n
+                adaptive_factor = min(1.2, max(0.8, 1 + period_deviation * 0.5))
+            
+            # 波动率因子：低波动率时信号更可靠
+            volatility_factor = min(1.2, max(0.8, 2 / (1 + latest_trix_volatility)))
+            
+            # 斜率因子：斜率越大，趋势越强
+            slope_factor = min(1.3, max(0.7, 1 + abs(latest_trix_slope) / 100))
+            
+            # 零轴穿越信号（最高优先级，Enhanced版本）
+            if latest_trix > 0 and prev_trix <= 0:
+                # Enhanced TRIX上穿零轴 - 强烈买入信号
+                signal_type = "buy"
+                base_strength = 0.9
+                
+                # 多周期确认
+                if latest_trix_secondary > latest_trix_secondary - 0.1:  # 次要周期也在上升
+                    base_strength += 0.05
+                
+                # 零轴交叉质量评估
+                cross_quality = min(1.0, abs(latest_trix) / 0.5)  # TRIX离零轴越远，穿越质量越高
+                base_strength *= (0.8 + 0.2 * cross_quality)
+                
+                strength = base_strength * adaptive_factor * volatility_factor
+                confidence = 0.9
+                reason = f"Enhanced TRIX上穿零轴({latest_trix:.4f})，多重确认强烈买入信号"
+                
+            elif latest_trix < 0 and prev_trix >= 0:
+                # Enhanced TRIX下穿零轴 - 强烈卖出信号
+                signal_type = "sell"
+                base_strength = 0.9
+                
+                # 多周期确认
+                if latest_trix_secondary < latest_trix_secondary + 0.1:  # 次要周期也在下降
+                    base_strength += 0.05
+                
+                # 零轴交叉质量评估
+                cross_quality = min(1.0, abs(latest_trix) / 0.5)
+                base_strength *= (0.8 + 0.2 * cross_quality)
+                
+                strength = base_strength * adaptive_factor * volatility_factor
+                confidence = 0.9
+                reason = f"Enhanced TRIX下穿零轴({latest_trix:.4f})，多重确认强烈卖出信号"
+                
+            # 金叉死叉信号（增强版）
+            elif latest_trix > latest_matrix and prev_trix <= prev_matrix:
+                # Enhanced TRIX金叉MATRIX - 买入信号
+                signal_type = "buy"
+                base_strength = 0.8
+                
+                # 零轴位置确认：在零轴上方的金叉更强
+                if latest_trix > 0:
+                    base_strength += 0.1
+                    reason_prefix = "Enhanced TRIX在零轴上方金叉"
+                else:
+                    reason_prefix = "Enhanced TRIX金叉"
+                
+                # 斜率确认：上升斜率增强信号
+                if latest_trix_slope > 0.01:
+                    base_strength += 0.05
+                
+                strength = base_strength * slope_factor * volatility_factor
+                confidence = 0.85
+                reason = f"{reason_prefix}MATRIX({latest_trix:.4f}>{latest_matrix:.4f})，斜率确认买入信号"
+                
+            elif latest_trix < latest_matrix and prev_trix >= prev_matrix:
+                # Enhanced TRIX死叉MATRIX - 卖出信号
+                signal_type = "sell"
+                base_strength = 0.8
+                
+                # 零轴位置确认：在零轴下方的死叉更强
+                if latest_trix < 0:
+                    base_strength += 0.1
+                    reason_prefix = "Enhanced TRIX在零轴下方死叉"
+                else:
+                    reason_prefix = "Enhanced TRIX死叉"
+                
+                # 斜率确认：下降斜率增强信号
+                if latest_trix_slope < -0.01:
+                    base_strength += 0.05
+                
+                strength = base_strength * slope_factor * volatility_factor
+                confidence = 0.85
+                reason = f"{reason_prefix}MATRIX({latest_trix:.4f}<{latest_matrix:.4f})，斜率确认卖出信号"
+            
+            # 趋势持续信号（增强版）
+            if signal_type == "hold":
+                trix_trend_strength = abs(latest_trix)
+                
+                if latest_trix > 0 and latest_trix > latest_matrix:
+                    # Enhanced TRIX在零轴上方且高于信号线 - 持续买入
+                    signal_type = "buy"
+                    base_strength = 0.6
+                    
+                    # 趋势强度调整
+                    if trix_trend_strength > 1.0:  # 强趋势
+                        base_strength += min(0.2, trix_trend_strength / 10)
+                    
+                    # 多周期协同确认
+                    if latest_trix_secondary > 0 and abs(latest_trix - latest_trix_secondary) < 0.5:
+                        base_strength += 0.1
+                    
+                    strength = base_strength * adaptive_factor
+                    confidence = 0.75
+                    reason = f"Enhanced TRIX强势上升趋势({latest_trix:.4f})，多重确认持续买入"
+                    
+                elif latest_trix < 0 and latest_trix < latest_matrix:
+                    # Enhanced TRIX在零轴下方且低于信号线 - 持续卖出
+                    signal_type = "sell"
+                    base_strength = 0.6
+                    
+                    # 趋势强度调整
+                    if trix_trend_strength > 1.0:  # 强趋势
+                        base_strength += min(0.2, trix_trend_strength / 10)
+                    
+                    # 多周期协同确认
+                    if latest_trix_secondary < 0 and abs(latest_trix - latest_trix_secondary) < 0.5:
+                        base_strength += 0.1
+                    
+                    strength = base_strength * adaptive_factor
+                    confidence = 0.75
+                    reason = f"Enhanced TRIX强势下降趋势({latest_trix:.4f})，多重确认持续卖出"
+            
+            # 计算Enhanced TRIX趋势变化
+            trix_rising = latest_trix > prev_trix
+            trix_momentum_change = latest_trix_momentum
+            trix_matrix_spread = latest_trix - latest_matrix
+            
+            # 设置增强元数据
+            metadata = {
+                'trix_value': latest_trix,
+                'matrix_value': latest_matrix,
+                'trix_secondary': latest_trix_secondary,
+                'trix_momentum': latest_trix_momentum,
+                'trix_slope': latest_trix_slope,
+                'trix_volatility': latest_trix_volatility,
+                'trix_trend': 'rising' if trix_rising else 'falling',
+                'trix_matrix_spread': trix_matrix_spread,
+                'zero_position': 'above' if latest_trix > 0 else 'below',
+                'adaptive_factor': adaptive_factor,
+                'volatility_factor': volatility_factor,
+                'slope_factor': slope_factor,
+                'trend_strength': 'strong' if abs(latest_trix) > 1.0 else 'moderate' if abs(latest_trix) > 0.5 else 'weak',
+                'multi_period_sync': abs(latest_trix - latest_trix_secondary) < 0.5,
+                'cross_quality': min(1.0, abs(latest_trix) / 0.5)
+            }
+            
+            # 检测背离模式（Enhanced特有）
+            if len(self._result) >= 15:
+                divergence_detected = self._detect_enhanced_trix_divergence(data)
+                if divergence_detected:
+                    metadata['divergence_detected'] = True
+                    # 背离信号调整
+                    if signal_type == "hold":
+                        signal_type = "sell" if latest_trix > 0 else "buy"
+                        strength = 0.75 * volatility_factor
+                        confidence = 0.8
+                        reason = "检测到Enhanced TRIX背离，多重确认反转信号"
+                    else:
+                        # 增强现有信号
+                        strength = min(1.0, strength + 0.1)
+                        confidence = min(1.0, confidence + 0.05)
+                        reason += "（背离确认）"
+            
+            # 6. 标准化输出
+            return {
+                'signal_type': signal_type,
+                'strength': max(0.0, min(1.0, strength)),
+                'confidence': max(0.0, min(1.0, confidence)),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'latest_close': latest_close,
+                    **metadata
+                }
+            }
+
+        except Exception as e:
+            logger.warning(f"Enhanced TRIX信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # Enhanced TRIX需要更多数据（由于三重指数平滑和多周期特性）
+        min_periods = max(
+            getattr(self, 'n', 12) * 3,
+            getattr(self, 'secondary_n', 24) * 3,
+            getattr(self, 'volatility_lookback', 20)
+        ) + 15
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {}
+        }
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (self._result is not None and 
+                hasattr(self._result, 'empty') and 
+                not self._result.empty and
+                'TRIX' in self._result.columns and
+                'MATRIX' in self._result.columns)
+
+    def _detect_enhanced_trix_divergence(self, data: pd.DataFrame) -> bool:
+        """
+        检测Enhanced TRIX背离形态（智能多维度背离检测）
+        
+        Args:
+            data: 价格数据
+            
+        Returns:
+            bool: 是否检测到背离
+        """
+        try:
+            if len(data) < 15 or len(self._result) < 15:
+                return False
+                
+            # 获取最近15个周期的数据
+            recent_prices = data['close'].iloc[-15:]
+            recent_trix = self._result['TRIX'].iloc[-15:]
+            
+            # Enhanced背离检测：考虑TRIX的特殊性质（三重平滑）
+            # 短期背离（5周期）- 对TRIX更敏感
+            short_prices = recent_prices.iloc[-5:]
+            short_trix = recent_trix.iloc[-5:]
+            
+            # 中期背离（10周期）- TRIX的主要分析周期
+            mid_prices = recent_prices.iloc[-10:]
+            mid_trix = recent_trix.iloc[-10:]
+            
+            # 长期背离（15周期）- 三重平滑的长期趋势
+            long_prices = recent_prices.iloc[-15:]
+            long_trix = recent_trix.iloc[-15:]
+            
+            # 检测短期背离
+            short_top_divergence = (short_prices.iloc[-1] == short_prices.max() and 
+                                  short_trix.iloc[-1] < short_trix.max())
+            short_bottom_divergence = (short_prices.iloc[-1] == short_prices.min() and 
+                                     short_trix.iloc[-1] > short_trix.min())
+            
+            # 检测中期背离
+            mid_top_divergence = (mid_prices.iloc[-1] >= mid_prices.quantile(0.9) and 
+                                mid_trix.iloc[-1] < mid_trix.quantile(0.9))
+            mid_bottom_divergence = (mid_prices.iloc[-1] <= mid_prices.quantile(0.1) and 
+                                   mid_trix.iloc[-1] > mid_trix.quantile(0.1))
+            
+            # 检测长期背离
+            long_top_divergence = (long_prices.iloc[-1] >= long_prices.quantile(0.8) and 
+                                 long_trix.iloc[-1] < long_trix.quantile(0.8))
+            long_bottom_divergence = (long_prices.iloc[-1] <= long_prices.quantile(0.2) and 
+                                    long_trix.iloc[-1] > long_trix.quantile(0.2))
+            
+            # Enhanced综合判断：至少两个时间框架出现背离
+            top_divergence_count = sum([short_top_divergence, mid_top_divergence, long_top_divergence])
+            bottom_divergence_count = sum([short_bottom_divergence, mid_bottom_divergence, long_bottom_divergence])
+            
+            return top_divergence_count >= 2 or bottom_divergence_count >= 2
+            
+        except Exception as e:
+            logger.warning(f"Enhanced TRIX背离检测失败: {e}")
+            return False
