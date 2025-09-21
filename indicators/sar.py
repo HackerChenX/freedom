@@ -1,12 +1,16 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -19,17 +23,17 @@ class Sar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化SAR指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "SAR"
+        super().__init__(name="SAR", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters()
@@ -152,6 +156,8 @@ class Sar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return df
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算SAR指标 - 标准接口
@@ -190,6 +196,8 @@ class Sar(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """最小周期数"""
         return self._minimum_periods
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于SAR指标数值生成最新的交易信号

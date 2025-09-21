@@ -118,8 +118,9 @@ class CompleteIndicatorRegistry:
 
         oscillator_indicators = {
             "KDJ": "indicators.kdj.KDJ",
-            "WR": "indicators.wr.WR",
-            "WILLIAMS_R": "indicators.wr.WR",  # 别名
+            "WR": "indicators.wr.WrWr",  # 修复类名: WR -> WrWr
+            "WILLR": "indicators.wr.WrWr",  # 添加WILLR别名
+            "WILLIAMS_R": "indicators.wr.WrWr",  # 修复类名: WR -> WrWr
             "CMO": "indicators.cmo.ChandeMomentumOscillator",
             "STOCHRSI": "indicators.stochrsi.Stochrsi",
             "STOCH": "indicators.stochrsi.Stochrsi",  # 别名
@@ -517,55 +518,3 @@ def get_failed_indicators() -> List[str]:
 # 自动初始化
 if __name__ != "__main__":
     initialize_indicators()
-
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        计算指标值
-
-        Args:
-            data: 输入数据,包含OHLCV等字段
-
-        Returns:
-            pd.DataFrame: 包含指标计算结果的数据框
-        """
-        if not self.validate_data(data):
-            raise ValueError("输入数据不符合要求")
-
-        # 预处理数据
-        processed_data = self.preprocess_data(data)
-
-        # TODO: 实现具体的指标计算逻辑
-        result = processed_data.copy()
-        result[f"{self.name}_value"] = processed_data["close"].rolling(window=self.period).mean()
-
-        # 后处理结果
-        result = self.postprocess_result(result)
-
-        # 保存结果
-        self._result = result
-
-        return result
-
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        获取交易信号
-
-        Args:
-            data: 包含指标计算结果的数据
-
-        Returns:
-            Dict[str, Any]: 交易信号信息
-        """
-        if data.empty:
-            return {"signal": "hold", "strength": 0.0, "timestamp": None}
-
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data["close"].iloc[-1] if "close" in data.columns else 0
-
-        return {
-            "signal": "hold",
-            "strength": 0.0,
-            "timestamp": data.index[-1] if not data.empty else None,
-            "price": latest_close,
-            "indicator": self.name,
-        }

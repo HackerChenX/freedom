@@ -1,6 +1,6 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 CHAIKIN 指标 (Chaikin A/D Oscillator)
 
@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -46,17 +48,19 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return max(getattr(self, 'fast_period', 3), getattr(self, 'slow_period', 10)) + 1  # TODO: 将魔法数字提取到配置中
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化CHAIKIN指标
         
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "CHAIKIN"
+        super().__init__(name="CHAIKIN", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "佳庆指标是基于累积分布线(A/D Line)的振荡器,用于衡量资金流入流出的动量"
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_chaikin()
@@ -116,7 +120,7 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         result = self._calculate_chaikin(data, **kwargs)
         self._result = result
-        return "result"
+        return result
     
     def _calculate_chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -165,13 +169,13 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         chaikin_oscillator = fast_ema - slow_ema
         
-        # 保存计算结果
-        df['CHAIKIN_MF_MULTIPLIER'] = money_flow_multiplier
-        df['CHAIKIN_MF_VOLUME'] = money_flow_volume
-        df['CHAIKIN_AD_LINE'] = ad_line
-        df['CHAIKIN_FAST_EMA'] = fast_ema
-        df['CHAIKIN_SLOW_EMA'] = slow_ema
-        df['CHAIKIN_VALUE'] = chaikin_oscillator
+        # 保存计算结果 - L4标准列名
+        df['chaikin_mf_multiplier'] = money_flow_multiplier
+        df['chaikin_mf_volume'] = money_flow_volume
+        df['chaikin_ad_line'] = ad_line
+        df['chaikin_fast_ema'] = fast_ema
+        df['chaikin_slow_ema'] = slow_ema
+        df['chaikin_value'] = chaikin_oscillator
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -180,7 +184,7 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 重写信号生成逻辑(CHAIKIN指标特定逻辑)
         df = self._apply_chaikin_signal_logic(df)
 
-        return "df"
+        return df
 
     def _apply_chaikin_signal_logic(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -189,11 +193,11 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取CHAIKIN值
-            if 'CHAIKIN_VALUE' not in df.columns:
+            if 'chaikin_value' not in df.columns:
                 # 如果没有CHAIKIN值,使用默认信号
-                return "df"
+                return df
 
-            chaikin_value = df['CHAIKIN_VALUE']
+            chaikin_value = df['chaikin_value']
 
             # CHAIKIN信号生成逻辑:
             # BUY: Chaikin振荡器从负转正(零轴向上突破)
@@ -205,8 +209,8 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             chaikin_negative = chaikin_value < 0
             
             # 计算交叉信号
-            zero_cross_up (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
-            zero_cross_down (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
+            zero_cross_up = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
+            zero_cross_down = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
 
             # 生成信号
             df.loc[:, 'buy_signal'] = zero_cross_up
@@ -228,7 +232,7 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 保存计算结果
         self._result = df
         
-        return "df"
+        return df
 
     def calculate_raw_score_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """
@@ -243,10 +247,10 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if not self.has_result():
             self.calculate_Chaikin(data, **kwargs)
         
-        if 'CHAIKIN_VALUE' not in self._result.columns:
-            return "pd.Series(50.0, index=data.index)"  # TODO: 将魔法数字提取到配置中
+        if 'chaikin_value' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
         
-        chaikin_value = self._result['CHAIKIN_VALUE'].fillna(0)
+        chaikin_value = self._result['chaikin_value'].fillna(0)
         scores = pd.Series(index=data.index, dtype=float)
         
         # 计算振荡器的动态范围
@@ -345,15 +349,15 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score = max(0, min(100, score))
             scores.iloc[i] = score
         
-        return "scores"
+        return scores
     
     def calculate_confidence_Chaikin(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
         if not self.has_result():
-            return "0.5"  # TODO: 将魔法数字提取到配置中
+            return 0.5
         
         # 基于Chaikin振荡器的稳定性计算置信度
-        chaikin_value = self._result['CHAIKIN_VALUE'].fillna(0)
+        chaikin_value = self._result['chaikin_value'].fillna(0)
         
         # 计算振荡器的变化率
         chaikin_change = chaikin_value.pct_change().fillna(0)
@@ -369,8 +373,8 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 signal_consistency = 1.0 - abs(buy_signals - sell_signals) / total_signals
         
         # 综合置信度
-        confidence = (stability * 0.6 + signal_consistency * 0.4)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        return "min(0.9, max(0.1, confidence))"  # TODO: 将魔法数字提取到配置中
+        confidence = (stability * 0.6 + signal_consistency * 0.4)
+        return min(0.9, max(0.1, confidence))
     
     def get_patterns_Chaikin(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """获取形态"""
@@ -379,22 +383,22 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         patterns = pd.DataFrame(index=data.index)
         
-        if 'CHAIKIN_VALUE' in self._result.columns:
-            chaikin_value = self._result['CHAIKIN_VALUE']
+        if 'chaikin_value' in self._result.columns:
+            chaikin_value = self._result['chaikin_value']
             
             # 识别关键形态(使用测试期望的名称)
-            patterns['CHAIKIN_CROSS_UP_ZERO'] (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
-            patterns['CHAIKIN_CROSS_DOWN_ZERO'] (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
+            patterns['CHAIKIN_CROSS_UP_ZERO'] = (chaikin_value > 0) & (chaikin_value.shift(1) <= 0)
+            patterns['CHAIKIN_CROSS_DOWN_ZERO'] = (chaikin_value < 0) & (chaikin_value.shift(1) >= 0)
             patterns['CHAIKIN_ABOVE_ZERO'] = chaikin_value > 0
             patterns['CHAIKIN_BELOW_ZERO'] = chaikin_value < 0
             patterns['CHAIKIN_RISING'] = chaikin_value > chaikin_value.shift(1)
             patterns['CHAIKIN_FALLING'] = chaikin_value < chaikin_value.shift(1)
         
-        return "patterns"
+        return patterns
 
     def has_result(self) -> bool:
         """检查是否有计算结果"""
-        return "self._result is not None"
+        return self._result is not None
 
     def calculate_score(self, data: pd.DataFrame, **kwargs) -> dict:
         """计算综合评分"""
@@ -425,7 +429,7 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if 'sell_signal' in result.columns:
             signals['chaikin_sell_signal'] = result['sell_signal']
         
-        return "signals"
+        return signals
 
     def set_parameters_Chaikin(self, **kwargs):
         """设置指标参数"""
@@ -457,9 +461,79 @@ class Chaikin(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     # ========================== 兼容性方法 ==========================
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """公共接口:计算指标"""
-        return "self.calculate_Chaikin(data, **kwargs)"
+        """计算CHAIKIN指标"""
+        return self.calculate_Chaikin(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取CHAIKIN指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算CHAIKIN指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的CHAIKIN值
+            latest = result.iloc[-1]
+            chaikin_value = latest.get('chaikin_value', 0.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # CHAIKIN信号逻辑
+            if chaikin_value > 0:  # CHAIKIN大于零轴，资金流入
+                signal = "BUY"
+                score = min(75.0, 50.0 + abs(chaikin_value) * 25)
+                confidence = 0.7
+            elif chaikin_value < 0:  # CHAIKIN小于零轴，资金流出
+                signal = "SELL"
+                score = max(25.0, 50.0 - abs(chaikin_value) * 25)
+                confidence = 0.7
+            else:  # CHAIKIN在零轴附近
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            # 检查零轴交叉信号增强置信度
+            if len(result) >= 2:
+                prev_chaikin = result['chaikin_value'].iloc[-2] if 'chaikin_value' in result.columns else 0
+                
+                # 零轴向上突破信号
+                if prev_chaikin <= 0 and chaikin_value > 0:
+                    signal = "BUY"
+                    score = min(85.0, score + 10)
+                    confidence = min(0.9, confidence + 0.2)
+                # 零轴向下跌破信号
+                elif prev_chaikin >= 0 and chaikin_value < 0:
+                    signal = "SELL"
+                    score = max(15.0, score - 10)
+                    confidence = min(0.9, confidence + 0.2)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"CHAIKIN信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
 
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

@@ -1,8 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 动量指标(MTM)
@@ -11,14 +8,15 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import List, Dict, Optional, Any, Union, Tuple
+from typing import Dict, Any, List, Optional, Union, Tuple
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -33,27 +31,27 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     参数：N，一般取10或12，表示计算周期
     """
     
-    def __init__(self, period: int = 10, ma_period: int = 6, overbought: float = 0, oversold: float = 0):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+    def __init__(self, **kwargs):
         """
         初始化MTM指标
         
         Args:
-            period: 计算周期，默认为10
-            ma_period: MTM平滑周期，默认为6
-            overbought: 超买线，默认根据历史数据自动计算
-            oversold: 超卖线，默认根据历史数据自动计算
+            **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "MTM"
-        self.period = period
-        self.ma_period = ma_period
-        self.overbought = overbought
-        self.oversold = oversold
-        self._auto_threshold = (overbought == 0 and oversold == 0)
+        super().__init__(name="MTM", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "动量指标，反映股价波动的速度，通过计算股价与前一段时间的股价差值衡量价格动量"
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_mtm()
+        
+        # 应用用户参数
+        self.set_parameters_Mtm_Mtm_Mtm_mtm(**kwargs)
         
         # 初始化结果存储
         self._result = None
@@ -137,22 +135,22 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         df_copy = df.copy()
         
-        # 计算MTM
-        df_copy['mtm'] = df_copy['close'] - df_copy['close'].shift(self.period)
+        # 计算MTM - L4标准列名
+        df_copy['mtm_value'] = df_copy['close'] - df_copy['close'].shift(self.period)
         
         # 计算MTMMA
-        df_copy['mtmma'] = df_copy['mtm'].rolling(window=self.ma_period).mean()
+        df_copy['mtm_ma'] = df_copy['mtm_value'].rolling(window=self.ma_period).mean()
         
         # 如果需要自动计算超买超卖线
         if self._auto_threshold:
             # 使用历史数据的标准差来设置超买超卖线
-            mtm_std = df_copy['mtm'].std()
+            mtm_std = df_copy['mtm_value'].std()
             self.overbought = 2 * mtm_std
             self.oversold = -2 * mtm_std
         
         # 添加超买超卖状态
-        df_copy['mtm_overbought'] = df_copy['mtm'] > self.overbought
-        df_copy['mtm_oversold'] = df_copy['mtm'] < self.oversold
+        df_copy['mtm_overbought'] = df_copy['mtm_value'] > self.overbought
+        df_copy['mtm_oversold'] = df_copy['mtm_value'] < self.oversold
         
         # 添加形态识别和信号生成
         df_copy = self.add_pattern_detection(df_copy)
@@ -178,12 +176,12 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if not self.has_result():
             self.calculate(data, **kwargs)
 
-        if self._result is None or 'mtm' not in self._result.columns:
+        if self._result is None or 'mtm_value' not in self._result.columns:
             return pd.DataFrame(index=data.index)
 
         # 获取MTM和MTMMA值
-        mtm = self._result['mtm']
-        mtmma = self._result['mtmma']
+        mtm = self._result['mtm_value']
+        mtmma = self._result['mtm_ma']
 
         # 创建形态DataFrame
         patterns_df = pd.DataFrame(index=data.index)
@@ -744,9 +742,89 @@ class Momentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     # ================== 兼容性方法 ==================
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法：计算指标"""
+        """计算MTM指标"""
         return self.calculate_mtm(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取MTM指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算MTM指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的MTM值
+            latest = result.iloc[-1]
+            mtm_value = latest.get('mtm_value', 0.0)
+            mtm_ma = latest.get('mtm_ma', 0.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # MTM信号逻辑
+            if mtm_value > self.overbought and self.overbought != 0:  # 超买区域
+                signal = "SELL"
+                score = max(20.0, 50.0 - (mtm_value - self.overbought) / abs(self.overbought) * 30)
+                confidence = min(0.8, 0.5 + (mtm_value - self.overbought) / abs(self.overbought) / 2)
+            elif mtm_value < self.oversold and self.oversold != 0:  # 超卖区域
+                signal = "BUY"
+                score = min(80.0, 50.0 + (self.oversold - mtm_value) / abs(self.oversold) * 30)
+                confidence = min(0.8, 0.5 + (self.oversold - mtm_value) / abs(self.oversold) / 2)
+            elif mtm_value > mtm_ma:  # MTM大于均线，动量向上
+                signal = "BUY"
+                score = min(75.0, 50.0 + abs(mtm_value - mtm_ma) / max(abs(mtm_ma), 1) * 25)
+                confidence = 0.6
+            elif mtm_value < mtm_ma:  # MTM小于均线，动量向下
+                signal = "SELL"
+                score = max(25.0, 50.0 - abs(mtm_value - mtm_ma) / max(abs(mtm_ma), 1) * 25)
+                confidence = 0.6
+            else:  # 中性区域
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            # 检查金叉死叉信号增强置信度
+            if len(result) >= 2:
+                prev_mtm = result['mtm_value'].iloc[-2] if 'mtm_value' in result.columns else 0
+                prev_ma = result['mtm_ma'].iloc[-2] if 'mtm_ma' in result.columns else 0
+                
+                # 金叉信号
+                if prev_mtm <= prev_ma and mtm_value > mtm_ma:
+                    signal = "BUY"
+                    score = min(85.0, score + 10)
+                    confidence = min(0.9, confidence + 0.2)
+                # 死叉信号
+                elif prev_mtm >= prev_ma and mtm_value < mtm_ma:
+                    signal = "SELL"
+                    score = max(15.0, score - 10)
+                    confidence = min(0.9, confidence + 0.2)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"MTM信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
     
     def get_patterns(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法：获取形态"""

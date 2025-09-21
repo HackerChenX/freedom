@@ -1,12 +1,16 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 
@@ -21,17 +25,17 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ROC指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "ROC"
+        super().__init__(name="ROC", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_roc()
@@ -93,6 +97,8 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_roc(data, **kwargs)
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算ROC指标 - Ultra Think修复:添加缺失的标准calculate方法
@@ -837,6 +843,8 @@ class RateOfChange(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 not self._result.empty and
                 'roc' in self._result.columns)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于ROC (Rate of Change) 指标数值生成最新的交易信号

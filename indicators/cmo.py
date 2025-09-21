@@ -1,21 +1,20 @@
-from utils.container import container
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import logging
-from typing import Dict, List
-
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any
-from enums.indicator_enum import Indicator_enum
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from enums.indicator_enum import Indicator_enum
 from enums.indicator_types import Trend_type, Cross_type
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -38,13 +37,13 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """初始化CMO指标"""
-        # 🔧 Ultra Think修复:修正构造函数调用(基于SAR成功修复经验)
-        super().__init__()
-        self.name = "CMO"
+        super().__init__(name="CMO", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "钱德动量摆动指标"
         self.indicator_type = Indicator_enum.CMO.name
         self._result = None
@@ -94,6 +93,44 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
         self.overbought = params.get('overbought', 50.0)  # TODO: 将魔法数字提取到配置中
         self.oversold = params.get('oversold', -50.0)  # TODO: 将魔法数字提取到配置中
+
+    def validate_data_structure(self, data: pd.DataFrame) -> bool:
+        """
+        验证数据结构是否符合CMO指标要求
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据结构是否有效
+        """
+        if not isinstance(data, pd.DataFrame):
+            logger.error(f"CMO数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+            return False
+            
+        if data.empty:
+            logger.error("CMO数据验证失败: 输入数据为空")
+            return False
+            
+        required_columns = ['close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"CMO数据验证失败: 缺少必需列 {missing_columns}")
+            return False
+            
+        # 检查数据长度
+        min_length = getattr(self, 'period', 14) + 5
+        if len(data) < min_length:
+            logger.error(f"CMO数据验证失败: 数据长度不足，需要至少{min_length}个数据点，实际{len(data)}个")
+            return False
+            
+        # 检查数据值的有效性
+        for col in required_columns:
+            if data[col].isna().all():
+                logger.error(f"CMO数据验证失败: 列{col}全部为NaN值")
+                return False
+                
+        return True
         
     def calculate_Cmo(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -109,6 +146,8 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_cmo(data, **kwargs)
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算CMO指标 - Ultra Think修复:添加缺失的标准calculate方法
@@ -339,6 +378,10 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             包含CMO列的Data_frame
         """
+        # 使用增强的数据验证方法
+        if not self.validate_data_structure(data):
+            raise ValueError("CMO计算: 输入数据验证失败")
+            
         if self._result is not None:
             return self._result
             
@@ -995,6 +1038,8 @@ class ChandeMomentumOscillator(BaseIndicator, PatternSignalMixin, MinimumPeriods
                 'type': 'neutral',
                 'strength': 'medium'
             })
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于CMO (Chande Momentum Oscillator) 指标数值生成最新的交易信号

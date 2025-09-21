@@ -1,21 +1,23 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 增强型TRIX三重指数平滑移动平均线模块
 
 实现增强型TRIX指标计算，提供自适应参数、多周期协同分析、形态识别等功能
 """
 
-from utils.logger import get_logger
-
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.trix import TripleExponentialAverage as TRIX
-from utils.logger import get_logger
 from utils.technical_utils import find_peaks_and_troughs
 from utils.indicator_utils import crossover, crossunder
 
@@ -35,17 +37,15 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, 
-                 n: int = 12,  # TODO: 将魔法数字提取到配置中 
-                 m: int = 9,  # TODO: 将魔法数字提取到配置中
-                 secondary_n: int = 24,  # TODO: 将魔法数字提取到配置中
+                 n: int = 12,
+                 m: int = 9,
+                 secondary_n: int = 24,
                  multi_periods: List[int] = None,
                  adaptive_period: bool = True,
-                 volatility_lookback: int = 20,  # TODO: 将魔法数字提取到配置中
+                 volatility_lookback: int = 20,
                  use_smoothed_trix: bool = True,
-                 smoothing_period: int = 3):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+                 smoothing_period: int = 3,
+                 **kwargs):
         """
         初始化增强型TRIX指标
         
@@ -53,13 +53,18 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             n: 主要周期，默认为12
             m: 信号线周期，默认为9
             secondary_n: 次要周期，默认为24
-            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            multi_periods: 多周期分析参数，默认为[6, 12, 24, 48]
             adaptive_period: 是否启用自适应周期，默认为True
             volatility_lookback: 波动率计算回溯期，默认为20
             use_smoothed_trix: 是否使用平滑后的TRIX
             smoothing_period: 平滑周期，默认为3
+            **kwargs: 其他参数
         """
-        super().__init__()
+        super().__init__(name="ENHANCED_TRIX", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.n = n
         self.m = m
         self.name = "EnhancedTRIX"
@@ -1632,6 +1637,8 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         smoothing_period = self._parameters.get('smoothing_period', 3)  # TODO: 将魔法数字提取到配置中
         return smoothing_period + max(10, smoothing_period // 2)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算Enhanced TRIX指标的主要入口方法
@@ -2120,3 +2127,177 @@ class EnhancedTrix(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         except Exception as e:
             logger.warning(f"Enhanced TRIX背离检测失败: {e}")
             return False
+
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        基于Enhanced TRIX指标生成交易信号
+        
+        Enhanced TRIX通过三重指数平滑移动平均线捕捉趋势变化，
+        结合零轴交叉、背离分析和多周期协同分析生成高质量信号。
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 计算Enhanced TRIX指标
+            result = self.calculate(data)
+            if result.empty or 'enhanced_trix' not in result.columns:
+                return self._get_default_signal("Enhanced TRIX计算失败")
+
+            # 3. 获取最新的TRIX数据
+            latest_trix = result['enhanced_trix'].iloc[-1]
+            latest_signal_line = result.get('enhanced_trix_signal', pd.Series()).iloc[-1] if 'enhanced_trix_signal' in result.columns else None
+            
+            if pd.isna(latest_trix):
+                return self._get_default_signal("最新Enhanced TRIX值为空")
+
+            # 4. 生成基于Enhanced TRIX的信号
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "Enhanced TRIX趋势分析"
+            
+            # TRIX零轴交叉信号
+            trix_series = result['enhanced_trix'].dropna()
+            if len(trix_series) >= 2:
+                prev_trix = trix_series.iloc[-2]
+                
+                # 零轴上穿 - 买入信号
+                if prev_trix <= 0 and latest_trix > 0:
+                    signal_type = "buy"
+                    strength = min(0.8, abs(latest_trix) * 1000)  # 假设TRIX值很小
+                    confidence = 0.75
+                    reason = f"Enhanced TRIX零轴上穿({latest_trix:.6f})，趋势由弱转强"
+                    
+                # 零轴下穿 - 卖出信号
+                elif prev_trix >= 0 and latest_trix < 0:
+                    signal_type = "sell"
+                    strength = min(0.8, abs(latest_trix) * 1000)
+                    confidence = 0.75
+                    reason = f"Enhanced TRIX零轴下穿({latest_trix:.6f})，趋势由强转弱"
+                    
+                # TRIX与信号线交叉
+                elif latest_signal_line is not None and not pd.isna(latest_signal_line):
+                    if len(result) >= 2:
+                        prev_signal_line = result['enhanced_trix_signal'].iloc[-2]
+                        
+                        # TRIX上穿信号线
+                        if (trix_series.iloc[-2] <= prev_signal_line and 
+                            latest_trix > latest_signal_line):
+                            signal_type = "buy"
+                            strength = min(0.6, abs(latest_trix - latest_signal_line) * 1000)
+                            confidence = 0.65
+                            reason = f"Enhanced TRIX上穿信号线，短期上涨动能增强"
+                            
+                        # TRIX下穿信号线
+                        elif (trix_series.iloc[-2] >= prev_signal_line and 
+                              latest_trix < latest_signal_line):
+                            signal_type = "sell"
+                            strength = min(0.6, abs(latest_trix - latest_signal_line) * 1000)
+                            confidence = 0.65
+                            reason = f"Enhanced TRIX下穿信号线，短期下跌压力增加"
+                            
+                # 基于TRIX斜率的趋势强度判断
+                if len(trix_series) >= 3:
+                    recent_slope = (latest_trix - trix_series.iloc[-3]) / 2
+                    
+                    if recent_slope > 0.0001:  # 上升趋势
+                        if signal_type == "hold":
+                            signal_type = "buy"
+                            strength = min(0.4, recent_slope * 5000)
+                            confidence = 0.55
+                            reason = f"Enhanced TRIX持续上升({recent_slope:.6f})，趋势向好"
+                            
+                    elif recent_slope < -0.0001:  # 下降趋势
+                        if signal_type == "hold":
+                            signal_type = "sell"
+                            strength = min(0.4, abs(recent_slope) * 5000)
+                            confidence = 0.55
+                            reason = f"Enhanced TRIX持续下降({recent_slope:.6f})，趋势转弱"
+
+            # 5. 结合背离分析增强信号质量
+            try:
+                if hasattr(self, '_detect_divergence') and len(data) >= 20:
+                    has_divergence = self._detect_divergence(data.tail(20))
+                    if has_divergence:
+                        confidence = min(confidence + 0.15, 0.9)
+                        if "背离" not in reason:
+                            reason += "，检测到价格背离信号"
+            except Exception:
+                pass  # 背离检测失败不影响主信号
+
+            # 6. 构建标准化信号
+            return {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator': 'Enhanced_TRIX',
+                    'current_trix': float(latest_trix),
+                    'signal_line': float(latest_signal_line) if latest_signal_line is not None and not pd.isna(latest_signal_line) else None,
+                    'periods': {'n': self.n, 'm': self.m},
+                    'adaptive_enabled': self.adaptive_period
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Enhanced TRIX信号生成失败: {e}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['open', 'high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # Enhanced TRIX需要足够的数据用于三重平滑
+        min_periods = max(self.n * 3, 50)  # 三重指数平滑需要更多数据
+        if len(data) < min_periods:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {
+                'indicator': 'Enhanced_TRIX',
+                'periods': {'n': self.n, 'm': self.m}
+            }
+        }

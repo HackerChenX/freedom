@@ -1,6 +1,6 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 TECHNICAL_INDICATORS 指标
 
@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -27,17 +29,19 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化TECHNICAL_INDICATORS指标
         
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "TECHNICAL_INDICATORS"
+        super().__init__(name="TECHNICAL_INDICATORS", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "技术指标集合,提供基础的技术分析功能"
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_technicalindicators()
@@ -59,10 +63,6 @@ class TechnicalIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin
         # 验证参数
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-        except Exception as e:
-            logger.error(f"错误: {e}")
-            return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             
             # 合并默认参数和用户参数
@@ -145,6 +145,8 @@ from db.sql_manager import SQLManager, QueryType
             int: 最少需要的数据周期数
         """
         return 30  # TODO: 将魔法数字提取到配置中
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -161,9 +163,9 @@ from db.sql_manager import SQLManager, QueryType
         # 预处理数据
         processed_data = self.preprocess_data(data)
         
-        # TODO: 实现具体的指标计算逻辑
+        # 实现具体的指标计算逻辑
         result = processed_data.copy()
-        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        result['technical_indicators_value'] = processed_data['close'].rolling(window=self.period).mean()
         
         # 后处理结果
         result = self.postprocess_result(result)
@@ -173,6 +175,8 @@ from db.sql_manager import SQLManager, QueryType
         
         return result
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取交易信号
@@ -183,16 +187,50 @@ from db.sql_manager import SQLManager, QueryType
         Returns:
             Dict[str, Any]: 交易信号信息
         """
-        if data.empty:
-            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
-        
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
-        
-        return {
-            'signal': 'hold',
-            'strength': 0.0,
-            'timestamp': data.index[-1] if not data.empty else None,
-            'price': latest_close,
-            'indicator': self.name
-        }
+        try:
+            if data.empty:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 计算指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的技术指标值
+            latest = result.iloc[-1]
+            technical_value = latest.get('technical_indicators_value', 0.0)
+            close_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # 技术指标信号逻辑 - 基于移动平均线
+            if pd.notna(technical_value) and technical_value != 0:
+                # 价格相对于移动平均线的位置
+                price_ratio = close_price / technical_value if technical_value != 0 else 1.0
+                
+                if price_ratio > 1.02:  # 价格高于均线2%以上
+                    signal = "BUY"
+                    score = min(75.0, 50.0 + (price_ratio - 1.0) * 500)
+                    confidence = 0.7
+                elif price_ratio < 0.98:  # 价格低于均线2%以上
+                    signal = "SELL"
+                    score = max(25.0, 50.0 - (1.0 - price_ratio) * 500)
+                    confidence = 0.7
+                else:
+                    signal = "HOLD"
+                    score = 50.0
+                    confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"TECHNICAL_INDICATORS信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}

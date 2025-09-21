@@ -1,36 +1,42 @@
-from typing import Dict, Any
-from utils.container import container
-from indicators.base_indicator import BaseIndicator
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 指标计算器实现
 
 提供基础的指标计算器实现,满足依赖注入需求
 """
 
-from typing import Dict, List, Optional, Any, Union
 import pandas as pd
 import logging
+from typing import Dict, List, Optional, Any, Union
 
+from utils.container import container
+from indicators.base_indicator import BaseIndicator
 from db.interfaces.indicator_calculator_interface import IindicatorCalculator, IIndicatorCalculator
 from enums.indicator_types import Indicatortype_indicator_types as IndicatorType
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
 
-class IndicatorCalculator(BaseIndicator,IindicatorCalculator):
+class IndicatorCalculator(BaseIndicator, IindicatorCalculator):
     """
     基础指标计算器实现
     
     提供基本的指标计算功能,可以被策略类使用
     """
     
-    def __init__(self):
-            super().__init__(name=self.__class__.__name__, **kwargs)
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, **kwargs):
         """初始化指标计算器"""
+        super().__init__(name="IndicatorCalculator", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "基础指标计算器,提供基本的指标计算功能"
         self._indicators = {}
         logger.debug("指标计算器初始化完成")
     
@@ -183,13 +189,12 @@ class IndicatorCalculator(BaseIndicator,IindicatorCalculator):
             'signal': signal,
             'histogram': histogram
         }
-
-
-# 兼容性别名
-IIndicatorCalculator = IndicatorCalculator 
+    
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
-        计算指标值
+        计算指标值 - BaseIndicator抽象方法实现
         
         Args:
             data: 输入数据,包含OHLCV等字段
@@ -203,9 +208,10 @@ IIndicatorCalculator = IndicatorCalculator
         # 预处理数据
         processed_data = self.preprocess_data(data)
         
-        # TODO: 实现具体的指标计算逻辑
+        # 使用移动平均作为默认计算
         result = processed_data.copy()
-        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
+        period = getattr(self, 'period', 20)
+        result['indicator_calculator_value'] = processed_data['close'].rolling(window=period).mean()
         
         # 后处理结果
         result = self.postprocess_result(result)
@@ -215,9 +221,11 @@ IIndicatorCalculator = IndicatorCalculator
         
         return result
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
-        获取交易信号
+        获取交易信号 - BaseIndicator抽象方法实现
         
         Args:
             data: 包含指标计算结果的数据
@@ -225,16 +233,54 @@ IIndicatorCalculator = IndicatorCalculator
         Returns:
             Dict[str, Any]: 交易信号信息
         """
-        if data.empty:
-            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
-        
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
-        
-        return {
-            'signal': 'hold',
-            'strength': 0.0,
-            'timestamp': data.index[-1] if not data.empty else None,
-            'price': latest_close,
-            'indicator': self.name
-        }
+        try:
+            if data.empty:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 计算指标
+            result = self.calculate(data)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的指标值
+            latest = result.iloc[-1]
+            indicator_value = latest.get('indicator_calculator_value', 0.0)
+            close_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # 基于移动平均的信号逻辑
+            if pd.notna(indicator_value) and indicator_value != 0:
+                # 价格相对于移动平均线的位置
+                price_ratio = close_price / indicator_value if indicator_value != 0 else 1.0
+                
+                if price_ratio > 1.01:  # 价格高于均线1%以上
+                    signal = "BUY"
+                    score = min(75.0, 50.0 + (price_ratio - 1.0) * 1000)
+                    confidence = 0.6
+                elif price_ratio < 0.99:  # 价格低于均线1%以上
+                    signal = "SELL"
+                    score = max(25.0, 50.0 - (1.0 - price_ratio) * 1000)
+                    confidence = 0.6
+                else:
+                    signal = "HOLD"
+                    score = 50.0
+                    confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"IndicatorCalculator信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+
+
+# 兼容性别名
+IIndicatorCalculator = IndicatorCalculator

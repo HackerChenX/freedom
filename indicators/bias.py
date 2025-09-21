@@ -1,24 +1,22 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
-均线多空指标(BIAS_Bias)
+均线多空指标(BIAS)
 
 (收盘价-MA)/MA*100%
 """
 
 import pandas as pd
-from typing import Dict, Any
 import numpy as np
-from typing import List
+from typing import Dict, Any, List
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -32,18 +30,21 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述:(收盘价-MA)/MA*100%
     """
 
-    def __init__(self, name: str = "BIAS", description: str = "均线多空指标",
-                 period: int = 14, periods: List[int] = None, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, **kwargs):
         """
-        初始化均线多空指标(BIAS_Bias)指标
+        初始化BIAS指标
+        
+        Args:
+            **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = name
-        self.description = description
-        self.periods = periods if periods is not None else [6, 12, 24]  # BIAS常用周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        super().__init__(name="BIAS", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "均线多空指标，计算收盘价与移动平均线的乖离率"
+        self.periods = kwargs.get('periods', [6, 12, 24])  # BIAS常用周期
         self.indicator_type = "BIAS"
         self.REQUIRED_COLUMNS = ['close']  # 添加必需列定义
         
@@ -80,18 +81,18 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 创建一个临时的DataFrame来存储新计算的列
         result_df = pd.DataFrame(index=data.index)
         
-        # 计算所有周期的BIAS
+        # 计算所有周期的BIAS - L4标准列名
         for p in self.periods:
             ma = data['close'].rolling(window=p, min_periods=1).mean()
-            result_df[f'BIAS_Bias{p}'] = (data['close'] - ma) / ma * 100
+            result_df[f'bias_{p}'] = (data['close'] - ma) / ma * 100
         
-        # 为主周期创建 'BIAS_Bias' 和 'BIAS_MA' 列,以供形态识别使用
+        # 为主周期创建主要列,以供形态识别使用
         if self.periods:
             main_period = self.periods[0]
-            main_bias_col = f'BIAS_Bias{main_period}'
+            main_bias_col = f'bias_{main_period}'
             if main_bias_col in result_df:
-                result_df['BIAS_Bias'] = result_df[main_bias_col]
-                result_df['BIAS_MA'] = result_df['BIAS_Bias'].rolling(window=main_period, min_periods=1).mean()
+                result_df['bias_value'] = result_df[main_bias_col]
+                result_df['bias_ma'] = result_df['bias_value'].rolling(window=main_period, min_periods=1).mean()
 
         # 只返回计算出的指标列,不包含原始数据列
         
@@ -111,11 +112,11 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取BIAS值
-            if 'BIAS_Bias' not in df.columns:
+            if 'bias_value' not in df.columns:
                 # 如果没有BIAS值,使用默认信号
                 return df
 
-            bias_value = df['BIAS_Bias']
+            bias_value = df['bias_value']
 
             # BIAS信号生成逻辑:
             # BUY: BIAS值为正且上升(价格高于均线且乖离增大)
@@ -155,14 +156,14 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         calculated_data = self._calculate_bias(data)
 
         # 验证必要的列是否存在
-        required_cols = ['BIAS_Bias', 'BIAS_MA']
+        required_cols = ['bias_value', 'bias_ma']
         if not all(col in calculated_data.columns for col in required_cols):
              logger.warning(f"BIAS指标在形态识别时缺少必要的计算列: {required_cols}")
              # 返回一个空的DataFrame,但保留索引
              return pd.DataFrame(index=data.index)
 
         # 实现BIAS形态识别逻辑
-        bias_values = calculated_data['BIAS_Bias']
+        bias_values = calculated_data['bias_value']
 
         # 创建形态识别结果DataFrame,只包含形态列
         patterns_df = pd.DataFrame(index=data.index)
@@ -215,10 +216,10 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 首先计算指标值
         calculated_data = self._calculate_bias(data)
 
-        if 'BIAS_Bias' not in calculated_data.columns:
-            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
+        if 'bias_value' not in calculated_data.columns:
+            return pd.Series(50.0, index=data.index)
 
-        bias_values = calculated_data['BIAS_Bias']
+        bias_values = calculated_data['bias_value']
 
         # 计算评分
         # BIAS在-10到+10之间为正常范围,对应40-60分
@@ -507,9 +508,79 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Bias(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """统一的计算接口"""
+        """计算BIAS指标"""
         return self._calculate_bias(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取BIAS指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算BIAS指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的BIAS值
+            latest = result.iloc[-1]
+            
+            # 获取主要周期的BIAS值
+            main_period = self.periods[0] if self.periods else 6
+            bias_value = latest.get(f'bias_{main_period}', 0.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # BIAS信号逻辑
+            if bias_value < -6:  # 强烈超卖
+                signal = "BUY"
+                score = min(85.0, 50.0 + abs(bias_value) * 3)
+                confidence = min(0.9, 0.7 + abs(bias_value) / 20)
+            elif bias_value < -3:  # 超卖
+                signal = "BUY"
+                score = min(75.0, 50.0 + abs(bias_value) * 5)
+                confidence = min(0.8, 0.6 + abs(bias_value) / 15)
+            elif bias_value > 6:  # 强烈超买
+                signal = "SELL"
+                score = max(15.0, 50.0 - bias_value * 3)
+                confidence = min(0.9, 0.7 + bias_value / 20)
+            elif bias_value > 3:  # 超买
+                signal = "SELL"
+                score = max(25.0, 50.0 - bias_value * 5)
+                confidence = min(0.8, 0.6 + bias_value / 15)
+            elif -1 <= bias_value <= 1:  # 中性区域
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.4
+            else:  # 其他情况
+                signal = "HOLD"
+                score = 50.0 + bias_value * 2  # 轻微调整
+                confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"BIAS信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
 
     # ==================== 兼容性方法 - 真实实现 ====================
 
@@ -526,7 +597,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 为每个周期检测形态
         for period in self.periods:
-            bias_col = f'BIAS{period}'
+            bias_col = f'bias_{period}'
             if bias_col in bias_data.columns:
                 bias_values = bias_data[bias_col]
 
@@ -583,7 +654,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 为每个周期计算评分
         for period in self.periods:
-            bias_col = f'BIAS{period}'
+            bias_col = f'bias_{period}'
             if bias_col in bias_data.columns:
                 bias_values = bias_data[bias_col]
 
@@ -628,7 +699,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             all_negative = True
             all_positive = True
             for period in self.periods:
-                bias_col = f'BIAS{period}'
+                bias_col = f'bias_{period}'
                 if bias_col in bias_data.columns:
                     all_negative &= (bias_data[bias_col] < 0)
                     all_positive &= (bias_data[bias_col] > 0)
@@ -662,7 +733,7 @@ class BiasBias(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         # 为每个周期生成信号
         for period in self.periods:
-            bias_col = f'BIAS{period}'
+            bias_col = f'bias_{period}'
             if bias_col in bias_data.columns:
                 bias_values = bias_data[bias_col]
 

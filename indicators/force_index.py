@@ -1,6 +1,5 @@
-from utils.container import container
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 力量指数(Force Index)指标
@@ -13,10 +12,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Optional, Tuple, Union
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -38,9 +39,6 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, period: int = 13, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化力量指数指标
         
@@ -48,7 +46,11 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 平滑周期,默认13
             **kwargs: 其他参数
         """
-        super().__init__(**kwargs)
+        super().__init__(name="FORCE_INDEX", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.period = period
         self.REQUIRED_COLUMNS = ['close', 'volume']
         
@@ -75,6 +77,8 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return True
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算力量指数
@@ -140,6 +144,8 @@ class ForceIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return signals
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取最新的交易信号

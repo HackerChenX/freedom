@@ -1,9 +1,5 @@
-from utils.container import container
-
-#!/usr/bin/env python
-from utils.logger import get_logger
-
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 指数移动平均线(EMA_Ema)
@@ -15,11 +11,13 @@ import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from utils.indicator_utils import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -36,16 +34,17 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     REQUIRED_COLUMNS = ["close"]
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化指数移动平均线(EMA_Ema)指标
         Args:
             **kwargs: 指标参数,支持period,price_field,alpha等
         """
-        super().__init__()
-        self.name = "EMA"
+        super().__init__(name="EMA", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "指数移动平均线"
 
         # 设置默认参数
@@ -443,6 +442,8 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Ema(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self._calculate_ema(data, **kwargs)
@@ -593,6 +594,8 @@ class EmaEma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 限制评分在0-100之间
         return score.clip(0, 100)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于EMA指标数值生成最新的交易信号

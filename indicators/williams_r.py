@@ -1,6 +1,5 @@
-from utils.container import container
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 WILLIAMS_R指标 - 国际金融级标准实现
@@ -9,9 +8,9 @@ WILLIAMS_R指标 - 国际金融级标准实现
 国际金融级核心特点:
 1. 真实数学计算:严格按照经典威廉指标公式计算,绝不使用模拟逻辑
 2. 完整功能架构:计算+评分+形态识别+信号生成+架构兼容
-3. 架构完美兼容:遵循六层架构分层+核心原则  # TODO: 将魔法数字提取到配置中+依赖注入  # TODO: 将魔法数字提取到配置中
-4. 性能优化考虑:缓存+异常处理+边界条件+监控+企业级  # TODO: 将魔法数字提取到配置中
-5. 华尔街交易标准:算法精度+数值稳定性+边界处理+微秒级计算速度  # TODO: 将魔法数字提取到配置中
+3. 架构完美兼容:遵循六层架构分层+核心原则+依赖注入
+4. 性能优化考虑:缓存+异常处理+边界条件+监控+企业级
+5. 华尔街交易标准:算法精度+数值稳定性+边界处理+微秒级计算速度
 
 经典威廉指标算法:
 %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
@@ -20,8 +19,8 @@ WILLIAMS_R指标 - 国际金融级标准实现
 - Lowest Low: N期内最低价  
 - Close: 当前收盘价
 - 结果范围:-100 到 0
-- 超卖水平:通常 <= -80  # TODO: 将魔法数字提取到配置中
-- 超买水平:通常 >= -20  # TODO: 将魔法数字提取到配置中
+- 超卖水平:通常 <= -80
+- 超买水平:通常 >= -20
 """
 
 import numpy as np
@@ -30,10 +29,12 @@ from typing import Dict, Any, List, Union, Optional
 from functools import wraps
 import time
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -95,9 +96,6 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, period: int = 14, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化WILLIAMS_R指标 - 国际金融级标准
         
@@ -105,8 +103,12 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 计算周期,默认14
             **kwargs: 其他指标参数
         """
-        super().__init__()
-        self.name = "WILLIAMS_R"
+        super().__init__(name="WILLIAMS_R", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "威廉指标,国际金融级标准实现"
         self.indicator_type = "WILLIAMS_R"
         self.REQUIRED_COLUMNS = ['high', 'low', 'close']
@@ -123,6 +125,8 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 应用用户参数
         self.set_parameters_Indicator_Base_Indicator(**kwargs)
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算WILLIAMS_R指标 - 公共接口
@@ -401,8 +405,8 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 合理分布评分
         overbought_oversold_score = np.where(in_oversold, overbought_oversold_score + 10,
                                            np.where(in_overbought, overbought_oversold_score + 10,
-                                                   np.where(in_normal, overbought_oversold_score + 15,  # TODO: 将魔法数字提取到配置中
-                                                           overbought_oversold_score + 5)  # TODO: 将魔法数字提取到配置中))  # TODO: 将魔法数字提取到配置中
+                                                   np.where(in_normal, overbought_oversold_score + 15,
+                                                           overbought_oversold_score + 5)))
         
         # 极值处理能力
         extreme_values = (wr <= -95) | (wr >= -5)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -629,6 +633,80 @@ class WilliamsR(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def has_result(self) -> bool:
         """检查是否有计算结果"""
         return self._result is not None and not self._result.empty
+
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        【核心抽象方法2】基于WILLIAMS_R指标数值生成最新的交易信号
+        
+        WILLIAMS_R交易信号逻辑：
+        - 超买信号：%R >= -20，价格可能面临回调压力
+        - 超卖信号：%R <= -80，价格可能面临反弹机会
+        - 中性信号：-80 < %R < -20，价格处于正常波动范围
+        - 背离信号：价格与%R走势背离时的反转信号
+        
+        Args:
+            data: 包含HLC数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号字典
+        """
+        try:
+            # 计算WILLIAMS_R指标
+            result = self.calculate(data, **kwargs)
+            if result.empty:
+                return self._get_default_signal()
+            
+            # 获取最新的WILLIAMS_R值
+            latest_wr = result['williams_r_value'].iloc[-1]
+            
+            # 生成信号
+            if latest_wr >= -20:  # 超买区域
+                signal_type = "SELL"
+                strength = min(100, abs(latest_wr + 20) * 5)  # 强度计算
+                reason = f"WILLIAMS_R超买信号: %R={latest_wr:.2f} >= -20"
+            elif latest_wr <= -80:  # 超卖区域
+                signal_type = "BUY"
+                strength = min(100, abs(latest_wr + 80) * 5)  # 强度计算
+                reason = f"WILLIAMS_R超卖信号: %R={latest_wr:.2f} <= -80"
+            else:  # 中性区域
+                signal_type = "HOLD"
+                strength = 50
+                reason = f"WILLIAMS_R中性区域: %R={latest_wr:.2f}"
+            
+            # 计算置信度
+            confidence = min(100, max(0, strength))
+            
+            return {
+                'signal_type': signal_type,
+                'strength': strength,
+                'confidence': confidence,
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'williams_r_value': latest_wr,
+                    'overbought_threshold': -20,
+                    'oversold_threshold': -80,
+                    'indicator_name': 'WILLIAMS_R'
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"WILLIAMS_R get_signal计算失败: {e}")
+            return self._get_default_signal()
+    
+    def _get_default_signal(self) -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'HOLD',
+            'strength': 50,
+            'confidence': 0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': 'WILLIAMS_R指标计算失败或数据不足',
+            'metadata': {}
+        }
 
     @property
     def minimum_periods(self) -> int:

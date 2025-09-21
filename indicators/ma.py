@@ -1,14 +1,15 @@
-from utils.container import container
 import pandas as pd
 import numpy as np
 from typing import List, Dict, Any
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from indicators.pattern_registry import PatternTypePatternRegistry
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 
 # 使用字符串替代Pattern_type枚举
@@ -31,16 +32,17 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     REQUIRED_COLUMNS = ["close"]
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化移动平均线(MA_Ma)指标
         Args:
             **kwargs: 指标参数,支持period,price_field等
         """
-        super().__init__()
-        self.name = "MA_Ma"
+        super().__init__(name="MA_Ma", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "移动平均线"
 
         # 设置默认参数
@@ -295,6 +297,8 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return result_df
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于MA指标数值生成最新的交易信号
@@ -747,6 +751,8 @@ class MaMa(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     ) -> float:
         return self.calculate_confidence(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算移动平均线指标

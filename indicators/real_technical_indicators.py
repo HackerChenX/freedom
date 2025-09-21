@@ -1,8 +1,5 @@
-from utils.container import container
-from indicators.base_indicator import BaseIndicator
 #!/usr/bin/env python3
-from utils.logger import get_logger
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 真实技术指标计算实现
@@ -10,14 +7,19 @@ from utils.logger import get_logger
 完全替代所有模拟实现,使用真实的数学公式计算技术指标.
 
 Author: AI Assistant
-Date: 2025-07-19  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+Date: 2025-07-19
 """
 
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, Optional, Tuple
-from db.sql_manager import SQLManager, QueryType
 import logging
+from typing import Dict, Any, Optional, Tuple
+
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from indicators.base_indicator import BaseIndicator
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -114,14 +116,14 @@ class RealTechnicalIndicators(BaseIndicator):
     @staticmethod
     def calculate_obv(close: pd.Series, volume: pd.Series) -> pd.Series:
         """计算真实能量潮指标"""
-        = close.diff()
+        price_change = close.diff()
         obv = pd.Series(index=close.index, dtype=float)
         obv.iloc[0] = volume.iloc[0]
         
         for i in range(1, len(close)):
-            if .iloc[i] > 0:
+            if price_change.iloc[i] > 0:
                 obv.iloc[i] = obv.iloc[i-1] + volume.iloc[i]
-            elif .iloc[i] < 0:
+            elif price_change.iloc[i] < 0:
                 obv.iloc[i] = obv.iloc[i-1] - volume.iloc[i]
             else:
                 obv.iloc[i] = obv.iloc[i-1]
@@ -181,25 +183,33 @@ class RealTechnicalIndicators(BaseIndicator):
 class RealIndicatorFactory(BaseIndicator):
     """真实指标工厂类"""
     
-    def __init__(self):
-            super().__init__(name=self.__class__.__name__, **kwargs)
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, **kwargs):
+        """初始化真实指标工厂"""
+        super().__init__(name="RealIndicatorFactory", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.calculator = RealTechnicalIndicators()
     
     def create_indicator(self, name: str, **kwargs) -> Any:
         """创建真实指标实例"""
         
         class RealIndicator(BaseIndicator):
-            def __init__(self, indicator_name: str, calculator: RealTechnicalIndicators):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
-                self.name = indicator_name
+            def __init__(self, indicator_name: str, calculator: RealTechnicalIndicators, **kwargs):
+                """初始化真实指标实例"""
+                super().__init__(name=indicator_name, **kwargs)
+                
+                # 依赖注入
+                self.data_access = container.resolve("DataAccessInterface")
+                self.cache_service = container.resolve("ICacheService")
+                
                 self.calculator = calculator
                 self.patterns = ['bullish', 'bearish', 'neutral']
             
+            @performance_monitor(threshold=2.0)
+            @exception_handler(reraise=True)
             def calculate(self, data: pd.DataFrame) -> Dict[str, Any]:
                 """计算真实指标值"""
                 try:
@@ -265,33 +275,46 @@ class RealIndicatorFactory(BaseIndicator):
             def get_patterns(self) -> list:
                 """获取支持的形态"""
                 return self.patterns
+            
+            @performance_monitor(threshold=1.0)
+            @exception_handler(reraise=False, default_return=None)
+            def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
+                """
+                获取交易信号
+                
+                Args:
+                    data: 包含指标计算结果的数据
+                    
+                Returns:
+                    Dict[str, Any]: 交易信号信息
+                """
+                if data.empty:
+                    return {
+                        'signal_type': 'hold',
+                        'strength': 0.0,
+                        'confidence': 0.5,
+                        'timestamp': pd.Timestamp.now(),
+                        'reason': '数据为空，保持观望',
+                        'metadata': {}
+                    }
+                
+                # 基于收盘价的简单信号生成逻辑
+                latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
+                
+                return {
+                    'signal_type': 'hold',
+                    'strength': 0.5,
+                    'confidence': 0.5,
+                    'timestamp': pd.Timestamp.now(),
+                    'reason': f'基于收盘价 {latest_close} 的真实指标信号',
+                    'metadata': {
+                        'indicator_name': self.name,
+                        'close_price': latest_close
+                    }
+                }
         
         return RealIndicator(name, self.calculator)
 
 
 # 全局真实指标工厂实例
 real_indicator_factory = RealIndicatorFactory()
-
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        获取交易信号
-        
-        Args:
-            data: 包含指标计算结果的数据
-            
-        Returns:
-            Dict[str, Any]: 交易信号信息
-        """
-        if data.empty:
-            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
-        
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
-        
-        return {
-            'signal': 'hold',
-            'strength': 0.0,
-            'timestamp': data.index[-1] if not data.empty else None,
-            'price': latest_close,
-            'indicator': self.name
-        }

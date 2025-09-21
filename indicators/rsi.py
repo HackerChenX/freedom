@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from utils.dependency_injection import get_logger
 # -*- coding: utf-8 -*-
 
 """
@@ -9,13 +8,14 @@ from utils.dependency_injection import get_logger
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import List, Dict, Any
 
+from utils.container import container
+from utils.dependency_injection import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from utils.dependency_injection import get_logger
 
 logger = get_logger(__name__)
 
@@ -27,8 +27,12 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
     def __init__(self, period: int = 14, ma_periods: List[int] = None, overbought: float = 70.0, oversold: float = 30.0):
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-        super().__init__()
-        self.name = "RSI_Rsi"
+        super().__init__(name="RSI_Rsi")
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
         self.ma_periods = ma_periods if ma_periods is not None else [5, 10]
         self.overbought = overbought
@@ -452,6 +456,8 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
 
     # ==================== 抽象方法实现 ====================
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算RSI指标 - 符合BaseIndicator标准
@@ -587,6 +593,8 @@ class RsiRsi(BaseIndicator, PatternSignalMixin):
         """兼容性方法：生成信号"""
         return self.generate_signals_Rsi(data, **kwargs)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取增强型RSI交易信号（抽象方法实现）

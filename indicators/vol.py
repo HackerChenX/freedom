@@ -1,8 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 成交量(VOL)
@@ -11,18 +8,17 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple, Any
-# from scipy import signal, stats  # 移除scipy依赖
 import warnings
-# import talib  # 移除talib依赖
+from typing import Dict, Any, Union, List, Optional, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
@@ -41,9 +37,6 @@ class STDDEV(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化标准差指标
 
@@ -51,7 +44,12 @@ class STDDEV(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 计算周期,默认20
             **kwargs: 其他参数
         """
-        super().__init__(**kwargs)
+        super().__init__(name="STDDEV", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
         self.REQUIRED_COLUMNS = ['close']
 
@@ -76,6 +74,8 @@ class STDDEV(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return True
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算标准差
@@ -122,6 +122,8 @@ class STDDEV(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return "signals"
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """获取最新的交易信号"""
         if data.empty or 'stddev_signal' not in data.columns:
@@ -204,10 +206,7 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述:市场活跃度,参与度直观体现
     """
     
-    def __init__(self, period: int = 14, enable_cycles_analysis: bool = True, enable_standardization: bool = True):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, period: int = 14, enable_cycles_analysis: bool = True, enable_standardization: bool = True, **kwargs):  # TODO: 将魔法数字提取到配置中
         """
         初始化成交量(VOL)指标
 
@@ -215,8 +214,13 @@ class VolumeIndicator(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 计算周期,默认为14
             enable_cycles_analysis: 是否启用量能周期分析,默认启用
             enable_standardization: 是否启用成交量标准化,默认启用
+            **kwargs: 其他参数
         """
-        super().__init__()
+        super().__init__(name="VOL", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.name = "VOL"
         self.description = "成交量指标,市场活跃度,参与度直观体现"

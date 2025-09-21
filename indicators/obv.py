@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 OBV (On-Balance Volume) 能量潮指标
 
@@ -9,11 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
-from utils.container import container
 
 logger = get_logger(__name__)
 
@@ -34,8 +37,11 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "OBV"
+        super().__init__(name="OBV", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         
         # 初始化结果存储
         self._result = None
@@ -300,6 +306,8 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     # ================== 兼容性方法 ==================
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法:计算指标"""
         return self.calculate_Obv(data, **kwargs)
@@ -333,11 +341,13 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     confidence += min(strength * 0.1, 0.3)
             
             return min(max(confidence, 0.0), 1.0)
-            
+
         except Exception as e:
             logger.warning(f"OBV置信度计算失败: {e}")
             return 0.0
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于OBV (On-Balance Volume) 指标数值生成最新的交易信号
@@ -530,7 +540,7 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                     **metadata
                 }
             }
-
+            
         except Exception as e:
             logger.warning(f"OBV信号生成失败: {e}")
             return self._get_default_signal(f"信号生成失败: {str(e)}")
@@ -541,7 +551,7 @@ class OnBalanceVolume(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         Args:
             data: 输入数据DataFrame
-            
+        
         Returns:
             bool: 数据是否有效
         """

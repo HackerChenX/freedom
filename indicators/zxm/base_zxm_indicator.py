@@ -1,5 +1,5 @@
-from typing import Dict, Any
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 张新民指标基类
@@ -7,16 +7,16 @@ from utils.container import container
 提供ZXM系列指标的共同基类和通用方法
 """
 
-from utils.logger import get_logger
-
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Dict, List, Any, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -25,10 +25,6 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
     """张新民指标基类"""
 
     def __init__(self, name: str, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
-        self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
         """
         初始化ZXM指标基类
         
@@ -37,6 +33,12 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
             **kwargs: 其他参数
         """
         super().__init__(name, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
         self._score_range = (0, 100)  # ZXM指标的得分范围，默认0-100
 
     def calculate_raw_score_Indicator_Base_Zxm_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
@@ -142,6 +144,8 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
         """
         return 30  # TODO: 将魔法数字提取到配置中
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -170,6 +174,8 @@ class BaseZxmindicator(BaseIndicator, ABC, MinimumPeriodsMixin):
 
         return result
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取交易信号

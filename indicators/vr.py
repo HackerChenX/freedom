@@ -1,7 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 成交量指标(VR)模块
@@ -10,15 +8,16 @@ from utils.logger import get_logger
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
 logger = get_logger(__name__)
@@ -32,18 +31,18 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化VR指标
 
         Args:
             **kwargs: 指标参数,包括period和ma_period
         """
-        # 🔧 Ultra Think修复:修正构造函数调用(基于SAR,CMO成功修复经验)
-        super().__init__()
-        self.name = "VR"
+        super().__init__(name="VR", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "成交量指标,计算上涨成交量与下跌成交量的比值"
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
 
@@ -60,6 +59,8 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         生成VR指标的标准化交易信号
@@ -449,6 +450,8 @@ class VolumeRatioVr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_vr(data, **kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VR指标 - Ultra Think修复:添加缺失的标准calculate方法

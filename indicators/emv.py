@@ -1,10 +1,5 @@
-from utils.container import container
-
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 指数平均数指标(EMV_Emv)
@@ -13,17 +8,16 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Optional, Union, List, Dict, Any
-import logging
+from typing import Dict, Any, Optional, Union, List
 
-
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -43,15 +37,16 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(
-        self, volume_divisor: float = 10000, period: int = 14
+        self, volume_divisor: float = 10000, period: int = 14, **kwargs
     ):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """初始化EMV指标"""
         # 🔧 Ultra Think修复:修正构造函数调用(基于SAR,CMO,VR成功修复经验)
-        super().__init__()
-        self.name = "EMV_Emv"
+        super().__init__(name="EMV_Emv", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "指数平均数指标,评估价格上涨下跌的难易程度"
         self.REQUIRED_COLUMNS = ["high", "low", "volume"]
         self.volume_divisor = volume_divisor
@@ -104,6 +99,8 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_emv(data, **kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算EMV指标 - Ultra Think修复:添加缺失的标准calculate方法
@@ -366,6 +363,8 @@ class EmvEmv(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         生成EMV指标的标准化交易信号

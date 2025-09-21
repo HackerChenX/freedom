@@ -1,17 +1,15 @@
-from typing import Dict, Any
-from utils.container import container
-from indicators.base_indicator import BaseIndicator
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 统一指标计算基类模块
 
 提供统一的指标计算基础设施,包括:
 1. 标准化的指标计算接口
 2. 通用的数据验证和处理
-3. 统一的指标注册和管理  # TODO: 将魔法数字提取到配置中
-4. 高效的批量计算支持  # TODO: 将魔法数字提取到配置中
+3. 统一的指标注册和管理
+4. 高效的批量计算支持
 """
-
-from utils.logger import get_logger
 
 import abc
 import pandas as pd
@@ -21,9 +19,11 @@ from datetime import datetime
 from dataclasses import dataclass
 from enum import Enum
 
+from utils.container import container
 from utils.logger import get_logger
 from utils.common_utils import DataProcessor, ValidationUtils, CacheUtils
 from utils.decorators import exception_handler, performance_monitor
+from indicators.base_indicator import BaseIndicator
 from enums.indicator_types import Indicatortype_indicator_types
 from db.sql_manager import SQLManager, QueryType
 
@@ -74,13 +74,15 @@ class UnifiedIndicatorCalculator(abc.ABC):
     """
     
     def __init__(self, name: str, indicator_type: IndicatorType):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+        """初始化统一指标计算器"""
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.name = name
         self.indicator_type = indicator_type
         self.cache_enabled = True
-        self.cache_ttl = 300  # 5分钟缓存  # TODO: 将魔法数字提取到配置中
+        self.cache_ttl = 300  # 5分钟缓存
         
         # 性能统计
         self.calculation_count = 0
@@ -90,6 +92,8 @@ class UnifiedIndicatorCalculator(abc.ABC):
         logger.debug(f"初始化指标计算器: {name}")
     
     @abc.abstractmethod
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **params) -> Union[pd.Series, pd.DataFrame]:
         """
         计算指标的核心方法
@@ -533,23 +537,41 @@ class IndicatorCalculatorFactory:
 class SimpleMovingAverageCalculator(TrendIndicatorBase):
     """简单移动平均线"""
     
-    def __init__(self, period: int = 20):
+    def __init__(self, period: int = 20, **kwargs):
+        """初始化简单移动平均线计算器"""
         # 先保存period，避免被super().__init__覆盖
         self.period = period
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         super().__init__("SMA")
         # 确保period不被覆盖
         self.period = period
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **params) -> pd.DataFrame:
+        # 1. 数据验证
+        if not isinstance(data, pd.DataFrame):
+            raise TypeError("输入数据必须是pandas.DataFrame")
+        
+        if data.empty:
+            raise ValueError("输入数据不能为空")
+        
+        if 'close' not in data.columns:
+            raise ValueError("缺少必需列: close")
+        
         period = params.get('period', self.period)  # 优先使用实例的period
+        if len(data) < period:
+            raise ValueError(f"数据量不足，需要至少{period}个数据点")
+            
         sma_values = data['close'].rolling(window=period).mean()
         
-        # 返回标准DataFrame格式
+        # 返回标准DataFrame格式，使用指标前缀命名
         result_df = data.copy()
-        result_df['sma'] = sma_values
+        result_df['sma_value'] = sma_values
         result_df['sma_signal'] = 0
         
         # 添加信号标记
@@ -586,8 +608,10 @@ class SimpleMovingAverageCalculator(TrendIndicatorBase):
         return (hasattr(self, '_result') and 
                 self._result is not None and 
                 not self._result.empty and
-                'sma' in self._result.columns)
+                'sma_value' in self._result.columns)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于SMA指标数值生成最新的交易信号
@@ -613,7 +637,7 @@ class SimpleMovingAverageCalculator(TrendIndicatorBase):
             period = getattr(self, 'period', 20)
             if self.has_result():
                 result_df = self._result
-                sma_values = result_df['sma']
+                sma_values = result_df['sma_value']
             else:
                 sma_values = data['close'].rolling(window=period).mean()
             

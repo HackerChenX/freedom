@@ -1,22 +1,22 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 CHIP_DISTRIBUTION 指标
 
-自动生成的最小化指标实现
+筹码分布指标，用于分析股票筹码的分布情况和成本分析
 """
 
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -29,23 +29,23 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化CHIP_DISTRIBUTION指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "CHIP_DISTRIBUTION"
+        super().__init__(name="CHIP_DISTRIBUTION", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_chipdistribution()
 
-        # 🔧 Ultra Think修复:设置内部minimum_periods值
-        self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中
+        # 设置内部minimum_periods值
+        self._minimum_periods = 14
 
         # 应用用户参数
         self.set_parameters_Distribution(**kwargs)
@@ -156,6 +156,8 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return df
     
     # 🔧 Ultra Think修复:添加通用calculate方法,确保测试兼容性
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         通用计算方法,供测试框架使用
@@ -302,6 +304,132 @@ class ChipDistribution(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         实现基类要求的参数设置方法
         """
         self.set_parameters_Distribution(**kwargs)
+    
+    # ================== 标准抽象方法实现 ==================
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取筹码分布交易信号 - BaseIndicator抽象方法实现
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        if data is None or len(data) < self.minimum_periods:
+            return self._get_default_signal()
+        
+        try:
+            # 计算筹码分布指标
+            result = self.calculate(data, **kwargs)
+            
+            if result is None or len(result) == 0:
+                return self._get_default_signal()
+            
+            # 获取最新的指标值
+            latest_data = result.iloc[-1]
+            
+            # 基于筹码分布生成信号
+            signal_type = "HOLD"
+            strength = 50.0
+            confidence = 50.0
+            reason = "无明显筹码分布信号"
+            
+            # 检查筹码分布指标值
+            if 'CHIP_DISTRIBUTION_VALUE' in latest_data:
+                chip_value = latest_data['CHIP_DISTRIBUTION_VALUE']
+                
+                if chip_value > 80:  # 筹码高度集中，可能突破
+                    signal_type = "BUY"
+                    strength = min(100.0, 60 + (chip_value - 80) * 2)
+                    confidence = min(100.0, 70 + (chip_value - 80) * 1.5)
+                    reason = f"筹码高度集中，突破概率高，集中度: {chip_value:.2f}"
+                elif chip_value < 20:  # 筹码高度分散，可能调整
+                    signal_type = "SELL"
+                    strength = min(100.0, 60 + (20 - chip_value) * 2)
+                    confidence = min(100.0, 70 + (20 - chip_value) * 1.5)
+                    reason = f"筹码高度分散，调整风险高，分散度: {chip_value:.2f}"
+                elif chip_value > 60:  # 筹码相对集中
+                    signal_type = "BUY"
+                    strength = min(100.0, 45 + (chip_value - 60) * 1.5)
+                    confidence = min(100.0, 55 + (chip_value - 60) * 1.2)
+                    reason = f"筹码相对集中，上涨概率较高，集中度: {chip_value:.2f}"
+                elif chip_value < 40:  # 筹码相对分散
+                    signal_type = "SELL"
+                    strength = min(100.0, 45 + (40 - chip_value) * 1.5)
+                    confidence = min(100.0, 55 + (40 - chip_value) * 1.2)
+                    reason = f"筹码相对分散，下跌风险较高，分散度: {chip_value:.2f}"
+            
+            # 检查是否有筹码分布形态
+            if hasattr(self, '_result') and self._result is not None:
+                patterns = self.get_patterns_Distribution(data)
+                if patterns is not None and len(patterns) > 0:
+                    # 基于形态数量调整信号强度
+                    pattern_count = patterns.sum().sum() if hasattr(patterns, 'sum') else 0
+                    if pattern_count > 0:
+                        strength = min(100.0, strength + pattern_count * 3)
+                        confidence = min(100.0, confidence + pattern_count * 2)
+                        reason += f"，发现{pattern_count}个筹码分布形态"
+            
+            # 检查筹码分布趋势
+            if len(result) >= 5 and 'CHIP_DISTRIBUTION_VALUE' in result.columns:
+                recent_values = result['CHIP_DISTRIBUTION_VALUE'].tail(5)
+                trend = recent_values.iloc[-1] - recent_values.iloc[0]
+                
+                if abs(trend) > 10:  # 有明显趋势
+                    if trend > 0:  # 筹码集中趋势
+                        if signal_type == "BUY":
+                            strength = min(100.0, strength + 10)
+                            confidence = min(100.0, confidence + 8)
+                            reason += "，筹码集中趋势明显"
+                    else:  # 筹码分散趋势
+                        if signal_type == "SELL":
+                            strength = min(100.0, strength + 10)
+                            confidence = min(100.0, confidence + 8)
+                            reason += "，筹码分散趋势明显"
+            
+            # 构建标准化信号字典
+            signal = {
+                'signal_type': signal_type,
+                'strength': strength,
+                'confidence': confidence,
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator': 'CHIP_DISTRIBUTION',
+                    'data_points': len(data),
+                    'latest_value': latest_data.get('CHIP_DISTRIBUTION_VALUE', 50.0) if 'CHIP_DISTRIBUTION_VALUE' in latest_data else 50.0,
+                    'chip_concentration': latest_data.get('CHIP_DISTRIBUTION_VALUE', 50.0) > 60 if 'CHIP_DISTRIBUTION_VALUE' in latest_data else False,
+                    'chip_dispersion': latest_data.get('CHIP_DISTRIBUTION_VALUE', 50.0) < 40 if 'CHIP_DISTRIBUTION_VALUE' in latest_data else False
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"筹码分布信号生成失败: {e}")
+            return self._get_default_signal()
+    
+    def _get_default_signal(self) -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'HOLD',
+            'strength': 50.0,
+            'confidence': 50.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': '数据不足或计算失败',
+            'metadata': {
+                'indicator': 'CHIP_DISTRIBUTION',
+                'data_points': 0,
+                'latest_value': 50.0,
+                'chip_concentration': False,
+                'chip_dispersion': False
+            }
+        }
 
 
 # 为了向后兼容,创建别名

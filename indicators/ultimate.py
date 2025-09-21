@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 终极振荡器(Ultimate Oscillator)指标
@@ -14,10 +12,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Optional, Tuple, Union
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -47,9 +47,6 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def __init__(
         self, period1: int = 7, period2: int = 14, period3: int = 28, **kwargs
     ):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化终极振荡器指标
 
@@ -59,11 +56,17 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period3: 长期周期,默认28
             **kwargs: 其他参数
         """
-        super().__init__(**kwargs)
+        super().__init__(name="ULTIMATE", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period1 = period1
         self.period2 = period2
         self.period3 = period3
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
+        self.description = "终极振荡器指标，由Larry Williams开发的动量振荡器，结合三个不同时间周期的价格动量"
 
     def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -92,6 +95,8 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return True
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算终极振荡器
@@ -228,6 +233,8 @@ class Ultimate(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 not self._result.empty and
                 'ultimate_oscillator' in self._result.columns)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于Ultimate Oscillator指标数值生成最新的交易信号

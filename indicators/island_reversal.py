@@ -1,22 +1,22 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 ISLAND_REVERSAL 指标
 
-自动生成的最小化指标实现
+岛型反转形态识别指标，用于识别价格的岛型反转模式
 """
 
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -29,17 +29,17 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ISLAND_REVERSAL指标
         
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "ISLAND_REVERSAL"
+        super().__init__(name="ISLAND_REVERSAL", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_islandreversal()
@@ -177,6 +177,8 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取形态"""
         return pd.DataFrame(index=data.index)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算岛形反转指标的主要入口方法
@@ -228,4 +230,106 @@ class IslandReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30  # TODO: 将魔法数字提取到配置中
+        return 30
+    
+    # ================== 标准抽象方法实现 ==================
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取岛型反转交易信号 - BaseIndicator抽象方法实现
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        if data is None or len(data) < self.minimum_periods:
+            return self._get_default_signal()
+        
+        try:
+            # 计算岛型反转指标
+            result = self.calculate(data, **kwargs)
+            
+            if result is None or len(result) == 0:
+                return self._get_default_signal()
+            
+            # 获取最新的指标值
+            latest_data = result.iloc[-1]
+            
+            # 基于岛型反转形态生成信号
+            signal_type = "HOLD"
+            strength = 50.0
+            confidence = 50.0
+            reason = "无明显岛型反转信号"
+            
+            # 检查岛型反转形态
+            if 'island_reversal_value' in latest_data:
+                island_value = latest_data['island_reversal_value']
+                
+                if island_value > 0.8:  # 强烈的岛型反转买入信号
+                    signal_type = "BUY"
+                    strength = min(100.0, 60 + island_value * 40)
+                    confidence = min(100.0, 70 + island_value * 25)
+                    reason = f"检测到强烈岛型反转买入信号，强度: {island_value:.2f}"
+                elif island_value < -0.8:  # 强烈的岛型反转卖出信号
+                    signal_type = "SELL"
+                    strength = min(100.0, 60 + abs(island_value) * 40)
+                    confidence = min(100.0, 70 + abs(island_value) * 25)
+                    reason = f"检测到强烈岛型反转卖出信号，强度: {abs(island_value):.2f}"
+                elif abs(island_value) > 0.4:  # 中等强度信号
+                    signal_type = "BUY" if island_value > 0 else "SELL"
+                    strength = min(100.0, 45 + abs(island_value) * 25)
+                    confidence = min(100.0, 55 + abs(island_value) * 20)
+                    reason = f"检测到中等岛型反转{'买入' if island_value > 0 else '卖出'}信号，强度: {abs(island_value):.2f}"
+            
+            # 检查是否有形态识别结果
+            if hasattr(self, '_result') and self._result is not None:
+                patterns = self.get_patterns_Reversal(data)
+                if patterns is not None and len(patterns) > 0:
+                    # 基于形态数量调整信号强度
+                    pattern_count = patterns.sum().sum() if hasattr(patterns, 'sum') else 0
+                    if pattern_count > 0:
+                        strength = min(100.0, strength + pattern_count * 5)
+                        confidence = min(100.0, confidence + pattern_count * 3)
+                        reason += f"，发现{pattern_count}个相关形态"
+            
+            # 构建标准化信号字典
+            signal = {
+                'signal_type': signal_type,
+                'strength': strength,
+                'confidence': confidence,
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator': 'ISLAND_REVERSAL',
+                    'data_points': len(data),
+                    'latest_value': latest_data.get('island_reversal_value', 0.0) if 'island_reversal_value' in latest_data else 0.0,
+                    'pattern_detected': abs(latest_data.get('island_reversal_value', 0.0)) > 0.4 if 'island_reversal_value' in latest_data else False
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"岛型反转信号生成失败: {e}")
+            return self._get_default_signal()
+    
+    def _get_default_signal(self) -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'HOLD',
+            'strength': 50.0,
+            'confidence': 50.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': '数据不足或计算失败',
+            'metadata': {
+                'indicator': 'ISLAND_REVERSAL',
+                'data_points': 0,
+                'latest_value': 0.0,
+                'pattern_detected': False
+            }
+        }

@@ -1,12 +1,16 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 
@@ -28,9 +32,6 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                  adaptive_thresholds: bool = True,
                  smooth_period: int = 3,  # TODO: 将魔法数字提取到配置中
                  **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强型Williams %R指标
 
@@ -43,8 +44,11 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             smooth_period: 平滑周期,默认3
             **kwargs: 其他参数
         """
-        super().__init__()
-        self.name = "ENHANCED_WR"
+        super().__init__(name="ENHANCED_WR", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.period = period
         self.overbought = overbought
         self.oversold = oversold
@@ -127,6 +131,8 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         self.set_parameters(**kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算增强型Williams %R指标 - 标准接口
@@ -548,6 +554,8 @@ class EnhancedWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         self.set_parameters_Wr(**kwargs)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于Enhanced Williams %R指标数值生成最新的交易信号

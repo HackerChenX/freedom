@@ -14,6 +14,7 @@ from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -26,17 +27,19 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化增强布林带指标
 
         Args:
             **kwargs: 指标参数
         """
-        # 移除super().__init__调用，直接设置属性
-        self.name = "EnhancedBoll"
+        # 正确调用父类初始化
+        super().__init__(name="ENHANCED_BOLL", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "增强布林带指标，提供自适应带宽和动态标准差调整"
 
         # 设置默认参数
@@ -80,6 +83,8 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         return max(self.period, self.volatility_window) + 10
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算增强布林带指标的主要入口方法
@@ -140,10 +145,10 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         upper = middle + (rolling_std * self.std_dev)
         lower = middle - (rolling_std * self.std_dev)
 
-        result["Middle"] = middle
-        result["Upper"] = upper
-        result["Lower"] = lower
-        result["RollingStd"] = rolling_std
+        result["enhanced_boll_middle"] = middle
+        result["enhanced_boll_upper"] = upper
+        result["enhanced_boll_lower"] = lower
+        result["enhanced_boll_std"] = rolling_std
 
         return result
 
@@ -170,8 +175,8 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         )  # TODO: 将魔法数字提取到配置中
 
         # 重新计算自适应布林带
-        middle = result["Middle"]
-        rolling_std = result["RollingStd"]
+        middle = result["enhanced_boll_middle"]
+        rolling_std = result["enhanced_boll_std"]
 
         adaptive_upper = middle + (rolling_std * adaptive_multiplier)
         adaptive_lower = middle - (rolling_std * adaptive_multiplier)
@@ -187,9 +192,9 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """计算带宽指标"""
         result = data.copy()
 
-        upper = result["Upper"]
-        lower = result["Lower"]
-        middle = result["Middle"]
+        upper = result["enhanced_boll_upper"]
+        lower = result["enhanced_boll_lower"]
+        middle = result["enhanced_boll_middle"]
 
         # 带宽
         bandwidth = (upper - lower) / middle
@@ -219,9 +224,9 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result = data.copy()
 
         close = result["close"]
-        upper = result["Upper"]
-        lower = result["Lower"]
-        middle = result["Middle"]
+        upper = result["enhanced_boll_upper"]
+        lower = result["enhanced_boll_lower"]
+        middle = result["enhanced_boll_middle"]
 
         # %B值
         percent_b = (close - lower) / (upper - lower)
@@ -247,9 +252,9 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result = data.copy()
 
         close = result["close"]
-        upper = result["Upper"]
-        lower = result["Lower"]
-        middle = result["Middle"]
+        upper = result["enhanced_boll_upper"]
+        lower = result["enhanced_boll_lower"]
+        middle = result["enhanced_boll_middle"]
         percent_b = result["PercentB"]
         bandwidth = result["Bandwidth"]
 
@@ -291,6 +296,83 @@ class EnhancedBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result["BreakoutSignal"] = upper_breakout | lower_breakout
 
         return result
+
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取增强布林带交易信号（抽象方法实现）
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的标准信号字典
+        """
+        try:
+            # 计算指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {
+                    'signal': 'HOLD',
+                    'score': 50.0,
+                    'confidence': 0.5
+                }
+            
+            # 获取最新的信号数据
+            latest = result.iloc[-1]
+            
+            # 基于布林带位置和信号生成交易信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # 获取关键指标
+            percent_b = latest.get('PercentB', 0.5)
+            bull_signal = latest.get('BullSignal', False)
+            bear_signal = latest.get('BearSignal', False)
+            bandwidth_squeeze = latest.get('BandwidthSqueeze', False)
+            bandwidth_expansion = latest.get('BandwidthExpansion', False)
+            
+            # 生成信号逻辑
+            if bull_signal and percent_b < 0.3:
+                signal = "BUY"
+                score = 75.0
+                confidence = 0.8
+            elif bear_signal and percent_b > 0.7:
+                signal = "SELL"
+                score = 25.0
+                confidence = 0.8
+            elif bandwidth_squeeze:
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.9  # 挤压期间高置信度持有
+            elif bandwidth_expansion:
+                # 扩张期间根据方向判断
+                if percent_b > 0.6:
+                    signal = "SELL"
+                    score = 30.0
+                    confidence = 0.7
+                elif percent_b < 0.4:
+                    signal = "BUY"
+                    score = 70.0
+                    confidence = 0.7
+            
+            return {
+                'signal': signal,
+                'score': score,
+                'confidence': confidence
+            }
+            
+        except Exception as e:
+            logger.warning(f"ENHANCED_BOLL信号获取失败: {e}")
+            return {
+                'signal': 'HOLD',
+                'score': 50.0,
+                'confidence': 0.5
+            }
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

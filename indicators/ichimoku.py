@@ -1,6 +1,6 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 ICHIMOKU 指标 (一目均衡表)
 
@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Union
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from db.sql_manager import SQLManager, QueryType
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 
@@ -46,20 +48,20 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ICHIMOKU指标
-        全球金融软件巅峰级标准:完整参数初始化 + 架构兼容性
         
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "ICHIMOKU"
+        super().__init__(name="ICHIMOKU", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.indicator_type = "ICHIMOKU"
-        self.description = "一目均衡表指标"
+        self.description = "一目均衡表指标，用于判断价格趋势和支撑阻力位"
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_ichimoku()
@@ -208,16 +210,16 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         ichimoku_signal += green_kumo * 10
         ichimoku_signal += (~green_kumo) * (-10)
         
-        # 保存计算结果
-        df['ICHIMOKU_TENKAN'] = tenkan_sen
-        df['ICHIMOKU_KIJUN'] = kijun_sen
-        df['ICHIMOKU_SENKOU_A'] = senkou_span_a
-        df['ICHIMOKU_SENKOU_B'] = senkou_span_b
-        df['ICHIMOKU_CHIKOU'] = chikou_span
-        df['ICHIMOKU_KUMO_TOP'] = kumo_top
-        df['ICHIMOKU_KUMO_BOTTOM'] = kumo_bottom
-        df['ICHIMOKU_KUMO_THICKNESS'] = kumo_thickness
-        df['ICHIMOKU_VALUE'] = ichimoku_signal
+        # 保存计算结果 - L4标准列名
+        df['ichimoku_tenkan'] = tenkan_sen
+        df['ichimoku_kijun'] = kijun_sen
+        df['ichimoku_senkou_a'] = senkou_span_a
+        df['ichimoku_senkou_b'] = senkou_span_b
+        df['ichimoku_chikou'] = chikou_span
+        df['ichimoku_kumo_top'] = kumo_top
+        df['ichimoku_kumo_bottom'] = kumo_bottom
+        df['ichimoku_kumo_thickness'] = kumo_thickness
+        df['ichimoku_value'] = ichimoku_signal
         
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -235,15 +237,15 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取ICHIMOKU各组件
-            if 'ICHIMOKU_VALUE' not in df.columns:
+            if 'ichimoku_value' not in df.columns:
                 return df
 
             close_price = df['close']
-            tenkan = df['ICHIMOKU_TENKAN']
-            kijun = df['ICHIMOKU_KIJUN']
-            kumo_top = df['ICHIMOKU_KUMO_TOP']
-            kumo_bottom = df['ICHIMOKU_KUMO_BOTTOM']
-            chikou = df['ICHIMOKU_CHIKOU']
+            tenkan = df['ichimoku_tenkan']
+            kijun = df['ichimoku_kijun']
+            kumo_top = df['ichimoku_kumo_top']
+            kumo_bottom = df['ichimoku_kumo_bottom']
+            chikou = df['ichimoku_chikou']
 
             # 一目均衡表信号生成逻辑:
             # 强买入信号:价格>云图 AND 转换线>基准线 AND 滞后线>价格(26日前)
@@ -298,18 +300,18 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if not self.has_result():
             self.calculate_Ichimoku(data, **kwargs)
         
-        if 'ICHIMOKU_VALUE' not in self._result.columns:
-            return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        if 'ichimoku_value' not in self._result.columns:
+            return pd.Series(50.0, index=data.index)
         
         close = self._result['close']
-        tenkan = self._result['ICHIMOKU_TENKAN'].fillna(close)
-        kijun = self._result['ICHIMOKU_KIJUN'].fillna(close)
-        senkou_a = self._result['ICHIMOKU_SENKOU_A'].fillna(close)
-        senkou_b = self._result['ICHIMOKU_SENKOU_B'].fillna(close)
-        chikou = self._result['ICHIMOKU_CHIKOU'].fillna(close)
-        kumo_top = self._result['ICHIMOKU_KUMO_TOP'].fillna(close)
-        kumo_bottom = self._result['ICHIMOKU_KUMO_BOTTOM'].fillna(close)
-        kumo_thickness = self._result['ICHIMOKU_KUMO_THICKNESS'].fillna(0)
+        tenkan = self._result['ichimoku_tenkan'].fillna(close)
+        kijun = self._result['ichimoku_kijun'].fillna(close)
+        senkou_a = self._result['ichimoku_senkou_a'].fillna(close)
+        senkou_b = self._result['ichimoku_senkou_b'].fillna(close)
+        chikou = self._result['ichimoku_chikou'].fillna(close)
+        kumo_top = self._result['ichimoku_kumo_top'].fillna(close)
+        kumo_bottom = self._result['ichimoku_kumo_bottom'].fillna(close)
+        kumo_thickness = self._result['ichimoku_kumo_thickness'].fillna(0)
         
         scores = pd.Series(index=data.index, dtype=float)
         
@@ -442,10 +444,10 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 基于一目均衡表多重确认的置信度
         close = self._result['close']
-        tenkan = self._result['ICHIMOKU_TENKAN']
-        kijun = self._result['ICHIMOKU_KIJUN']
-        kumo_top = self._result['ICHIMOKU_KUMO_TOP']
-        kumo_bottom = self._result['ICHIMOKU_KUMO_BOTTOM']
+        tenkan = self._result['ichimoku_tenkan']
+        kijun = self._result['ichimoku_kijun']
+        kumo_top = self._result['ichimoku_kumo_top']
+        kumo_bottom = self._result['ichimoku_kumo_bottom']
         
         # 计算各组件的一致性
         price_kumo_consistency = 0.5  # TODO: 将魔法数字提取到配置中
@@ -475,12 +477,12 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         patterns = pd.DataFrame(index=data.index)
         
-        if 'ICHIMOKU_VALUE' in self._result.columns:
+        if 'ichimoku_value' in self._result.columns:
             close = self._result['close']
-            tenkan = self._result['ICHIMOKU_TENKAN']
-            kijun = self._result['ICHIMOKU_KIJUN']
-            kumo_top = self._result['ICHIMOKU_KUMO_TOP']
-            kumo_bottom = self._result['ICHIMOKU_KUMO_BOTTOM']
+            tenkan = self._result['ichimoku_tenkan']
+            kijun = self._result['ichimoku_kijun']
+            kumo_top = self._result['ichimoku_kumo_top']
+            kumo_bottom = self._result['ichimoku_kumo_bottom']
             
             # 识别关键形态
             patterns['price_above_kumo'] = close > kumo_top
@@ -495,14 +497,97 @@ class Ichimoku(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     # === 全球金融软件巅峰级BaseIndicator抽象方法实现 ===
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        全球金融软件巅峰级标准公共计算接口
-        符合BaseIndicator规范,统一调用入口
+        计算ICHIMOKU指标
         """
         result = self.calculate_Ichimoku(data, **kwargs)
         self._result = result  # 保存结果供其他方法使用
         return result
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取ICHIMOKU指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算ICHIMOKU指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的ICHIMOKU值
+            latest = result.iloc[-1]
+            close_price = latest.get('close', 0)
+            tenkan = latest.get('ichimoku_tenkan', close_price)
+            kijun = latest.get('ichimoku_kijun', close_price)
+            kumo_top = latest.get('ichimoku_kumo_top', close_price)
+            kumo_bottom = latest.get('ichimoku_kumo_bottom', close_price)
+            chikou = latest.get('ichimoku_chikou', close_price)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # ICHIMOKU信号逻辑
+            # 1. 价格与云图关系
+            price_above_kumo = close_price > kumo_top
+            price_below_kumo = close_price < kumo_bottom
+            price_in_kumo = not (price_above_kumo or price_below_kumo)
+            
+            # 2. 转换线与基准线关系
+            tenkan_above_kijun = tenkan > kijun
+            
+            # 3. 滞后线确认（简化处理）
+            chikou_confirm = abs(chikou - close_price) / close_price if close_price > 0 else 0
+            
+            # 综合信号判断
+            if price_above_kumo and tenkan_above_kijun:  # 强烈看涨
+                signal = "BUY"
+                score = min(85.0, 70.0 + (close_price - kumo_top) / close_price * 100)
+                confidence = min(0.9, 0.7 + chikou_confirm)
+            elif price_below_kumo and not tenkan_above_kijun:  # 强烈看跌
+                signal = "SELL"
+                score = max(15.0, 30.0 - (kumo_bottom - close_price) / close_price * 100)
+                confidence = min(0.9, 0.7 + chikou_confirm)
+            elif price_above_kumo or tenkan_above_kijun:  # 偏强
+                signal = "HOLD"
+                score = 65.0
+                confidence = 0.6
+            elif price_below_kumo or not tenkan_above_kijun:  # 偏弱
+                signal = "HOLD"
+                score = 35.0
+                confidence = 0.6
+            elif price_in_kumo:  # 在云图内部，趋势不明确
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.4
+            else:  # 其他情况
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"ICHIMOKU信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
         
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

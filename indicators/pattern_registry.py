@@ -1,4 +1,5 @@
-from indicators.base_indicator import BaseIndicator
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 形态注册表模块
@@ -6,14 +7,18 @@ from indicators.base_indicator import BaseIndicator
 为技术指标提供形态注册和管理机制
 """
 
-from typing import Dict, List, Any, Optional, Callable, Tuple
-from enum import Enum
-import pandas as pd
-import numpy as np
-from utils.logger import get_logger
-from utils.dependency_injection import get_container
 import os
 import json
+import pandas as pd
+import numpy as np
+from typing import Dict, List, Any, Optional, Callable, Tuple
+from enum import Enum
+
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from utils.dependency_injection import get_container
+from indicators.base_indicator import BaseIndicator
 
 # 获取日志记录器
 logger = get_logger(__name__)
@@ -120,7 +125,7 @@ class PatternInfo(BaseIndicator):
         }
 
 
-class PatternRegistry(BaseIndicator):
+class PatternRegistry:
     """
         PatternRegistry - L4核心服务层组件
 
@@ -151,6 +156,10 @@ class PatternRegistry(BaseIndicator):
     def __init__(self):
         """初始化形态注册表(只初始化一次)"""
         if not PatternRegistry._initialized:
+            # 依赖注入
+            self.data_access = container.resolve("DataAccessInterface")
+            self.cache_service = container.resolve("ICacheService")
+            
             self._patterns = {}
             self._patterns_by_indicator = {}  # 按指标名称组织的形态
             self._allow_override = False  # 默认不允许覆盖

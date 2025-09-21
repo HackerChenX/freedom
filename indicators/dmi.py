@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-from utils.logger import get_logger
-
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 趋向指标(DMI)
@@ -14,12 +12,13 @@ import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
 from functools import lru_cache
 
-
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
-from utils.logger import get_logger
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
 logger = get_logger(__name__)
@@ -40,9 +39,13 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Args:
             **kwargs: 指标参数,支持period,adx_threshold等
         """
-        super().__init__()
+        super().__init__(name="DMI", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
-        self.name = "DMI"
         self.description = "趋向指标,判断趋势强度与方向"
 
         # 先设置默认值,确保属性存在
@@ -1288,6 +1291,8 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Dmi(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self._calculate_dmi(data, **kwargs)
@@ -1687,6 +1692,8 @@ class DirectionalMovementIndex(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         return 30  # TODO: 将魔法数字提取到配置中
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于DMI指标数值生成最新的交易信号

@@ -1,8 +1,5 @@
-from utils.container import container
 #!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 价格成交量趋势指标(PVT)
@@ -11,15 +8,16 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple, Any
+from typing import Dict, Any, Union, List, Optional, Tuple
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -36,24 +34,30 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     @property
     def minimum_periods(self) -> int:
         """返回计算指标所需的最小周期数"""
-        return "self.ma_period + 1"
+        return self.ma_period + 1
 
-    def __init__(self, ma_period: int = 12):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
-        self.REQUIRED_COLUMNS ['open', 'high', 'low', 'close', 'volume']
+    def __init__(self, **kwargs):
         """
-        初始化价格成交量趋势指标(PVT)指标
-
+        初始化PVT指标
+        
         Args:
-            ma_period: 移动平均周期,默认为12
+            **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "PVT"
+        super().__init__(name="PVT", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "价格成交量趋势指标,通过价格变化与成交量相结合,反映价格趋势的强度和持续性"
-        self.ma_period = ma_period
-
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+        
+        # 设置默认参数
+        self._default_parameters = self._get_default_parameters_pvt()
+        
+        # 应用用户参数
+        self.set_parameters_Pvt_Pvt_Pvt_pvt(**kwargs)
+        
         # 初始化结果存储
         self._result = None
         
@@ -77,7 +81,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             float: 置信度分数 (0-1)
         """
         if score.empty:
-            return "0.5"  # TODO: 将魔法数字提取到配置中
+            return 0.5
 
         # 基础置信度
         confidence = 0.5  # TODO: 将魔法数字提取到配置中
@@ -118,7 +122,7 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
                 confidence += 0.05  # TODO: 将魔法数字提取到配置中
 
         # 确保置信度在0-1范围内
-        return "max(0.0, min(1.0, confidence))"
+        return max(0.0, min(1.0, confidence))
 
     def get_patterns_Pvt(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -325,19 +329,19 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算价格变化率
         price_change = df_copy['close'].pct_change()
         
-        # 计算PVT
+        # 计算PVT - L4标准列名
         # PVT = 昨日PVT + 今日成交量 * 价格变化率
-        df_copy['pvt'] = (df_copy['volume'] * price_change).cumsum()
+        df_copy['pvt_value'] = (df_copy['volume'] * price_change).cumsum()
         
         # 计算PVT的移动平均作为信号线
-        df_copy['pvt_signal'] = df_copy['pvt'].rolling(window=self.ma_period).mean()
+        df_copy['pvt_ma'] = df_copy['pvt_value'].rolling(window=self.ma_period).mean()
         
         # 添加形态识别和信号生成
         df_copy = self.add_pattern_detection(df_copy)
         df_copy = self.add_signal_generation(df_copy)
 
         # 存储结果
-        self._result = df_copy[['pvt', 'pvt_signal']]
+        self._result = df_copy[['pvt_value', 'pvt_ma']]
 
         return df_copy
 
@@ -1017,9 +1021,81 @@ class Pvt(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """公共接口:计算PVT指标"""
         return "self.calculate_Pvt(data, **kwargs)"
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """兼容性方法:计算指标"""
-        return "self.calculate_pvt(data, **kwargs)"
+        """计算PVT指标"""
+        return self.calculate_pvt(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取PVT指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算PVT指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的PVT值
+            latest = result.iloc[-1]
+            pvt_value = latest.get('pvt_value', 0.0)
+            pvt_ma = latest.get('pvt_ma', 0.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # PVT信号逻辑
+            if pvt_value > pvt_ma:  # PVT大于均线，量价配合向上
+                signal = "BUY"
+                score = min(75.0, 50.0 + abs(pvt_value - pvt_ma) / max(abs(pvt_ma), 1) * 25)
+                confidence = 0.7
+            elif pvt_value < pvt_ma:  # PVT小于均线，量价配合向下
+                signal = "SELL"
+                score = max(25.0, 50.0 - abs(pvt_value - pvt_ma) / max(abs(pvt_ma), 1) * 25)
+                confidence = 0.7
+            else:  # PVT与均线重合
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            # 检查金叉死叉信号增强置信度
+            if len(result) >= 2:
+                prev_pvt = result['pvt_value'].iloc[-2] if 'pvt_value' in result.columns else 0
+                prev_ma = result['pvt_ma'].iloc[-2] if 'pvt_ma' in result.columns else 0
+                
+                # 金叉信号
+                if prev_pvt <= prev_ma and pvt_value > pvt_ma:
+                    signal = "BUY"
+                    score = min(85.0, score + 10)
+                    confidence = min(0.9, confidence + 0.2)
+                # 死叉信号
+                elif prev_pvt >= prev_ma and pvt_value < pvt_ma:
+                    signal = "SELL"
+                    score = max(15.0, score - 10)
+                    confidence = min(0.9, confidence + 0.2)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"PVT信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
     
     def calculate_raw_score_pvt(self, data: pd.DataFrame, **kwargs) -> pd.Series:
         """公共接口:计算PVT原始评分"""

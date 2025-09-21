@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
 
 """
 MFI (Money Flow Index) 资金流量指标
@@ -13,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -29,17 +29,19 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化MFI指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "MFI"
+        super().__init__(name="MFI", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "资金流量指标，结合价格和成交量来衡量买卖压力，识别超买超卖状态"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_mfi()
@@ -102,9 +104,11 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 🔧 Ultra Think修复:标准化接口调用
         return self._calculate_mfi(data, **kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算MFI指标 - Ultra Think修复:添加缺失的标准calculate方法
+        计算MFI指标
 
         Args:
             data: 输入数据
@@ -112,8 +116,68 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 包含MFI指标的DataFrame
         """
-        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
         return self._calculate_mfi(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取MFI指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算MFI指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的MFI值
+            latest = result.iloc[-1]
+            mfi_value = latest.get('mfi_value', 50.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # MFI信号逻辑
+            if mfi_value >= self.overbought:  # 超买区域
+                signal = "SELL"
+                score = max(20.0, 50.0 - (mfi_value - self.overbought) * 1.5)
+                confidence = min(0.8, 0.5 + (mfi_value - self.overbought) / 40)
+            elif mfi_value <= self.oversold:  # 超卖区域
+                signal = "BUY"
+                score = min(80.0, 50.0 + (self.oversold - mfi_value) * 1.5)
+                confidence = min(0.8, 0.5 + (self.oversold - mfi_value) / 40)
+            elif mfi_value > 60:  # 偏强区域
+                signal = "HOLD"
+                score = 60.0
+                confidence = 0.6
+            elif mfi_value < 40:  # 偏弱区域
+                signal = "HOLD"
+                score = 40.0
+                confidence = 0.6
+            else:  # 中性区域
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"MFI信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -365,14 +429,14 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 计算MFI
         # 避免除零错误
         mfi_ratio = pmf_sum / (nmf_sum + 1e-10)  # 添加小数避免除零
-        df["mfi"] = 100 - (100 / (1 + mfi_ratio))
-        df[f"MFI{self.period}"] = df["mfi"]  # 为了向后兼容
+        df["mfi_value"] = 100 - (100 / (1 + mfi_ratio))
+        df[f"MFI{self.period}"] = df["mfi_value"]  # 为了向后兼容
 
         # 计算MFI信号线(移动平均)
-        df["mfi_signal"] = df["mfi"].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
+        df["mfi_signal"] = df["mfi_value"].rolling(window=5).mean()  # TODO: 将魔法数字提取到配置中
 
         # 计算MFI波动率
-        df["mfi_volatility"] = df["mfi"].rolling(window=10).std()
+        df["mfi_volatility"] = df["mfi_value"].rolling(window=10).std()
 
         # 清理中间计算列
         df.drop(["TP", "MF", "TP_change", "PMF", "NMF"], axis=1, inplace=True)
@@ -393,11 +457,11 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取MFI值
-            if "mfi" not in df.columns:
+            if "mfi_value" not in df.columns:
                 # 如果没有MFI值,使用默认信号
                 return df
 
-            mfi_value = df["mfi"]
+            mfi_value = df["mfi_value"]
             mfi_signal = df["mfi_signal"]
 
             # MFI信号生成逻辑:
@@ -462,7 +526,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
 
         # 获取MFI数据
-        mfi = self._result["mfi"]
+        mfi = self._result["mfi_value"]
         mfi_signal = self._result["mfi_signal"]
         mfi_volatility = self._result["mfi_volatility"]
 
@@ -601,7 +665,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return 0.5  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
         # 基于MFI指标的明确性计算置信度
-        mfi = self._result["mfi"].dropna()
+        mfi = self._result["mfi_value"].dropna()
         mfi_volatility = self._result["mfi_volatility"].dropna()
 
         if len(mfi) == 0:
@@ -649,7 +713,7 @@ class Mfi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         patterns = pd.DataFrame(index=data.index)
 
-        mfi = self._result["mfi"]
+        mfi = self._result["mfi_value"]
         mfi_signal = self._result["mfi_signal"]
 
         # 基本形态

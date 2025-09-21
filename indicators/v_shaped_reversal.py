@@ -1,22 +1,22 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 V_SHAPED_REVERSAL 指标
 
-自动生成的最小化指标实现
+V型反转形态识别指标，用于识别价格的V型反转模式
 """
 
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-from utils.indicator_parameter_validator import IndicatorParameterValidator
 
 logger = get_logger(__name__)
 
@@ -28,10 +28,7 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     自动生成的最小化实现,支持参数标准化
     """
     
-    def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, period: int = 20, **kwargs):
         """
         初始化V_SHAPED_REVERSAL指标
 
@@ -39,7 +36,12 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period: 计算周期
             **kwargs: 其他指标参数
         """
-        self.name = "V_SHAPED_REVERSAL"
+        super().__init__(name="V_SHAPED_REVERSAL", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
 
         # 设置默认参数
@@ -225,4 +227,110 @@ class VShapedReversal(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             int: 最少需要的数据周期数
         """
-        return 30  # TODO: 将魔法数字提取到配置中
+        return 30
+    
+    # ================== 标准抽象方法实现 ==================
+    
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        """
+        计算V型反转指标 - BaseIndicator抽象方法实现
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            pd.DataFrame: 包含V型反转指标的DataFrame
+        """
+        return self.calculate_Reversal_V_Shaped_Reversal(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取V型反转交易信号 - BaseIndicator抽象方法实现
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 其他参数
+            
+        Returns:
+            Dict[str, Any]: 标准化的交易信号字典
+        """
+        if data is None or len(data) < self.minimum_periods:
+            return self._get_default_signal()
+        
+        try:
+            # 计算V型反转指标
+            result = self.calculate(data, **kwargs)
+            
+            if result is None or len(result) == 0:
+                return self._get_default_signal()
+            
+            # 获取最新的指标值
+            latest_data = result.iloc[-1]
+            
+            # 基于V型反转形态生成信号
+            signal_type = "HOLD"
+            strength = 50.0
+            confidence = 50.0
+            reason = "无明显V型反转信号"
+            
+            # 检查V型反转形态
+            if 'v_shaped_reversal_value' in latest_data:
+                v_value = latest_data['v_shaped_reversal_value']
+                
+                if v_value > 0.7:  # 强烈的V型反转信号
+                    signal_type = "BUY"
+                    strength = min(100.0, 50 + v_value * 50)
+                    confidence = min(100.0, 60 + v_value * 30)
+                    reason = f"检测到强烈V型反转买入信号，强度: {v_value:.2f}"
+                elif v_value < -0.7:  # 强烈的倒V型反转信号
+                    signal_type = "SELL"
+                    strength = min(100.0, 50 + abs(v_value) * 50)
+                    confidence = min(100.0, 60 + abs(v_value) * 30)
+                    reason = f"检测到强烈倒V型反转卖出信号，强度: {abs(v_value):.2f}"
+                elif abs(v_value) > 0.3:  # 中等强度信号
+                    signal_type = "BUY" if v_value > 0 else "SELL"
+                    strength = min(100.0, 40 + abs(v_value) * 30)
+                    confidence = min(100.0, 50 + abs(v_value) * 20)
+                    reason = f"检测到中等V型反转{'买入' if v_value > 0 else '卖出'}信号，强度: {abs(v_value):.2f}"
+            
+            # 构建标准化信号字典
+            signal = {
+                'signal_type': signal_type,
+                'strength': strength,
+                'confidence': confidence,
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator': 'V_SHAPED_REVERSAL',
+                    'period': self.period,
+                    'data_points': len(data),
+                    'latest_value': latest_data.get('v_shaped_reversal_value', 0.0) if 'v_shaped_reversal_value' in latest_data else 0.0
+                }
+            }
+            
+            return signal
+            
+        except Exception as e:
+            logger.error(f"V型反转信号生成失败: {e}")
+            return self._get_default_signal()
+    
+    def _get_default_signal(self) -> Dict[str, Any]:
+        """获取默认信号"""
+        return {
+            'signal_type': 'HOLD',
+            'strength': 50.0,
+            'confidence': 50.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': '数据不足或计算失败',
+            'metadata': {
+                'indicator': 'V_SHAPED_REVERSAL',
+                'period': self.period,
+                'data_points': 0,
+                'latest_value': 0.0
+            }
+        }

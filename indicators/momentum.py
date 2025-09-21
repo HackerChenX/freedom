@@ -1,6 +1,6 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 MOMENTUM 指标
 
@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 
@@ -34,17 +36,18 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         return getattr(self, 'period', 14) + 1  # TODO: 将魔法数字提取到配置中
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化MOMENTUM指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "MOMENTUM"
+        super().__init__(name="MOMENTUM", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "动量指标,衡量价格变化的速度和幅度"
 
         # 初始化结果存储
@@ -423,6 +426,8 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     # ================== 兼容性方法 ==================
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法:计算指标"""
         return self.calculate_momentum(data, **kwargs)
@@ -583,6 +588,8 @@ class MomentumMomentum(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return self.calculate_confidence_Momentum(score, patterns, signals)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于MOMENTUM (动量指标) 指标数值生成最新的交易信号

@@ -1,6 +1,6 @@
-from utils.container import container
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
+
 """
 VORTEX (Vortex Indicator) 涡流指标
 
@@ -11,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Union
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from db.sql_manager import SQLManager, QueryType
 from utils.indicator_parameter_validator import IndicatorParameterValidator
 
@@ -31,17 +33,19 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化VORTEX指标
         
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "VORTEX"
+        super().__init__(name="VORTEX", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "涡流指标，用于识别趋势的开始和结束，通过比较正向和负向价格运动来衡量趋势强度"
         
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_vortex()
@@ -93,9 +97,11 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 设置参数
         self.period = params.get('period', 14)  # TODO: 将魔法数字提取到配置中
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算VORTEX指标 - 公共接口
+        计算VORTEX指标
         
         Args:
             data: 包含OHLCV数据的Data_frame
@@ -106,6 +112,86 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         result = self._calculate_baseindicator(data, **kwargs)
         self._result = result
         return result
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取VORTEX指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算VORTEX指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的VORTEX值
+            latest = result.iloc[-1]
+            vi_plus = latest.get('vortex_vi_plus', 1.0)
+            vi_minus = latest.get('vortex_vi_minus', 1.0)
+            vortex_diff = latest.get('vortex_diff', 0.0)
+            vortex_strength = latest.get('vortex_strength', 50.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # VORTEX信号逻辑
+            if vi_plus > vi_minus:  # 上升趋势
+                if vortex_diff > 0.1:  # 强烈上升趋势
+                    signal = "BUY"
+                    score = min(85.0, 50.0 + vortex_diff * 200)
+                    confidence = min(0.9, 0.6 + vortex_diff * 2)
+                elif vortex_diff > 0.05:  # 中等上升趋势
+                    signal = "BUY"
+                    score = min(75.0, 50.0 + vortex_diff * 150)
+                    confidence = min(0.8, 0.5 + vortex_diff * 3)
+                else:  # 弱上升趋势
+                    signal = "HOLD"
+                    score = 60.0
+                    confidence = 0.6
+            elif vi_minus > vi_plus:  # 下降趋势
+                if vortex_diff < -0.1:  # 强烈下降趋势
+                    signal = "SELL"
+                    score = max(15.0, 50.0 + vortex_diff * 200)
+                    confidence = min(0.9, 0.6 + abs(vortex_diff) * 2)
+                elif vortex_diff < -0.05:  # 中等下降趋势
+                    signal = "SELL"
+                    score = max(25.0, 50.0 + vortex_diff * 150)
+                    confidence = min(0.8, 0.5 + abs(vortex_diff) * 3)
+                else:  # 弱下降趋势
+                    signal = "HOLD"
+                    score = 40.0
+                    confidence = 0.6
+            else:  # 趋势不明确
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            # 结合强度调整置信度
+            if vortex_strength > 70:  # 高强度
+                confidence = min(0.9, confidence + 0.1)
+            elif vortex_strength < 30:  # 低强度
+                confidence = max(0.3, confidence - 0.1)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"VORTEX信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -146,10 +232,10 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 确保数据有足够的长度
         if len(df) < self.period + 1:
             logger.warning(f"数据长度({len(df)})不足,需要至少{self.period + 1}条数据")
-            df['VI_PLUS'] = np.nan
-            df['VI_MINUS'] = np.nan
-            df['VORTEX_DIFF'] = np.nan
-            df['VORTEX_RATIO'] = np.nan
+            df['vortex_vi_plus'] = np.nan
+            df['vortex_vi_minus'] = np.nan
+            df['vortex_diff'] = np.nan
+            df['vortex_ratio'] = np.nan
             return df
 
         # 计算真实范围 (True Range)
@@ -175,26 +261,26 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         df['sum_tr'] = df['true_range'].rolling(window=self.period).sum()
         
         # 计算涡流指标
-        df['VI_PLUS'] = df['sum_vm_plus'] / df['sum_tr']
-        df['VI_MINUS'] = df['sum_vm_minus'] / df['sum_tr']
+        df['vortex_vi_plus'] = df['sum_vm_plus'] / df['sum_tr']
+        df['vortex_vi_minus'] = df['sum_vm_minus'] / df['sum_tr']
         
         # 计算涡流指标的差值和比率
-        df['VORTEX_DIFF'] = df['VI_PLUS'] - df['VI_MINUS']
-        df['VORTEX_RATIO'] = df['VI_PLUS'] / (df['VI_MINUS'] + 1e-8)  # 避免除零  # TODO: 将魔法数字提取到配置中
+        df['vortex_diff'] = df['vortex_vi_plus'] - df['vortex_vi_minus']
+        df['vortex_ratio'] = df['vortex_vi_plus'] / (df['vortex_vi_minus'] + 1e-8)  # 避免除零
         
         # 计算涡流指标的强度
-        df['VORTEX_STRENGTH'] = abs(df['VORTEX_DIFF'])
+        df['vortex_strength'] = abs(df['vortex_diff'])
         
         # 计算涡流指标的趋势
-        df['VORTEX_TREND'] = np.where(df['VI_PLUS'] > df['VI_MINUS'], 1, 
-                                     np.where(df['VI_PLUS'] < df['VI_MINUS'], -1, 0))
+        df['vortex_trend'] = np.where(df['vortex_vi_plus'] > df['vortex_vi_minus'], 1, 
+                                     np.where(df['vortex_vi_plus'] < df['vortex_vi_minus'], -1, 0))
         
         # 计算涡流指标的变化率
-        df['VI_PLUS_CHANGE'] = df['VI_PLUS'].pct_change() * 100
-        df['VI_MINUS_CHANGE'] = df['VI_MINUS'].pct_change() * 100
+        df['vortex_vi_plus_change'] = df['vortex_vi_plus'].pct_change() * 100
+        df['vortex_vi_minus_change'] = df['vortex_vi_minus'].pct_change() * 100
         
         # 计算涡流指标的波动率
-        df['VORTEX_VOLATILITY'] = df['VORTEX_DIFF'].rolling(window=10).std()
+        df['vortex_volatility'] = df['vortex_diff'].rolling(window=10).std()
         
         # 清理中间计算列
         df.drop(['prev_close', 'tr1', 'tr2', 'tr3', 'prev_high', 'prev_low', 
@@ -217,14 +303,14 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """
         try:
             # 获取VORTEX值
-            if 'VI_PLUS' not in df.columns or 'VI_MINUS' not in df.columns:
+            if 'vortex_vi_plus' not in df.columns or 'vortex_vi_minus' not in df.columns:
                 # 如果没有VORTEX值,使用默认信号
                 return df
 
-            vi_plus = df['VI_PLUS']
-            vi_minus = df['VI_MINUS']
-            vortex_strength = df['VORTEX_STRENGTH']
-            vortex_trend = df['VORTEX_TREND']
+            vi_plus = df['vortex_vi_plus']
+            vi_minus = df['vortex_vi_minus']
+            vortex_strength = df['vortex_strength']
+            vortex_trend = df['vortex_trend']
 
             # VORTEX信号生成逻辑:
             # BUY: VI+ 上穿 VI- 且强度足够
@@ -286,11 +372,11 @@ class Vortex(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中
         
         # 获取VORTEX数据
-        vi_plus = self._result['VI_PLUS']
-        vi_minus = self._result['VI_MINUS']
-        vortex_diff = self._result['VORTEX_DIFF']
-        vortex_strength = self._result['VORTEX_STRENGTH']
-        vortex_trend = self._result['VORTEX_TREND']
+        vi_plus = self._result['vortex_vi_plus']
+        vi_minus = self._result['vortex_vi_minus']
+        vortex_diff = self._result['vortex_diff']
+        vortex_strength = self._result['vortex_strength']
+        vortex_trend = self._result['vortex_trend']
         
         # 初始化评分
         scores = pd.Series(50.0, index=data.index)  # TODO: 将魔法数字提取到配置中

@@ -1,22 +1,20 @@
-from utils.container import container
-
 """
 布林带指标模块
 
 实现布林带(BOLL_Boll)指标计算
 """
 
-from utils.logger import get_logger
-
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Union, Optional, Any, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import boll as calc_boll
-from utils.logger import get_logger
 from indicators.pattern_registry import (
     PatternRegistry,
     PatternTypePatternRegistry,
@@ -35,18 +33,19 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化布林带指标
 
         Args:
             **kwargs: 指标参数,支持period,std_dev,ma_type等
         """
-        super().__init__()
+        super().__init__(name="BOLL", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
-        self.name = "BOLL"
         self.description = "布林带"
 
         # 设置默认参数
@@ -2005,10 +2004,14 @@ class BollBoll(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Boll(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self._calculate_boll(data, **kwargs)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于BOLL指标数值生成最新的交易信号

@@ -1,19 +1,19 @@
-from utils.container import container
-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import pandas as pd
-from typing import Dict, Any
 import numpy as np
-from typing import Dict, List, Union, Optional, Any
 import logging
+from typing import Dict, List, Union, Optional, Any
+
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from utils.signal_utils import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.signal_utils import crossover, crossunder
 from enums.signal_strength import Signal_strength
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -29,12 +29,13 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """初始化AD指标"""
-        super().__init__()
-        self.name = "AD"
+        super().__init__(name="AD", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "累积分布线指标"
         self.indicator_type = "AD"
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
@@ -44,6 +45,8 @@ class AD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._default_parameters = {}
         self.set_parameters_Indicator_Base_Indicator(**kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """计算AD指标 - 公共接口"""
         result = self._calculate_baseindicator(data, **kwargs)

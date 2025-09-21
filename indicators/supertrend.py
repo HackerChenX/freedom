@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 超级趋势(SuperTrend)指标
@@ -14,10 +12,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Optional, Tuple, Union
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -43,9 +43,6 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, period: int = 10, multiplier: float = 3.0, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化SuperTrend指标
 
@@ -54,10 +51,16 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             multiplier: ATR乘数,默认3.0
             **kwargs: 其他参数
         """
-        super().__init__(**kwargs)
+        super().__init__(name="SUPERTREND", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
         self.multiplier = multiplier
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
+        self.description = "超级趋势指标，基于ATR的趋势跟踪指标，显示动态的支撑和阻力线"
 
     def _get_default_parameters(self) -> Dict[str, Any]:
         """获取默认参数"""
@@ -81,6 +84,8 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return True
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算SuperTrend指标
@@ -239,6 +244,8 @@ class SuperTrend(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return signals
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于SuperTrend指标数值生成最新的交易信号

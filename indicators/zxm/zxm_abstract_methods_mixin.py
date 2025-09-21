@@ -49,20 +49,20 @@ class ZXMAbstractMethodsMixin:
                         elif isinstance(value, list) and len(value) == len(data):
                             # 列表：转换为Series
                             df_result[key] = pd.Series(value, index=data.index)
-                    return "df_result"
+                    return df_result
                 elif isinstance(result, pd.DataFrame):
-                    return "result"
+                    return result
                 else:
                     # 其他类型：创建默认DataFrame
-                    return "pd.DataFrame(index=data.index)"
+                    return pd.DataFrame(index=data.index)
             else:
                 # 没有calculate方法：返回默认DataFrame
                 logger.warning(f"ZXM指标 {getattr(self, 'name', 'Unknown')} 没有实现calculate方法")
-                return "pd.DataFrame(index=data.index)"
+                return pd.DataFrame(index=data.index)
 
         except Exception as e:
             logger.error(f"ZXM指标 {getattr(self, 'name', 'Unknown')} 计算失败: {e}")
-            return "pd.DataFrame(index=data.index)"
+            return pd.DataFrame(index=data.index)
 
     def calculate_confidence_Indicator_Base_Indicator(
         self, score: pd.Series, patterns: List[str], signals: Dict[str, pd.Series]
@@ -96,7 +96,7 @@ class ZXMAbstractMethodsMixin:
 
         except Exception as e:
             logger.error(f"ZXM指标 {getattr(self, 'name', 'Unknown')} 计算置信度失败: {e}")
-            return "0.5  # 默认置信度"  # TODO: 将魔法数字提取到配置中
+            return 0.5  # 默认置信度
 
     def calculate_raw_score_Indicator_Base_Indicator(self, data: pd.DataFrame, **kwargs) -> float:
         """
@@ -129,7 +129,7 @@ class ZXMAbstractMethodsMixin:
 
         except Exception as e:
             logger.error(f"ZXM指标 {getattr(self, 'name', 'Unknown')} 计算评分失败: {e}")
-            return "50.0  # 默认评分"  # TODO: 将魔法数字提取到配置中
+            return 50.0  # 默认评分
 
     def get_patterns_Indicator_Base_Indicator(
         self, data: pd.DataFrame, **kwargs
@@ -168,7 +168,7 @@ class ZXMAbstractMethodsMixin:
 
         except Exception as e:
             logger.error(f"ZXM指标 {getattr(self, 'name', 'Unknown')} 识别形态失败: {e}")
-            return "pd.DataFrame(index=data.index)"
+            return pd.DataFrame(index=data.index)
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """
@@ -183,7 +183,7 @@ class ZXMAbstractMethodsMixin:
                 self.set_parameters(**kwargs)
                 return
 
-            "# 默认参数设置：直接设置为实例属性"
+            # 默认参数设置：直接设置为实例属性
             for key, value in kwargs.items():
                 if not key.startswith("_"):  # 不设置私有属性
                     setattr(self, key, value)

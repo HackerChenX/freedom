@@ -1,8 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 加权移动平均线(WMA)
@@ -11,18 +8,19 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple, Any
 import logging
+from typing import Dict, Any, Union, List, Optional, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from utils.indicator_utils import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
+from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
 
@@ -38,21 +36,22 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     # WMA指标只需要close列
     REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
 
-    def __init__(self, period: int = 14, periods: List[int] = None):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, period: int = 14, periods: List[int] = None, **kwargs):  # TODO: 将魔法数字提取到配置中
         """
         初始化加权移动平均线(WMA)指标
         
         Args:
             period: 计算周期,默认为14
             periods: 多个计算周期,如果提供,将计算多个周期的WMA
+            **kwargs: 其他参数
         """
-        super().__init__()  # 不传递参数给super()
-        self.name = "WMA"
+        super().__init__(name="WMA", period=period, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = "加权移动平均线,对不同时期价格赋予不同权重"
-        self.period = period
         self.periods = periods if periods is not None else [period]
         self._result = None  # 缓存计算结果
 
@@ -124,6 +123,8 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return False
 
     # 兼容性方法
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法:通用计算接口"""
         return self.calculate_Wma(data, **kwargs)
@@ -165,6 +166,8 @@ class Wma(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 重置计算结果
         self._result = None
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于WMA指标数值生成最新的交易信号

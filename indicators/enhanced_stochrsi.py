@@ -1,11 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -41,8 +46,11 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
             adaptive_thresholds: 是否使用自适应阈值，默认True
             **kwargs: 其他参数
         """
-        super().__init__()
-        self.name = "ENHANCED_STOCHRSI"
+        super().__init__(name="ENHANCED_STOCHRSI", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.rsi_period = rsi_period
         self.stoch_period = stoch_period
         self.k_period = k_period
@@ -534,6 +542,8 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         """
         return max(self.rsi_period, self.stoch_period) + max(self.k_period, self.d_period) + 10
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算Enhanced StochRSI指标的主要入口方法
@@ -645,6 +655,8 @@ class EnhancedStochasticRSI(BaseIndicator, PatternSignalMixin, MinimumPeriodsMix
         """
         self.set_parameters_Stochrsi_Enhanced_Stochrsi(**kwargs)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取增强型StochRSI交易信号

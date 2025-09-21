@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
 
 """
 STOCHRSI (Stochastic RSI) 随机相对强弱指标
@@ -13,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -31,17 +31,17 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]  # 标准指标列要求
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化STOCHRSI指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "STOCHRSI"
+        super().__init__(name="STOCHRSI", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_stochrsi()
@@ -57,6 +57,38 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "k_period": 3,
             "d_period": 3,
         }  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+
+    def validate_data_structure(self, data: pd.DataFrame) -> bool:
+        """
+        验证数据结构是否符合STOCHRSI指标要求
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据结构是否有效
+        """
+        if not isinstance(data, pd.DataFrame):
+            logger.error(f"STOCHRSI数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+            return False
+            
+        if data.empty:
+            logger.error("STOCHRSI数据验证失败: 输入数据为空")
+            return False
+            
+        required_columns = ['close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"STOCHRSI数据验证失败: 缺少必需列 {missing_columns}")
+            return False
+            
+        # 检查数据长度
+        min_length = max(self.rsi_period, self.stoch_period) + self.k_period + self.d_period
+        if len(data) < min_length:
+            logger.error(f"STOCHRSI数据验证失败: 数据长度不足，需要至少{min_length}个数据点，实际{len(data)}个")
+            return False
+            
+        return True
 
     def set_parameters_Stochrsi(self, **kwargs):
         """
@@ -140,13 +172,9 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了STOCHRSI指标的Data_frame
         """
-        # 严格数据验证 - 抛出异常以确保质量检查器识别
-        if data is None or data.empty:
-            raise ValueError("STOCHRSI计算: 输入数据不能为空")
-            
-        # 检查必需列
-        if 'close' not in data.columns:
-            raise ValueError("STOCHRSI计算: 缺少必需的'close'列")
+        # 使用统一的数据验证方法
+        if not self.validate_data_structure(data):
+            raise ValueError("STOCHRSI计算: 输入数据验证失败")
         
         df = data.copy()
 
@@ -155,6 +183,9 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         if len(df) < min_length:
             logger.warning(f"数据长度({len(df)})小于所需的回溯周期({min_length})")
             raise ValueError(f"STOCHRSI计算: 数据长度不足，需要至少{min_length}个数据点，实际{len(df)}个")
+            df["stochrsi_k_value"] = np.nan
+            df["stochrsi_d_value"] = np.nan
+            # 保持向后兼容性
             df["STOCHRSI_K"] = np.nan
             df["STOCHRSI_D"] = np.nan
             return df
@@ -171,9 +202,13 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         rsi_max = rsi.rolling(window=self.stoch_period).max()
         stoch_rsi = (rsi - rsi_min) / (rsi_max - rsi_min) * 100
 
-        # 计算%K和%D
-        df["STOCHRSI_K"] = stoch_rsi.rolling(window=self.k_period).mean()
-        df["STOCHRSI_D"] = df["STOCHRSI_K"].rolling(window=self.d_period).mean()
+        # 计算%K和%D - 使用标准化列名
+        df["stochrsi_k_value"] = stoch_rsi.rolling(window=self.k_period).mean()
+        df["stochrsi_d_value"] = df["stochrsi_k_value"].rolling(window=self.d_period).mean()
+        
+        # 保持向后兼容性的别名
+        df["STOCHRSI_K"] = df["stochrsi_k_value"]
+        df["STOCHRSI_D"] = df["stochrsi_d_value"]
 
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -340,6 +375,8 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     ) -> float:
         return self.calculate_confidence(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         return self._calculate_stochrsi(data, **kwargs)
 
@@ -609,6 +646,8 @@ class Stochrsi(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         except Exception as e:
             logger.warning(f"STOCHRSI形态注册失败: {e}")
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于STOCHRSI (Stochastic RSI) 指标数值生成最新的交易信号

@@ -1,5 +1,3 @@
-from utils.container import container
-
 """
 MACD指标分析模块
 
@@ -10,8 +8,11 @@ from typing import Dict, List, Tuple, Optional, Any, Union
 import pandas as pd
 import numpy as np
 from datetime import datetime
+
+from utils.container import container
 from utils.logger import get_logger
 from utils.technical_utils import calculate_macd, crossover, crossunder
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
@@ -33,9 +34,6 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         divergence_threshold: float = 0.05,
         zero_line_sensitivity: float = 0.001,
     ):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化MACD指标
 
@@ -106,7 +104,11 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         registry.set_allow_override(True)
 
         # 初始化基类(会自动调用register_patterns方法)
-        super().__init__()
+        super().__init__(name="MACD_Macd")
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 重置形态注册表为不允许覆盖
         registry.set_allow_override(False)
@@ -447,19 +449,6 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             },
             index=data.index
         )
-
-        # 添加形态识别和信号生成（如果方法存在）
-        try:
-            if hasattr(self, 'add_pattern_detection'):
-                result_df = self.add_pattern_detection(result_df)
-        except Exception:
-            pass  # 如果方法不存在或出错，继续执行
-
-        try:
-            if hasattr(self, 'add_signal_generation'):
-                result_df = self.add_signal_generation(result_df)
-        except Exception:
-            pass  # 如果方法不存在或出错，继续执行
 
         return result_df
 
@@ -1208,6 +1197,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     # ==================== 抽象方法实现 ====================
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算MACD指标 - Ultra Think修复:返回DataFrame格式确保100%兼容性
@@ -1734,6 +1725,8 @@ class MacdMacd(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return signals_df
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取增强型MACD交易信号（抽象方法实现）

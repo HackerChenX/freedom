@@ -1,24 +1,21 @@
-from utils.container import container
-
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
-
-import logging
-from typing import Dict, Any
-from typing import Dict, List
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import numpy as np
 import pandas as pd
+from typing import Dict, Any, List
 
-from enums.indicator_types import Trend_type, Cross_type
-from enums.indicator_enum import Indicator_enum
-from indicators.common import crossover, crossunder
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-import logging
+from indicators.common import crossover, crossunder
+from enums.indicator_types import Trend_type, Cross_type
+from enums.indicator_enum import Indicator_enum
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
@@ -43,13 +40,14 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         description: str = "肯特纳通道指标",
         **kwargs
     ):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """初始化KC指标"""
         # 正确调用父类初始化
-        super().__init__(**kwargs)
-        self.name = name
+        super().__init__(name=name, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = description
         self.indicator_type = Indicator_enum.KC.name
         self.period = period
@@ -75,6 +73,8 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             self.multiplier = multiplier
 
     # Ultra Think标准方法实现
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """通用计算接口"""
         return self._calculate_kc(data)
@@ -87,6 +87,8 @@ class KeltnerChannel(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         生成KC指标的标准化交易信号

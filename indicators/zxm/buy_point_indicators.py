@@ -1,4 +1,5 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 ZXM体系买点指标模块
@@ -10,11 +11,13 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.zxm.zxm_abstract_methods_mixin import ZXMAbstractMethodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -26,14 +29,15 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAb
     判断日线MACD指标是否小于0.9  # TODO: 将魔法数字提取到配置中
     """
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """初始化ZXM买点-日MACD指标"""
-        super().__init__()
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+        super().__init__(name="ZXMDailyMACD", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ["open", "high", "low", "close", "volume"]
-        self.name = "ZXMDailyMACD"
         self.description = "ZXM买点-日MACD指标，判断日线MACD值是否小于0.9"
         
         # ZXM特有参数
@@ -91,6 +95,8 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAb
         self._result = result
         return result
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取ZXM日线MACD交易信号（抽象方法实现）
@@ -240,6 +246,8 @@ class ZXMDailyMACD(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin, ZXMAb
             'metadata': {}
         }
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """公共计算接口"""
         return self._calculate(data, **kwargs)

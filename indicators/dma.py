@@ -1,21 +1,20 @@
-from utils.container import container
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import logging
-from typing import Dict, Any
-from typing import Dict, List, Any
-
 import numpy as np
 import pandas as pd
+from typing import Dict, List, Any
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from enums.indicator_types import Trend_type, Cross_type
 from enums.indicator_enum import Indicator_enum
 from indicators.common import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 
 logger = get_logger(__name__)
@@ -39,13 +38,14 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         return max(self.fast_period, self.slow_period) + self.ama_period
 
     def __init__(self, fast_period: int = 10, slow_period: int = 50, ama_period: int = 10,  # TODO: 将魔法数字提取到配置中
-                 name: str = "DMA", description: str = "轨道线指标"):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+                 name: str = "DMA", description: str = "轨道线指标", **kwargs):
         """初始化DMA指标"""
-        super().__init__()
-        self.name = name
+        super().__init__(name=name, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.description = description
         self.indicator_type = Indicator_enum.DMA.name
         self.fast_period = fast_period
@@ -769,6 +769,8 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
     def calculate_confidence_Indicator_Base_Indicator(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         return self.calculate_confidence(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         return self._calculate_dma(data, **kwargs)
 
@@ -1039,6 +1041,8 @@ class DisplacedMovingAverage(BaseIndicator, PatternSignalMixin, MinimumPeriodsMi
         
         return signals_list
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于DMA指标数值生成最新的交易信号

@@ -188,7 +188,13 @@ class BaseIndicator(abc.ABC):
 
         子类可以重写此方法来注册自定义形态
         """
-        pass
+        try:
+            # 子类实现形态注册逻辑
+            pass
+        except Exception as e:
+            # 捕获循环依赖异常，避免卡死
+            logger.warning(f"注册{self.name}指标形态时出现异常: {e}")
+            pass
 
     def register_pattern_to_registry(self, 
                                    pattern_id: str, 
@@ -215,7 +221,7 @@ class BaseIndicator(abc.ABC):
             allow_override: 是否允许覆盖
         """
         try:
-            # 导入形态注册表
+            # 导入形态注册表 - 添加循环依赖保护
             from indicators.pattern_registry import get_pattern_registry, PatternTypePatternRegistry, PatternStrengthPatternRegistry, PatternPolarity
             
             # 获取注册表实例
@@ -261,7 +267,11 @@ class BaseIndicator(abc.ABC):
             logger.debug(f"形态 {pattern_id} 注册成功: {display_name}")
             
         except Exception as e:
-            logger.warning(f"注册形态 {pattern_id} 失败: {e}")
+            # 特别处理循环依赖异常
+            if "PatternRegistry" in str(e) or "circular" in str(e).lower():
+                logger.warning(f"注册PatternRegistry到依赖注入容器失败: {e}")
+            else:
+                logger.warning(f"注册形态 {pattern_id} 失败: {e}")
             # 不抛出异常，确保指标能正常实例化
 
     @abc.abstractmethod

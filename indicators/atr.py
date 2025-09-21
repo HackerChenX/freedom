@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 ATR (Average True Range) 平均真实波幅指标 - 增强版
@@ -12,8 +10,10 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional
 
-from indicators.base_indicator import BaseIndicator
+from utils.container import container
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from indicators.base_indicator import BaseIndicator
 
 logger = get_logger(__name__)
 
@@ -26,10 +26,7 @@ class ATR(BaseIndicator):
     ATR值越高,表示价格波动越大;ATR值越低,表示价格波动越小.
     """
 
-    def __init__(self, period: int = 14, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, period: int = 14, **kwargs):
         """
         初始化ATR指标
 
@@ -37,10 +34,185 @@ class ATR(BaseIndicator):
             period: 计算周期,默认14
             **kwargs: 其他参数
         """
-        super().__init__()
-        self.name = "ATR"
+        super().__init__(name="ATR", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
         self._result = None
+
+    def validate_data_structure(self, data: pd.DataFrame) -> bool:
+        """
+        验证数据结构是否符合ATR指标要求
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据结构是否有效
+        """
+        if not isinstance(data, pd.DataFrame):
+            logger.error(f"ATR数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+            return False
+            
+        if data.empty:
+            logger.error("ATR数据验证失败: 输入数据为空")
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"ATR数据验证失败: 缺少必需列 {missing_columns}")
+            return False
+            
+        # 检查数据长度
+        min_length = self.period + 5
+        if len(data) < min_length:
+            logger.error(f"ATR数据验证失败: 数据长度不足，需要至少{min_length}个数据点，实际{len(data)}个")
+            return False
+            
+        # 检查数据值的有效性
+        for col in required_columns:
+            if data[col].isna().all():
+                logger.error(f"ATR数据验证失败: 列{col}全部为NaN值")
+                return False
+                
+        # 检查价格逻辑的合理性
+        if not (data['high'] >= data['low']).all():
+            logger.error("ATR数据验证失败: 存在高价低于低价的不合理数据")
+            return False
+            
+        if not ((data['close'] >= data['low']) & (data['close'] <= data['high'])).all():
+            logger.error("ATR数据验证失败: 存在收盘价超出高低价范围的不合理数据")
+            return False
+                
+        return True
+
+    def check_data_quality(self, data: pd.DataFrame) -> Dict[str, Any]:
+        """
+        检查数据质量并返回详细报告
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            Dict[str, Any]: 数据质量报告
+        """
+        quality_report = {
+            'is_valid': True,
+            'issues': [],
+            'data_shape': data.shape if hasattr(data, 'shape') else None,
+            'null_count': data.isnull().sum().to_dict() if hasattr(data, 'isnull') else {},
+            'column_count': len(data.columns) if hasattr(data, 'columns') else 0
+        }
+        
+        try:
+            # 基础检查
+            if not isinstance(data, pd.DataFrame):
+                quality_report['is_valid'] = False
+                quality_report['issues'].append(f"数据类型错误：期望DataFrame，实际{type(data)}")
+                return quality_report
+                
+            if data.empty:
+                quality_report['is_valid'] = False
+                quality_report['issues'].append("数据为空")
+                return quality_report
+                
+            # 列存在性检查
+            required_columns = ['high', 'low', 'close']
+            missing_columns = [col for col in required_columns if col not in data.columns]
+            if missing_columns:
+                quality_report['is_valid'] = False
+                quality_report['issues'].append(f"缺少必需列：{missing_columns}")
+                
+            # 数据长度检查
+            if len(data) < self.period:
+                quality_report['is_valid'] = False
+                quality_report['issues'].append(f"数据长度不足：需要{self.period}，实际{len(data)}")
+                
+            # 数据逻辑性检查
+            if 'high' in data.columns and 'low' in data.columns:
+                if not (data['high'] >= data['low']).all():
+                    quality_report['is_valid'] = False
+                    quality_report['issues'].append("存在高价低于低价的不合理数据")
+                    
+        except Exception as e:
+            quality_report['is_valid'] = False
+            quality_report['issues'].append(f"数据质量检查异常：{str(e)}")
+            
+        return quality_report
+
+    def validate_input_data(self, data: pd.DataFrame) -> bool:
+        """
+        标准化输入数据验证方法（符合L4测试框架期望）
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        return self.validate_data_structure(data)
+
+    def has_result(self) -> bool:
+        """
+        检查是否已有计算结果
+        
+        Returns:
+            bool: 是否已有计算结果
+        """
+        return (hasattr(self, '_result') and 
+                self._result is not None and 
+                isinstance(self._result, dict) and
+                "ATR" in self._result and
+                not self._result["ATR"].empty)
+
+    def validate_calculation_result(self, result: pd.DataFrame) -> bool:
+        """
+        验证计算结果的有效性
+        
+        Args:
+            result: 计算结果DataFrame
+            
+        Returns:
+            bool: 结果是否有效
+        """
+        if not isinstance(result, pd.DataFrame):
+            logger.error(f"ATR结果验证失败: 结果类型错误，期望DataFrame，实际{type(result)}")
+            return False
+            
+        if result.empty:
+            logger.error("ATR结果验证失败: 结果为空")
+            return False
+            
+        required_columns = ['atr_value', 'tr_value']
+        missing_columns = [col for col in required_columns if col not in result.columns]
+        if missing_columns:
+            logger.error(f"ATR结果验证失败: 缺少必需列 {missing_columns}")
+            return False
+            
+        # 检查ATR值的合理性
+        atr_values = result['atr_value'].dropna()
+        if len(atr_values) > 0:
+            if (atr_values < 0).any():
+                logger.error("ATR结果验证失败: ATR值不能为负数")
+                return False
+                
+            # 检查ATR值是否过大（可能计算错误）
+            max_reasonable_atr = result['close'].max() * 0.5 if 'close' in result.columns else float('inf')
+            if (atr_values > max_reasonable_atr).any():
+                logger.warning(f"ATR结果验证警告: ATR值可能过大，最大值{atr_values.max():.4f}")
+                
+        # 检查TR值的合理性
+        tr_values = result['tr_value'].dropna()
+        if len(tr_values) > 0:
+            if (tr_values < 0).any():
+                logger.error("ATR结果验证失败: TR值不能为负数")
+                return False
+                
+        return True
 
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
         """设置指标参数"""
@@ -81,7 +253,9 @@ class ATR(BaseIndicator):
             return df
         return pd.DataFrame(index=data.index)
 
-    def calculate(self, data: pd.DataFrame) -> Dict[str, Any]:
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算ATR指标
 
@@ -89,57 +263,118 @@ class ATR(BaseIndicator):
             data: 包含OHLCV数据的DataFrame
 
         Returns:
-            Dict[str, Any]: 包含ATR指标的字典
+            pd.DataFrame: 包含ATR指标的DataFrame
         """
         try:
-            if len(data) < self.period:
-                logger.warning(f"数据长度({len(data)})小于所需周期({self.period})")
-                return {
-                    "ATR": pd.Series(index=data.index, data=np.nan),
-                    "atr_percent": pd.Series(index=data.index, data=np.nan),
-                    "TR": pd.Series(index=data.index, data=np.nan),
-                }
+            # 使用增强的数据验证方法
+            if not self.validate_data_structure(data):
+                logger.warning("ATR计算: 数据验证失败，返回空结果")
+                result_df = data.copy()
+                result_df["atr_value"] = np.nan
+                result_df["atr_percent"] = np.nan
+                result_df["tr_value"] = np.nan
+                return result_df
 
-            # 计算真实波幅(TR)
-            high = data["high"].astype(float)
-            low = data["low"].astype(float)
-            close = data["close"].astype(float)
+            # 计算真实波幅(TR) - 添加错误处理
+            try:
+                high = data["high"].astype(float)
+                low = data["low"].astype(float)
+                close = data["close"].astype(float)
+            except (ValueError, TypeError) as e:
+                logger.error(f"ATR数据类型转换失败: {e}")
+                raise ValueError(f"ATR计算: 价格数据类型转换失败 - {e}")
 
-            # 三种真实波幅计算方式
-            tr1 = high - low
-            tr2 = np.abs(high - close.shift(1))
-            tr3 = np.abs(low - close.shift(1))
+            # 三种真实波幅计算方式 - 添加错误处理
+            try:
+                tr1 = high - low
+                tr2 = np.abs(high - close.shift(1))
+                tr3 = np.abs(low - close.shift(1))
 
-            # 取最大值作为真实波幅,确保为正数
-            tr = np.maximum(tr1, np.maximum(tr2, tr3))
-            tr = tr.bfill().fillna(0.01)  # 填充NaN,最小值0.01
-            tr = np.maximum(tr, 0.01)  # 确保最小值为0.01
+                # 取最大值作为真实波幅,确保为正数
+                tr = np.maximum(tr1, np.maximum(tr2, tr3))
+                tr = tr.bfill().fillna(0.01)  # 填充NaN,最小值0.01
+                tr = np.maximum(tr, 0.01)  # 确保最小值为0.01
+                
+                # 检查TR计算结果
+                if tr.isna().all():
+                    logger.error("ATR计算失败: TR值全部为NaN")
+                    raise ValueError("ATR计算: TR计算结果无效")
+                    
+            except Exception as e:
+                logger.error(f"ATR TR计算失败: {e}")
+                raise ValueError(f"ATR计算: TR计算过程出错 - {e}")
 
-            # 计算ATR - TR的移动平均,确保为正数
-            atr = tr.rolling(window=self.period, min_periods=1).mean()
-            atr = np.maximum(atr, 0.01)  # 确保ATR最小值为0.01
+            # 计算ATR - TR的移动平均,确保为正数 - 添加错误处理
+            try:
+                atr = tr.rolling(window=self.period, min_periods=1).mean()
+                atr = np.maximum(atr, 0.01)  # 确保ATR最小值为0.01
+                
+                # 检查ATR计算结果
+                if atr.isna().all():
+                    logger.error("ATR计算失败: ATR值全部为NaN")
+                    raise ValueError("ATR计算: ATR计算结果无效")
+                    
+            except Exception as e:
+                logger.error(f"ATR移动平均计算失败: {e}")
+                raise ValueError(f"ATR计算: 移动平均计算过程出错 - {e}")
 
-            # 计算ATR百分比(相对于价格的百分比)
-            atr_percent = (atr / (close + 1e-10) * 100).fillna(0)
+            # 计算ATR百分比(相对于价格的百分比) - 添加错误处理
+            try:
+                atr_percent = (atr / (close + 1e-10) * 100).fillna(0)
+            except Exception as e:
+                logger.error(f"ATR百分比计算失败: {e}")
+                # 提供默认值
+                atr_percent = pd.Series(index=data.index, data=0.0)
 
-            # 存储结果
+            # 构建标准化DataFrame输出
+            result_df = data.copy()
+            result_df["atr_value"] = atr
+            result_df["atr_percent"] = atr_percent
+            result_df["tr_value"] = tr
+            result_df["atr_ma"] = atr.rolling(window=20, min_periods=1).mean()  # TODO: 将魔法数字提取到配置中
+            result_df["atr_std"] = atr.rolling(window=20, min_periods=1).std()  # TODO: 将魔法数字提取到配置中
+
+            # 验证计算结果
+            if not self.validate_calculation_result(result_df):
+                logger.error("ATR计算结果验证失败")
+                # 返回安全的空结果
+                safe_result = data.copy()
+                safe_result["atr_value"] = np.nan
+                safe_result["atr_percent"] = np.nan
+                safe_result["tr_value"] = np.nan
+                return safe_result
+
+            # 存储结果(保持向后兼容)
             self._result = {
                 "ATR": atr,
                 "atr_percent": atr_percent,
                 "TR": tr,
-                "atr_ma": atr.rolling(window=20, min_periods=1).mean(),  # TODO: 将魔法数字提取到配置中
-                "atr_std": atr.rolling(window=20, min_periods=1).std(),  # TODO: 将魔法数字提取到配置中
+                "atr_ma": result_df["atr_ma"],
+                "atr_std": result_df["atr_std"],
             }
 
-            return self._result
+            return result_df
 
         except Exception as e:
             logger.error(f"ATR计算失败: {e}")
-            return {
-                "ATR": pd.Series(index=data.index, data=np.nan),
-                "atr_percent": pd.Series(index=data.index, data=np.nan),
-                "TR": pd.Series(index=data.index, data=np.nan),
-            }
+            # 提供详细的错误恢复机制
+            try:
+                # 尝试创建基础结果结构
+                result_df = data.copy()
+                result_df["atr_value"] = np.nan
+                result_df["atr_percent"] = np.nan
+                result_df["tr_value"] = np.nan
+                result_df["atr_ma"] = np.nan
+                result_df["atr_std"] = np.nan
+                
+                # 记录错误恢复日志
+                logger.info(f"ATR指标错误恢复成功，返回空值结果，数据形状: {result_df.shape}")
+                return result_df
+                
+            except Exception as recovery_error:
+                logger.error(f"ATR错误恢复也失败: {recovery_error}")
+                # 最后的安全网：返回最基础的DataFrame
+                return pd.DataFrame(index=data.index if hasattr(data, 'index') else range(len(data)))
 
     def get_patterns(self) -> Dict[str, Any]:
         """
@@ -205,247 +440,6 @@ class ATR(BaseIndicator):
         """检查是否已计算结果"""
         return self._result is not None and isinstance(self._result, dict) and "ATR" in self._result
         
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        生成ATR指标的标准化交易信号
-        
-        ATR (Average True Range) 特有信号逻辑:
-        1. 波动性突破: ATR快速上升，表示市场波动性增加
-        2. 波动性收缩: ATR下降，表示市场进入平静期
-        3. 趋势强度: ATR高位时趋势更可靠
-        4. 入场时机: 波动性收缩后的突破更可靠
-        
-        Args:
-            data: 包含价格数据的DataFrame
-
-        Returns:
-            Dict[str, Any]: 标准化信号格式
-            {
-                'signal_type': 'buy'/'sell'/'hold',
-                'strength': 0.0-1.0,
-                'confidence': 0.0-1.0, 
-                'timestamp': datetime,
-                'price': float,
-                'reason': str,
-                'metadata': dict
-            }
-        """
-        try:
-            # 数据验证
-            if not self._validate_signal_data(data):
-                return self._get_default_signal("数据验证失败")
-            
-            # 确保已计算ATR指标
-            if not self.has_result():
-                self.calculate(data)
-                
-            if not self.has_result():
-                return self._get_default_signal("ATR计算结果为空")
-                
-            # 获取ATR相关数据
-            atr_data = self._result["ATR"]
-            atr_ma_data = self._result.get("atr_ma", atr_data.rolling(window=5).mean())
-            atr_percent_data = self._result.get("atr_percent", pd.Series(index=data.index, data=0))
-            
-            # 获取最新的有效数据点
-            latest_idx = -1
-            while latest_idx >= -len(atr_data) and pd.isna(atr_data.iloc[latest_idx]):
-                latest_idx -= 1
-                
-            if latest_idx < -len(atr_data) or latest_idx < -1:
-                return self._get_default_signal("ATR数据不足")
-                
-            latest_atr = atr_data.iloc[latest_idx]
-            latest_atr_ma = atr_ma_data.iloc[latest_idx] if not pd.isna(atr_ma_data.iloc[latest_idx]) else latest_atr
-            prev_atr = atr_data.iloc[latest_idx - 1] if latest_idx - 1 >= -len(atr_data) else latest_atr
-            
-            # 获取当前价格
-            current_price = data['close'].iloc[-1] if 'close' in data.columns else 0.0
-            
-            # 信号强度和置信度初始化
-            base_strength = 0.0
-            base_confidence = 0.5
-            signal_type = 'hold'
-            reason_parts = []
-            
-            # 1. ATR突破信号分析 (波动性突破)
-            atr_change_ratio = (latest_atr - prev_atr) / prev_atr if prev_atr > 0 else 0
-            atr_vs_ma_ratio = (latest_atr - latest_atr_ma) / latest_atr_ma if latest_atr_ma > 0 else 0
-            
-            if atr_change_ratio > 0.2:  # ATR快速上升20%+
-                signal_type = 'buy'
-                base_strength = 0.7
-                base_confidence = 0.8
-                reason_parts.append(f"波动性突破(ATR上升{atr_change_ratio:.1%}，市场活跃度增加)")
-                
-            elif atr_change_ratio < -0.15:  # ATR下降15%+
-                signal_type = 'sell'
-                base_strength = 0.6
-                base_confidence = 0.7
-                reason_parts.append(f"波动性收缩(ATR下降{abs(atr_change_ratio):.1%}，市场趋于平静)")
-                
-            # 2. ATR相对位置分析
-            elif atr_vs_ma_ratio > 0.3:  # ATR显著高于均线
-                signal_type = 'buy'
-                base_strength = 0.6
-                base_confidence = 0.75
-                reason_parts.append(f"高波动状态(ATR比均线高{atr_vs_ma_ratio:.1%}，趋势信号可靠)")
-                
-            elif atr_vs_ma_ratio < -0.2:  # ATR显著低于均线
-                signal_type = 'hold'
-                base_strength = 0.3
-                base_confidence = 0.6
-                reason_parts.append(f"低波动状态(ATR比均线低{abs(atr_vs_ma_ratio):.1%}，等待突破)")
-                
-            # 3. ATR百分位分析
-            if len(atr_percent_data.dropna()) > 0:
-                latest_percentile = atr_percent_data.iloc[latest_idx]
-                
-                if latest_percentile >= 80:  # ATR处于历史高位
-                    if signal_type == 'buy':
-                        base_strength *= 1.2  # 增强买入信号
-                    reason_parts.append(f"波动性历史高位({latest_percentile:.0f}%分位)")
-                    
-                elif latest_percentile <= 20:  # ATR处于历史低位
-                    signal_type = 'hold' if signal_type == 'sell' else signal_type
-                    base_strength *= 0.8  # 降低信号强度
-                    reason_parts.append(f"波动性历史低位({latest_percentile:.0f}%分位)")
-            
-            # 4. 趋势一致性检查
-            if len(atr_data) >= 3:
-                recent_atr_trend = atr_data.iloc[-3:].diff().mean()
-                if signal_type in ['buy', 'sell']:
-                    if (signal_type == 'buy' and recent_atr_trend > 0) or \
-                       (signal_type == 'sell' and recent_atr_trend < 0):
-                        base_confidence += 0.1
-                        reason_parts.append("ATR趋势一致")
-            
-            # 5. 信号强度调整
-            strength_multiplier = 1.0
-            confidence_adjustment = 0.0
-            
-            # ATR绝对值调整
-            if latest_atr > current_price * 0.05:  # ATR超过价格的5%
-                strength_multiplier *= 1.3
-                confidence_adjustment += 0.15
-                reason_parts.append("极高波动环境")
-            elif latest_atr < current_price * 0.01:  # ATR低于价格的1%
-                strength_multiplier *= 0.7
-                confidence_adjustment -= 0.1
-                reason_parts.append("极低波动环境")
-            
-            # ATR变化幅度调整
-            if abs(atr_change_ratio) > 0.5:  # ATR变化超过50%
-                strength_multiplier *= 1.4
-                confidence_adjustment += 0.2
-                reason_parts.append(f"波动性剧烈变化({atr_change_ratio:+.1%})")
-            elif abs(atr_change_ratio) < 0.05:  # ATR变化很小
-                strength_multiplier *= 0.8
-                confidence_adjustment -= 0.1
-                reason_parts.append("波动性稳定")
-            
-            # 应用调整因子
-            final_strength = min(1.0, base_strength * strength_multiplier)
-            final_confidence = min(1.0, max(0.0, base_confidence + confidence_adjustment))
-            
-            # 如果没有明确信号，保持持有状态
-            if not reason_parts:
-                signal_type = 'hold'
-                final_strength = 0.0
-                final_confidence = 0.5
-                reason_parts.append("ATR处于中性状态")
-            
-            # 构建元数据
-            metadata = {
-                'atr_value': float(latest_atr),
-                'atr_ma': float(latest_atr_ma),
-                'atr_previous': float(prev_atr),
-                'atr_change_ratio': float(atr_change_ratio),
-                'atr_vs_ma_ratio': float(atr_vs_ma_ratio),
-                'signal_source': 'ATR_indicator',
-                'calculation_method': 'true_range_analysis',
-                'data_points_used': len(atr_data.dropna()),
-                'period': self.period
-            }
-            
-            # 添加ATR百分位信息
-            if len(atr_percent_data.dropna()) > 0:
-                metadata['atr_percentile'] = float(atr_percent_data.iloc[latest_idx])
-            
-            # 添加价格相关信息到元数据
-            if 'close' in data.columns:
-                metadata['current_price'] = float(current_price)
-                metadata['atr_price_ratio'] = float(latest_atr / current_price) if current_price > 0 else 0.0
-
-            return {
-                'signal_type': signal_type,
-                'strength': round(final_strength, 3),
-                'confidence': round(final_confidence, 3),
-                'timestamp': pd.Timestamp.now(),
-                'price': float(current_price),
-                'reason': '; '.join(reason_parts),
-                'metadata': metadata
-            }
-
-        except Exception as e:
-            logger.error(f"ATR信号生成失败: {e}")
-            return self._get_default_signal(f"信号生成异常: {str(e)}")
-    
-    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
-        """
-        验证信号生成所需的数据
-        
-        Args:
-            data: 输入数据
-            
-        Returns:
-            bool: 数据是否有效
-        """
-        try:
-            if data is None or data.empty:
-                return False
-                
-            # 检查必需的列
-            required_columns = ['high', 'low', 'close']
-            for col in required_columns:
-                if col not in data.columns:
-                    logger.warning(f"ATR信号生成缺少必需列: {col}")
-                    return False
-                    
-            # 检查数据量
-            if len(data) < self.period:
-                logger.warning(f"ATR信号生成数据量不足: {len(data)} < {self.period}")
-                return False
-                
-            return True
-            
-        except Exception as e:
-            logger.error(f"ATR数据验证失败: {e}")
-            return False
-    
-    def _get_default_signal(self, reason: str = "无明确信号") -> Dict[str, Any]:
-        """
-        获取默认的持有信号
-        
-        Args:
-            reason: 信号原因
-            
-        Returns:
-            Dict[str, Any]: 默认信号
-        """
-        return {
-            'signal_type': 'hold',
-            'strength': 0.0,
-            'confidence': 0.5,
-            'timestamp': pd.Timestamp.now(),
-            'price': 0.0,
-            'reason': reason,
-            'metadata': {
-                'signal_source': 'ATR_indicator',
-                'default_signal': True,
-                'indicator_name': 'ATR'
-            }
-        }
 
     def get_score(self) -> float:
         """
@@ -482,3 +476,151 @@ class ATR(BaseIndicator):
         except Exception as e:
             logger.error(f"ATR评分计算失败: {e}")
             return 50.0  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        基于ATR指标生成交易信号
+        
+        ATR主要用于波动性分析，而非直接交易信号。
+        这里提供基于波动性的风险调整信号。
+        
+        Args:
+            data: 包含OHLCV数据的DataFrame
+            **kwargs: 额外参数
+            
+        Returns:
+            Dict[str, Any]: 标准化交易信号格式
+        """
+        try:
+            # 1. 数据验证
+            if not self._validate_signal_data(data):
+                return self._get_default_signal("数据验证失败")
+            
+            # 2. 确保已计算指标
+            if self._result is None:
+                self.calculate(data)
+
+            if self._result is None or "ATR" not in self._result:
+                return self._get_default_signal("ATR计算结果为空")
+
+            # 3. 获取ATR数据
+            atr_series = self._result["ATR"]
+            if len(atr_series) < 2:
+                return self._get_default_signal("ATR数据不足")
+                
+            latest_atr = atr_series.iloc[-1]
+            if pd.isna(latest_atr):
+                return self._get_default_signal("最新ATR值为空")
+            
+            # 4. 计算ATR波动性特征
+            atr_mean = atr_series.rolling(window=min(20, len(atr_series))).mean().iloc[-1]
+            atr_std = atr_series.rolling(window=min(20, len(atr_series))).std().iloc[-1]
+            
+            # 5. 生成基于波动性的信号
+            signal_type = "hold"
+            strength = 0.0
+            confidence = 0.5
+            reason = "ATR波动性分析"
+            
+            if pd.notna(atr_mean) and pd.notna(atr_std) and atr_std > 0:
+                # 波动性相对水平
+                volatility_level = (latest_atr - atr_mean) / atr_std
+                
+                if volatility_level > 2.0:
+                    # 极高波动 - 建议减仓观望
+                    signal_type = "sell"
+                    strength = min(0.8, abs(volatility_level) / 3.0)
+                    confidence = 0.75
+                    reason = f"ATR显示极高波动性({latest_atr:.4f}，超出均值{abs(volatility_level):.1f}个标准差)，建议降低仓位"
+                    
+                elif volatility_level < -1.5:
+                    # 极低波动 - 可能突破前的宁静
+                    signal_type = "buy"
+                    strength = min(0.6, abs(volatility_level) / 2.0)
+                    confidence = 0.65
+                    reason = f"ATR显示极低波动性({latest_atr:.4f}，低于均值{abs(volatility_level):.1f}个标准差)，可能酝酿变化"
+                    
+                elif volatility_level > 1.0:
+                    # 高波动 - 谨慎操作
+                    signal_type = "hold"
+                    strength = 0.3
+                    confidence = 0.6
+                    reason = f"ATR显示高波动性({latest_atr:.4f})，建议谨慎操作"
+                    
+                else:
+                    # 正常波动 - 保持当前策略
+                    signal_type = "hold"
+                    strength = 0.1
+                    confidence = 0.5
+                    reason = f"ATR显示正常波动性({latest_atr:.4f})，维持当前策略"
+            
+            # 6. 构建标准化信号
+            return {
+                'signal_type': signal_type,
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
+                'timestamp': pd.Timestamp.now(),
+                'reason': reason,
+                'metadata': {
+                    'indicator': 'ATR',
+                    'current_atr': float(latest_atr),
+                    'atr_mean': float(atr_mean) if pd.notna(atr_mean) else None,
+                    'volatility_level': float(volatility_level) if 'volatility_level' in locals() else None,
+                    'period': self.period
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"ATR信号生成失败: {e}")
+            # 提供详细的错误分类和恢复
+            error_details = {
+                'error_type': type(e).__name__,
+                'error_message': str(e),
+                'recovery_attempted': True
+            }
+            logger.info(f"ATR信号生成错误详情: {error_details}")
+            return self._get_default_signal(f"信号生成失败: {str(e)}")
+
+    def _validate_signal_data(self, data: pd.DataFrame) -> bool:
+        """
+        验证信号生成所需的数据
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据是否有效
+        """
+        if data is None or data.empty:
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        if not all(col in data.columns for col in required_columns):
+            return False
+            
+        # ATR需要足够的数据用于计算
+        if len(data) < self.period:
+            return False
+            
+        return True
+
+    def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
+        """
+        生成默认信号（持有信号）
+        
+        Args:
+            reason: 生成默认信号的原因
+            
+        Returns:
+            Dict[str, Any]: 默认信号
+        """
+        return {
+            'signal_type': 'hold',
+            'strength': 0.0,
+            'confidence': 0.0,
+            'timestamp': pd.Timestamp.now(),
+            'reason': reason,
+            'metadata': {'indicator': 'ATR', 'period': self.period}
+        }

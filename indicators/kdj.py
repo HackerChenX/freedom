@@ -1,9 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python
-from utils.logger import get_logger
-
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 KDJ指标
@@ -12,12 +8,15 @@ KDJ指标
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Any, Optional, Union, Tuple
 import logging
 from enum import Enum
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import log_calls, error_handling, performance_monitor, exception_handler
+from utils.technical_utils import calculate_kdj
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
@@ -28,9 +27,6 @@ from indicators.pattern_registry import (
     PatternStrengthPatternRegistry,
     PatternInfo,
 )
-from utils.logger import get_logger
-from utils.decorators import log_calls, error_handling
-from utils.technical_utils import calculate_kdj
 
 logger = get_logger(__name__)
 
@@ -69,9 +65,13 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             m1: K值平滑因子,默认为3
             m2: D值平滑因子,默认为3
         """
-        super().__init__()
+        super().__init__(name="KDJ")
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
-        self.name = "KDJ"
         self.description = "随机指标"
         self.n = n
         self.m1 = m1
@@ -1458,6 +1458,8 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Kdj(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self.calculate_Kdj(data, **kwargs)
@@ -1580,6 +1582,8 @@ class KdjKdj(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         # 限制评分在0-100之间
         return score.clip(0, 100)
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取增强型KDJ交易信号（抽象方法实现）

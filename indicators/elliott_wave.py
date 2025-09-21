@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 Elliott Wave Theory 艾略特波浪理论指标
 
@@ -9,11 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
-from utils.container import container
 
 logger = get_logger(__name__)
 
@@ -26,23 +29,26 @@ class ElliottWaveTheory(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
-    
+
     def __init__(self, **kwargs):
         """
         初始化Elliott Wave指标
-        
+
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "ELLIOTT_WAVE"
+        super().__init__(name="ELLIOTT_WAVE", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         
         # 初始化结果存储
         self._result = None
-        
+
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_wave()
-        
+
         # 应用用户参数
         self.set_parameters_Wave(**kwargs)
     
@@ -53,23 +59,23 @@ class ElliottWaveTheory(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             "fibonacci_ratios": [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618],
             "wave_tolerance": 0.1
         }
-    
+
     def set_parameters_Wave(self, **kwargs):
         """
         设置指标参数
-        
+
         Args:
             **kwargs: 参数字典
         """
         # 合并默认参数和用户参数
         params = self._default_parameters.copy()
         params.update(kwargs)
-        
+
         # 设置参数
         self.wave_period = params.get('wave_period', 21)
         self.fibonacci_ratios = params.get('fibonacci_ratios', [0.236, 0.382, 0.5, 0.618, 0.786, 1.0, 1.272, 1.618, 2.618])
         self.wave_tolerance = params.get('wave_tolerance', 0.1)
-    
+
     def calculate_Wave(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算Elliott Wave指标
@@ -214,6 +220,8 @@ class ElliottWaveTheory(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         return patterns
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> str:
         """
         获取Elliott Wave信号 - 实现抽象方法
@@ -272,6 +280,8 @@ class ElliottWaveTheory(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     
     # ================== 兼容性方法 ==================
     
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """兼容性方法:计算指标"""
         return self.calculate_Wave(data, **kwargs)

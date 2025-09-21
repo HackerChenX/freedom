@@ -1,8 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 成交量震荡指标(VOSC)
@@ -11,16 +8,16 @@ from db.sql_manager import SQLManager, QueryType
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import Union, List, Dict, Optional, Tuple, Any
-# import talib  # 移除talib依赖
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
 from db.sql_manager import SQLManager, QueryType
 from indicators.pattern_registry import PatternRegistry, PatternTypePatternRegistry, PatternStrengthPatternRegistry
 
@@ -35,18 +32,21 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述:通过对成交量的长短期移动平均差值的百分比来衡量成交量的变化和趋势
     """
     
-    def __init__(self, short_period: int = 12, long_period: int = 26):  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, short_period: int = 12, long_period: int = 26, **kwargs):
         """
         初始化成交量震荡指标(VOSC)指标
 
         Args:
             short_period: 短期移动平均周期,默认为12
             long_period: 长期移动平均周期,默认为26
+            **kwargs: 其他参数
         """
-        super().__init__()
+        super().__init__(name="VOSC", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.short_period = short_period
         self.long_period = long_period
@@ -58,6 +58,8 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """检查是否已计算结果"""
         return self._result is not None and not self._result.empty
     
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         生成VOSC指标的标准化交易信号
@@ -1479,6 +1481,8 @@ class Vosc(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         long_period = self._parameters.get('long_period', 26)  # TODO: 将魔法数字提取到配置中
         return max(short_period, long_period) + 10
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算VOSC指标的主要入口方法

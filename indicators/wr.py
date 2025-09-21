@@ -1,9 +1,5 @@
-from utils.container import container
-
-#!/usr/bin/env python
-from utils.logger import get_logger
-
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 威廉指标(WR_Wr)
@@ -13,15 +9,15 @@ from utils.logger import get_logger
 
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, Union, List, Dict, Optional, Tuple, Any
+from typing import Dict, Any, Union, List, Optional, Tuple
 
-# import talib  # 移除talib依赖
-
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from utils.indicator_utils import crossover, crossunder
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.indicator_utils import crossover, crossunder
-from utils.logger import get_logger
 from indicators.pattern_registry import (
     PatternRegistry,
     PatternTypePatternRegistry,
@@ -41,16 +37,24 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化WR指标
 
         Args:
             **kwargs: 指标参数,支持period,overbought,oversold等
         """
-        super().__init__()
+        # 🔧 L4标准修复：避免参数重复传递冲突
+        # 提取参数，避免在kwargs中重复
+        period = kwargs.pop('period', 14)  # 使用pop避免重复
+        name = kwargs.pop('name', 'WR')    # 使用pop避免重复
+
+        # 正确调用父类初始化，无参数冲突
+        super().__init__(name=name, period=period, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.REQUIRED_COLUMNS = ["high", "low", "close"]
         self.name = "WR"
         self.description = "威廉指标"
@@ -120,6 +124,44 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self.overbought = params.get("overbought", -20.0)  # TODO: 将魔法数字提取到配置中
         self.oversold = params.get("oversold", -80.0)  # TODO: 将魔法数字提取到配置中
 
+    def validate_data_structure(self, data: pd.DataFrame) -> bool:
+        """
+        验证数据结构是否符合WR指标要求
+        
+        Args:
+            data: 输入数据DataFrame
+            
+        Returns:
+            bool: 数据结构是否有效
+        """
+        if not isinstance(data, pd.DataFrame):
+            logger.error(f"WR数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+            return False
+            
+        if data.empty:
+            logger.error("WR数据验证失败: 输入数据为空")
+            return False
+            
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            logger.error(f"WR数据验证失败: 缺少必需列 {missing_columns}")
+            return False
+            
+        # 检查数据长度
+        min_length = getattr(self, 'period', 14) + 5
+        if len(data) < min_length:
+            logger.error(f"WR数据验证失败: 数据长度不足，需要至少{min_length}个数据点，实际{len(data)}个")
+            return False
+            
+        # 检查数据值的有效性
+        for col in required_columns:
+            if data[col].isna().all():
+                logger.error(f"WR数据验证失败: 列{col}全部为NaN值")
+                return False
+                
+        return True
+
     def _validate_dataframe_wr(self, df: pd.DataFrame, required_columns: List[str]) -> None:
         """
         验证Data_frame是否包含所需的列
@@ -161,10 +203,11 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             添加了WR指标列的Data_frame
         """
-        if df.empty:
-            return pd.DataFrame()
+        # 使用增强的数据验证方法
+        if not self.validate_data_structure(df):
+            raise ValueError("WR计算: 输入数据验证失败")
 
-        # 确保数据包含必要的列
+        # 确保数据包含必要的列（保持向后兼容）
         required_columns = ["close", "high", "low"]
         self._validate_dataframe_wr(df, required_columns)
 
@@ -176,8 +219,21 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         highest_high = df_copy["high"].rolling(window=self.period).max()
         lowest_low = df_copy["low"].rolling(window=self.period).min()
 
-        # 计算WR值
-        df_copy["wr"] = -100 * (highest_high - df_copy["close"]) / (highest_high - lowest_low)
+        # 计算WR值，添加除零保护
+        try:
+            denominator = highest_high - lowest_low
+            # 避免除零错误
+            denominator = denominator.replace(0, np.nan)
+            df_copy["wr"] = -100 * (highest_high - df_copy["close"]) / denominator
+            
+            # 检查结果的有效性
+            if df_copy["wr"].isna().all():
+                logger.warning("WR计算结果全部为NaN，可能是输入数据问题")
+                
+        except Exception as e:
+            logger.error(f"WR计算过程中发生错误: {e}")
+            # 提供默认值以确保方法不会失败
+            df_copy["wr"] = np.nan
 
         # 添加形态识别和信号生成
         df_copy = self.add_pattern_detection(df_copy)
@@ -1095,9 +1151,90 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence_Wr(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        """统一的计算接口"""
-        return self.calculate_Wr_Wr(data, **kwargs)
+        """
+        【核心抽象方法1】计算威廉指标(Williams %R)的数值结果
+
+        🎯 L4标准实现：
+        - 符合BaseIndicator抽象方法规范
+        - 返回标准化列名格式：wr_value, wr_overbought, wr_oversold
+        - 完整的数据验证和异常处理
+
+        Williams %R公式：
+        %R = (Highest High - Close) / (Highest High - Lowest Low) * -100
+
+        Args:
+            data: 包含OHLCV数据的DataFrame，必须包含high, low, close列
+            **kwargs: 可选参数
+                - period: 计算周期，默认14
+                - overbought: 超买阈值，默认-20
+                - oversold: 超卖阈值，默认-80
+
+        Returns:
+            pd.DataFrame: 包含威廉指标的标准化DataFrame
+                - wr_value: 威廉指标主值 (-100到0之间)
+                - wr_overbought: 超买信号 (布尔值)
+                - wr_oversold: 超卖信号 (布尔值)
+                - wr_position: 相对位置 (0-100)
+        """
+        # 🔧 L4标准：数据验证
+        if data.empty:
+            raise ValueError("输入数据不能为空")
+
+        required_columns = ['high', 'low', 'close']
+        missing_columns = [col for col in required_columns if col not in data.columns]
+        if missing_columns:
+            raise ValueError(f"输入数据缺少必需列: {missing_columns}")
+
+        # 🔧 L4标准：参数处理
+        period = kwargs.get('period', self.period)
+        overbought = kwargs.get('overbought', -20.0)
+        oversold = kwargs.get('oversold', -80.0)
+
+        if len(data) < period:
+            logger.warning(f"数据长度不足，需要至少{period}个数据点，实际{len(data)}个")
+
+        # 🔧 L4标准：威廉指标计算
+        high = data['high']
+        low = data['low']
+        close = data['close']
+
+        # 计算滚动窗口内的最高价和最低价
+        highest_high = high.rolling(window=period, min_periods=1).max()
+        lowest_low = low.rolling(window=period, min_periods=1).min()
+
+        # 计算威廉指标，添加除零保护
+        denominator = highest_high - lowest_low
+        denominator = denominator.replace(0, np.nan)  # 避免除零
+
+        wr_value = -100 * (highest_high - close) / denominator
+
+        # 🔧 L4标准：创建标准化结果DataFrame
+        result = pd.DataFrame(index=data.index)
+
+        # 标准列名：{indicator}_{type}格式
+        result['wr_value'] = wr_value
+        result['wr_overbought'] = wr_value > overbought  # 超买信号
+        result['wr_oversold'] = wr_value < oversold      # 超卖信号
+
+        # 计算相对位置 (0-100)
+        wr_min = wr_value.rolling(window=period*2, min_periods=period).min()
+        wr_max = wr_value.rolling(window=period*2, min_periods=period).max()
+        wr_range = wr_max - wr_min
+        result['wr_position'] = np.where(
+            wr_range != 0,
+            (wr_value - wr_min) / wr_range * 100,
+            50.0  # 默认中性位置
+        )
+
+        # 🔧 L4标准：向后兼容列名
+        result['wr'] = wr_value  # 保持向后兼容
+
+        logger.debug(f"威廉指标计算完成，周期={period}，数据点={len(result)}")
+
+        return result
 
     # ==================== 兼容性方法 - 真实实现 ====================
 
@@ -1519,6 +1656,8 @@ class WrWr(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             logger.error(f"WR形态注册失败: {e}")
             return False
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于Williams %R指标数值生成最新的交易信号

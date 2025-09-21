@@ -1,6 +1,6 @@
-from typing import Dict, Any
-from utils.container import container
-from indicators.base_indicator import BaseIndicator
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 """
 多周期指标计算服务
 支持在不同周期上计算技术指标，如15分钟KDJ金叉和日线KDJ金叉
@@ -10,8 +10,10 @@ from typing import Dict, List, Optional, Any, Tuple
 import pandas as pd
 from datetime import datetime
 
+from utils.container import container
 from utils.logger import get_logger
 from utils.decorators import exception_handler, performance_monitor
+from indicators.base_indicator import BaseIndicator
 from db.services.multi_period_data_service import MultiPeriodDataService, Period
 from indicators.complete_indicator_registry import CompleteIndicatorRegistry, get_indicator
 from indicators.signal_method_adapter import get_unified_indicator_signal
@@ -31,12 +33,13 @@ class MultiPeriodIndicatorService(BaseIndicator):
     - 支持周期间的信号验证
     """
     
-    def __init__(self):
-            super().__init__(name=self.__class__.__name__, **kwargs)
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, **kwargs):
         """初始化多周期指标服务"""
+        super().__init__(name="MultiPeriodIndicatorService", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.data_service = MultiPeriodDataService()
         self.indicator_registry = CompleteIndicatorRegistry()
         self.indicator_registry.register_all_indicators()
@@ -381,6 +384,8 @@ class MultiPeriodIndicatorService(BaseIndicator):
         
         return aggregated
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算指标值
@@ -409,6 +414,8 @@ class MultiPeriodIndicatorService(BaseIndicator):
         
         return result
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取交易信号

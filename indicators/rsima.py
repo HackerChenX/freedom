@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -10,22 +8,16 @@ RSI均线系统指标(RSIMA)
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Dict, Any, List, Optional
 
-try:
-    import talib
-    HAS_TALIB = True
-except ImportError:
-    HAS_TALIB = False
-
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from indicators.common import crossover, crossunder
 from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -38,20 +30,26 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     描述：计算RSI的移动平均线系统，用于确认RSI趋势
     """
     
-    def __init__(self, rsi_period: int = 14, ma_periods: List[int] = None):
-        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
+    def __init__(self, rsi_period: int = 14, ma_periods: List[int] = None, **kwargs):
         """
         初始化RSI均线系统(RSIMA)指标
         
         Args:
             rsi_period: RSI计算周期，默认为14
-            ma_periods: RSI均线周期列表，默认为[5, 10, 20]
+            ma_periods: RSI均线周期列表，默认为[3, 5, 10]
+            **kwargs: 其他参数
         """
-        super().__init__()
+        super().__init__(name="RSIMA", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.REQUIRED_COLUMNS = ['open', 'high', 'low', 'close', 'volume']
         self.rsi_period = rsi_period
         # 使用较小的默认周期，以便在数据量较少时也能计算
         self.ma_periods = ma_periods if ma_periods is not None else [3, 5, 10]
-        self.name = "RSIMA"
+        self.description = "RSI均线系统指标,用于确认RSI趋势"
     
     def set_parameters_Rsima_Rsima_Rsima_rsima(self, rsi_period: int = None, ma_periods: List[int] = None):
         """
@@ -232,7 +230,7 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         # 计算RSI
         rsi = 100 - (100 / (1 + rs))
-        df_copy['rsi'] = rsi
+        df_copy['rsima_rsi'] = rsi
         
         # 计算可用的均线周期
         available_periods = []
@@ -240,11 +238,11 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             # 如果数据行数足够计算该周期的均线，则添加到可用周期列表
             if len(df_copy) >= period + self.rsi_period:
                 available_periods.append(period)
-                df_copy[f'rsi_ma{period}'] = df_copy['rsi'].rolling(window=period).mean()
+                df_copy[f'rsima_ma_{period}'] = df_copy['rsima_rsi'].rolling(window=period).mean()
         
         # 如果没有可用的均线周期，至少计算一个3日均线
         if not available_periods and len(df_copy) >= self.rsi_period + 3:
-            df_copy['rsi_ma3'] = df_copy['rsi'].rolling(window=3).mean()
+            df_copy['rsima_ma_3'] = df_copy['rsima_rsi'].rolling(window=3).mean()
             available_periods.append(3)
         
         # 记录可用的均线周期，供信号生成时使用
@@ -292,7 +290,7 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return df
             
         # 检查必要的指标列是否存在
-        required_columns = ['rsi']
+        required_columns = ['rsima_rsi']
         self._validate_dataframe_rsima(df, required_columns)
         
         df_copy = df.copy()
@@ -313,22 +311,22 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             
             # RSI短期均线上穿长期均线买入
             for i in range(1, len(df_copy)):
-                if df_copy[f'rsi_ma{short_period}'].iloc[i-1] < df_copy[f'rsi_ma{long_period}'].iloc[i-1] and \
-                   df_copy[f'rsi_ma{short_period}'].iloc[i] > df_copy[f'rsi_ma{long_period}'].iloc[i]:
+                if df_copy[f'rsima_ma_{short_period}'].iloc[i-1] < df_copy[f'rsima_ma_{long_period}'].iloc[i-1] and \
+                   df_copy[f'rsima_ma_{short_period}'].iloc[i] > df_copy[f'rsima_ma_{long_period}'].iloc[i]:
                     df_copy.iloc[i, df_copy.columns.get_loc('rsima_buy_signal')] = 1
                 
                 # RSI短期均线下穿长期均线卖出
-                elif df_copy[f'rsi_ma{short_period}'].iloc[i-1] > df_copy[f'rsi_ma{long_period}'].iloc[i-1] and \
-                     df_copy[f'rsi_ma{short_period}'].iloc[i] < df_copy[f'rsi_ma{long_period}'].iloc[i]:
+                elif df_copy[f'rsima_ma_{short_period}'].iloc[i-1] > df_copy[f'rsima_ma_{long_period}'].iloc[i-1] and \
+                     df_copy[f'rsima_ma_{short_period}'].iloc[i] < df_copy[f'rsima_ma_{long_period}'].iloc[i]:
                     df_copy.iloc[i, df_copy.columns.get_loc('rsima_sell_signal')] = 1
         
         # RSI上穿50买入
         for i in range(1, len(df_copy)):
-            if df_copy['rsi'].iloc[i-1] < 50 and df_copy['rsi'].iloc[i] > 50:
+            if df_copy['rsima_rsi'].iloc[i-1] < 50 and df_copy['rsima_rsi'].iloc[i] > 50:
                 df_copy.iloc[i, df_copy.columns.get_loc('rsima_buy_signal')] = 1
             
             # RSI下穿50卖出
-            elif df_copy['rsi'].iloc[i-1] > 50 and df_copy['rsi'].iloc[i] < 50:
+            elif df_copy['rsima_rsi'].iloc[i-1] > 50 and df_copy['rsima_rsi'].iloc[i] < 50:
                 df_copy.iloc[i, df_copy.columns.get_loc('rsima_sell_signal')] = 1
         
         return df_copy
@@ -359,7 +357,7 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         import matplotlib.pyplot as plt
         
         # 检查必要的指标列是否存在
-        required_columns = ['rsi']
+        required_columns = ['rsima_rsi']
         self._validate_dataframe_rsima(df, required_columns)
         
         # 创建新的轴对象（如果未提供）
@@ -367,13 +365,13 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             fig, ax = plt.subplots(figsize=(10, 5))
             
         # 绘制RSI线
-        ax.plot_Rsima(df.index, df['rsi'], label=f'RSI({self.rsi_period})')
+        ax.plot(df.index, df['rsima_rsi'], label=f'RSI({self.rsi_period})')
         
         # 绘制RSI均线
         available_periods = getattr(self, '_available_periods', [])
         for period in available_periods:
-            if f'rsi_ma{period}' in df.columns:
-                ax.plot_Rsima(df.index, df[f'rsi_ma{period}'], label=f'RSI MA{period}', linestyle='--')
+            if f'rsima_ma_{period}' in df.columns:
+                ax.plot(df.index, df[f'rsima_ma_{period}'], label=f'RSI MA{period}', linestyle='--')
         
         # 添加参考线
         ax.axhline(y=70, color='r', linestyle='--', alpha=0.3)
@@ -424,39 +422,6 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """获取默认参数"""
         return {}
     
-    def set_parameters_Rsima_Rsima_Rsima_rsima_duplicate(self, **kwargs):
-        """
-        设置指标参数
-        
-        Args:
-            **kwargs: 参数字典
-        """
-        # 验证参数
-        try:
-            from utils.indicator_parameter_validator import IndicatorParameterValidator
-            validator = IndicatorParameterValidator()
-            
-            # 合并默认参数和用户参数
-            params = self._default_parameters.copy()
-            params.update(kwargs)
-            
-            # 验证参数
-            is_valid, errors = validator.validate_indicator_parameters('RSIMA', params)
-            if not is_valid:
-                from utils.logger import get_logger
-                logger = get_logger(__name__)
-                logger.warning(f"RSIMA参数验证失败: {'; '.join(errors)}")
-                # 使用默认参数
-                params = self._default_parameters.copy()
-            
-            # 设置参数（保持向后兼容）
-            for key, value in params.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-                    
-        except Exception:
-            # 如果验证失败，静默处理
-            pass
 
     def calculate_confidence_Rsima(self, score: pd.Series, patterns: pd.DataFrame, signals: dict) -> float:
         """计算置信度"""
@@ -480,6 +445,8 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return rsi_period + max(10, rsi_period // 2)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算RSIMA指标的主要入口方法
@@ -492,6 +459,106 @@ class Rsima(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             包含RSIMA指标的DataFrame
         """
         return self._calculateRsima(data)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取RSIMA指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算RSIMA指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的RSIMA值
+            latest = result.iloc[-1]
+            rsima_rsi = latest.get('rsima_rsi', 50.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # RSIMA信号逻辑 - 基于RSI值和均线交叉
+            # 1. RSI超买超卖判断
+            if rsima_rsi > 70:
+                signal = "SELL"  # RSI超买，卖出信号
+                score = min(80.0, 50.0 + (rsima_rsi - 70) * 1.5)
+                confidence = 0.7
+            elif rsima_rsi < 30:
+                signal = "BUY"   # RSI超卖，买入信号
+                score = max(20.0, 50.0 - (30 - rsima_rsi) * 1.5)
+                confidence = 0.7
+            elif rsima_rsi > 50:
+                signal = "BUY"   # RSI在50以上，偏多头
+                score = 50.0 + (rsima_rsi - 50) * 0.5
+                confidence = 0.6
+            elif rsima_rsi < 50:
+                signal = "SELL"  # RSI在50以下，偏空头
+                score = 50.0 - (50 - rsima_rsi) * 0.5
+                confidence = 0.6
+            
+            # 2. 检查RSI均线交叉信号增强置信度
+            available_periods = getattr(self, '_available_periods', [])
+            if len(available_periods) >= 2 and len(result) >= 2:
+                periods = sorted(available_periods)
+                short_period = periods[0]
+                long_period = periods[-1]
+                
+                short_ma_col = f'rsima_ma_{short_period}'
+                long_ma_col = f'rsima_ma_{long_period}'
+                
+                if short_ma_col in result.columns and long_ma_col in result.columns:
+                    current_short_ma = latest.get(short_ma_col, 50.0)
+                    current_long_ma = latest.get(long_ma_col, 50.0)
+                    prev_short_ma = result.iloc[-2].get(short_ma_col, 50.0) if len(result) >= 2 else current_short_ma
+                    prev_long_ma = result.iloc[-2].get(long_ma_col, 50.0) if len(result) >= 2 else current_long_ma
+                    
+                    # 金叉：短期均线上穿长期均线
+                    if prev_short_ma <= prev_long_ma and current_short_ma > current_long_ma:
+                        signal = "BUY"
+                        score = min(85.0, score + 20)
+                        confidence = min(0.9, confidence + 0.2)
+                    # 死叉：短期均线下穿长期均线
+                    elif prev_short_ma >= prev_long_ma and current_short_ma < current_long_ma:
+                        signal = "SELL"
+                        score = max(15.0, score - 20)
+                        confidence = min(0.9, confidence + 0.2)
+            
+            # 3. 检查RSI穿越50中轴信号
+            if len(result) >= 2:
+                prev_rsi = result.iloc[-2].get('rsima_rsi', 50.0) if len(result) >= 2 else rsima_rsi
+                
+                # RSI上穿50
+                if prev_rsi <= 50 and rsima_rsi > 50:
+                    signal = "BUY"
+                    score = min(75.0, score + 10)
+                    confidence = min(0.8, confidence + 0.1)
+                # RSI下穿50
+                elif prev_rsi >= 50 and rsima_rsi < 50:
+                    signal = "SELL"
+                    score = max(25.0, score - 10)
+                    confidence = min(0.8, confidence + 0.1)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"RSIMA信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
 
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """

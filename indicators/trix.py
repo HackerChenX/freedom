@@ -1,4 +1,5 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 TRIX三重指数平滑移动平均线模块
@@ -6,17 +7,17 @@ TRIX三重指数平滑移动平均线模块
 实现TRIX指标计算,用于过滤短期波动,捕捉中长期趋势
 """
 
-from utils.logger import get_logger
-
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, Dict, List, Union, Optional, Any, Tuple
+from typing import Dict, Any, List, Union, Optional, Tuple
 import logging
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -30,17 +31,17 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化TRIX指标
 
         Args:
             **kwargs: 指标参数,支持period,signal_period等
         """
-        super().__init__()
-        self.name = "TRIX"
+        super().__init__(name="TRIX", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_trix()
@@ -112,6 +113,8 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 🔧 Ultra Think修复:添加缺失的calculate方法,确保100%兼容性
         return self._calculate_trix(data, **kwargs)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算TRIX指标 - Ultra Think修复:添加缺失的标准calculate方法
@@ -182,7 +185,12 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         # 计算MATRIX = MA(TRIX, M)
         matrix = self.sma_Trix(trix, m)
 
-        # 添加计算结果到数据框
+        # 添加计算结果到数据框 - 使用标准化列名格式
+        result["tr_value"] = tr  # 标准化列名：tr_value
+        result["trix_value"] = trix  # 标准化列名：trix_value
+        result["trix_signal"] = matrix  # 标准化列名：trix_signal
+        
+        # 保持向后兼容性
         result["TR"] = tr
         result["TRIX"] = trix
         result["MATRIX"] = matrix
@@ -1117,7 +1125,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         return patterns
 
-    def generate_signals_Trix(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
+    def _legacy_generate_signals_trix(self, data: pd.DataFrame, *args, **kwargs) -> pd.DataFrame:
         """
         生成TRIX指标标准化交易信号
 
@@ -1437,7 +1445,7 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
 
         return pattern_info_map.get(pattern_id, default_pattern)
 
-    def generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def _legacy_generate_trading_signals(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         生成交易信号 - Ultra Think九连胜传奇成功模式
 
@@ -1634,16 +1642,15 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         """
         return 35  # TODO: 将魔法数字提取到配置中
 
+    # 删除重复的get_signal方法 - 保留后面完整版本
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
-        【核心抽象方法2】基于TRIX指标数值生成最新的交易信号
+        基于TRIX指标生成交易信号
         
-        TRIX交易信号逻辑：
-        - TRIX上穿MATRIX（信号线）：买入信号（金叉）
-        - TRIX下穿MATRIX（信号线）：卖出信号（死叉）  
-        - TRIX上穿零轴：强烈买入信号
-        - TRIX下穿零轴：强烈卖出信号
-        - TRIX背离：反转信号
+        TRIX通过三重指数平滑过滤短期噪音，捕捉中长期趋势变化，
+        主要通过零轴交叉和信号线交叉生成交易信号。
         
         Args:
             data: 包含OHLCV数据的DataFrame
@@ -1657,150 +1664,111 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             if not self._validate_signal_data(data):
                 return self._get_default_signal("数据验证失败")
             
-            # 2. 确保已计算指标
-            if not self.has_result():
-                self.calculate(data, **kwargs)
+            # 2. 计算TRIX指标
+            result = self.calculate(data)
+            if result.empty or 'trix_value' not in result.columns:
+                return self._get_default_signal("TRIX计算失败")
 
-            if self._result is None or len(self._result) == 0:
-                return self._get_default_signal("TRIX计算结果为空")
+            # 3. 获取最新的TRIX数据
+            latest_trix = result['trix_value'].iloc[-1]
+            latest_signal = result.get('trix_signal', pd.Series()).iloc[-1] if 'trix_signal' in result.columns else None
+            
+            if pd.isna(latest_trix):
+                return self._get_default_signal("最新TRIX值为空")
 
-            # 3. 获取最新数据
-            latest_close = data['close'].iloc[-1]
-            
-            # 4. 获取TRIX相关值
-            if len(self._result) < 2:
-                return self._get_default_signal("TRIX数据不足")
-                
-            # 检查必要的列是否存在
-            required_columns = ['TRIX', 'MATRIX']
-            if not all(col in self._result.columns for col in required_columns):
-                return self._get_default_signal("TRIX结果列不完整")
-                
-            latest_trix = self._result['TRIX'].iloc[-1]
-            latest_matrix = self._result['MATRIX'].iloc[-1]
-            prev_trix = self._result['TRIX'].iloc[-2]
-            prev_matrix = self._result['MATRIX'].iloc[-2]
-            
-            # 5. TRIX信号生成逻辑
+            # 4. 生成基于TRIX的信号
             signal_type = "hold"
             strength = 0.0
             confidence = 0.5
-            reason = "无明确信号"
-            metadata = {}
+            reason = "TRIX趋势分析"
             
-            # 零轴穿越信号（最强信号）
-            if latest_trix > 0 and prev_trix <= 0:
-                # TRIX上穿零轴 - 强烈买入信号
-                signal_type = "buy"
-                strength = 0.95
-                confidence = 0.9
-                reason = "TRIX上穿零轴，强烈买入信号"
+            # TRIX零轴交叉信号（主要信号源）
+            trix_series = result['trix_value'].dropna()
+            if len(trix_series) >= 2:
+                prev_trix = trix_series.iloc[-2]
                 
-            elif latest_trix < 0 and prev_trix >= 0:
-                # TRIX下穿零轴 - 强烈卖出信号
-                signal_type = "sell"
-                strength = 0.95
-                confidence = 0.9
-                reason = "TRIX下穿零轴，强烈卖出信号"
-                
-            # 金叉死叉信号
-            elif latest_trix > latest_matrix and prev_trix <= prev_matrix:
-                # TRIX上穿MATRIX（金叉） - 买入信号
-                signal_type = "buy"
-                strength = 0.8
-                confidence = 0.85
-                reason = "TRIX金叉MATRIX，买入信号"
-                
-                # 如果在零轴以上，增强信号
-                if latest_trix > 0:
-                    strength = min(0.9, strength + 0.1)
-                    confidence = min(0.9, confidence + 0.05)
-                    reason = "TRIX在零轴上方金叉MATRIX，强烈买入信号"
+                # 零轴上穿 - 强烈买入信号
+                if prev_trix <= 0 and latest_trix > 0:
+                    signal_type = "buy"
+                    strength = min(0.9, abs(latest_trix) * 100)  # TRIX值通常很小
+                    confidence = 0.85
+                    reason = f"TRIX零轴上穿({latest_trix:.4f})，长期趋势转强"
                     
-            elif latest_trix < latest_matrix and prev_trix >= prev_matrix:
-                # TRIX下穿MATRIX（死叉） - 卖出信号
-                signal_type = "sell"
-                strength = 0.8
-                confidence = 0.85
-                reason = "TRIX死叉MATRIX，卖出信号"
-                
-                # 如果在零轴以下，增强信号
-                if latest_trix < 0:
-                    strength = min(0.9, strength + 0.1)
-                    confidence = min(0.9, confidence + 0.05)
-                    reason = "TRIX在零轴下方死叉MATRIX，强烈卖出信号"
+                # 零轴下穿 - 强烈卖出信号
+                elif prev_trix >= 0 and latest_trix < 0:
+                    signal_type = "sell"
+                    strength = min(0.9, abs(latest_trix) * 100)
+                    confidence = 0.85
+                    reason = f"TRIX零轴下穿({latest_trix:.4f})，长期趋势转弱"
                     
-            # 趋势持续信号
-            elif latest_trix > latest_matrix and latest_trix > 0:
-                # TRIX在零轴上方且高于MATRIX - 持续买入
-                signal_type = "buy"
-                strength = 0.6
-                confidence = 0.75
-                reason = "TRIX在零轴上方且高于信号线，持续买入信号"
-                
-                # 基于TRIX绝对值调整强度
-                trix_strength = abs(latest_trix)
-                if trix_strength > 50:  # TRIX绝对值较大，趋势明显
-                    strength = min(0.8, strength + trix_strength / 500)
-                    confidence = min(0.85, confidence + 0.1)
-                    reason = f"TRIX强势上升({latest_trix:.2f})，强烈买入信号"
+                # TRIX与信号线交叉（次要信号源）
+                elif latest_signal is not None and not pd.isna(latest_signal):
+                    if len(result) >= 2:
+                        prev_signal = result['trix_signal'].iloc[-2]
+                        
+                        # TRIX上穿信号线
+                        if (trix_series.iloc[-2] <= prev_signal and 
+                            latest_trix > latest_signal):
+                            signal_type = "buy"
+                            strength = min(0.7, abs(latest_trix - latest_signal) * 200)
+                            confidence = 0.7
+                            reason = f"TRIX上穿信号线，短期上涨动能增强"
+                            
+                        # TRIX下穿信号线
+                        elif (trix_series.iloc[-2] >= prev_signal and 
+                              latest_trix < latest_signal):
+                            signal_type = "sell"
+                            strength = min(0.7, abs(latest_trix - latest_signal) * 200)
+                            confidence = 0.7
+                            reason = f"TRIX下穿信号线，短期下跌压力增加"
+                            
+                # 基于TRIX斜率的趋势强度判断
+                if len(trix_series) >= 5:
+                    # 计算TRIX的趋势斜率（5日变化）
+                    trix_change = latest_trix - trix_series.iloc[-5]
                     
-            elif latest_trix < latest_matrix and latest_trix < 0:
-                # TRIX在零轴下方且低于MATRIX - 持续卖出
-                signal_type = "sell"
-                strength = 0.6
-                confidence = 0.75
-                reason = "TRIX在零轴下方且低于信号线，持续卖出信号"
-                
-                # 基于TRIX绝对值调整强度
-                trix_strength = abs(latest_trix)
-                if trix_strength > 50:  # TRIX绝对值较大，趋势明显
-                    strength = min(0.8, strength + trix_strength / 500)
-                    confidence = min(0.85, confidence + 0.1)
-                    reason = f"TRIX强势下降({latest_trix:.2f})，强烈卖出信号"
-            
-            # 计算TRIX趋势变化
-            trix_rising = latest_trix > prev_trix
-            matrix_rising = latest_matrix > prev_matrix
-            trix_matrix_spread = latest_trix - latest_matrix
-            
-            # 设置元数据
-            metadata = {
-                'trix_value': latest_trix,
-                'matrix_value': latest_matrix,
-                'trix_trend': 'rising' if trix_rising else 'falling',
-                'matrix_trend': 'rising' if matrix_rising else 'falling',
-                'trix_matrix_spread': trix_matrix_spread,
-                'zero_position': 'above' if latest_trix > 0 else 'below',
-                'trend_strength': 'strong' if abs(latest_trix) > 50 else 'weak'
-            }
-            
-            # 检测背离模式（如果有足够数据）
-            if len(self._result) >= 10:
-                divergence_detected = self._detect_divergence_pattern(data)
-                if divergence_detected:
-                    metadata['divergence_detected'] = True
-                    if signal_type == "hold":
-                        signal_type = "sell" if latest_trix > 0 else "buy"
-                        strength = 0.7
-                        confidence = 0.8
-                        reason = "检测到TRIX背离，反转信号"
-            
-            # 6. 标准化输出
+                    if abs(trix_change) > 0.001:  # 有意义的变化
+                        if trix_change > 0 and signal_type == "hold":
+                            signal_type = "buy"
+                            strength = min(0.5, abs(trix_change) * 50)
+                            confidence = 0.6
+                            reason = f"TRIX持续上升({trix_change:.4f})，趋势向好"
+                            
+                        elif trix_change < 0 and signal_type == "hold":
+                            signal_type = "sell"
+                            strength = min(0.5, abs(trix_change) * 50)
+                            confidence = 0.6
+                            reason = f"TRIX持续下降({trix_change:.4f})，趋势转弱"
+
+            # 5. 结合背离分析增强信号质量
+            try:
+                if hasattr(self, '_detect_divergence') and len(data) >= 30:
+                    has_divergence = self._detect_divergence(data.tail(30))
+                    if has_divergence:
+                        confidence = min(confidence + 0.1, 0.95)
+                        if "背离" not in reason:
+                            reason += "，检测到价格背离信号"
+            except Exception:
+                pass  # 背离检测失败不影响主信号
+
+            # 6. 构建标准化信号
             return {
                 'signal_type': signal_type,
-                'strength': max(0.0, min(1.0, strength)),
-                'confidence': max(0.0, min(1.0, confidence)),
+                'strength': round(strength, 3),
+                'confidence': round(confidence, 3),
                 'timestamp': pd.Timestamp.now(),
                 'reason': reason,
                 'metadata': {
-                    'latest_close': latest_close,
-                    **metadata
+                    'indicator': 'TRIX',
+                    'current_trix': float(latest_trix),
+                    'signal_line': float(latest_signal) if latest_signal is not None and not pd.isna(latest_signal) else None,
+                    'period': getattr(self, 'period', 14),
+                    'signal_period': getattr(self, 'signal_period', 9)
                 }
             }
-
+            
         except Exception as e:
-            logger.warning(f"TRIX信号生成失败: {e}")
+            logger.error(f"TRIX信号生成失败: {e}")
             return self._get_default_signal(f"信号生成失败: {str(e)}")
 
     def _validate_signal_data(self, data: pd.DataFrame) -> bool:
@@ -1813,19 +1781,85 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
         Returns:
             bool: 数据是否有效
         """
-        if data is None or data.empty:
-            return False
+        try:
+            if data is None or data.empty:
+                logger.error("TRIX信号数据验证失败: 输入数据为空")
+                return False
+                
+            if not isinstance(data, pd.DataFrame):
+                logger.error(f"TRIX信号数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+                return False
+                
+            required_columns = ['close']
+            missing_columns = [col for col in required_columns if col not in data.columns]
+            if missing_columns:
+                logger.error(f"TRIX信号数据验证失败: 缺少必需列 {missing_columns}")
+                return False
+                
+            # 检查数据值的有效性
+            for col in required_columns:
+                if data[col].isna().all():
+                    logger.error(f"TRIX信号数据验证失败: 列{col}全部为NaN值")
+                    return False
+                    
+            # TRIX需要足够的数据用于三重平滑
+            min_periods = getattr(self, 'period', 14) * 3 + 10
+            if len(data) < min_periods:
+                logger.error(f"TRIX信号数据验证失败: 数据长度不足，需要至少{min_periods}个数据点，实际{len(data)}个")
+                return False
+                
+            return True
             
-        required_columns = ['close']
-        if not all(col in data.columns for col in required_columns):
+        except Exception as e:
+            logger.error(f"TRIX信号数据验证异常: {e}")
             return False
+
+    def validate_data_structure(self, data: pd.DataFrame) -> bool:
+        """
+        验证数据结构是否符合TRIX指标要求
+        
+        Args:
+            data: 输入数据DataFrame
             
-        # TRIX需要足够的数据
-        min_periods = getattr(self, 'n', 14) * 3 + 10  # 三重平滑需要更多数据
-        if len(data) < min_periods:
+        Returns:
+            bool: 数据结构是否有效
+        """
+        try:
+            if not isinstance(data, pd.DataFrame):
+                logger.error(f"TRIX数据验证失败: 输入数据类型错误，期望DataFrame，实际{type(data)}")
+                return False
+                
+            if data.empty:
+                logger.error("TRIX数据验证失败: 输入数据为空")
+                return False
+                
+            required_columns = ['close']
+            missing_columns = [col for col in required_columns if col not in data.columns]
+            if missing_columns:
+                logger.error(f"TRIX数据验证失败: 缺少必需列 {missing_columns}")
+                return False
+                
+            # 检查数据长度
+            min_length = getattr(self, 'period', 14) * 3 + 20  # TRIX需要更多数据进行三重平滑
+            if len(data) < min_length:
+                logger.error(f"TRIX数据验证失败: 数据长度不足，需要至少{min_length}个数据点，实际{len(data)}个")
+                return False
+                
+            # 检查数据值的有效性
+            for col in required_columns:
+                if data[col].isna().all():
+                    logger.error(f"TRIX数据验证失败: 列{col}全部为NaN值")
+                    return False
+                    
+            # 检查价格数据的合理性（收盘价应为正数）
+            if (data['close'] <= 0).any():
+                logger.warning("TRIX数据验证警告: 存在非正数的收盘价")
+                
+            return True
+            
+        except Exception as e:
+            logger.error(f"TRIX数据结构验证异常: {e}")
             return False
-            
-        return True
 
     def _get_default_signal(self, reason: str = "数据不足") -> Dict[str, Any]:
         """
@@ -1843,55 +1877,8 @@ class TripleExponentialAverage(BaseIndicator, PatternSignalMixin, MinimumPeriods
             'confidence': 0.0,
             'timestamp': pd.Timestamp.now(),
             'reason': reason,
-            'metadata': {}
+            'metadata': {
+                'indicator': 'TRIX',
+                'period': getattr(self, 'period', 14)
+            }
         }
-
-    def has_result(self) -> bool:
-        """
-        检查是否已有计算结果
-        
-        Returns:
-            bool: 是否已有计算结果
-        """
-        return (self._result is not None and 
-                hasattr(self._result, 'empty') and 
-                not self._result.empty and
-                'TRIX' in self._result.columns and
-                'MATRIX' in self._result.columns)
-
-    def _detect_divergence_pattern(self, data: pd.DataFrame) -> bool:
-        """
-        检测TRIX背离形态
-        
-        Args:
-            data: 价格数据
-            
-        Returns:
-            bool: 是否检测到背离
-        """
-        try:
-            if len(data) < 10 or len(self._result) < 10:
-                return False
-                
-            # 获取最近10个周期的数据
-            recent_prices = data['close'].iloc[-10:]
-            recent_trix = self._result['TRIX'].iloc[-10:]
-            
-            # 简化的背离检测：价格新高但TRIX没有新高（顶背离）
-            # 或价格新低但TRIX没有新低（底背离）
-            price_max_idx = recent_prices.idxmax()
-            price_min_idx = recent_prices.idxmin()
-            trix_max_idx = recent_trix.idxmax()
-            trix_min_idx = recent_trix.idxmin()
-            
-            # 检测顶背离或底背离
-            top_divergence = (recent_prices.iloc[-1] == recent_prices.max() and 
-                            recent_trix.iloc[-1] < recent_trix.max())
-            bottom_divergence = (recent_prices.iloc[-1] == recent_prices.min() and 
-                               recent_trix.iloc[-1] > recent_trix.min())
-            
-            return top_divergence or bottom_divergence
-            
-        except Exception as e:
-            logger.warning(f"TRIX背离检测失败: {e}")
-            return False

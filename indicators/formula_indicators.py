@@ -38,10 +38,6 @@ class FormulaIndicators(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     def set_parameters_Indicators_formulaindicators(self, **kwargs):
         try:
             from utils.indicator_parameter_validator import IndicatorParameterValidator
-        except Exception as e:
-            logger.error(f"错误: {e}")
-            return pd.DataFrame()
-from db.sql_manager import SQLManager, QueryType
             validator = IndicatorParameterValidator()
             params = self._default_parameters.copy()
             params.update(kwargs)
@@ -637,9 +633,9 @@ class MACondition(FORMULA_INDICATORS):
         support_resistance = pd.Series(0.0, index=close.index)
         
         # 均线作为支撑
-        ma_support = ((close > ma_short * 0.99) & (close < ma_short * 1.01)) | \  # TODO: 将魔法数字提取到配置中
-                    ((close > ma_medium * 0.99) & (close < ma_medium * 1.01)) | \  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    ((close > ma_long * 0.99) & (close < ma_long * 1.01))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        ma_support = ((close > ma_short * 0.99) & (close < ma_short * 1.01)) | \
+                    ((close > ma_medium * 0.99) & (close < ma_medium * 1.01)) | \
+                    ((close > ma_long * 0.99) & (close < ma_long * 1.01))
         
         # 在上升趋势中的支撑更有效
         uptrend = (ma_short > ma_short.shift(5)) & (ma_medium > ma_medium.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -647,9 +643,9 @@ class MACondition(FORMULA_INDICATORS):
         support_resistance[effective_support] += 12.0  # TODO: 将魔法数字提取到配置中
         
         # 均线作为阻力
-        ma_resistance = ((close > ma_short * 0.99) & (close < ma_short * 1.01)) | \  # TODO: 将魔法数字提取到配置中
-                       ((close > ma_medium * 0.99) & (close < ma_medium * 1.01)) | \  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                       ((close > ma_long * 0.99) & (close < ma_long * 1.01))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        ma_resistance = ((close > ma_short * 0.99) & (close < ma_short * 1.01)) | \
+                       ((close > ma_medium * 0.99) & (close < ma_medium * 1.01)) | \
+                       ((close > ma_long * 0.99) & (close < ma_long * 1.01))
         
         # 在下降趋势中的阻力更有效
         downtrend = (ma_short < ma_short.shift(5)) & (ma_medium < ma_medium.shift(5))  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
@@ -727,8 +723,8 @@ class GenericCondition(FORMULA_INDICATORS):
         price_condition[breakdown_low] -= 15.0  # TODO: 将魔法数字提取到配置中
         
         # 价格相对位置
-        = high.rolling(window=20).max() - low.rolling(window=20).min()  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-        price_position = (close - low.rolling(window=20).min()) / .replace(0, np.nan)  # TODO: 将魔法数字提取到配置中
+        price_range = high.rolling(window=20).max() - low.rolling(window=20).min()
+        price_position = (close - low.rolling(window=20).min()) / price_range.replace(0, np.nan)
         
         # 高位给正分,低位给负分
         high_position = price_position > 0.8  # TODO: 将魔法数字提取到配置中
@@ -882,55 +878,3 @@ class GenericCondition(FORMULA_INDICATORS):
     
 # 为了向后兼容,创建别名
 formula_indicators = FORMULA_INDICATORS
-
-    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
-        """
-        计算指标值
-        
-        Args:
-            data: 输入数据,包含OHLCV等字段
-            
-        Returns:
-            pd.DataFrame: 包含指标计算结果的数据框
-        """
-        if not self.validate_data(data):
-            raise ValueError("输入数据不符合要求")
-        
-        # 预处理数据
-        processed_data = self.preprocess_data(data)
-        
-        # TODO: 实现具体的指标计算逻辑
-        result = processed_data.copy()
-        result[f'{self.name}_value'] = processed_data['close'].rolling(window=self.period).mean()
-        
-        # 后处理结果
-        result = self.postprocess_result(result)
-        
-        # 保存结果
-        self._result = result
-        
-        return result
-
-    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
-        """
-        获取交易信号
-        
-        Args:
-            data: 包含指标计算结果的数据
-            
-        Returns:
-            Dict[str, Any]: 交易信号信息
-        """
-        if data.empty:
-            return {'signal': 'hold', 'strength': 0.0, 'timestamp': None}
-        
-        # TODO: 实现具体的信号生成逻辑
-        latest_close = data['close'].iloc[-1] if 'close' in data.columns else 0
-        
-        return {
-            'signal': 'hold',
-            'strength': 0.0,
-            'timestamp': data.index[-1] if not data.empty else None,
-            'price': latest_close,
-            'indicator': self.name
-        }

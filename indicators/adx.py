@@ -1,8 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 ADX - 平均方向指数
@@ -11,23 +8,24 @@ DMI系统的一部分,用于评估趋势的强度,无论方向如何
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
-from typing import Union, List, Dict, Optional, Tuple, Any
 import warnings
+from typing import Dict, List, Optional, Tuple, Any
+
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
+from indicators.base_indicator import BaseIndicator
+from indicators.base.pattern_signal_mixin import PatternSignalMixin
+from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
+from indicators.common import crossover, crossunder
+from db.sql_manager import SQLManager, QueryType
 
 try:
     import talib
     HAS_TALIB = True
 except ImportError:
     HAS_TALIB = False
-
-from indicators.base_indicator import BaseIndicator
-from indicators.base.pattern_signal_mixin import PatternSignalMixin
-from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from indicators.common import crossover, crossunder
-from utils.logger import get_logger
-from db.sql_manager import SQLManager, QueryType
 
 # 静默警告
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -43,9 +41,6 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
     """
     
     def __init__(self, params: Dict[str, Any] = None, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化ADX指标
 
@@ -79,6 +74,10 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         period_value = default_params.pop("period", 14)
         super().__init__(name="ADX", period=period_value, **default_params)
         
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         # 最终确保params完整
         self.params["period"] = period_value
         self.params.update(default_params)
@@ -97,6 +96,8 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         self.crossover = crossover
         self.crossunder = crossunder
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于ADX指标数值生成最新的交易信号
@@ -1321,6 +1322,8 @@ class AverageDirectionalIndex(BaseIndicator, PatternSignalMixin, MinimumPeriodsM
         """抽象基类要求的置信度计算方法"""
         return self.calculate_confidence(score, patterns, signals)
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """统一的计算接口"""
         return self._calculate_adx(data, **kwargs)

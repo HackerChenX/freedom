@@ -1,12 +1,22 @@
-from utils.container import container
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+VOLUME_SCORE 成交量评分指标
+
+成交量评分指标，通过分析成交量的相对强度、变化率和波动性来评估市场活跃度
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -39,23 +49,25 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             return 0.0
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化VOLUME_SCORE指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "VOLUME_SCORE"
+        super().__init__(name="VOLUME_SCORE", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "成交量评分指标，通过分析成交量的相对强度、变化率和波动性来评估市场活跃度"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_volumescore()
 
-        # 🔧 Ultra Think修复:设置内部minimum_periods值
-        self._minimum_periods = 14  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+        # 设置内部minimum_periods值
+        self._minimum_periods = 14
 
         # 应用用户参数
         self.set_parameters_Score_Volume_Score(**kwargs)
@@ -156,12 +168,24 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             score = max(0, min(100, score))
             volume_score.append(score)
 
-        df["VOLUME_SCORE_VALUE"] = volume_score
+        df["volume_score_value"] = volume_score
 
-        # 6. 计算成交量评分的移动平均  # TODO: 将魔法数字提取到配置中
-        df["VOLUME_SCORE_MA"] = (
+        # 6. 计算成交量评分的移动平均
+        df["volume_score_ma"] = (
             pd.Series(volume_score).rolling(window=5, min_periods=1).mean()
-        )  # TODO: 将魔法数字提取到配置中
+        )
+        
+        # 7. 计算成交量强度评分
+        volume_strength_scores = []
+        for i in range(len(df)):
+            if not pd.isna(df["volume_ratio"].iloc[i]):
+                ratio = df["volume_ratio"].iloc[i]
+                strength_score = min(200.0, max(0.0, ratio * 100))
+            else:
+                strength_score = 100.0
+            volume_strength_scores.append(strength_score)
+        
+        df["volume_score_strength"] = volume_strength_scores
 
         # 添加形态识别和信号生成
         df = self.add_pattern_detection(df)
@@ -212,6 +236,8 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         """实现MinimumPeriodsMixin要求的minimum_periods属性"""
         return getattr(self, "_minimum_periods", 14)  # TODO: 将魔法数字提取到配置中
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算成交量评分
@@ -223,22 +249,75 @@ class VolumeScore(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             pd.DataFrame: 计算结果
         """
+        return self._calculate_volumescore(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取VOLUME_SCORE指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
         try:
-            result_df = pd.DataFrame(index=data.index)
-
-            # 计算成交量评分
-            volume_score = self.calculate_volume_score(data)
-            result_df["volume_score"] = volume_score
-
-            # 计算成交量强度
-            volume_strength = self.calculate_volume_strength(data)
-            result_df["volume_strength"] = volume_strength
-
-            return result_df
-
+            # 计算VOLUME_SCORE指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的成交量评分值
+            latest = result.iloc[-1]
+            volume_score_value = latest.get('volume_score_value', 50.0)
+            volume_score_strength = latest.get('volume_score_strength', 50.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # VOLUME_SCORE信号逻辑
+            if volume_score_value >= 80:  # 高成交量活跃区域
+                signal = "BUY"
+                score = min(85.0, 50.0 + (volume_score_value - 50) * 0.7)
+                confidence = min(0.8, 0.5 + (volume_score_value - 80) / 40)
+            elif volume_score_value <= 30:  # 低成交量萎缩区域
+                signal = "SELL"
+                score = max(25.0, 50.0 - (50 - volume_score_value) * 0.5)
+                confidence = min(0.7, 0.5 + (30 - volume_score_value) / 60)
+            elif volume_score_value > 65:  # 偏强区域
+                signal = "HOLD"
+                score = 65.0
+                confidence = 0.6
+            elif volume_score_value < 45:  # 偏弱区域
+                signal = "HOLD"
+                score = 45.0
+                confidence = 0.6
+            else:  # 中性区域
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            # 结合成交量强度调整置信度
+            if volume_score_strength > 150:  # 成交量强度很高
+                confidence = min(0.9, confidence + 0.1)
+            elif volume_score_strength < 50:  # 成交量强度很低
+                confidence = max(0.3, confidence - 0.1)
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
         except Exception as e:
-            logger.error(f"成交量评分计算失败: {e}")
-            return pd.DataFrame(index=data.index)
+            logger.warning(f"VOLUME_SCORE信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
 
     def calculate_volume_strength(self, data: pd.DataFrame) -> float:
         """计算成交量强度"""

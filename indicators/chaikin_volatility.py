@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
 蔡金波动率(Chaikin Volatility)指标
@@ -14,10 +12,12 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Any, List, Optional, Tuple, Union
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -41,9 +41,6 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, period: int = 10, lookback: int = 10, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化蔡金波动率指标
 
@@ -52,7 +49,11 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             lookback: 回望周期,默认10
             **kwargs: 其他参数
         """
-        super().__init__(**kwargs)
+        super().__init__(name="CHAIKIN_VOLATILITY", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
         self.period = period
         self.lookback = lookback
         self.REQUIRED_COLUMNS = ["high", "low"]
@@ -79,6 +80,8 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return True
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算蔡金波动率
@@ -172,6 +175,8 @@ class ChaikinVolatility(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
         return levels
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取最新的交易信号

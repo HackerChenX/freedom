@@ -1,9 +1,8 @@
-from utils.container import container
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+# -*- coding: utf-8 -*-
 
 """
-COMPOSITE (复合指标) - 增强版
+COMPOSITE (复合指标) - L4标准修复版
 修复版本,确保通过所有验证阶段
 """
 
@@ -11,8 +10,10 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, Optional
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -25,10 +26,7 @@ class COMPOSITE(BaseIndicator):
     包括趋势,动量,波动性和成交量等多维度分析.
     """
     
-    def __init__(self, period: int = 20, **kwargs):  # TODO: 将魔法数字提取到配置中
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
+    def __init__(self, period: int = 20, **kwargs):
         """
         初始化COMPOSITE指标
         
@@ -36,9 +34,14 @@ class COMPOSITE(BaseIndicator):
             period: 计算周期,默认20
             **kwargs: 其他参数
         """
-        super().__init__()
-        self.name = "COMPOSITE"
+        super().__init__(name="COMPOSITE", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.period = period
+        self.description = "复合指标结合多个技术指标的信号,提供综合的市场分析"
         self._result = None
         
     def set_parameters_Indicator_Base_Indicator(self, **kwargs):
@@ -78,7 +81,9 @@ class COMPOSITE(BaseIndicator):
             return df
         return pd.DataFrame(index=data.index)
     
-    def calculate(self, data: pd.DataFrame) -> Dict[str, Any]:
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
+    def calculate(self, data: pd.DataFrame) -> pd.DataFrame:
         """
         计算COMPOSITE指标
         
@@ -91,13 +96,13 @@ class COMPOSITE(BaseIndicator):
         try:
             if len(data) < self.period:
                 logger.warning(f"数据长度({len(data)})小于所需周期({self.period})")
-                return {
-                    'composite_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    'trend_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    'momentum_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    'volatility_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                    'volume_score': pd.Series(index=data.index, data=50.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                }
+                result = pd.DataFrame(index=data.index)
+                result['composite_value'] = 50.0
+                result['composite_trend'] = 50.0
+                result['composite_momentum'] = 50.0
+                result['composite_volatility'] = 50.0
+                result['composite_volume'] = 50.0
+                return result
 
             # 确保数据类型正确
             high = data['high'].astype(float)
@@ -118,11 +123,11 @@ class COMPOSITE(BaseIndicator):
             volume_score = self._calculate_volume_score(data)
             
             # 复合评分计算 - 确保与子评分有强相关性
-            composite_score (
-                trend_score * 0.35 +      # 增加趋势权重  # TODO: 将魔法数字提取到配置中
-                momentum_score * 0.35 +   # 增加动量权重  # TODO: 将魔法数字提取到配置中
-                volatility_score * 0.15 + # 降低波动性权重  # TODO: 将魔法数字提取到配置中
-                volume_score * 0.15       # 降低成交量权重  # TODO: 将魔法数字提取到配置中
+            composite_score = (
+                trend_score * 0.35 +      # 增加趋势权重
+                momentum_score * 0.35 +   # 增加动量权重
+                volatility_score * 0.15 + # 降低波动性权重
+                volume_score * 0.15       # 降低成交量权重
             )
 
             # 添加市场敏感性调整
@@ -138,7 +143,15 @@ class COMPOSITE(BaseIndicator):
             # 确保评分在合理范围内
             composite_score = np.clip(composite_score, 0, 100)
             
-            # 存储结果
+            # 创建标准化输出DataFrame
+            result = pd.DataFrame(index=data.index)
+            result['composite_value'] = composite_score
+            result['composite_trend'] = trend_score
+            result['composite_momentum'] = momentum_score
+            result['composite_volatility'] = volatility_score
+            result['composite_volume'] = volume_score
+            
+            # 存储结果用于信号生成
             self._result = {
                 'composite_score': composite_score,
                 'trend_score': trend_score,
@@ -147,17 +160,17 @@ class COMPOSITE(BaseIndicator):
                 'volume_score': volume_score
             }
 
-            return self._result
+            return result
             
         except Exception as e:
             logger.error(f"COMPOSITE计算失败: {e}")
-            return {
-                'composite_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                'trend_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                'momentum_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                'volatility_score': pd.Series(index=data.index, data=50.0),  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-                'volume_score': pd.Series(index=data.index, data=50.0)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
-            }
+            result = pd.DataFrame(index=data.index)
+            result['composite_value'] = 50.0
+            result['composite_trend'] = 50.0
+            result['composite_momentum'] = 50.0
+            result['composite_volatility'] = 50.0
+            result['composite_volume'] = 50.0
+            return result
 
     def _calculate_trend_score(self, data: pd.DataFrame) -> pd.Series:
         """计算趋势评分"""
@@ -205,11 +218,11 @@ class COMPOSITE(BaseIndicator):
         histogram = macd - signal
         
         # 动量评分
-        rsi_score = np.where(rsi > 70, 80, np.where(rsi < 30, 20, 50))  # TODO: 将魔法数字提取到配置中
-        macd_score = np.where(histogram > 0, 70, 30)  # TODO: 将魔法数字提取到配置中
+        rsi_score = np.where(rsi > 70, 80, np.where(rsi < 30, 20, 50))
+        macd_score = np.where(histogram > 0, 70, 30)
         
-        momentum_score (rsi_score + macd_score) / 2
-        return "pd.Series(momentum_score, index=data.index)"
+        momentum_score = (rsi_score + macd_score) / 2
+        return pd.Series(momentum_score, index=data.index)
     
     def _calculate_volatility_score(self, data: pd.DataFrame) -> pd.Series:
         """计算波动性评分"""
@@ -228,10 +241,10 @@ class COMPOSITE(BaseIndicator):
         volatility = close.rolling(window=20, min_periods=1).std() / close.rolling(window=20, min_periods=1).mean()  # TODO: 将魔法数字提取到配置中
         
         # 波动性评分 (低波动性得高分)
-        atr_percentile = atr.rolling(window=50, min_periods=1).rank(pct=True)  # TODO: 将魔法数字提取到配置中
+        atr_percentile = atr.rolling(window=50, min_periods=1).rank(pct=True)
         vol_score = (1 - atr_percentile) * 100
         
-        return "vol_score.fillna(50)"  # TODO: 将魔法数字提取到配置中
+        return vol_score.fillna(50)
     
     def _calculate_volume_score(self, data: pd.DataFrame) -> pd.Series:
         """计算成交量评分"""
@@ -243,17 +256,17 @@ class COMPOSITE(BaseIndicator):
         volume_ratio = volume / (volume_ma + 1e-10)
         
         # 价量配合
-        close.pct_change()
-        volume_price_correlation .rolling(window=10, min_periods=1).corr(volume_ratio)
+        price_change = close.pct_change()
+        volume_price_correlation = price_change.rolling(window=10, min_periods=1).corr(volume_ratio)
         
         # 成交量评分
-        volume_score = np.where(volume_ratio > 1.5, 80,  # TODO: 将魔法数字提取到配置中
-                               np.where(volume_ratio > 1.0, 60, 40))  # TODO: 将魔法数字提取到配置中
+        volume_score = np.where(volume_ratio > 1.5, 80,
+                               np.where(volume_ratio > 1.0, 60, 40))
         
-        correlation_score = np.where(volume_price_correlation > 0.3, 20, 0)  # TODO: 将魔法数字提取到配置中
+        correlation_score = np.where(volume_price_correlation > 0.3, 20, 0)
         
         total_volume_score = volume_score + correlation_score
-        return "pd.Series(total_volume_score, index=data.index)"
+        return pd.Series(total_volume_score, index=data.index)
     
     def get_patterns(self) -> Dict[str, Any]:
         """
@@ -277,19 +290,19 @@ class COMPOSITE(BaseIndicator):
             momentum_score = self._result['momentum_score']
             
             # 多头复合形态
-            bullish_composite = (composite_score > 70) & (trend_score > 60) & (momentum_score > 60)  # TODO: 将魔法数字提取到配置中
+            bullish_composite = (composite_score > 70) & (trend_score > 60) & (momentum_score > 60)
             
             # 空头复合形态
-            bearish_composite = (composite_score < 30) & (trend_score < 40) & (momentum_score < 40)  # TODO: 将魔法数字提取到配置中
+            bearish_composite = (composite_score < 30) & (trend_score < 40) & (momentum_score < 40)
             
             # 中性复合形态
-            neutral_composite (composite_score >= 40) & (composite_score <= 60)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            neutral_composite = (composite_score >= 40) & (composite_score <= 60)
             
             # 强趋势形态
-            strong_trend (trend_score > 80) | (trend_score < 20)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            strong_trend = (trend_score > 80) | (trend_score < 20)
             
             # 统计形态数量
-            pattern_count (
+            pattern_count = (
                 bullish_composite.sum() + 
                 bearish_composite.sum() + 
                 neutral_composite.sum() + 
@@ -315,7 +328,9 @@ class COMPOSITE(BaseIndicator):
                 'pattern_count': 0
             }
 
-    def get_signal(self) -> Dict[str, Any]:
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame) -> Dict[str, Any]:
         """
         获取COMPOSITE交易信号
         
@@ -336,10 +351,10 @@ class COMPOSITE(BaseIndicator):
             momentum_score = self._result['momentum_score']
             
             # 买入信号:复合评分高且趋势向上
-            buy_signals (composite_score > 65) & (trend_score > 60) & (momentum_score > 55)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            buy_signals = (composite_score > 65) & (trend_score > 60) & (momentum_score > 55)
             
             # 卖出信号:复合评分低且趋势向下
-            sell_signals (composite_score < 35) & (trend_score < 40) & (momentum_score < 45)  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            sell_signals = (composite_score < 35) & (trend_score < 40) & (momentum_score < 45)
             
             # 信号强度:基于复合评分
             signal_strength = composite_score / 100
@@ -349,7 +364,7 @@ class COMPOSITE(BaseIndicator):
                 'sell_signals': sell_signals.tolist(),
                 'signal_strength': signal_strength.tolist(),
                 'signal_count': int(buy_signals.sum() + sell_signals.sum()),
-                'composite_trend': (composite_score > 50).tolist()  # TODO: 将魔法数字提取到配置中
+                'composite_trend': (composite_score > 50).tolist()
             }
 
         except Exception as e:
@@ -369,7 +384,7 @@ class COMPOSITE(BaseIndicator):
             float: 指标评分 (0-100)
         """
         if self._result is None:
-            return "50.0"  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            return 50.0
         
         try:
             composite_score = self._result['composite_score']
@@ -395,8 +410,8 @@ class COMPOSITE(BaseIndicator):
                 signal_quality_score = 15  # TODO: 将魔法数字提取到配置中
             
             total_score = data_quality_score + distribution_score + signal_quality_score
-            return "min(100.0, max(0.0, total_score))"
+            return min(100.0, max(0.0, total_score))
             
         except Exception as e:
             logger.error(f"COMPOSITE评分计算失败: {e}")
-            return "50.0"  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
+            return 50.0

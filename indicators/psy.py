@@ -1,7 +1,5 @@
-from utils.container import container
-#!/usr/bin/env python
-from utils.logger import get_logger
-# -*- coding: utf-8 -*-  # TODO: 将魔法数字提取到配置中
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 心理线指标(PSY)模块
@@ -11,14 +9,15 @@ from utils.logger import get_logger
 """
 
 import numpy as np
-from typing import Dict, Any
 import pandas as pd
 from typing import Dict, List, Union, Optional, Any, Tuple
 
+from utils.container import container
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
 from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 
 logger = get_logger(__name__)
 
@@ -37,17 +36,19 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
     
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化PSY指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
-        self.name = "PSY"
+        super().__init__(name="PSY", **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
+        self.description = "心理线指标，计算一段时间内上涨日所占百分比，反映市场人气强弱和超买超卖状态"
 
         # 设置默认参数
         self._default_parameters = self._get_default_parameters_psy()
@@ -128,7 +129,9 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         
         self.market_environment = environment
 
-    def calculate_Psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
+    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
         计算PSY指标
 
@@ -139,21 +142,81 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         Returns:
             包含PSY指标的DataFrame
         """
-        # 🔧 Ultra Think修复:标准化接口调用
-        return "self._calculate_psy(data, **kwargs)"
+        return self._calculate_psy(data, **kwargs)
     
-    def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def calculate_Psy(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
-        计算PSY指标 - Ultra Think修复:添加缺失的标准calculate方法
-        
+        计算PSY指标 - 向后兼容方法
+
         Args:
-            data: 输入数据
-            
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
         Returns:
-            pd.DataFrame: 包含PSY指标的DataFrame
+            包含PSY指标的DataFrame
         """
-        # 🔧 Ultra Think修复:实现标准calculate接口,确保100%兼容性
-        return "self._calculate_psy(data, **kwargs)"
+        return self.calculate(data, **kwargs)
+    
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
+    def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
+        """
+        获取PSY指标信号
+
+        Args:
+            data: 包含价格数据的DataFrame
+            **kwargs: 其他参数
+
+        Returns:
+            Dict[str, Any]: 包含signal, score, confidence的字典
+        """
+        try:
+            # 计算PSY指标
+            result = self.calculate(data, **kwargs)
+            
+            if result.empty or len(result) == 0:
+                return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
+            
+            # 获取最新的PSY值
+            latest = result.iloc[-1]
+            psy_value = latest.get('psy_value', 50.0)
+            
+            # 初始化信号
+            signal = "HOLD"
+            score = 50.0
+            confidence = 0.5
+            
+            # PSY信号逻辑
+            if psy_value >= 75:  # 超买区域
+                signal = "SELL"
+                score = max(20.0, 50.0 - (psy_value - 75) * 1.2)
+                confidence = min(0.8, 0.5 + (psy_value - 75) / 50)
+            elif psy_value <= 25:  # 超卖区域
+                signal = "BUY"
+                score = min(80.0, 50.0 + (25 - psy_value) * 1.2)
+                confidence = min(0.8, 0.5 + (25 - psy_value) / 50)
+            elif psy_value > 60:  # 偏强区域
+                signal = "HOLD"
+                score = 60.0
+                confidence = 0.6
+            elif psy_value < 40:  # 偏弱区域
+                signal = "HOLD"
+                score = 40.0
+                confidence = 0.6
+            else:  # 中性区域
+                signal = "HOLD"
+                score = 50.0
+                confidence = 0.5
+            
+            return {
+                'signal': signal,
+                'score': float(score),
+                'confidence': float(confidence)
+            }
+            
+        except Exception as e:
+            logger.warning(f"PSY信号获取失败: {e}")
+            return {'signal': 'HOLD', 'score': 50.0, 'confidence': 0.5}
     
     def _calculate_baseindicator(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """
@@ -434,11 +497,19 @@ class PsychologicalLine(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
         self._result = result
         
         
+        # 标准化列名格式为 {indicator}_{type}
+        if 'psy' in result.columns:
+            result = result.rename(columns={
+                'psy': 'psy_value',
+                'psyma': 'psy_ma',
+                'psy_change': 'psy_change'
+            })
+        
         # 添加形态识别和信号生成
         result = self.add_pattern_detection(result)
         result = self.add_signal_generation(result)
 
-        return "result"
+        return result
     
     def _adjust_parameters_by_volatility(self, data: pd.DataFrame) -> None:
         """

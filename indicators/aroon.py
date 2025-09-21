@@ -1,7 +1,5 @@
-from utils.container import container
-
 #!/usr/bin/env python3
-from utils.logger import get_logger
+# -*- coding: utf-8 -*-
 
 """
 AROON 指标
@@ -13,10 +11,12 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional
 
+from utils.container import container
+from utils.logger import get_logger
+from utils.decorators import performance_monitor, exception_handler
 from indicators.base_indicator import BaseIndicator
 from indicators.base.pattern_signal_mixin import PatternSignalMixin
 from indicators.base.minimum_periods_mixin import MinimumPeriodsMixin
-from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -42,16 +42,23 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
     """
 
     def __init__(self, **kwargs):
-        # 依赖注入示例:
-        # self.data_access = container.resolve("DataAccessInterface")
-        # self.cache_service = container.resolve("ICacheService")
         """
         初始化AROON指标
 
         Args:
             **kwargs: 指标参数
         """
-        super().__init__()
+        # 使用默认值，避免循环依赖
+        period = kwargs.get('period', 14)
+        name = kwargs.get('name', 'AROON')
+        
+        # 正确调用父类初始化
+        super().__init__(name=name, period=period, **kwargs)
+        
+        # 依赖注入
+        self.data_access = container.resolve("DataAccessInterface")
+        self.cache_service = container.resolve("ICacheService")
+        
         self.name = "AROON"
         self.description = "阿隆指标,用于识别趋势的强度和方向"
         self._result = None  # 初始化结果存储
@@ -117,6 +124,8 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
 
     # ========================== 兼容性方法 ==========================
 
+    @performance_monitor(threshold=2.0)
+    @exception_handler(reraise=True)
     def calculate(self, data: pd.DataFrame, **kwargs) -> pd.DataFrame:
         """公共接口:计算指标"""
         return self.calculate_Aroon(data, **kwargs)
@@ -514,6 +523,8 @@ class Aroon(BaseIndicator, PatternSignalMixin, MinimumPeriodsMixin):
             period + 5, 20
         )  # AROON周期 + 缓冲,最少20个周期  # TODO: 将魔法数字提取到配置中  # TODO: 将魔法数字提取到配置中
 
+    @performance_monitor(threshold=1.0)
+    @exception_handler(reraise=False, default_return=None)
     def get_signal(self, data: pd.DataFrame, **kwargs) -> Dict[str, Any]:
         """
         【核心抽象方法2】基于AROON指标数值生成最新的交易信号
