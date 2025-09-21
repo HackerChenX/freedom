@@ -1,0 +1,390 @@
+
+
+# RestAPI接口文档
+## 通用
+### 查询服务器时间
+
+Http request:  GET info/time
+请求正文：无   
+响应正文：    
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---  
+timestamp  | String  | 时间戳  | UTC时间
+   
+
+
+样例：
+
+``` java
+
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+		"timestamp":"timestamp"
+	}
+}
+
+```
+
+### 查询API发行号
+
+Http request:  GET info/version
+请求正文：无
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+version  | String  | 版本号 
+
+
+样例：
+
+``` java
+
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+		"version":"version"
+	}
+}
+
+```
+
+## 交易
+### 创建限价单
+
+Http request:  POST limit/order/create
+请求正文：
+
+参数名  | 类型  | 是否必填   | 注释   | 说明
+--- | ---  | ---  | ---  | ---
+orderId  | String   | true  | 订单号  | 不能重复
+instrumentId  | String   | true  | 合约号  | 样例 ETH-BTC
+direction  |  String  | true  | 方向 | 0-买 1-卖
+price  | String | true  | 价格  | 
+volume  | String | true | 数量  | 
+
+
+响应正文：
+
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+orderId  | String  | 订单号  | 
+instrumentId  | String  | 合约号  | 样例 ETH-BTC
+direction  |  String  | 方向 | 0-买 1-卖
+orderType  | String  | 订单类型  | 1-限价单、2-市价单 、3-止盈止损 、4-冰山订单 、5-隐藏订单
+limtPrice  | String  | 价格  | 
+stopPrice  | String  | 触发价  | 
+displaySize  | String   | 展示数量 |
+volume  | String | 数量  | 
+timestamp  | String | 下单时间戳  | 13位
+
+
+样例：
+
+``` java
+请求样例：
+{
+	"orderId":"000000001",
+	"instrumentId":"BTC-ETH",
+	"direction":"0",
+	"price":"1",
+	"volume":"1"
+}
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+		"apiKey":"testApiKey",
+		"orderId":"000000001",
+     	"orderType":"1",
+    	"instrumentId":"BTC-ETH",
+    	"direction":"0",
+    	"limtPrice":"1",
+    	"volume":"1",
+    	"stopPrice":"0",
+    	"displaySize":"0",
+    	"timestamp":"1234567890123"
+	}
+}
+
+```
+
+### 创建市价单
+
+Http request:  POST market/order/create
+请求正文：
+
+参数名  | 类型  | 是否必填   | 注释   | 说明
+--- | ---  | ---  | ---  | ---
+orderId  | String   | true  | 订单号  | 不能重复
+instrumentId  | String   | true  | 合约号  | 样例 ETH-BTC
+direction  |  String  | true  | 方向 | 0-买 1-卖
+volume  | String | true | 数量  | 
+
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+orderId  | String  | 订单号  | 
+instrumentId  | String  | 合约号  | 样例 ETH-BTC
+direction  |  String  | 方向 | 0-买 1-卖
+orderType  | String  | 订单类型  | 1-限价单、2-市价单 、3-止盈止损 、4-冰山订单 、5-隐藏订单
+limtPrice  | String  | 价格  | 
+stopPrice  | String  | 触发价  | 
+displaySize  | String   | 展示数量| 
+volume  | String | 数量  | 
+timestamp  | String | 下单时间戳  | 13位
+
+
+样例：
+
+``` java
+请求样例：
+{
+	"orderId":"000000001",
+	"instrumentId":"BTC-ETH",
+	"direction":"0",
+	"volume":"1"
+}
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+		"apiKey":"testApiKey",
+		"orderId":"000000001",
+     	"orderType":"2",
+    	"instrumentId":"BTC-ETH",
+    	"direction":"0",
+    	"limtPrice":"1",
+    	"volume":"1",
+    	"stopPrice":"0",
+    	"displaySize":"0",
+    	"timestamp":"1234567890123"
+	}
+}
+```
+
+### 撤销订单
+
+Http request:  POST /order/cancel
+请求正文：
+
+参数名  | 类型  | 是否必填   | 注释   | 说明
+--- | ---  | ---  | ---  | ---
+orderId  | String   | true  | 订单号  | 
+
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+apiKey  | String  | apiKey  | 
+orderId  | String  | 订单号  | 
+instrumentId  | String  | 合约号  | 样例 ETH-BTC
+direction  |  String  | 方向 | 0-买 1-卖
+orderType  | String  | 订单类型  | 1-限价单、2-市价单 、3-止盈止损 、4-冰山订单 、5-隐藏订单
+limtPrice  | String  | 价格  | 
+stopPrice  | String  | 触发价  | 
+displaySize  | String   | 展示数量| 
+volume  | String | 数量  | 
+timestamp  | String | 下单时间戳  | 13位
+
+
+``` java
+请求样例：
+{
+	"orderId":"000000001"
+}
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+	    "apiKey":"testApiKey",
+		"orderId":"000000001",
+     	"orderType":"1",
+    	"instrumentId":"BTC-ETH",
+    	"direction":"0",
+    	"limtPrice":"1",
+    	"volume":"2",
+    	"stopPrice":"0",
+    	"displaySize":"0",
+    	"timestamp":"1234567890123"
+	}
+}
+```
+
+### 查询订单
+
+Http request:  GET /order/find
+请求正文：
+
+参数名  | 类型  | 是否必填   | 注释   | 说明
+--- | ---  | ---  | ---  | ---
+orderId  | String   | false  | 订单号  | 
+instrumentId  | String   | false  | 合约号  | 样例 ETH-BTC
+direction  |  String  | false  | 方向 | 0-买 1-卖
+orderType  | String  | false  | 订单类型  | 1-限价单、2-市价单 、3-止盈止损 、4-冰山订单 、5-隐藏订单
+start  | String  | false  | 开始时间  | yyyyMMdd HH:mm:ss
+end  | String  | false  | 结束时间  | yyyyMMdd HH:mm:ss
+
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+apiKey  | String  | apiKey  | 
+orderId  | String  | 订单号  | 不能重复
+instrumentId  | String  | 合约号  | 样例 ETH-BTC
+direction  |  String  | 方向 | 0-买 1-卖
+orderType  | String  | 订单类型  | 1-限价单、2-市价单 、3-止盈止损 、4-冰山订单 、5-隐藏订单
+limtPrice  | String  | 价格  | 当订单类型为3 时必填
+stopPrice  | String  | 触发价  | 当订单类型为4 时必填
+displaySize  | String   | 展示数量| 
+volume  | String | 数量  | 
+orderStatus  | String | 订单状态  | 0-全部成交、1-部分成交 、2-未成交、3-撤单、4-部分成交部分撤单、5-已触发止损
+timestamp  | String | 下单时间戳  | 13位
+
+
+``` java
+请求样例：
+{
+	"instrumentId":"BTC-ETH"
+}
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",,
+	"data":[
+		{
+			"apiKey":"testApiKey",
+			"orderId":"000000001",
+			"orderType":"1",
+			"instrumentId":"BTC-ETH",
+			"direction":"0",
+			"limtPrice":"1",
+			"volume":"2",
+			"stopPrice":"0",
+			"displaySize":"0",
+			"orderStatus":"0",
+			"timestamp":"1234567890123"
+		},
+		{
+			"apiKey":"testApiKey",
+			"orderId":"000000002",
+			"orderType":"1",
+			"instrumentId":"BTC-ETH",
+			"direction":"0",
+			"limtPrice":"1",
+			"volume":"2",
+			"stopPrice":"0",
+			"displaySize":"0",
+			"orderStatus":"0",
+			"timestamp":"1234567890123"
+		}
+	]
+}
+```
+
+### 查询成交
+
+Http request:  GET /trade/find
+请求正文：
+
+参数名  | 类型  | 是否必填   | 注释   | 说明
+--- | ---  | ---  | ---  | ---
+instrumentId  | String   | false  | 合约号  | 样例 ETH-BTC
+direction  |  String  | false  | 方向 | 0-买 1-卖
+start  | String  | false  | 开始时间  | yyyyMMdd HH:mm:ss
+end  | String  | false  | 结束时间  | yyyyMMdd HH:mm:ss
+
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+apiKey  | String  | apiKey  | 
+tradeId  | String  | 成交号  | 
+orderId  | String  | 订单号  | 
+instrumentId  | String  | 合约号  | 样例 ETH-BTC
+direction  |  String  | 方向 | 0-买 1-卖
+price  | String  | 价格  | 
+volume  | String  | 数量  | 
+fee  | String   | 手续费| 
+timestamp  | String | 操作时间戳  | 13位
+
+``` java
+请求样例：
+{
+	"instrumentId":"BTC-ETH"
+}
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":[
+		{
+			"apiKey":"testApiKey",
+			"orderId":"000000001",
+			"tradeId":"1",
+			"instrumentId":"BTC-ETH",
+			"direction":"0",
+			"price":"1",
+			"volume":"2",
+			"fee":"0.05",
+			"timestamp":"1234567890123"
+		},
+		{
+			"apiKey":"testApiKey",
+			"orderId":"000000001",
+			"tradeId":"2",
+			"instrumentId":"BTC-ETH",
+			"direction":"1",
+			"price":"1",
+			"volume":"2",
+			"fee":"0.05",
+			"timestamp":"1234567890123"
+		}
+	]
+}
+```
+
+## 资产
+### 查询资产
+
+Http request:  GET /balance/find
+
+请求正文：
+无参
+
+响应正文：
+
+参数名  | 类型 | 注释   | 说明
+--- | ---  | ---  | ---
+assetId  | String  | 资产id  | 
+balance  | String  | 资产余额  | 
+available  | String  | 可用余额  | 
+frozen  | String  | 冻结余额  | 
+
+
+``` java
+请求样例：
+
+响应样例：
+{
+	"errorCode":"0000",
+	"errorMessage":"",
+	"data":{
+		"assetId":"ETH",
+     	"balance":"20000",
+    	"available":"18000",
+    	"frozen":"2000"
+	}
+}
+```

@@ -1,0 +1,1093 @@
+---
+description: 部署运维和生产环境管理规范
+globs: *.py,*.sh,*.json,*.yml,*.md
+---
+
+# 部署运维管理规范
+
+## 环境配置管理
+
+### 开发环境设置
+
+基于项目的[本地开发指南](mdc:LOCAL_DEVELOPMENT.md)：
+
+```bash
+# Python环境配置
+python3.11 -m venv vnpy_freedom_env
+source vnpy_freedom_env/bin/activate  # Linux/macOS
+# vnpy_freedom_env\Scripts\activate   # Windows
+
+# 依赖安装
+pip install -U pip setuptools wheel
+pip install -r requirements.txt
+
+# 开发工具安装
+pip install black isort mypy flake8 pytest pytest-cov
+```
+
+### 生产环境配置
+
+```bash
+#!/bin/bash
+# production_setup.sh
+
+set -e  # 遇到错误立即退出
+
+echo "🚀 VnPy Freedom 生产环境部署"
+
+# 1. 系统依赖检查
+check_system_requirements() {
+    echo "检查系统依赖..."
+    
+    # Python版本检查
+    if ! python3.11 --version >/dev/null 2>&1; then
+        echo "❌ 需要Python 3.11"
+        exit 1
+    fi
+    
+    # 内存检查
+    total_memory=$(free -m | awk 'NR==2{printf "%.0f", $2}')
+    if [ "$total_memory" -lt 4096 ]; then
+        echo "⚠️  建议至少4GB内存"
+    fi
+    
+    echo "✅ 系统检查通过"
+}
+
+# 2. 安全配置
+setup_security() {
+    echo "配置安全设置..."
+    
+    # 创建专用用户
+    if ! id "vnpy" &>/dev/null; then
+        sudo useradd -m -s /bin/bash vnpy
+        echo "✅ 创建vnpy用户"
+    fi
+    
+    # 设置文件权限
+    chmod 700 /home/vnpy/vnpy_freedom
+    chmod 600 /home/vnpy/vnpy_freedom/config/*.json
+    
+    echo "✅ 安全配置完成"
+}
+
+# 3. 服务配置
+setup_systemd_service() {
+    echo "配置系统服务..."
+    
+    cat > /etc/systemd/system/vnpy-freedom.service << EOF
+[Unit]
+Description=VnPy Freedom Trading Platform
+After=network.target
+
+[Service]
+Type=simple
+User=vnpy
+Group=vnpy
+WorkingDirectory=/home/vnpy/vnpy_freedom
+ExecStart=/home/vnpy/vnpy_freedom_env/bin/python run_vnpy_freedom.py --daemon
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# 环境变量
+Environment=PYTHONPATH=/home/vnpy/vnpy_freedom
+Environment=VNPY_FREEDOM_CONFIG=/home/vnpy/vnpy_freedom/config
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable vnpy-freedom
+    echo "✅ 系统服务配置完成"
+}
+
+# 执行部署步骤
+check_system_requirements
+setup_security
+setup_systemd_service
+
+echo "🎉 生产环境部署完成"
+```
+
+### 配置文件管理
+
+```python
+# config/production.py
+"""生产环境配置"""
+
+import os
+from pathlib import Path
+from typing import Dict, Any
+
+# 基础路径
+BASE_DIR = Path(__file__).parent.parent
+CONFIG_DIR = BASE_DIR / "config"
+LOG_DIR = BASE_DIR / "logs"
+DATA_DIR = BASE_DIR / "data"
+
+# 确保目录存在
+for directory in [CONFIG_DIR, LOG_DIR, DATA_DIR]:
+    directory.mkdir(exist_ok=True)
+
+# 数据库配置
+DATABASE_CONFIG = {
+    "clickhouse": {
+        "host": os.getenv("CLICKHOUSE_HOST", "localhost"),
+        "port": int(os.getenv("CLICKHOUSE_PORT", "8123")),
+        "user": os.getenv("CLICKHOUSE_USER", "default"),
+        "password": os.getenv("CLICKHOUSE_PASSWORD", ""),
+        "database": os.getenv("CLICKHOUSE_DATABASE", "vnpy"),
+        "pool_size": 10,
+        "timeout": 30
+    }
+}
+
+# 日志配置
+LOGGING_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        },
+        "detailed": {
+            "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d - %(funcName)s(): %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "standard"
+        },
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "vnpy_freedom.log"),
+            "maxBytes": 10485760,  # 10MB
+            "backupCount": 5,
+            "formatter": "detailed"
+        },
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(LOG_DIR / "vnpy_freedom_error.log"),
+            "maxBytes": 10485760,
+            "backupCount": 3,
+            "formatter": "detailed"
+        }
+    },
+    "loggers": {
+        "vnpy": {
+            "handlers": ["console", "file", "error_file"],
+            "level": "DEBUG",
+            "propagate": False
+        },
+        "root": {
+            "handlers": ["console", "file"],
+            "level": "INFO"
+        }
+    }
+}
+
+# 性能配置
+PERFORMANCE_CONFIG = {
+    "max_workers": os.cpu_count(),
+    "memory_limit": "2GB",
+    "gc_threshold": 1000,
+    "cache_size": 1024
+}
+
+# 安全配置
+SECURITY_CONFIG = {
+    "api_rate_limit": 100,  # 请求/分钟
+    "session_timeout": 3600,  # 秒
+    "max_failed_attempts": 5,
+    "lockout_duration": 300  # 秒
+}
+```
+
+## 监控和告警系统
+
+### 系统监控
+
+```python
+# monitoring/system_monitor.py
+"""系统监控模块"""
+
+import psutil
+import time
+import logging
+from datetime import datetime
+from typing import Dict, Any
+from dataclasses import dataclass
+
+@dataclass
+class SystemMetrics:
+    """系统指标"""
+    timestamp: datetime
+    cpu_percent: float
+    memory_percent: float
+    disk_percent: float
+    network_io: Dict[str, int]
+    process_count: int
+    
+class SystemMonitor:
+    """系统监控器"""
+    
+    def __init__(self, alert_thresholds: Dict[str, float] = None):
+        """初始化监控器"""
+        self.logger = logging.getLogger(__name__)
+        self.alert_thresholds = alert_thresholds or {
+            "cpu": 80.0,
+            "memory": 85.0,
+            "disk": 90.0
+        }
+        self.alert_cooldown = {}  # 告警冷却
+        
+    def collect_metrics(self) -> SystemMetrics:
+        """收集系统指标"""
+        return SystemMetrics(
+            timestamp=datetime.now(),
+            cpu_percent=psutil.cpu_percent(interval=1),
+            memory_percent=psutil.virtual_memory().percent,
+            disk_percent=psutil.disk_usage('/').percent,
+            network_io=psutil.net_io_counters()._asdict(),
+            process_count=len(psutil.pids())
+        )
+    
+    def check_alerts(self, metrics: SystemMetrics) -> None:
+        """检查告警条件"""
+        checks = {
+            "cpu": (metrics.cpu_percent, "CPU使用率"),
+            "memory": (metrics.memory_percent, "内存使用率"),
+            "disk": (metrics.disk_percent, "磁盘使用率")
+        }
+        
+        for metric_name, (value, description) in checks.items():
+            threshold = self.alert_thresholds[metric_name]
+            
+            if value > threshold:
+                self._send_alert(
+                    f"⚠️ {description}过高: {value:.1f}% (阈值: {threshold}%)",
+                    metric_name
+                )
+    
+    def _send_alert(self, message: str, alert_type: str) -> None:
+        """发送告警"""
+        current_time = time.time()
+        last_alert = self.alert_cooldown.get(alert_type, 0)
+        
+        # 告警冷却期（5分钟）
+        if current_time - last_alert < 300:
+            return
+            
+        self.logger.warning(message)
+        self.alert_cooldown[alert_type] = current_time
+        
+        # 这里可以集成各种告警渠道
+        self._notify_administrators(message)
+    
+    def _notify_administrators(self, message: str) -> None:
+        """通知管理员"""
+        # 邮件通知
+        # 短信通知
+        # 微信通知
+        # Slack通知
+        pass
+
+# 启动监控
+def start_system_monitoring():
+    """启动系统监控"""
+    monitor = SystemMonitor()
+    
+    while True:
+        try:
+            metrics = monitor.collect_metrics()
+            monitor.check_alerts(metrics)
+            
+            # 记录指标到数据库
+            # save_metrics_to_database(metrics)
+            
+        except Exception as e:
+            logging.error(f"监控异常: {e}")
+            
+        time.sleep(60)  # 每分钟检查一次
+```
+
+### 应用监控
+
+```python
+# monitoring/application_monitor.py
+"""应用监控模块"""
+
+import threading
+import time
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+from dataclasses import dataclass
+
+@dataclass
+class StrategyMetrics:
+    """策略指标"""
+    strategy_name: str
+    status: str
+    position: int
+    pnl: float
+    trades_count: int
+    last_update: datetime
+    
+@dataclass
+class GatewayMetrics:
+    """网关指标"""
+    gateway_name: str
+    connected: bool
+    latency: float
+    error_count: int
+    last_heartbeat: datetime
+
+class ApplicationMonitor:
+    """应用监控器"""
+    
+    def __init__(self, main_engine):
+        """初始化"""
+        self.main_engine = main_engine
+        self.logger = logging.getLogger(__name__)
+        self.metrics_history: List[Dict] = []
+        self.running = False
+        
+    def start_monitoring(self) -> None:
+        """启动监控"""
+        self.running = True
+        monitor_thread = threading.Thread(target=self._monitor_loop)
+        monitor_thread.daemon = True
+        monitor_thread.start()
+        
+        self.logger.info("应用监控启动")
+    
+    def stop_monitoring(self) -> None:
+        """停止监控"""
+        self.running = False
+        self.logger.info("应用监控停止")
+    
+    def _monitor_loop(self) -> None:
+        """监控循环"""
+        while self.running:
+            try:
+                # 收集策略指标
+                strategy_metrics = self._collect_strategy_metrics()
+                
+                # 收集网关指标
+                gateway_metrics = self._collect_gateway_metrics()
+                
+                # 检查异常情况
+                self._check_strategy_health(strategy_metrics)
+                self._check_gateway_health(gateway_metrics)
+                
+                # 保存指标历史
+                self._save_metrics_history({
+                    "timestamp": datetime.now(),
+                    "strategies": strategy_metrics,
+                    "gateways": gateway_metrics
+                })
+                
+            except Exception as e:
+                self.logger.error(f"监控异常: {e}")
+            
+            time.sleep(30)  # 每30秒检查一次
+    
+    def _collect_strategy_metrics(self) -> List[StrategyMetrics]:
+        """收集策略指标"""
+        metrics = []
+        
+        # 获取CTA策略引擎
+        try:
+            from vnpy_ctastrategy import CtaStrategyApp
+            cta_engine = self.main_engine.get_engine(CtaStrategyApp.app_name)
+            
+            for strategy_name, strategy in cta_engine.strategies.items():
+                metrics.append(StrategyMetrics(
+                    strategy_name=strategy_name,
+                    status="运行中" if strategy.trading else "已停止",
+                    position=strategy.pos,
+                    pnl=strategy.pnl,
+                    trades_count=len(strategy.trades),
+                    last_update=datetime.now()
+                ))
+                
+        except Exception as e:
+            self.logger.error(f"收集策略指标失败: {e}")
+            
+        return metrics
+    
+    def _collect_gateway_metrics(self) -> List[GatewayMetrics]:
+        """收集网关指标"""
+        metrics = []
+        
+        for gateway_name, gateway in self.main_engine.gateways.items():
+            metrics.append(GatewayMetrics(
+                gateway_name=gateway_name,
+                connected=gateway.get_status().get("connected", False),
+                latency=gateway.get_status().get("latency", 0),
+                error_count=gateway.get_status().get("error_count", 0),
+                last_heartbeat=datetime.now()
+            ))
+            
+        return metrics
+    
+    def _check_strategy_health(self, metrics: List[StrategyMetrics]) -> None:
+        """检查策略健康状态"""
+        for metric in metrics:
+            # 检查策略是否停止
+            if metric.status == "已停止":
+                self._send_alert(f"策略 {metric.strategy_name} 已停止运行")
+            
+            # 检查大额亏损
+            if metric.pnl < -10000:  # 亏损超过1万
+                self._send_alert(f"策略 {metric.strategy_name} 亏损过大: {metric.pnl:.2f}")
+            
+            # 检查持仓过大
+            if abs(metric.position) > 100:  # 持仓超过100手
+                self._send_alert(f"策略 {metric.strategy_name} 持仓过大: {metric.position}")
+    
+    def _check_gateway_health(self, metrics: List[GatewayMetrics]) -> None:
+        """检查网关健康状态"""
+        for metric in metrics:
+            # 检查连接状态
+            if not metric.connected:
+                self._send_alert(f"网关 {metric.gateway_name} 连接断开")
+            
+            # 检查延迟
+            if metric.latency > 1000:  # 延迟超过1秒
+                self._send_alert(f"网关 {metric.gateway_name} 延迟过高: {metric.latency}ms")
+            
+            # 检查错误率
+            if metric.error_count > 10:
+                self._send_alert(f"网关 {metric.gateway_name} 错误过多: {metric.error_count}")
+    
+    def _send_alert(self, message: str) -> None:
+        """发送告警"""
+        self.logger.warning(f"应用告警: {message}")
+        # 集成告警通知
+    
+    def _save_metrics_history(self, metrics: Dict) -> None:
+        """保存指标历史"""
+        self.metrics_history.append(metrics)
+        
+        # 保持最近24小时的数据
+        cutoff_time = datetime.now() - timedelta(hours=24)
+        self.metrics_history = [
+            m for m in self.metrics_history 
+            if m["timestamp"] > cutoff_time
+        ]
+```
+
+## 备份和恢复
+
+### 数据备份策略
+
+```python
+# backup/backup_manager.py
+"""备份管理器"""
+
+import os
+import shutil
+import gzip
+import json
+import schedule
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import List, Dict
+
+class BackupManager:
+    """备份管理器"""
+    
+    def __init__(self, config: Dict):
+        """初始化"""
+        self.config = config
+        self.backup_dir = Path(config["backup_directory"])
+        self.backup_dir.mkdir(exist_ok=True)
+        
+        self.logger = logging.getLogger(__name__)
+    
+    def create_full_backup(self) -> str:
+        """创建完整备份"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"vnpy_freedom_full_{timestamp}"
+        backup_path = self.backup_dir / backup_name
+        
+        self.logger.info(f"开始创建完整备份: {backup_name}")
+        
+        try:
+            # 1. 备份配置文件
+            config_backup = backup_path / "config"
+            shutil.copytree("config", config_backup)
+            
+            # 2. 备份策略文件
+            strategy_backup = backup_path / "strategies"
+            shutil.copytree("strategies", strategy_backup)
+            
+            # 3. 备份数据库
+            self._backup_database(backup_path / "database")
+            
+            # 4. 备份日志文件（最近7天）
+            self._backup_logs(backup_path / "logs")
+            
+            # 5. 创建备份元信息
+            self._create_backup_metadata(backup_path, "full")
+            
+            # 6. 压缩备份
+            compressed_path = self._compress_backup(backup_path)
+            
+            self.logger.info(f"完整备份创建成功: {compressed_path}")
+            return str(compressed_path)
+            
+        except Exception as e:
+            self.logger.error(f"创建完整备份失败: {e}")
+            raise
+    
+    def create_incremental_backup(self) -> str:
+        """创建增量备份"""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_name = f"vnpy_freedom_inc_{timestamp}"
+        backup_path = self.backup_dir / backup_name
+        
+        self.logger.info(f"开始创建增量备份: {backup_name}")
+        
+        try:
+            # 找到最近的完整备份
+            last_full_backup = self._find_last_full_backup()
+            if not last_full_backup:
+                self.logger.warning("未找到完整备份，将创建完整备份")
+                return self.create_full_backup()
+            
+            # 备份变更的文件
+            self._backup_changed_files(backup_path, last_full_backup["timestamp"])
+            
+            # 创建备份元信息
+            self._create_backup_metadata(backup_path, "incremental", last_full_backup)
+            
+            # 压缩备份
+            compressed_path = self._compress_backup(backup_path)
+            
+            self.logger.info(f"增量备份创建成功: {compressed_path}")
+            return str(compressed_path)
+            
+        except Exception as e:
+            self.logger.error(f"创建增量备份失败: {e}")
+            raise
+    
+    def _backup_database(self, target_dir: Path) -> None:
+        """备份数据库"""
+        target_dir.mkdir(exist_ok=True)
+        
+        # ClickHouse备份
+        if "clickhouse" in self.config:
+            self._backup_clickhouse(target_dir / "clickhouse")
+        
+        # SQLite备份
+        sqlite_files = list(Path(".").glob("*.db"))
+        for db_file in sqlite_files:
+            shutil.copy2(db_file, target_dir / db_file.name)
+    
+    def _backup_clickhouse(self, target_dir: Path) -> None:
+        """备份ClickHouse数据"""
+        target_dir.mkdir(exist_ok=True)
+        
+        # 导出表结构和数据
+        import subprocess
+        
+        ch_config = self.config["clickhouse"]
+        host = ch_config["host"]
+        port = ch_config["port"]
+        user = ch_config["user"]
+        database = ch_config["database"]
+        
+        # 导出命令
+        export_cmd = [
+            "clickhouse-client",
+            f"--host={host}",
+            f"--port={port}",
+            f"--user={user}",
+            f"--database={database}",
+            "--query=SHOW TABLES",
+            "--format=TabSeparated"
+        ]
+        
+        try:
+            # 获取表列表
+            result = subprocess.run(export_cmd, capture_output=True, text=True)
+            tables = result.stdout.strip().split('\n')
+            
+            # 导出每个表
+            for table in tables:
+                if table:
+                    self._export_clickhouse_table(table, target_dir, ch_config)
+                    
+        except Exception as e:
+            self.logger.error(f"ClickHouse备份失败: {e}")
+    
+    def _backup_logs(self, target_dir: Path) -> None:
+        """备份日志文件"""
+        target_dir.mkdir(exist_ok=True)
+        
+        log_dir = Path("logs")
+        if not log_dir.exists():
+            return
+        
+        # 备份最近7天的日志
+        cutoff_date = datetime.now() - timedelta(days=7)
+        
+        for log_file in log_dir.glob("*.log*"):
+            if log_file.stat().st_mtime > cutoff_date.timestamp():
+                shutil.copy2(log_file, target_dir / log_file.name)
+    
+    def restore_backup(self, backup_file: str) -> None:
+        """恢复备份"""
+        backup_path = Path(backup_file)
+        
+        if not backup_path.exists():
+            raise FileNotFoundError(f"备份文件不存在: {backup_file}")
+        
+        self.logger.info(f"开始恢复备份: {backup_file}")
+        
+        try:
+            # 解压备份
+            extract_dir = self._extract_backup(backup_path)
+            
+            # 读取备份元信息
+            metadata = self._read_backup_metadata(extract_dir)
+            
+            # 根据备份类型进行恢复
+            if metadata["type"] == "full":
+                self._restore_full_backup(extract_dir)
+            else:
+                self._restore_incremental_backup(extract_dir, metadata)
+            
+            self.logger.info("备份恢复成功")
+            
+        except Exception as e:
+            self.logger.error(f"备份恢复失败: {e}")
+            raise
+    
+    def schedule_backups(self) -> None:
+        """调度备份任务"""
+        # 每天凌晨2点创建完整备份
+        schedule.every().day.at("02:00").do(self.create_full_backup)
+        
+        # 每4小时创建增量备份
+        schedule.every(4).hours.do(self.create_incremental_backup)
+        
+        # 每周清理旧备份
+        schedule.every().sunday.at("03:00").do(self.cleanup_old_backups)
+        
+        self.logger.info("备份任务调度已设置")
+    
+    def cleanup_old_backups(self) -> None:
+        """清理旧备份"""
+        cutoff_date = datetime.now() - timedelta(days=30)  # 保留30天
+        
+        for backup_file in self.backup_dir.glob("*.tar.gz"):
+            if backup_file.stat().st_mtime < cutoff_date.timestamp():
+                backup_file.unlink()
+                self.logger.info(f"删除旧备份: {backup_file.name}")
+```
+
+### 灾难恢复预案
+
+```python
+# disaster_recovery/recovery_plan.py
+"""灾难恢复预案"""
+
+import logging
+import subprocess
+import time
+from pathlib import Path
+from typing import List, Dict
+
+class DisasterRecoveryManager:
+    """灾难恢复管理器"""
+    
+    def __init__(self):
+        """初始化"""
+        self.logger = logging.getLogger(__name__)
+        self.recovery_steps = [
+            self._check_system_status,
+            self._restore_configuration,
+            self._restore_database,
+            self._restart_services,
+            self._verify_functionality,
+            self._notify_completion
+        ]
+    
+    def execute_recovery_plan(self, backup_location: str) -> bool:
+        """执行灾难恢复计划"""
+        self.logger.info("🚨 开始执行灾难恢复计划")
+        
+        recovery_context = {
+            "backup_location": backup_location,
+            "start_time": time.time(),
+            "failed_steps": [],
+            "completed_steps": []
+        }
+        
+        try:
+            for i, step in enumerate(self.recovery_steps, 1):
+                step_name = step.__name__
+                self.logger.info(f"执行步骤 {i}/{len(self.recovery_steps)}: {step_name}")
+                
+                try:
+                    result = step(recovery_context)
+                    if result:
+                        recovery_context["completed_steps"].append(step_name)
+                        self.logger.info(f"✅ 步骤完成: {step_name}")
+                    else:
+                        recovery_context["failed_steps"].append(step_name)
+                        self.logger.error(f"❌ 步骤失败: {step_name}")
+                        
+                except Exception as e:
+                    self.logger.error(f"❌ 步骤异常: {step_name} - {e}")
+                    recovery_context["failed_steps"].append(step_name)
+            
+            # 检查恢复结果
+            success = len(recovery_context["failed_steps"]) == 0
+            
+            if success:
+                self.logger.info("🎉 灾难恢复完成")
+            else:
+                self.logger.error(f"⚠️ 恢复部分失败: {recovery_context['failed_steps']}")
+            
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"💥 灾难恢复执行失败: {e}")
+            return False
+    
+    def _check_system_status(self, context: Dict) -> bool:
+        """检查系统状态"""
+        # 检查磁盘空间
+        disk_usage = subprocess.run(
+            ["df", "-h", "/"], capture_output=True, text=True
+        )
+        
+        # 检查内存
+        memory_info = subprocess.run(
+            ["free", "-h"], capture_output=True, text=True
+        )
+        
+        # 检查网络连接
+        network_check = subprocess.run(
+            ["ping", "-c", "3", "8.8.8.8"], capture_output=True
+        )
+        
+        return network_check.returncode == 0
+    
+    def _restore_configuration(self, context: Dict) -> bool:
+        """恢复配置文件"""
+        backup_location = Path(context["backup_location"])
+        config_backup = backup_location / "config"
+        
+        if config_backup.exists():
+            subprocess.run(["cp", "-r", str(config_backup), "config"])
+            return True
+        
+        return False
+    
+    def _restore_database(self, context: Dict) -> bool:
+        """恢复数据库"""
+        backup_location = Path(context["backup_location"])
+        db_backup = backup_location / "database"
+        
+        if db_backup.exists():
+            # 恢复ClickHouse
+            self._restore_clickhouse_data(db_backup / "clickhouse")
+            
+            # 恢复SQLite
+            for db_file in db_backup.glob("*.db"):
+                subprocess.run(["cp", str(db_file), str(db_file.name)])
+            
+            return True
+        
+        return False
+    
+    def _restart_services(self, context: Dict) -> bool:
+        """重启服务"""
+        try:
+            # 停止现有服务
+            subprocess.run(["systemctl", "stop", "vnpy-freedom"], check=True)
+            
+            # 等待服务完全停止
+            time.sleep(5)
+            
+            # 启动服务
+            subprocess.run(["systemctl", "start", "vnpy-freedom"], check=True)
+            
+            # 检查服务状态
+            result = subprocess.run(
+                ["systemctl", "is-active", "vnpy-freedom"], 
+                capture_output=True, text=True
+            )
+            
+            return result.stdout.strip() == "active"
+            
+        except subprocess.CalledProcessError:
+            return False
+    
+    def _verify_functionality(self, context: Dict) -> bool:
+        """验证功能完整性"""
+        # 检查关键服务是否正常
+        checks = [
+            self._check_database_connection,
+            self._check_trading_system,
+            self._check_data_feeds
+        ]
+        
+        for check in checks:
+            if not check():
+                return False
+        
+        return True
+    
+    def _notify_completion(self, context: Dict) -> bool:
+        """通知恢复完成"""
+        duration = time.time() - context["start_time"]
+        
+        message = f"""
+        🚨 VnPy Freedom 灾难恢复报告
+        
+        恢复时间: {duration:.2f} 秒
+        成功步骤: {len(context["completed_steps"])}
+        失败步骤: {len(context["failed_steps"])}
+        
+        详细信息:
+        - 完成: {', '.join(context["completed_steps"])}
+        - 失败: {', '.join(context["failed_steps"])}
+        """
+        
+        # 发送通知
+        self._send_recovery_notification(message)
+        
+        return True
+
+# 自动化恢复触发器
+def setup_auto_recovery():
+    """设置自动恢复触发器"""
+    
+    def health_check():
+        """健康检查"""
+        # 检查关键进程
+        # 检查数据库连接
+        # 检查网络状态
+        pass
+    
+    def trigger_recovery_if_needed():
+        """在需要时触发恢复"""
+        if not health_check():
+            recovery_manager = DisasterRecoveryManager()
+            latest_backup = find_latest_backup()
+            recovery_manager.execute_recovery_plan(latest_backup)
+    
+    # 定期健康检查
+    import schedule
+    schedule.every(5).minutes.do(trigger_recovery_if_needed)
+```
+
+## 性能优化
+
+### 系统调优
+
+```bash
+#!/bin/bash
+# system_tuning.sh
+# 系统性能调优脚本
+
+echo "🔧 VnPy Freedom 系统性能调优"
+
+# 1. 内核参数优化
+echo "优化内核参数..."
+cat >> /etc/sysctl.conf << EOF
+# 网络优化
+net.core.rmem_max = 134217728
+net.core.wmem_max = 134217728
+net.ipv4.tcp_rmem = 4096 87380 134217728
+net.ipv4.tcp_wmem = 4096 65536 134217728
+net.ipv4.tcp_congestion_control = bbr
+
+# 文件系统优化
+fs.file-max = 1000000
+fs.nr_open = 1000000
+
+# 内存优化
+vm.swappiness = 10
+vm.dirty_ratio = 15
+vm.dirty_background_ratio = 5
+EOF
+
+sysctl -p
+
+# 2. 文件描述符限制
+echo "设置文件描述符限制..."
+cat >> /etc/security/limits.conf << EOF
+vnpy soft nofile 65536
+vnpy hard nofile 65536
+vnpy soft nproc 32768
+vnpy hard nproc 32768
+EOF
+
+# 3. 进程调度优化
+echo "优化进程调度..."
+echo 'vnpy - rtprio 99' >> /etc/security/limits.conf
+
+# 4. CPU亲和性设置
+echo "设置CPU亲和性..."
+systemctl edit vnpy-freedom --full << EOF
+[Service]
+CPUAffinity=0-3
+Nice=-10
+IOSchedulingClass=1
+IOSchedulingPriority=4
+EOF
+
+echo "✅ 系统调优完成"
+```
+
+### 应用性能监控
+
+```python
+# performance/profiler.py
+"""性能分析器"""
+
+import cProfile
+import pstats
+import functools
+import time
+import memory_profiler
+from typing import Callable, Any
+
+class PerformanceProfiler:
+    """性能分析器"""
+    
+    def __init__(self):
+        """初始化"""
+        self.profiles = {}
+        self.timing_data = {}
+    
+    def profile_function(self, func: Callable) -> Callable:
+        """函数性能分析装饰器"""
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            # 时间分析
+            start_time = time.perf_counter()
+            
+            # 内存分析
+            start_memory = memory_profiler.memory_usage()[0]
+            
+            # 执行函数
+            result = func(*args, **kwargs)
+            
+            # 记录性能数据
+            end_time = time.perf_counter()
+            end_memory = memory_profiler.memory_usage()[0]
+            
+            duration = end_time - start_time
+            memory_diff = end_memory - start_memory
+            
+            self._record_performance(func.__name__, duration, memory_diff)
+            
+            return result
+        
+        return wrapper
+    
+    def profile_method(self, method_name: str):
+        """方法性能分析装饰器"""
+        def decorator(func: Callable) -> Callable:
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                profiler = cProfile.Profile()
+                profiler.enable()
+                
+                try:
+                    result = func(*args, **kwargs)
+                    return result
+                finally:
+                    profiler.disable()
+                    
+                    # 保存性能数据
+                    stats = pstats.Stats(profiler)
+                    self.profiles[method_name] = stats
+            
+            return wrapper
+        return decorator
+    
+    def _record_performance(self, func_name: str, duration: float, memory_diff: float):
+        """记录性能数据"""
+        if func_name not in self.timing_data:
+            self.timing_data[func_name] = {
+                "calls": 0,
+                "total_time": 0,
+                "max_time": 0,
+                "min_time": float('inf'),
+                "memory_usage": []
+            }
+        
+        data = self.timing_data[func_name]
+        data["calls"] += 1
+        data["total_time"] += duration
+        data["max_time"] = max(data["max_time"], duration)
+        data["min_time"] = min(data["min_time"], duration)
+        data["memory_usage"].append(memory_diff)
+    
+    def generate_report(self) -> str:
+        """生成性能报告"""
+        report = ["性能分析报告", "=" * 50]
+        
+        for func_name, data in self.timing_data.items():
+            avg_time = data["total_time"] / data["calls"]
+            avg_memory = sum(data["memory_usage"]) / len(data["memory_usage"])
+            
+            report.extend([
+                f"\n函数: {func_name}",
+                f"  调用次数: {data['calls']}",
+                f"  总时间: {data['total_time']:.4f}s",
+                f"  平均时间: {avg_time:.4f}s",
+                f"  最长时间: {data['max_time']:.4f}s",
+                f"  最短时间: {data['min_time']:.4f}s",
+                f"  平均内存: {avg_memory:.2f}MB"
+            ])
+        
+        return "\n".join(report)
+
+# 使用示例
+profiler = PerformanceProfiler()
+
+@profiler.profile_function
+def process_market_data(data):
+    """处理市场数据"""
+    # 数据处理逻辑
+    pass
+
+@profiler.profile_method("strategy_calculation")
+def calculate_signals(self):
+    """计算交易信号"""
+    # 信号计算逻辑
+    pass
+```
+
+这套完整的Cursor Rules涵盖了：
+
+1. **项目结构指南** - 整体架构和目录组织
+2. **模块开发规范** - VnPy模块标准开发流程
+3. **数据架构设计** - 多时间周期数据处理和数据库集成
+4. **交易策略规范** - 策略开发和回测框架
+5. **网关集成规范** - 交易接口开发标准
+6. **代码质量规范** - 编码标准和测试要求
+7. **部署运维规范** - 生产环境管理和监控
+
+这些规则将为VnPy Freedom项目的持续开发提供全面的指导，确保代码质量、系统稳定性和可维护性。

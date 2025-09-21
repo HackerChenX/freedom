@@ -1,0 +1,232 @@
+---
+description: VnPy模块开发规范和最佳实践
+globs: **/vnpy_*/**/*.py
+---
+
+# VnPy 模块开发规范
+
+## 模块结构标准
+
+### 标准VnPy模块结构
+```
+vnpy_modulename/
+├── __init__.py                 # 模块包初始化
+├── CHANGELOG.md               # 变更日志
+├── LICENSE                    # 许可证
+├── README.md                  # 模块说明
+└── vnpy_modulename/           # 主要代码目录
+    ├── __init__.py           # 导出主要类和常量
+    ├── engine.py             # 核心引擎逻辑
+    ├── template.py           # 模板基类
+    ├── ui/                   # 用户界面
+    │   ├── __init__.py
+    │   └── widget.py
+    └── locale/               # 国际化文件
+        ├── __init__.py
+        └── zh_CN.po
+```
+
+## 核心组件开发
+
+### 1. 应用类 (App Class)
+```python
+from pathlib import Path
+from vnpy.trader.app import BaseApp
+from .engine import ModuleNameEngine
+
+APP_NAME = "ModuleName"
+
+class ModuleNameApp(BaseApp):
+    """模块应用类"""
+    
+    app_name: str = APP_NAME
+    app_module: str = __module__
+    app_path: Path = Path(__file__).parent
+    display_name: str = "模块显示名称"
+    engine_class: type[ModuleNameEngine] = ModuleNameEngine
+    widget_name: str = "ModuleWidget"
+    icon_name: str = str(app_path.joinpath("ui", "module.ico"))
+```
+
+### 2. 引擎类 (Engine Class)
+```python
+from vnpy.trader.engine import BaseEngine, MainEngine
+from vnpy.event import EventEngine
+
+class ModuleNameEngine(BaseEngine):
+    """模块引擎类"""
+    
+    def __init__(self, main_engine: MainEngine, event_engine: EventEngine):
+        """构造函数"""
+        super().__init__(main_engine, event_engine, APP_NAME)
+        
+        # 初始化模块状态
+        self.active = False
+        
+    def start(self):
+        """启动模块"""
+        self.write_log("模块启动")
+        self.active = True
+        
+    def stop(self):
+        """停止模块"""
+        self.write_log("模块停止")
+        self.active = False
+```
+
+### 3. 模板类 (Template Class)
+```python
+from abc import ABC, abstractmethod
+from vnpy.trader.object import BarData, TickData
+
+class ModuleTemplate(ABC):
+    """模块模板基类"""
+    
+    def __init__(self):
+        """构造函数"""
+        self.inited = False
+        self.trading = False
+        
+    @abstractmethod
+    def on_init(self):
+        """初始化回调"""
+        pass
+        
+    @abstractmethod
+    def on_start(self):
+        """启动回调"""
+        pass
+        
+    @abstractmethod
+    def on_stop(self):
+        """停止回调"""
+        pass
+```
+
+## 数据库集成规范
+
+### 数据库接口实现
+参考 [ClickHouse数据库实现](mdc:Database_Interfaces/Time_Series_Databases/vnpy_clickhouse/vnpy_clickhouse/clickhouse_database.py)：
+
+```python
+from vnpy.trader.database import BaseDatabase
+from vnpy.trader.constant import Interval, Exchange
+from datetime import datetime
+from typing import List
+
+class CustomDatabase(BaseDatabase):
+    """自定义数据库接口"""
+    
+    def load_bar_data(
+        self,
+        symbol: str,
+        exchange: Exchange,
+        interval: Interval,
+        start: datetime,
+        end: datetime
+    ) -> List[BarData]:
+        """加载K线数据 - 支持自动合成"""
+        # 实现数据加载逻辑
+        # 支持基础数据查询和自动合成
+        pass
+```
+
+## 错误处理规范
+
+### 1. 异常处理
+```python
+try:
+    # 核心业务逻辑
+    result = self.process_data(data)
+except Exception as e:
+    self.write_log(f"处理数据失败: {e}")
+    # 记录详细错误信息用于调试
+    import traceback
+    traceback.print_exc()
+    return None
+```
+
+### 2. 日志记录
+```python
+# 使用引擎的日志功能
+self.write_log("信息日志")
+self.write_log(f"处理完成: {count}条数据")
+
+# 错误日志包含足够的上下文信息
+self.write_log(f"模块{module_name}加载失败: {error}")
+```
+
+## 性能优化指南
+
+### 1. 数据处理优化
+- 使用生成器处理大数据集
+- 实现数据缓存机制
+- 避免重复计算
+
+### 2. 内存管理
+- 及时释放不需要的对象
+- 使用`__slots__`减少内存占用
+- 避免循环引用
+
+### 3. 并发处理
+```python
+from concurrent.futures import ThreadPoolExecutor
+from typing import List, Callable
+
+def parallel_process(items: List, func: Callable, max_workers: int = 4):
+    """并行处理数据"""
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        results = list(executor.map(func, items))
+    return results
+```
+
+## 测试规范
+
+### 单元测试示例
+```python
+import unittest
+from vnpy.trader.constant import Exchange, Interval
+from datetime import datetime
+
+class TestModuleName(unittest.TestCase):
+    """模块测试类"""
+    
+    def setUp(self):
+        """测试准备"""
+        self.engine = ModuleNameEngine()
+        
+    def test_basic_functionality(self):
+        """测试基本功能"""
+        result = self.engine.process_data(test_data)
+        self.assertIsNotNone(result)
+        
+    def test_error_handling(self):
+        """测试错误处理"""
+        with self.assertRaises(ValueError):
+            self.engine.process_data(invalid_data)
+```
+
+## 兼容性要求
+
+### 1. VnPy版本兼容
+- 支持VnPy 3.0+
+- 使用标准VnPy接口和对象
+- 遵循VnPy应用架构
+
+### 2. Python版本支持
+- 最低支持Python 3.11
+- 使用类型注解
+- 兼容最新Python特性
+
+### 3. 依赖管理
+- 明确声明外部依赖
+- 提供依赖安装指南
+- 处理可选依赖的缺失情况
+
+## 文档要求
+
+每个模块必须包含：
+- README.md：功能说明和使用指南
+- CHANGELOG.md：版本变更记录
+- 代码注释：关键函数和类的文档字符串
+- 类型注解：所有公共接口使用类型注解

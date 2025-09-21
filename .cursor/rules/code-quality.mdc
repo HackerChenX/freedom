@@ -1,0 +1,572 @@
+---
+description: 代码质量和开发最佳实践规范
+alwaysApply: true
+---
+
+# 代码质量和开发规范
+
+## 代码风格标准
+
+### Python代码规范
+
+遵循PEP 8标准，并增加以下VnPy特定规范：
+
+```python
+# 导入顺序：标准库 → 第三方库 → VnPy核心 → 本地模块
+import sys
+import json
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Callable
+
+import numpy as np
+import pandas as pd
+
+from vnpy.trader.engine import BaseEngine, MainEngine
+from vnpy.trader.object import BarData, TickData
+from vnpy.trader.constant import Interval, Exchange
+
+from .template import StrategyTemplate
+from .utility import calculate_indicators
+```
+
+### 类型注解要求
+
+所有公共接口必须使用类型注解：
+
+```python
+from typing import Dict, List, Optional, Union, Callable, Any
+from datetime import datetime
+from vnpy.trader.object import BarData, TickData
+
+class DataProcessor:
+    """数据处理器"""
+    
+    def __init__(self, window_size: int = 100) -> None:
+        """构造函数"""
+        self.window_size: int = window_size
+        self.data_cache: List[BarData] = []
+        
+    def process_bars(self, bars: List[BarData]) -> Dict[str, float]:
+        """处理K线数据"""
+        if not bars:
+            return {}
+            
+        # 计算技术指标
+        indicators: Dict[str, float] = self._calculate_indicators(bars)
+        return indicators
+    
+    def _calculate_indicators(self, bars: List[BarData]) -> Dict[str, float]:
+        """计算技术指标（私有方法）"""
+        prices: List[float] = [bar.close_price for bar in bars]
+        
+        return {
+            "sma_20": self._sma(prices, 20),
+            "sma_60": self._sma(prices, 60),
+            "volatility": self._calculate_volatility(prices)
+        }
+    
+    def _sma(self, values: List[float], period: int) -> Optional[float]:
+        """简单移动平均"""
+        if len(values) < period:
+            return None
+        return sum(values[-period:]) / period
+    
+    def _calculate_volatility(self, prices: List[float]) -> float:
+        """计算波动率"""
+        if len(prices) < 2:
+            return 0.0
+        
+        returns: List[float] = []
+        for i in range(1, len(prices)):
+            ret = (prices[i] - prices[i-1]) / prices[i-1]
+            returns.append(ret)
+            
+        if not returns:
+            return 0.0
+            
+        mean_return = sum(returns) / len(returns)
+        variance = sum((r - mean_return) ** 2 for r in returns) / len(returns)
+        return variance ** 0.5
+```
+
+### 文档字符串规范
+
+使用Google风格的文档字符串：
+
+```python
+def load_bar_data(
+    self,
+    symbol: str,
+    exchange: Exchange,
+    interval: Interval,
+    start: datetime,
+    end: datetime
+) -> List[BarData]:
+    """
+    加载K线数据，支持自动合成功能
+    
+    Args:
+        symbol: 交易品种代码
+        exchange: 交易所
+        interval: 时间周期
+        start: 开始时间
+        end: 结束时间
+    
+    Returns:
+        K线数据列表，按时间排序
+        
+    Raises:
+        ValueError: 当时间参数无效时
+        ConnectionError: 当数据库连接失败时
+        
+    Example:
+        >>> db = ClickHouseDatabase()
+        >>> bars = db.load_bar_data(
+        ...     "000001", Exchange.SZSE, Interval.MINUTE_15,
+        ...     datetime(2023, 1, 1), datetime(2023, 1, 31)
+        ... )
+        >>> print(f"加载了 {len(bars)} 条数据")
+    """
+    # 实现逻辑
+    pass
+```
+
+## 错误处理规范
+
+### 异常处理层次
+
+```python
+# 1. 系统级异常 - 记录并重新抛出
+try:
+    result = self.critical_operation()
+except (ConnectionError, SystemError) as e:
+    self.write_log(f"系统错误: {e}")
+    raise  # 重新抛出，让上层处理
+
+# 2. 业务级异常 - 处理并返回默认值
+try:
+    data = self.parse_market_data(raw_data)
+except (ValueError, KeyError) as e:
+    self.write_log(f"数据解析失败: {e}")
+    return None  # 返回默认值
+
+# 3. 预期异常 - 优雅处理
+try:
+    price = float(price_str)
+except ValueError:
+    self.write_log(f"价格格式错误: {price_str}")
+    price = 0.0
+```
+
+### 自定义异常类
+
+```python
+class VnPyFreedomError(Exception):
+    """VnPy Freedom基础异常"""
+    pass
+
+class DataValidationError(VnPyFreedomError):
+    """数据验证错误"""
+    def __init__(self, field: str, value: Any, message: str = ""):
+        self.field = field
+        self.value = value
+        super().__init__(f"字段 {field} 验证失败: {value}. {message}")
+
+class ModuleLoadError(VnPyFreedomError):
+    """模块加载错误"""
+    def __init__(self, module_name: str, reason: str):
+        self.module_name = module_name
+        self.reason = reason
+        super().__init__(f"模块 {module_name} 加载失败: {reason}")
+
+# 使用示例
+def validate_bar_data(bar: BarData) -> None:
+    """验证K线数据"""
+    if bar.high_price < bar.low_price:
+        raise DataValidationError(
+            "high_price", bar.high_price, 
+            f"最高价不能小于最低价 {bar.low_price}"
+        )
+    
+    if bar.volume < 0:
+        raise DataValidationError(
+            "volume", bar.volume,
+            "成交量不能为负数"
+        )
+```
+
+## 性能优化指导
+
+### 数据处理优化
+
+```python
+# ❌ 低效：频繁的列表操作
+def calculate_sma_slow(prices: List[float], period: int) -> List[float]:
+    """低效的移动平均计算"""
+    result = []
+    for i in range(len(prices)):
+        if i >= period - 1:
+            window = prices[i-period+1:i+1]
+            result.append(sum(window) / period)
+        else:
+            result.append(0.0)
+    return result
+
+# ✅ 高效：使用NumPy向量化操作
+import numpy as np
+
+def calculate_sma_fast(prices: np.ndarray, period: int) -> np.ndarray:
+    """高效的移动平均计算"""
+    if len(prices) < period:
+        return np.zeros_like(prices)
+    
+    # 使用pandas rolling更高效
+    import pandas as pd
+    series = pd.Series(prices)
+    return series.rolling(window=period, min_periods=1).mean().values
+
+# ✅ 内存友好：生成器处理大数据
+def process_large_dataset(data_source: Iterator[BarData]) -> Iterator[Dict[str, float]]:
+    """流式处理大数据集"""
+    window = []
+    window_size = 100
+    
+    for bar in data_source:
+        window.append(bar)
+        
+        # 保持窗口大小
+        if len(window) > window_size:
+            window.pop(0)
+        
+        # 计算指标
+        if len(window) >= 20:  # 最小窗口
+            indicators = calculate_indicators(window)
+            yield indicators
+```
+
+### 缓存策略
+
+```python
+from functools import lru_cache
+from typing import Tuple
+import weakref
+
+class CachedIndicatorCalculator:
+    """带缓存的指标计算器"""
+    
+    def __init__(self):
+        self._cache: Dict[Tuple, float] = {}
+        self._weak_cache = weakref.WeakValueDictionary()
+    
+    @lru_cache(maxsize=128)
+    def _calculate_sma(self, prices_tuple: Tuple[float, ...], period: int) -> float:
+        """缓存的SMA计算"""
+        prices = list(prices_tuple)
+        if len(prices) < period:
+            return 0.0
+        return sum(prices[-period:]) / period
+    
+    def calculate_sma(self, prices: List[float], period: int) -> float:
+        """公共SMA接口"""
+        # 转换为元组用于缓存键
+        prices_tuple = tuple(prices[-100:])  # 只使用最近100个数据点
+        return self._calculate_sma(prices_tuple, period)
+    
+    def clear_cache(self) -> None:
+        """清理缓存"""
+        self._calculate_sma.cache_clear()
+        self._cache.clear()
+```
+
+### 并发处理
+
+```python
+import asyncio
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from typing import List, Callable, Any
+
+class ParallelProcessor:
+    """并行处理器"""
+    
+    def __init__(self, max_workers: int = 4):
+        self.max_workers = max_workers
+    
+    def process_symbols_parallel(
+        self,
+        symbols: List[str],
+        process_func: Callable[[str], Any],
+        use_process: bool = False
+    ) -> List[Any]:
+        """并行处理多个交易品种"""
+        executor_class = ProcessPoolExecutor if use_process else ThreadPoolExecutor
+        
+        with executor_class(max_workers=self.max_workers) as executor:
+            futures = [executor.submit(process_func, symbol) for symbol in symbols]
+            results = []
+            
+            for future in futures:
+                try:
+                    result = future.result(timeout=30)  # 30秒超时
+                    results.append(result)
+                except Exception as e:
+                    print(f"处理失败: {e}")
+                    results.append(None)
+                    
+        return results
+    
+    async def async_data_fetch(self, urls: List[str]) -> List[Any]:
+        """异步数据获取"""
+        async def fetch_one(url: str) -> Any:
+            # 异步HTTP请求实现
+            await asyncio.sleep(0.1)  # 模拟网络延迟
+            return f"data_from_{url}"
+        
+        tasks = [fetch_one(url) for url in urls]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        return [r for r in results if not isinstance(r, Exception)]
+```
+
+## 测试规范
+
+### 单元测试结构
+
+```python
+import unittest
+from unittest.mock import Mock, patch, MagicMock
+from datetime import datetime
+from vnpy.trader.constant import Exchange, Interval
+from vnpy.trader.object import BarData
+
+class TestDataProcessor(unittest.TestCase):
+    """数据处理器测试"""
+    
+    def setUp(self) -> None:
+        """测试准备"""
+        self.processor = DataProcessor(window_size=100)
+        
+        # 创建测试数据
+        self.test_bars = [
+            BarData(
+                symbol="TEST",
+                exchange=Exchange.SZSE,
+                datetime=datetime(2023, 1, 1, 9, 30),
+                interval=Interval.MINUTE_15,
+                volume=1000,
+                turnover=50000,
+                open_price=10.0,
+                high_price=10.5,
+                low_price=9.5,
+                close_price=10.2,
+                gateway_name="test"
+            )
+        ]
+    
+    def test_process_bars_normal(self) -> None:
+        """测试正常数据处理"""
+        result = self.processor.process_bars(self.test_bars)
+        
+        self.assertIsInstance(result, dict)
+        self.assertIn("sma_20", result)
+        self.assertIn("volatility", result)
+    
+    def test_process_bars_empty(self) -> None:
+        """测试空数据处理"""
+        result = self.processor.process_bars([])
+        
+        self.assertEqual(result, {})
+    
+    def test_sma_calculation(self) -> None:
+        """测试SMA计算"""
+        prices = [1.0, 2.0, 3.0, 4.0, 5.0]
+        result = self.processor._sma(prices, 3)
+        
+        expected = (3.0 + 4.0 + 5.0) / 3
+        self.assertAlmostEqual(result, expected, places=6)
+    
+    def test_sma_insufficient_data(self) -> None:
+        """测试数据不足的SMA计算"""
+        prices = [1.0, 2.0]
+        result = self.processor._sma(prices, 5)
+        
+        self.assertIsNone(result)
+    
+    @patch('vnpy.trader.database.get_database')
+    def test_with_mocked_database(self, mock_get_db) -> None:
+        """测试带模拟数据库的情况"""
+        # 配置mock
+        mock_db = Mock()
+        mock_db.load_bar_data.return_value = self.test_bars
+        mock_get_db.return_value = mock_db
+        
+        # 测试逻辑
+        from vnpy.trader.database import get_database
+        db = get_database()
+        bars = db.load_bar_data("TEST", Exchange.SZSE, Interval.MINUTE_15, 
+                               datetime(2023, 1, 1), datetime(2023, 1, 2))
+        
+        self.assertEqual(len(bars), 1)
+        mock_db.load_bar_data.assert_called_once()
+
+class TestIntegration(unittest.TestCase):
+    """集成测试"""
+    
+    def test_end_to_end_data_flow(self) -> None:
+        """端到端数据流测试"""
+        # 测试从数据加载到指标计算的完整流程
+        pass
+    
+    def test_performance_benchmark(self) -> None:
+        """性能基准测试"""
+        import time
+        
+        # 大量数据测试
+        large_dataset = [self.create_test_bar(i) for i in range(10000)]
+        
+        start_time = time.time()
+        processor = DataProcessor()
+        result = processor.process_bars(large_dataset)
+        end_time = time.time()
+        
+        # 性能断言
+        self.assertLess(end_time - start_time, 1.0)  # 应在1秒内完成
+        self.assertIsNotNone(result)
+    
+    def create_test_bar(self, index: int) -> BarData:
+        """创建测试K线数据"""
+        return BarData(
+            symbol="TEST",
+            exchange=Exchange.SZSE,
+            datetime=datetime(2023, 1, 1, 9, 30 + index),
+            interval=Interval.MINUTE_15,
+            volume=1000 + index,
+            turnover=50000 + index * 50,
+            open_price=10.0 + index * 0.01,
+            high_price=10.5 + index * 0.01,
+            low_price=9.5 + index * 0.01,
+            close_price=10.2 + index * 0.01,
+            gateway_name="test"
+        )
+
+# 运行测试
+if __name__ == '__main__':
+    unittest.main()
+```
+
+### 集成测试示例
+
+```python
+import pytest
+from datetime import datetime, timedelta
+from vnpy.trader.constant import Exchange, Interval
+
+@pytest.fixture
+def database_connection():
+    """数据库连接fixture"""
+    from vnpy.trader.database import get_database
+    db = get_database()
+    yield db
+    # 清理逻辑
+    db.close()
+
+@pytest.fixture
+def sample_data():
+    """样本数据fixture"""
+    return [
+        create_bar_data(datetime(2023, 1, 1) + timedelta(minutes=i * 15), 10.0 + i * 0.1)
+        for i in range(100)
+    ]
+
+def test_data_synthesis_integration(database_connection, sample_data):
+    """测试数据合成集成"""
+    # 插入15分钟数据
+    for bar in sample_data:
+        database_connection.save_bar_data([bar])
+    
+    # 查询30分钟合成数据
+    synthesized_data = database_connection.load_bar_data(
+        "TEST", Exchange.SZSE, Interval.MINUTE_30,
+        datetime(2023, 1, 1), datetime(2023, 1, 2)
+    )
+    
+    # 验证合成结果
+    assert len(synthesized_data) == len(sample_data) // 2
+    assert all(bar.interval == Interval.MINUTE_30 for bar in synthesized_data)
+
+@pytest.mark.performance
+def test_large_data_processing(database_connection):
+    """大数据量性能测试"""
+    import time
+    
+    start_time = time.time()
+    
+    # 处理大量数据
+    result = database_connection.load_bar_data(
+        "000001", Exchange.SZSE, Interval.MINUTE_15,
+        datetime(2020, 1, 1), datetime(2023, 12, 31)
+    )
+    
+    end_time = time.time()
+    
+    # 性能断言
+    assert end_time - start_time < 10.0  # 应在10秒内完成
+    assert len(result) > 0
+```
+
+## 代码审查清单
+
+### 提交前检查
+
+```bash
+# 1. 代码格式检查
+python -m black . --check
+python -m isort . --check-only
+
+# 2. 类型检查
+python -m mypy vnpy_module/
+
+# 3. 代码质量检查
+python -m flake8 vnpy_module/
+python -m pylint vnpy_module/
+
+# 4. 安全检查
+python -m bandit -r vnpy_module/
+
+# 5. 运行测试
+python -m pytest tests/ -v --cov=vnpy_module
+
+# 6. 文档生成
+python -m sphinx-build docs/ docs/_build/
+```
+
+### 代码审查要点
+
+1. **功能正确性**
+   - [ ] 业务逻辑正确
+   - [ ] 边界条件处理
+   - [ ] 错误处理完善
+
+2. **性能考虑**
+   - [ ] 算法效率合理
+   - [ ] 内存使用优化
+   - [ ] 数据库查询优化
+
+3. **代码质量**
+   - [ ] 命名清晰明确
+   - [ ] 函数职责单一
+   - [ ] 代码重复性低
+
+4. **安全性**
+   - [ ] 输入验证充分
+   - [ ] 敏感信息保护
+   - [ ] API密钥安全
+
+5. **可维护性**
+   - [ ] 文档完整
+   - [ ] 测试覆盖充分
+   - [ ] 依赖关系清晰
+
+6. **兼容性**
+   - [ ] VnPy版本兼容
+   - [ ] Python版本支持
+   - [ ] 跨平台考虑

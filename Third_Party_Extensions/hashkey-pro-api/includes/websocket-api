@@ -1,0 +1,181 @@
+<h1 id='websocket'>WebSocket接口文档</h1><h2 id='websocket-2'>WebSocket行情数据(公有流)</h2><h3 id='d9d514d202'>行情数据</h3>
+<p>请求正文</p>
+
+<table><thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>是否必填</th>
+<th>描述</th>
+<th>说明</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>true</td>
+<td>类型</td>
+<td>sub</td>
+</tr>
+<tr>
+<td>topic</td>
+<td>String</td>
+<td>true</td>
+<td>主题</td>
+<td>market_data</td>
+</tr>
+<tr>
+<td>instrumentId</td>
+<td>String</td>
+<td>true</td>
+<td>币对</td>
+<td>ETH/USDT, BTC/ETH ...</td>
+</tr>
+</tbody></table>
+
+<p>响应正文</p>
+
+<table><thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>描述</th>
+<th>说明</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>type</td>
+<td>String</td>
+<td>类型</td>
+<td>sub-resp</td>
+</tr>
+<tr>
+<td>topic</td>
+<td>String</td>
+<td>主题</td>
+<td>market_data</td>
+</tr>
+<tr>
+<td>errorCode</td>
+<td>String</td>
+<td>错误码</td>
+<td>0000 ...</td>
+</tr>
+<tr>
+<td>errorMessage</td>
+<td>String</td>
+<td>错误信息</td>
+<td>success ...</td>
+</tr>
+<tr>
+<td>high</td>
+<td>String</td>
+<td>高</td>
+<td></td>
+</tr>
+<tr>
+<td>low</td>
+<td>String</td>
+<td>低</td>
+<td></td>
+</tr>
+<tr>
+<td>close</td>
+<td>String</td>
+<td>收</td>
+<td></td>
+</tr>
+<tr>
+<td>instrumentId</td>
+<td>String</td>
+<td>币对</td>
+<td>ETH/USDT, BTC/ETH ...</td>
+</tr>
+<tr>
+<td>base</td>
+<td>String</td>
+<td>源币种</td>
+<td></td>
+</tr>
+<tr>
+<td>target</td>
+<td>String</td>
+<td>目标币种</td>
+<td></td>
+</tr>
+<tr>
+<td>lastPrice</td>
+<td>String</td>
+<td>最新价格</td>
+<td></td>
+</tr>
+<tr>
+<td>lastPriceValuation</td>
+<td>String</td>
+<td>最新价格估值</td>
+<td></td>
+</tr>
+<tr>
+<td>chgRate</td>
+<td>String</td>
+<td>变化比例</td>
+<td></td>
+</tr>
+<tr>
+<td>chgVol</td>
+<td>String</td>
+<td>变化量</td>
+<td></td>
+</tr>
+<tr>
+<td>volume</td>
+<td>String</td>
+<td>成交量</td>
+<td></td>
+</tr>
+</tbody></table>
+<div class="highlight"><pre class="highlight json tab-json"><code><span class="err">请求样例：</span><span class="w">
+</span><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="s2">"sub"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"channel"</span><span class="p">:{</span><span class="w">
+        </span><span class="nl">"topic"</span><span class="p">:</span><span class="s2">"market_data"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"instrumentId"</span><span class="p">:</span><span class="s2">"ETH/USDT"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w"> 
+
+</span><span class="err">响应样例：</span><span class="w">
+</span><span class="p">{</span><span class="w">
+    </span><span class="nl">"type"</span><span class="p">:</span><span class="s2">"sub-resp"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"topic"</span><span class="p">:</span><span class="s2">"market_data"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"errorCode"</span><span class="p">:</span><span class="s2">"0000"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"errorMessage"</span><span class="p">:</span><span class="s2">"success"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"data"</span><span class="p">:[</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"close"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"high"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"low"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"base"</span><span class="p">:</span><span class="s2">"USDT"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"target"</span><span class="p">:</span><span class="s2">"ETH"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"instrumentId"</span><span class="p">:</span><span class="s2">"ETH/USDT"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"chgRate"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"chgVol"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"lastPrice"</span><span class="p">:</span><span class="s2">"3"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"lastPriceValuation"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"volume"</span><span class="p">:</span><span class="s2">"2"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"close"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"high"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"low"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"base"</span><span class="p">:</span><span class="s2">"USDT"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"target"</span><span class="p">:</span><span class="s2">"ETH"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"instrumentId"</span><span class="p">:</span><span class="s2">"ETH/USDT"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"chgRate"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"chgVol"</span><span class="p">:</span><span class="s2">"0"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"lastPrice"</span><span class="p">:</span><span class="s2">"3"</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"lastPriceValuation"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="w">
+            </span><span class="nl">"volume"</span><span class="p">:</span><span class="s2">"2"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre></div>

@@ -1,0 +1,303 @@
+---
+description: 数据架构设计和多时间周期处理规范
+globs: **/Database_Interfaces/**/*.py,**/Data_Services/**/*.py
+---
+
+# 数据架构设计规范
+
+## 核心数据架构
+
+### 时间周期统一标准
+
+基于扩展的 [Interval枚举](mdc:Core_Framework/vnpy/vnpy/trader/constant.py)：
+
+```python
+class Interval(Enum):
+    """数据时间间隔标准"""
+    MINUTE = "1m"         # 1分钟
+    MINUTE_5 = "5m"       # 5分钟
+    MINUTE_15 = "15m"     # 15分钟 (基础数据)
+    MINUTE_30 = "30m"     # 30分钟 (自动合成)
+    HOUR = "1h"           # 1小时 (自动合成)
+    HOUR_2 = "2h"         # 2小时 (自动合成)
+    HOUR_4 = "4h"         # 4小时 (自动合成)
+    DAILY = "d"           # 日线
+    WEEKLY = "w"          # 周线
+    MONTHLY = "m"         # 月线
+    TICK = "tick"         # 逐笔数据
+```
+
+### 数据库接口标准
+
+参考 [ClickHouse实现](mdc:Database_Interfaces/Time_Series_Databases/vnpy_clickhouse/vnpy_clickhouse/clickhouse_database.py)：
+
+```python
+class CustomDatabase(BaseDatabase):
+    """标准数据库接口"""
+    
+    def load_bar_data(
+        self,
+        symbol: str,
+        exchange: Exchange,
+        interval: Interval,
+        start: datetime,
+        end: datetime
+    ) -> List[BarData]:
+        """
+        统一数据加载接口
+        
+        支持策略：
+        1. 基础数据直接查询
+        2. 合成数据自动生成
+        3. 透明的接口切换
+        """
+        # 基础数据周期
+        if interval in {Interval.MINUTE_15, Interval.DAILY, Interval.WEEKLY}:
+            return self._load_direct_data(symbol, exchange, interval, start, end)
+        
+        # 合成数据周期
+        elif interval in {Interval.MINUTE_30, Interval.HOUR, Interval.HOUR_2, Interval.HOUR_4}:
+            return self._synthesize_data(symbol, exchange, interval, start, end)
+        
+        # 其他周期尝试直接查询
+        else:
+            return self._load_direct_data(symbol, exchange, interval, start, end)
+```
+
+## 数据合成算法
+
+### K线合成规则
+
+基于 [ClickHouse合成实现](mdc:Database_Interfaces/Time_Series_Databases/vnpy_clickhouse/vnpy_clickhouse/clickhouse_database.py)：
+
+```python
+def _synthesize_data(self, symbol: str, exchange: Exchange, 
+                    target_interval: Interval, start_dt: datetime, end_dt: datetime):
+    """K线数据合成算法"""
+    
+    # 合成倍数映射
+    synthesis_mapping = {
+        Interval.MINUTE_30: 2,   # 30分钟 = 2 * 15分钟
+        Interval.HOUR: 4,        # 60分钟 = 4 * 15分钟  
+        Interval.HOUR_2: 8,      # 120分钟 = 8 * 15分钟
+        Interval.HOUR_4: 16      # 240分钟 = 16 * 15分钟
+    }
+    
+    # OHLC计算规则
+    def merge_bars(bars: List[BarData]) -> BarData:
+        """合成K线的OHLC计算"""
+        if not bars:
+            return None
+            
+        # 按时间排序
+        bars.sort(key=lambda x: x.datetime)
+        
+        return BarData(
+            symbol=bars[0].symbol,
+            exchange=bars[0].exchange,
+            datetime=get_group_start_time(bars[0].datetime, target_interval),
+            interval=target_interval,
+            volume=sum(bar.volume for bar in bars),           # 成交量累加
+            turnover=sum(bar.turnover for bar in bars),       # 成交额累加
+            open_price=bars[0].open_price,                    # 第一个开盘价
+            high_price=max(bar.high_price for bar in bars),   # 最高价
+            low_price=min(bar.low_price for bar in bars),     # 最低价
+            close_price=bars[-1].close_price,                 # 最后收盘价
+            gateway_name="synthesized"
+        )
+```
+
+### 时间对齐算法
+
+```python
+def get_group_start_time(dt: datetime, interval: Interval) -> datetime:
+    """计算时间分组边界"""
+    if interval == Interval.MINUTE_30:
+        # 30分钟边界: 09:30, 10:00, 10:30...
+        minute = (dt.minute // 30) * 30
+        return dt.replace(minute=minute, second=0, microsecond=0)
+        
+    elif interval == Interval.HOUR:
+        # 小时边界: 09:30, 10:30, 11:30...
+        return dt.replace(minute=0, second=0, microsecond=0)
+        
+    elif interval == Interval.HOUR_2:
+        # 2小时边界: 09:30, 11:30, 13:30...
+        hour = (dt.hour // 2) * 2
+        return dt.replace(hour=hour, minute=0, second=0, microsecond=0)
+        
+    elif interval == Interval.HOUR_4:
+        # 4小时边界: 09:30, 13:30...
+        hour = (dt.hour // 4) * 4
+        return dt.replace(hour=hour, minute=0, second=0, microsecond=0)
+```
+
+## 数据服务集成
+
+### 数据源适配器模式
+
+```python
+class DatafeedAdapter(BaseDatafeed):
+    """数据源适配器"""
+    
+    # 时间周期映射 - 根据数据源能力定制
+    INTERVAL_MAPPING = {
+        Interval.MINUTE: "1min",
+        Interval.MINUTE_15: "15min",
+        Interval.HOUR: "1hour",
+        Interval.DAILY: "1day"
+    }
+    
+    def query_bar_history(self, req: HistoryRequest) -> List[BarData]:
+        """查询历史数据"""
+        # 检查数据源是否支持该时间周期
+        if req.interval not in self.INTERVAL_MAPPING:
+            self.write_log(f"不支持的时间周期: {req.interval.value}")
+            return []
+            
+        # 转换为数据源格式并查询
+        external_interval = self.INTERVAL_MAPPING[req.interval]
+        return self._fetch_data(req.symbol, external_interval, req.start, req.end)
+```
+
+### 缓存策略
+
+```python
+from functools import lru_cache
+from datetime import timedelta
+
+class CachedDatabase(BaseDatabase):
+    """带缓存的数据库接口"""
+    
+    @lru_cache(maxsize=128)
+    def _load_cached_data(self, symbol: str, exchange: str, 
+                         interval: str, start_str: str, end_str: str):
+        """缓存数据加载"""
+        # 将datetime转换为字符串用于缓存键
+        start = datetime.fromisoformat(start_str)
+        end = datetime.fromisoformat(end_str)
+        return self._actual_load_data(symbol, exchange, interval, start, end)
+        
+    def clear_cache(self):
+        """清理缓存"""
+        self._load_cached_data.cache_clear()
+```
+
+## 数据质量控制
+
+### 数据验证规则
+
+```python
+def validate_bar_data(bar: BarData) -> bool:
+    """K线数据质量验证"""
+    checks = [
+        bar.high_price >= bar.low_price,          # 最高价 >= 最低价
+        bar.high_price >= bar.open_price,         # 最高价 >= 开盘价
+        bar.high_price >= bar.close_price,        # 最高价 >= 收盘价
+        bar.low_price <= bar.open_price,          # 最低价 <= 开盘价
+        bar.low_price <= bar.close_price,         # 最低价 <= 收盘价
+        bar.volume >= 0,                          # 成交量 >= 0
+        bar.turnover >= 0,                        # 成交额 >= 0
+    ]
+    
+    if not all(checks):
+        print(f"数据质量检查失败: {bar}")
+        return False
+    return True
+
+def detect_data_gaps(bars: List[BarData], interval: Interval) -> List[datetime]:
+    """检测数据缺口"""
+    if len(bars) < 2:
+        return []
+        
+    gaps = []
+    expected_delta = get_interval_delta(interval)
+    
+    for i in range(1, len(bars)):
+        actual_delta = bars[i].datetime - bars[i-1].datetime
+        if actual_delta > expected_delta * 1.5:  # 允许一定容差
+            gaps.append(bars[i-1].datetime)
+            
+    return gaps
+```
+
+## 性能优化策略
+
+### 数据批量处理
+
+```python
+def batch_load_data(symbols: List[str], interval: Interval, 
+                   start: datetime, end: datetime) -> Dict[str, List[BarData]]:
+    """批量加载数据"""
+    result = {}
+    
+    # 按数据源分组优化查询
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                self.load_bar_data, symbol, exchange, interval, start, end
+            ): symbol for symbol in symbols
+        }
+        
+        for future in concurrent.futures.as_completed(futures):
+            symbol = futures[future]
+            try:
+                result[symbol] = future.result()
+            except Exception as e:
+                print(f"加载{symbol}数据失败: {e}")
+                result[symbol] = []
+                
+    return result
+```
+
+### 内存优化
+
+```python
+def streaming_data_process(data_iterator, chunk_size: int = 1000):
+    """流式数据处理"""
+    chunk = []
+    for item in data_iterator:
+        chunk.append(item)
+        
+        if len(chunk) >= chunk_size:
+            yield chunk
+            chunk = []  # 释放内存
+            
+    if chunk:  # 处理最后一批数据
+        yield chunk
+```
+
+## 监控和诊断
+
+### 数据库性能监控
+
+```python
+import time
+from functools import wraps
+
+def monitor_performance(func):
+    """数据库操作性能监控装饰器"""
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        start_time = time.time()
+        try:
+            result = func(self, *args, **kwargs)
+            success = True
+            return result
+        except Exception as e:
+            success = False
+            raise
+        finally:
+            end_time = time.time()
+            duration = end_time - start_time
+            
+            # 记录性能指标
+            self.write_log(f"{func.__name__} 执行时间: {duration:.3f}s, "
+                          f"成功: {success}")
+            
+            # 性能告警
+            if duration > 5.0:  # 超过5秒告警
+                self.write_log(f"⚠️ 数据库操作慢查询: {func.__name__}")
+                
+    return wrapper
+```

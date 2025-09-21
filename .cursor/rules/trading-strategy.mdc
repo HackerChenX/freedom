@@ -1,0 +1,415 @@
+---
+description: 交易策略开发规范和最佳实践
+globs: **/Trading_Strategies/**/*.py,**/Strategy_Development/**/*.py
+---
+
+# 交易策略开发规范
+
+## 策略架构设计
+
+### 基础策略模板
+
+基于 [CTA策略框架](mdc:Strategy_Applications/Trading_Strategies/vnpy_ctastrategy/)：
+
+```python
+from vnpy_ctastrategy import CtaTemplate
+from vnpy.trader.constant import Interval, Exchange
+from vnpy.trader.object import BarData, TickData, OrderData, TradeData
+from datetime import datetime, timedelta
+
+class MultiTimeframeStrategy(CtaTemplate):
+    """多时间框架策略模板"""
+    
+    # 策略参数
+    fast_ma_length: int = 20
+    slow_ma_length: int = 60
+    risk_ratio: float = 0.02
+    
+    # 策略变量
+    fast_ma_value: float = 0.0
+    slow_ma_value: float = 0.0
+    position_target: int = 0
+    
+    # 参数列表（用于优化和界面显示）
+    parameters = [
+        "fast_ma_length", "slow_ma_length", "risk_ratio"
+    ]
+    
+    # 变量列表（用于状态显示）
+    variables = [
+        "fast_ma_value", "slow_ma_value", "position_target"
+    ]
+    
+    def __init__(self, cta_engine, strategy_name, vt_symbol, setting):
+        """策略初始化"""
+        super().__init__(cta_engine, strategy_name, vt_symbol, setting)
+        
+        # 多时间框架数据管理
+        self.bars_15m = []    # 15分钟主分析周期
+        self.bars_1h = []     # 1小时趋势确认
+        
+        # 技术指标初始化
+        self.am_15m = ArrayManager(size=100)
+        self.am_1h = ArrayManager(size=50)
+```
+
+### 多时间框架处理
+
+```python
+def on_init(self):
+    """策略初始化"""
+    self.write_log("多时间框架策略初始化")
+    
+    # 加载不同时间周期历史数据
+    self.load_bar(15)    # 15分钟数据（基础数据）
+    self.load_bar(60)    # 1小时数据（自动合成）
+    
+def on_bar(self, bar: BarData):
+    """K线数据更新"""
+    if bar.interval == Interval.MINUTE_15:
+        self.on_15min_bar(bar)
+    elif bar.interval == Interval.HOUR:
+        self.on_hour_bar(bar)
+        
+def on_15min_bar(self, bar: BarData):
+    """15分钟K线处理"""
+    self.am_15m.update_bar(bar)
+    if not self.am_15m.inited:
+        return
+        
+    # 主要交易逻辑
+    self.calculate_signals()
+    self.execute_trades()
+    
+def on_hour_bar(self, bar: BarData):
+    """1小时K线处理（趋势过滤）"""
+    self.am_1h.update_bar(bar)
+    if not self.am_1h.inited:
+        return
+        
+    # 趋势方向判断
+    self.trend_direction = self.analyze_trend()
+```
+
+## 信号生成系统
+
+### 技术指标计算
+
+```python
+def calculate_signals(self):
+    """计算交易信号"""
+    # 移动平均线
+    self.fast_ma_value = self.am_15m.sma(self.fast_ma_length)
+    self.slow_ma_value = self.am_15m.sma(self.slow_ma_length)
+    
+    # 多重确认信号
+    ma_signal = self.get_ma_signal()
+    volume_signal = self.get_volume_signal()
+    trend_filter = self.get_trend_filter()
+    
+    # 综合信号判断
+    if all([ma_signal > 0, volume_signal > 0, trend_filter > 0]):
+        self.position_target = 1
+    elif all([ma_signal < 0, volume_signal < 0, trend_filter < 0]):
+        self.position_target = -1
+    else:
+        self.position_target = 0
+
+def get_ma_signal(self) -> int:
+    """移动平均线信号"""
+    if self.fast_ma_value > self.slow_ma_value:
+        return 1  # 多头信号
+    elif self.fast_ma_value < self.slow_ma_value:
+        return -1  # 空头信号
+    else:
+        return 0  # 无信号
+
+def get_volume_signal(self) -> int:
+    """成交量确认信号"""
+    current_volume = self.am_15m.volume[-1]
+    avg_volume = self.am_15m.sma_array(20, self.am_15m.volume)[-1]
+    
+    if current_volume > avg_volume * 1.2:
+        return 1  # 放量确认
+    else:
+        return 0  # 量能不足
+
+def get_trend_filter(self) -> int:
+    """趋势过滤器"""
+    if not self.am_1h.inited:
+        return 0
+        
+    # 使用1小时数据判断趋势
+    ma_1h = self.am_1h.sma(20)
+    current_price = self.am_1h.close[-1]
+    
+    if current_price > ma_1h:
+        return 1  # 上升趋势
+    elif current_price < ma_1h:
+        return -1  # 下降趋势
+    else:
+        return 0  # 震荡趋势
+```
+
+## 风险管理系统
+
+### 仓位管理
+
+```python
+def calculate_position_size(self, signal_strength: float) -> int:
+    """动态仓位计算"""
+    # 基于风险比例的仓位管理
+    account_balance = self.cta_engine.main_engine.get_account().balance
+    risk_amount = account_balance * self.risk_ratio
+    
+    # 计算止损距离
+    current_price = self.am_15m.close[-1]
+    atr = self.am_15m.atr(14)
+    stop_distance = atr * 2  # 2倍ATR止损
+    
+    # 仓位大小 = 风险金额 / 止损距离
+    position_size = int(risk_amount / stop_distance)
+    
+    # 根据信号强度调整
+    position_size = int(position_size * signal_strength)
+    
+    # 仓位限制
+    max_position = int(account_balance * 0.1)  # 最大10%资金
+    return min(position_size, max_position)
+
+def set_stop_loss(self, direction: int):
+    """动态止损设置"""
+    current_price = self.am_15m.close[-1]
+    atr = self.am_15m.atr(14)
+    
+    if direction > 0:  # 多头止损
+        stop_price = current_price - atr * 2
+    else:  # 空头止损
+        stop_price = current_price + atr * 2
+        
+    # 更新止损价格
+    self.stop_loss_price = stop_price
+    self.write_log(f"设置止损价格: {stop_price}")
+```
+
+### 交易执行
+
+```python
+def execute_trades(self):
+    """执行交易"""
+    current_pos = self.pos
+    target_pos = self.position_target
+    
+    # 计算交易数量
+    trade_volume = abs(target_pos - current_pos)
+    if trade_volume == 0:
+        return
+    
+    # 执行开仓
+    if target_pos > current_pos:
+        self.buy(self.am_15m.close[-1] + 5, trade_volume)
+        self.write_log(f"执行买入: {trade_volume}")
+        
+    elif target_pos < current_pos:
+        self.sell(self.am_15m.close[-1] - 5, trade_volume)
+        self.write_log(f"执行卖出: {trade_volume}")
+
+def on_order(self, order: OrderData):
+    """委托状态更新"""
+    if order.status.is_active():
+        self.write_log(f"委托提交: {order.vt_orderid}")
+    elif order.status.is_rejected():
+        self.write_log(f"委托被拒: {order.vt_orderid}, {order.reject_reason}")
+
+def on_trade(self, trade: TradeData):
+    """成交回报处理"""
+    self.write_log(f"成交回报: {trade.direction.value} {trade.volume}@{trade.price}")
+    
+    # 成交后设置止损
+    if self.pos != 0:
+        self.set_stop_loss(1 if self.pos > 0 else -1)
+```
+
+## 策略回测框架
+
+### 回测配置
+
+参考 [CTA回测引擎](mdc:Strategy_Applications/Backtesting_Analysis/vnpy_ctabacktester/)：
+
+```python
+def run_backtest():
+    """运行策略回测"""
+    from vnpy_ctabacktester import BacktestingEngine
+    from datetime import datetime
+    
+    # 创建回测引擎
+    engine = BacktestingEngine()
+    
+    # 设置回测参数
+    engine.set_parameters(
+        vt_symbol="000001.SZSE",
+        interval=Interval.MINUTE_15,
+        start=datetime(2023, 1, 1),
+        end=datetime(2023, 12, 31),
+        rate=0.0003,  # 手续费率
+        slippage=0.01,  # 滑点
+        size=100,  # 合约乘数
+        pricetick=0.01,  # 最小价格变动
+        capital=1000000,  # 初始资金
+    )
+    
+    # 添加策略
+    engine.add_strategy(MultiTimeframeStrategy, {
+        "fast_ma_length": 20,
+        "slow_ma_length": 60,
+        "risk_ratio": 0.02
+    })
+    
+    # 加载历史数据
+    engine.load_data()
+    
+    # 运行回测
+    engine.run_backtesting()
+    
+    # 计算统计指标
+    df = engine.calculate_result()
+    statistics = engine.calculate_statistics()
+    
+    # 输出结果
+    engine.show_chart()
+    
+    return df, statistics
+```
+
+### 参数优化
+
+```python
+def optimize_strategy():
+    """策略参数优化"""
+    from vnpy.trader.optimize import OptimizationSetting
+    
+    # 设置优化参数
+    setting = OptimizationSetting()
+    setting.set_parameter("fast_ma_length", 10, 30, 5)
+    setting.set_parameter("slow_ma_length", 40, 80, 10)
+    setting.set_parameter("risk_ratio", 0.01, 0.05, 0.01)
+    
+    # 设置优化目标
+    setting.optimize_target = "sharpe_ratio"
+    
+    # 运行优化
+    engine.run_ga_optimization(setting, population_size=20, ngen=30)
+    
+    # 获取最优参数
+    best_params = engine.get_optimization_result()
+    return best_params
+```
+
+## 实盘交易集成
+
+### 实盘策略部署
+
+```python
+def deploy_live_strategy():
+    """部署实盘策略"""
+    from vnpy_ctastrategy import CtaStrategyApp, CtaEngine
+    
+    # 获取策略引擎
+    cta_engine = main_engine.get_engine(CtaStrategyApp.app_name)
+    
+    # 添加策略实例
+    cta_engine.add_strategy(
+        class_name="MultiTimeframeStrategy",
+        strategy_name="multi_tf_001",
+        vt_symbol="000001.SZSE",
+        setting={
+            "fast_ma_length": 20,
+            "slow_ma_length": 60,
+            "risk_ratio": 0.02
+        }
+    )
+    
+    # 初始化策略
+    cta_engine.init_strategy("multi_tf_001")
+    
+    # 启动策略
+    cta_engine.start_strategy("multi_tf_001")
+```
+
+### 监控和告警
+
+```python
+def setup_monitoring():
+    """设置策略监控"""
+    
+    def check_strategy_health():
+        """策略健康检查"""
+        for strategy_name in cta_engine.strategies:
+            strategy = cta_engine.strategies[strategy_name]
+            
+            # 检查策略状态
+            if not strategy.trading:
+                send_alert(f"策略 {strategy_name} 已停止交易")
+                
+            # 检查持仓风险
+            if abs(strategy.pos) > strategy.max_position:
+                send_alert(f"策略 {strategy_name} 持仓超限")
+                
+            # 检查盈亏
+            if strategy.pnl < -strategy.max_loss:
+                send_alert(f"策略 {strategy_name} 亏损超限")
+                
+    # 定时健康检查
+    import threading
+    timer = threading.Timer(60.0, check_strategy_health)
+    timer.start()
+
+def send_alert(message: str):
+    """发送告警消息"""
+    # 可以集成邮件、短信、微信等告警方式
+    print(f"🚨 策略告警: {message}")
+    
+    # 记录到日志
+    logger.warning(f"策略告警: {message}")
+```
+
+## 策略评估指标
+
+### 绩效分析
+
+```python
+def analyze_strategy_performance(trades: List[TradeData]) -> Dict:
+    """策略绩效分析"""
+    if not trades:
+        return {}
+    
+    # 基础统计
+    total_trades = len(trades)
+    winning_trades = len([t for t in trades if t.pnl > 0])
+    losing_trades = total_trades - winning_trades
+    
+    win_rate = winning_trades / total_trades if total_trades > 0 else 0
+    
+    # 盈亏分析
+    total_pnl = sum(t.pnl for t in trades)
+    avg_pnl = total_pnl / total_trades if total_trades > 0 else 0
+    
+    winning_pnl = sum(t.pnl for t in trades if t.pnl > 0)
+    losing_pnl = sum(t.pnl for t in trades if t.pnl < 0)
+    
+    avg_winning = winning_pnl / winning_trades if winning_trades > 0 else 0
+    avg_losing = losing_pnl / losing_trades if losing_trades > 0 else 0
+    
+    # 风险指标
+    profit_factor = abs(winning_pnl / losing_pnl) if losing_pnl != 0 else 0
+    
+    return {
+        "total_trades": total_trades,
+        "win_rate": win_rate,
+        "total_pnl": total_pnl,
+        "avg_pnl": avg_pnl,
+        "profit_factor": profit_factor,
+        "avg_winning": avg_winning,
+        "avg_losing": avg_losing,
+    }
+```

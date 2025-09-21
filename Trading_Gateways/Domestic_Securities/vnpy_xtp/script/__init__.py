@@ -1,0 +1,1 @@
+"""VnPy Freedom - script module"""

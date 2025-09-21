@@ -1,0 +1,673 @@
+---
+description: 交易网关集成开发规范
+globs: **/Trading_Gateways/**/*.py
+---
+
+# 交易网关集成规范
+
+## 网关架构设计
+
+### 基础网关类结构
+
+参考 [币安网关实现](mdc:Trading_Gateways/Cryptocurrency_Exchanges/vnpy_binance/)：
+
+```python
+from vnpy.trader.gateway import BaseGateway
+from vnpy.trader.object import (
+    TickData, BarData, OrderData, TradeData, 
+    ContractData, AccountData, PositionData,
+    OrderRequest, CancelRequest, SubscribeRequest, HistoryRequest
+)
+from vnpy.trader.constant import (
+    Direction, OrderType, Product, Status, Exchange, Interval
+)
+from vnpy_rest import RestClient, Request
+from vnpy_websocket import WebsocketClient
+
+class CustomGateway(BaseGateway):
+    """自定义交易网关"""
+    
+    # 网关基本信息
+    default_name: str = "CUSTOM"
+    default_setting: Dict[str, Any] = {
+        "API密钥": "",
+        "私钥": "",
+        "服务器": ["实盘", "模拟盘"],
+        "代理地址": "",
+        "代理端口": 0,
+    }
+    
+    # 支持的交易所列表
+    exchanges: List[Exchange] = [Exchange.CUSTOM]
+    
+    def __init__(self, event_engine: EventEngine, gateway_name: str):
+        """构造函数"""
+        super().__init__(event_engine, gateway_name)
+        
+        # 客户端实例
+        self.rest_api: "CustomRestApi" = CustomRestApi(self)
+        self.ws_api: "CustomWebsocketApi" = CustomWebsocketApi(self)
+        
+        # 数据缓存
+        self.orders: Dict[str, OrderData] = {}
+        self.trades: Dict[str, TradeData] = {}
+        self.positions: Dict[str, PositionData] = {}
+        self.contracts: Dict[str, ContractData] = {}
+```
+
+### 网关生命周期管理
+
+```python
+def connect(self, setting: dict) -> None:
+    """连接网关"""
+    api_key = setting["API密钥"]
+    secret = setting["私钥"]
+    server = setting["服务器"]
+    proxy_host = setting["代理地址"]
+    proxy_port = setting["代理端口"]
+    
+    # 验证必要参数
+    if not api_key or not secret:
+        self.write_log("API密钥和私钥不能为空")
+        return
+    
+    # 初始化REST API
+    self.rest_api.connect(api_key, secret, server, proxy_host, proxy_port)
+    
+    # 初始化WebSocket API  
+    self.ws_api.connect(api_key, secret, server, proxy_host, proxy_port)
+    
+    self.write_log("网关连接成功")
+
+def close(self) -> None:
+    """关闭网关"""
+    self.rest_api.stop()
+    self.ws_api.stop()
+    self.write_log("网关连接关闭")
+
+def subscribe(self, req: SubscribeRequest) -> None:
+    """订阅行情"""
+    self.ws_api.subscribe(req)
+
+def send_order(self, req: OrderRequest) -> str:
+    """发送委托"""
+    return self.rest_api.send_order(req)
+
+def cancel_order(self, req: CancelRequest) -> None:
+    """撤销委托"""
+    self.rest_api.cancel_order(req)
+
+def query_account(self) -> None:
+    """查询账户"""
+    self.rest_api.query_account()
+
+def query_position(self) -> None:
+    """查询持仓"""
+    self.rest_api.query_position()
+
+def query_history(self, req: HistoryRequest) -> List[BarData]:
+    """查询历史数据"""
+    return self.rest_api.query_history(req)
+```
+
+## REST API集成
+
+### REST客户端实现
+
+```python
+class CustomRestApi(RestClient):
+    """REST API客户端"""
+    
+    def __init__(self, gateway: CustomGateway):
+        """构造函数"""
+        super().__init__()
+        self.gateway = gateway
+        self.gateway_name = gateway.gateway_name
+        
+        # API配置
+        self.api_key: str = ""
+        self.secret: str = ""
+        self.server: str = ""
+        
+        # 请求限制
+        self.order_count: int = 0
+        self.order_count_lock = Lock()
+        
+    def connect(self, api_key: str, secret: str, server: str, 
+                proxy_host: str, proxy_port: int) -> None:
+        """连接REST API"""
+        self.api_key = api_key
+        self.secret = secret
+        self.server = server
+        
+        # 设置服务器地址
+        if server == "实盘":
+            self.init("https://api.exchange.com")
+        else:
+            self.init("https://testnet.exchange.com")
+            
+        # 设置代理
+        if proxy_host and proxy_port:
+            self.proxies = {
+                "http": f"http://{proxy_host}:{proxy_port}",
+                "https": f"http://{proxy_host}:{proxy_port}"
+            }
+            
+        self.start()
+        self.gateway.write_log("REST API连接成功")
+        
+        # 查询基础信息
+        self.query_contracts()
+        self.query_account()
+        self.query_position()
+
+    def sign(self, request: Request) -> Request:
+        """请求签名"""
+        timestamp = str(int(time.time() * 1000))
+        
+        # 构造签名字符串
+        if request.method == "GET":
+            sign_str = f"{timestamp}{request.method}{request.path}"
+            if request.params:
+                query_string = "&".join([f"{k}={v}" for k, v in request.params.items()])
+                sign_str += f"?{query_string}"
+        else:
+            sign_str = f"{timestamp}{request.method}{request.path}"
+            if request.data:
+                sign_str += request.data
+        
+        # 生成签名
+        signature = hmac.new(
+            self.secret.encode("utf-8"),
+            sign_str.encode("utf-8"),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # 添加认证头
+        request.headers = {
+            "API-KEY": self.api_key,
+            "API-TIMESTAMP": timestamp,
+            "API-SIGNATURE": signature,
+            "Content-Type": "application/json"
+        }
+        
+        return request
+```
+
+### 委托交易实现
+
+```python
+def send_order(self, req: OrderRequest) -> str:
+    """发送委托"""
+    # 生成本地委托号
+    orderid = self.generate_orderid()
+    
+    # 转换委托类型和方向
+    order_type = ORDERTYPE_VT2EXCHANGE[req.type]
+    direction = DIRECTION_VT2EXCHANGE[req.direction]
+    
+    # 构造请求数据
+    data = {
+        "symbol": req.symbol,
+        "side": direction,
+        "type": order_type,
+        "quantity": str(req.volume),
+    }
+    
+    # 添加价格（限价单）
+    if req.type == OrderType.LIMIT:
+        data["price"] = str(req.price)
+        
+    # 发送请求
+    self.add_request(
+        method="POST",
+        path="/api/v3/order",
+        callback=self.on_send_order,
+        data=json.dumps(data),
+        extra=orderid,
+        on_error=self.on_send_order_error
+    )
+    
+    # 创建本地委托对象
+    order = req.create_order_data(orderid, self.gateway_name)
+    self.gateway.on_order(order)
+    
+    return order.vt_orderid
+
+def on_send_order(self, data: dict, request: Request) -> None:
+    """委托发送回调"""
+    # 解析返回数据
+    orderid = request.extra
+    system_orderid = data["orderId"]
+    
+    # 更新委托映射
+    self.local_sys_map[orderid] = system_orderid
+    self.sys_local_map[system_orderid] = orderid
+    
+    # 更新委托状态
+    order = self.gateway.orders.get(orderid)
+    if order:
+        order.orderid = system_orderid
+        self.gateway.on_order(order)
+        
+    self.gateway.write_log(f"委托提交成功: {orderid} -> {system_orderid}")
+
+def on_send_order_error(self, exception_type: type, exception_value: Exception, 
+                       tb, request: Request) -> None:
+    """委托发送错误回调"""
+    orderid = request.extra
+    order = self.gateway.orders.get(orderid)
+    
+    if order:
+        order.status = Status.REJECTED
+        order.reject_reason = f"委托发送失败: {exception_value}"
+        self.gateway.on_order(order)
+        
+    self.gateway.write_log(f"委托发送失败: {orderid}, {exception_value}")
+```
+
+## WebSocket API集成
+
+### WebSocket客户端实现
+
+```python
+class CustomWebsocketApi(WebsocketClient):
+    """WebSocket API客户端"""
+    
+    def __init__(self, gateway: CustomGateway):
+        """构造函数"""
+        super().__init__()
+        self.gateway = gateway
+        self.gateway_name = gateway.gateway_name
+        
+        # 订阅管理
+        self.subscriptions: Set[str] = set()
+        self.tickers: Dict[str, TickData] = {}
+        
+    def connect(self, api_key: str, secret: str, server: str,
+                proxy_host: str, proxy_port: int) -> None:
+        """连接WebSocket"""
+        self.api_key = api_key
+        self.secret = secret
+        
+        # 设置WebSocket地址
+        if server == "实盘":
+            ws_host = "wss://stream.exchange.com/ws"
+        else:
+            ws_host = "wss://testnet.exchange.com/ws"
+            
+        # 设置代理
+        if proxy_host and proxy_port:
+            self.proxies = {
+                "http": f"http://{proxy_host}:{proxy_port}",
+                "https": f"http://{proxy_host}:{proxy_port}"
+            }
+            
+        self.init(ws_host)
+        self.start()
+
+    def on_connected(self) -> None:
+        """连接成功回调"""
+        self.gateway.write_log("WebSocket连接成功")
+        
+        # 认证
+        self.authenticate()
+
+    def on_disconnected(self) -> None:
+        """连接断开回调"""
+        self.gateway.write_log("WebSocket连接断开")
+
+    def on_packet(self, packet: dict) -> None:
+        """数据包处理"""
+        if "stream" in packet:
+            stream = packet["stream"]
+            data = packet["data"]
+            
+            # 处理不同类型的数据流
+            if "@ticker" in stream:
+                self.on_ticker(data)
+            elif "@depth" in stream:
+                self.on_depth(data)
+            elif "@trade" in stream:
+                self.on_trade(data)
+            elif "@kline" in stream:
+                self.on_kline(data)
+                
+        elif "result" in packet:
+            # 订阅确认
+            self.on_subscribe_result(packet)
+        elif "error" in packet:
+            # 错误处理
+            self.on_error(packet)
+
+    def subscribe(self, req: SubscribeRequest) -> None:
+        """订阅行情"""
+        symbol = req.symbol.lower()
+        
+        # 构造订阅消息
+        subscribe_msg = {
+            "method": "SUBSCRIBE",
+            "params": [
+                f"{symbol}@ticker",
+                f"{symbol}@depth5",
+                f"{symbol}@trade"
+            ],
+            "id": int(time.time())
+        }
+        
+        self.send_packet(subscribe_msg)
+        self.subscriptions.add(req.vt_symbol)
+        
+        self.gateway.write_log(f"订阅行情: {req.vt_symbol}")
+```
+
+### 行情数据处理
+
+```python
+def on_ticker(self, data: dict) -> None:
+    """Ticker数据处理"""
+    symbol = data["s"]
+    
+    # 创建或更新Tick对象
+    tick = self.tickers.get(symbol)
+    if not tick:
+        tick = TickData(
+            symbol=symbol,
+            exchange=Exchange.CUSTOM,
+            datetime=datetime.now(timezone.utc),
+            gateway_name=self.gateway_name
+        )
+        self.tickers[symbol] = tick
+    
+    # 更新Tick数据
+    tick.last_price = float(data["c"])
+    tick.open_price = float(data["o"])
+    tick.high_price = float(data["h"])
+    tick.low_price = float(data["l"])
+    tick.volume = float(data["v"])
+    tick.turnover = float(data["q"])
+    tick.datetime = datetime.fromtimestamp(data["E"] / 1000, timezone.utc)
+    
+    # 推送到主引擎
+    self.gateway.on_tick(copy(tick))
+
+def on_depth(self, data: dict) -> None:
+    """深度数据处理"""
+    symbol = data["s"]
+    
+    # 获取对应的Tick对象
+    tick = self.tickers.get(symbol)
+    if not tick:
+        return
+    
+    # 更新买卖盘数据
+    bids = data["bids"]
+    asks = data["asks"]
+    
+    for i, (price, volume) in enumerate(bids[:5]):
+        tick.__setattr__(f"bid_price_{i+1}", float(price))
+        tick.__setattr__(f"bid_volume_{i+1}", float(volume))
+        
+    for i, (price, volume) in enumerate(asks[:5]):
+        tick.__setattr__(f"ask_price_{i+1}", float(price))
+        tick.__setattr__(f"ask_volume_{i+1}", float(volume))
+    
+    tick.datetime = datetime.fromtimestamp(data["E"] / 1000, timezone.utc)
+    self.gateway.on_tick(copy(tick))
+
+def on_trade(self, data: dict) -> None:
+    """成交数据处理"""
+    # 如果需要推送逐笔成交数据
+    trade_data = TradeData(
+        symbol=data["s"],
+        exchange=Exchange.CUSTOM,
+        orderid=data["t"],
+        tradeid=data["t"],
+        direction=Direction.LONG if data["m"] else Direction.SHORT,
+        price=float(data["p"]),
+        volume=float(data["q"]),
+        datetime=datetime.fromtimestamp(data["T"] / 1000, timezone.utc),
+        gateway_name=self.gateway_name
+    )
+    
+    self.gateway.on_trade(trade_data)
+```
+
+## 数据格式转换
+
+### 标准化映射
+
+```python
+# 委托类型映射
+ORDERTYPE_VT2EXCHANGE = {
+    OrderType.LIMIT: "LIMIT",
+    OrderType.MARKET: "MARKET",
+    OrderType.STOP: "STOP_LOSS",
+}
+ORDERTYPE_EXCHANGE2VT = {v: k for k, v in ORDERTYPE_VT2EXCHANGE.items()}
+
+# 委托方向映射
+DIRECTION_VT2EXCHANGE = {
+    Direction.LONG: "BUY",
+    Direction.SHORT: "SELL"
+}
+DIRECTION_EXCHANGE2VT = {v: k for k, v in DIRECTION_VT2EXCHANGE.items()}
+
+# 委托状态映射
+STATUS_EXCHANGE2VT = {
+    "NEW": Status.SUBMITTING,
+    "PARTIALLY_FILLED": Status.PARTTRADED,
+    "FILLED": Status.ALLTRADED,
+    "CANCELED": Status.CANCELLED,
+    "REJECTED": Status.REJECTED,
+    "EXPIRED": Status.CANCELLED
+}
+
+# 产品类型映射
+PRODUCT_EXCHANGE2VT = {
+    "SPOT": Product.SPOT,
+    "FUTURES": Product.FUTURES,
+    "OPTIONS": Product.OPTION
+}
+
+# 时间周期映射
+INTERVAL_VT2EXCHANGE = {
+    Interval.MINUTE: "1m",
+    Interval.MINUTE_5: "5m",
+    Interval.MINUTE_15: "15m",
+    Interval.MINUTE_30: "30m",
+    Interval.HOUR: "1h",
+    Interval.HOUR_2: "2h",
+    Interval.HOUR_4: "4h",
+    Interval.DAILY: "1d",
+    Interval.WEEKLY: "1w"
+}
+```
+
+### 数据对象转换
+
+```python
+def parse_contract_data(raw_data: dict) -> ContractData:
+    """解析合约信息"""
+    return ContractData(
+        symbol=raw_data["symbol"],
+        exchange=Exchange.CUSTOM,
+        name=raw_data["baseAsset"] + "/" + raw_data["quoteAsset"],
+        product=PRODUCT_EXCHANGE2VT[raw_data["type"]],
+        size=1,
+        pricetick=float(raw_data["tickSize"]),
+        min_volume=float(raw_data["minQty"]),
+        stop_supported=True,
+        net_position=True,
+        history_data=True,
+        gateway_name=self.gateway_name
+    )
+
+def parse_account_data(raw_data: dict) -> AccountData:
+    """解析账户信息"""
+    return AccountData(
+        accountid=raw_data["accountType"],
+        balance=float(raw_data["totalWalletBalance"]),
+        frozen=float(raw_data["totalInitialMargin"]),
+        gateway_name=self.gateway_name
+    )
+
+def parse_position_data(raw_data: dict) -> PositionData:
+    """解析持仓信息"""
+    return PositionData(
+        symbol=raw_data["symbol"],
+        exchange=Exchange.CUSTOM,
+        direction=Direction.NET,
+        volume=float(raw_data["positionAmt"]),
+        frozen=0,
+        price=float(raw_data["entryPrice"]),
+        pnl=float(raw_data["unrealizedPnl"]),
+        yd_volume=0,
+        gateway_name=self.gateway_name
+    )
+```
+
+## 错误处理和重连
+
+### 错误处理机制
+
+```python
+def on_error(self, exception_type: type, exception_value: Exception, tb) -> None:
+    """错误处理"""
+    error_msg = f"网关错误: {exception_type.__name__}: {exception_value}"
+    self.gateway.write_log(error_msg)
+    
+    # 根据错误类型处理
+    if isinstance(exception_value, ConnectionError):
+        self.handle_connection_error()
+    elif isinstance(exception_value, TimeoutError):
+        self.handle_timeout_error()
+    elif "API key" in str(exception_value):
+        self.handle_auth_error()
+    else:
+        self.handle_general_error(exception_value)
+
+def handle_connection_error(self) -> None:
+    """处理连接错误"""
+    self.gateway.write_log("检测到连接错误，尝试重连...")
+    
+    # 停止当前连接
+    self.stop()
+    
+    # 延迟重连
+    threading.Timer(5.0, self.reconnect).start()
+
+def reconnect(self) -> None:
+    """重新连接"""
+    try:
+        self.start()
+        self.gateway.write_log("重连成功")
+        
+        # 重新订阅
+        for vt_symbol in self.subscriptions:
+            req = SubscribeRequest(symbol=vt_symbol.split(".")[0], exchange=Exchange.CUSTOM)
+            self.subscribe(req)
+            
+    except Exception as e:
+        self.gateway.write_log(f"重连失败: {e}")
+        # 继续尝试重连
+        threading.Timer(10.0, self.reconnect).start()
+```
+
+### 限频控制
+
+```python
+class RateLimiter:
+    """请求限频器"""
+    
+    def __init__(self, max_requests: int, time_window: int):
+        """构造函数"""
+        self.max_requests = max_requests
+        self.time_window = time_window
+        self.requests = []
+        self.lock = threading.Lock()
+    
+    def can_request(self) -> bool:
+        """检查是否可以发送请求"""
+        with self.lock:
+            now = time.time()
+            
+            # 清理过期请求
+            self.requests = [req_time for req_time in self.requests 
+                           if now - req_time < self.time_window]
+            
+            # 检查是否超过限制
+            if len(self.requests) >= self.max_requests:
+                return False
+            
+            # 记录新请求
+            self.requests.append(now)
+            return True
+    
+    def wait_if_needed(self) -> None:
+        """如果需要则等待"""
+        while not self.can_request():
+            time.sleep(0.1)
+
+# 在REST客户端中使用
+class CustomRestApi(RestClient):
+    def __init__(self, gateway: CustomGateway):
+        super().__init__()
+        self.gateway = gateway
+        
+        # 创建限频器（例如：100请求/分钟）
+        self.rate_limiter = RateLimiter(100, 60)
+    
+    def add_request(self, method: str, path: str, **kwargs) -> None:
+        """添加请求（带限频控制）"""
+        self.rate_limiter.wait_if_needed()
+        super().add_request(method, path, **kwargs)
+```
+
+## 测试和部署
+
+### 网关测试
+
+```python
+def test_gateway():
+    """网关测试"""
+    from vnpy.event import EventEngine
+    
+    # 创建事件引擎
+    event_engine = EventEngine()
+    
+    # 创建网关
+    gateway = CustomGateway(event_engine, "TEST")
+    
+    # 测试配置
+    setting = {
+        "API密钥": "test_api_key",
+        "私钥": "test_secret",
+        "服务器": "模拟盘",
+        "代理地址": "",
+        "代理端口": 0,
+    }
+    
+    # 连接测试
+    gateway.connect(setting)
+    
+    # 等待连接完成
+    time.sleep(5)
+    
+    # 订阅测试
+    req = SubscribeRequest(symbol="BTCUSDT", exchange=Exchange.CUSTOM)
+    gateway.subscribe(req)
+    
+    # 委托测试
+    order_req = OrderRequest(
+        symbol="BTCUSDT",
+        exchange=Exchange.CUSTOM,
+        direction=Direction.LONG,
+        type=OrderType.LIMIT,
+        volume=0.001,
+        price=50000
+    )
+    gateway.send_order(order_req)
+    
+    return gateway
+```

@@ -1,0 +1,32 @@
+{
+    "font.family": "微软雅黑",
+    "font.size": 12,
+
+    "log.active": true,
+    "log.level": 20,
+    "log.console": true,
+    "log.file": true,
+
+    "email.server": "smtp.qq.com",
+    "email.port": 465,
+    "email.username": "",
+    "email.password": "",
+    "email.sender": "",
+    "email.receiver": "",
+
+    "datafeed.name": "efinance",
+    "datafeed.username": "",
+    "datafeed.password": "",
+    
+    "_comment_datafeed": "数据源配置说明",
+    "_comment_tushare": "TuShare配置: datafeed.name=tushare, username=token",
+    "_comment_efinance": "EFinance配置: datafeed.name=efinance, 无需username/password",
+
+    "database.timezone": "Asia/Shanghai",
+    "database.name": "clickhouse",
+    "database.database": "stock",
+    "database.host": "localhost",
+    "database.port": 8123,
+    "database.user": "default",
+    "database.password": "123456"
+}

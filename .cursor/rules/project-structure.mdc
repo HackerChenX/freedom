@@ -1,0 +1,68 @@
+---
+alwaysApply: true
+description: VnPy Freedom项目结构和架构指南
+---
+
+# VnPy Freedom 项目结构指南
+
+## 核心架构原则
+
+VnPy Freedom采用模块化架构设计，遵循以下核心原则：
+
+1. **分层架构**：核心框架 → 功能模块 → 业务应用
+2. **松耦合**：模块间通过标准接口通信
+3. **可扩展**：支持插件式模块开发
+4. **向后兼容**：保持与VnPy生态的兼容性
+
+## 目录结构说明
+
+### 核心框架
+- **[Core_Framework/](mdc:Core_Framework/)**：VnPy核心框架代码
+  - **[vnpy/](mdc:Core_Framework/vnpy/)**：主要的VnPy核心库
+  - **[vnag/](mdc:Core_Framework/vnag/)**：图形分析工具
+
+### 功能模块分类
+
+#### 策略应用 [Strategy_Applications/](mdc:Strategy_Applications/)
+- **[Backtesting_Analysis/](mdc:Strategy_Applications/Backtesting_Analysis/)**：回测分析模块
+- **[Data_Management/](mdc:Strategy_Applications/Data_Management/)**：数据管理模块
+- **[Risk_Management/](mdc:Strategy_Applications/Risk_Management/)**：风险管理模块
+- **[Trading_Strategies/](mdc:Strategy_Applications/Trading_Strategies/)**：交易策略模块
+- **[Trading_Tools/](mdc:Strategy_Applications/Trading_Tools/)**：交易工具模块
+- **[System_Services/](mdc:Strategy_Applications/System_Services/)**：系统服务模块
+
+#### 数据服务 [Data_Services/](mdc:Data_Services/)
+- **[Market_Data/](mdc:Data_Services/Market_Data/)**：市场数据服务
+- **[Special_Data/](mdc:Data_Services/Special_Data/)**：特殊数据服务
+
+#### 交易网关 [Trading_Gateways/](mdc:Trading_Gateways/)
+- **[Cryptocurrency_Exchanges/](mdc:Trading_Gateways/Cryptocurrency_Exchanges/)**：数字货币交易所
+- **[Domestic_Securities/](mdc:Trading_Gateways/Domestic_Securities/)**：国内证券接口
+- **[International_Markets/](mdc:Trading_Gateways/International_Markets/)**：国际市场接口
+
+#### 数据库接口 [Database_Interfaces/](mdc:Database_Interfaces/)
+- **[Time_Series_Databases/](mdc:Database_Interfaces/Time_Series_Databases/)**：时序数据库
+- **[Relational_Databases/](mdc:Database_Interfaces/Relational_Databases/)**：关系型数据库
+
+#### 工具模块 [Utility_Tools/](mdc:Utility_Tools/)
+- **[vnpy_rest/](mdc:Utility_Tools/vnpy_rest/)**：REST客户端工具
+- **[vnpy_websocket/](mdc:Utility_Tools/vnpy_websocket/)**：WebSocket客户端工具
+
+## 主要入口点
+
+- **[run_vnpy_freedom.py](mdc:run_vnpy_freedom.py)**：主要启动脚本，包含智能模块发现和加载功能
+- **[README.md](mdc:README.md)**：项目说明文档
+- **[LOCAL_DEVELOPMENT.md](mdc:LOCAL_DEVELOPMENT.md)**：本地开发指南
+
+## 模块命名约定
+
+- 所有VnPy扩展模块以`vnpy_`前缀命名
+- 模块目录结构：`vnpy_modulename/vnpy_modulename/`（嵌套结构）
+- 主应用类命名：`ModuleNameApp`
+- 引擎类命名：`ModuleNameEngine`
+
+## 依赖关系
+
+核心依赖链：`Core_Framework` → `Utility_Tools` → `功能模块` → `业务应用`
+
+重要：修改核心框架时需要考虑对所有下游模块的影响。
