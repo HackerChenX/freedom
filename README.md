@@ -1,165 +1,218 @@
-# VnPy Freedom - 完整量化交易生态系统
+# 🚀 VnPy Freedom - 量化交易平台
 
-## 🎯 项目概述
-VnPy Freedom 是一个基于 VeighNa 4.0 的完整量化交易生态系统，包含 **57个核心模块**，总大小 **939MB**，为量化交易提供从数据获取到策略执行的一站式解决方案。
+[![GitHub](https://img.shields.io/github/license/HackerChenX/freedom)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
+[![VnPy](https://img.shields.io/badge/VnPy-3.0+-green.svg)](https://github.com/vnpy/vnpy)
+[![ClickHouse](https://img.shields.io/badge/ClickHouse-Database-orange.svg)](https://clickhouse.com/)
 
-## 📁 项目结构
-项目已按功能模块重新组织，使用清晰的二级分类结构：
-
-```
-📁 Core_Framework/                  # 核心框架模块 (2个)
-📁 Trading_Gateways/               # 交易接口模块 (23个)
-│   ├── Domestic_Futures/          # 国内期货市场 (8个)
-│   ├── Domestic_Securities/       # 国内证券市场 (4个)
-│   ├── Asset_Management/          # 资管系统接口 (5个)
-│   ├── International_Markets/     # 海外市场 (1个)
-│   └── Cryptocurrency_Exchanges/  # 数字货币交易所 (5个)
-📁 Strategy_Applications/          # 策略应用模块 (10个)
-│   ├── Trading_Strategies/        # 策略交易引擎 (3个)
-│   ├── Trading_Tools/             # 交易工具 (3个)
-│   ├── Data_Management/           # 数据管理 (2个)
-│   ├── Risk_Management/           # 风险管理 (0个)
-│   └── System_Services/           # 系统服务 (2个)
-📁 Data_Services/                  # 数据服务模块 (7个)
-│   ├── Market_Data/               # 行情数据 (5个)
-│   └── Special_Data/              # 特殊数据 (2个)
-📁 Database_Interfaces/            # 数据库接口模块 (6个)
-│   ├── Relational_Databases/      # 关系型数据库 (3个)
-│   └── Time_Series_Databases/     # 时序数据库 (3个)
-📁 Utility_Tools/                  # 工具模块 (2个)
-📁 Third_Party_Extensions/         # 第三方项目 (5个)
-📁 Demo_Examples/                  # 演示示例 (2个)
-```
-
-## ⭐ 核心亮点
-
-### 🤖 AI量化模块 (vnpy.alpha)
-VeighNa 4.0 重磅新增的AI量化策略开发模块：
-- **因子特征工程**: Alpha 158因子集合，时序/截面算子
-- **机器学习模型**: Lasso、LightGBM、MLP神经网络
-- **策略开发**: 基于ML信号的量化策略
-- **投研管理**: AlphaLab实验室完整工作流程
-
-### 🔌 全面的交易接口支持
-- **国内期货**: CTP、CTP Mini、飞马、易盛等 (8个)
-- **国内证券**: XTP、华鑫奇点、顶点HTS等 (4个)
-- **海外市场**: Interactive Brokers (1个)
-- **数字货币**: 币安、火币、Bybit等 (5个)
-- **资管系统**: 融航、杰宜斯、利星等 (5个)
-
-### 🚀 完整的策略应用生态
-- **策略引擎**: CTA、组合策略、脚本策略
-- **交易工具**: 算法交易、价差交易、期权交易
-- **系统服务**: RPC服务、Web交易、组合管理
-- **数据管理**: 行情记录、数据管理器
-
-## 🚀 快速开始
-
-### 新手入门路径
-1. **了解核心架构**: `Core_Framework/vnpy/`
-2. **选择交易接口**: `Trading_Gateways/Domestic_Futures/vnpy_ctp/` (期货)
-3. **开发交易策略**: `Strategy_Applications/Trading_Strategies/vnpy_ctastrategy/`
-4. **参考示例代码**: `Demo_Examples/`
-
-### AI量化开发路径
-1. **学习AI模块**: `Core_Framework/vnpy/alpha/`
-2. **强化学习**: `Third_Party_Extensions/FinRL/`
-3. **语言模型**: `Third_Party_Extensions/Kronos/`
-
-### 数据管理配置
-1. **专业数据服务**: `Data_Services/Market_Data/vnpy_rqdata/`
-2. **轻量级存储**: `Database_Interfaces/Relational_Databases/vnpy_sqlite/`
-3. **行情录制**: `Strategy_Applications/Data_Management/vnpy_datarecorder/`
-
-## 📊 模块统计
-
-| 分类 | 数量 | 主要功能 |
-|------|------|----------|
-| 核心框架 | 2 | 基础架构、AI量化 |
-| 交易接口 | 23 | 连接各类交易所 |
-| 策略应用 | 10 | 策略开发与执行 |
-| 数据服务 | 7 | 行情数据获取 |
-| 数据库接口 | 6 | 数据存储管理 |
-| 工具模块 | 2 | 网络通信工具 |
-| 第三方项目 | 5 | 扩展功能支持 |
-| 演示示例 | 2 | 学习参考材料 |
-
-## 🔧 技术特点
-
-### 架构优势
-- **事件驱动架构**: 松耦合设计，高性能运行
-- **模块化组件**: 易于扩展和维护
-- **统一接口标准**: 便于集成和开发
-
-### 功能完整性
-- **全流程覆盖**: 从数据获取到策略执行
-- **多资产支持**: 股票、期货、期权、数字货币
-- **完整风险管理**: 实时监控和控制
-- **先进AI技术**: 机器学习量化策略
-
-## 📚 文档资源
-
-- [📄 项目模块功能文档](docs/VnPy_Freedom_项目模块功能文档.md) - 详细功能说明
-- [📄 项目结构重组说明](./项目结构重组说明_最终版.md) - 重组详细说明
-- [📄 项目目录结构](./项目目录结构.md) - 完整目录树
-- [📄 项目清理报告](./项目清理报告.md) - 冗余文件清理说明
-- [📄 下载摘要](./DOWNLOAD_SUMMARY.md) - 原始下载信息
-
-## 🎯 使用建议
-
-### 环境要求
-- Python 3.10+ (推荐 3.13)
-- Windows 11+ / Ubuntu 22.04+ / macOS
-- 推荐使用 VeighNa Studio 4.1.0
-
-### 安装步骤
-1. **统一安装**: `python install.py`
-2. **选择组件**: 根据需求选择AI、数据库、数据服务等模块
-3. **配置环境**: 可选择设置开发环境
-4. **启动使用**: 多种启动方式可选
-
-### 🚀 启动方式
-
-#### 方式一：图形化启动器 (推荐)
-```bash
-# Windows
-start_vnpy_freedom.bat
-
-# Linux/macOS
-./start_vnpy_freedom.sh
-```
-
-#### 方式二：快速启动
-```bash
-python quick_start.py
-```
-
-#### 方式三：完整启动器
-```bash
-python run_vnpy_freedom.py
-```
-
-#### 方式四：模块检查
-```bash
-python check_modules.py
-```
-
-### 学习路径
-- **初学者**: 核心框架 → CTA策略 → 示例代码
-- **进阶用户**: 算法交易 → 分布式部署 → Web界面
-- **AI开发**: Alpha模块 → 强化学习 → 语言模型
-
-## 🤝 社区支持
-
-- [VeighNa官方网站](https://www.vnpy.com)
-- [官方文档](https://www.vnpy.com/docs/cn/index.html)
-- [社区论坛](https://www.vnpy.com/forum/)
-- [GitHub仓库](https://github.com/vnpy/vnpy)
-
-## 📄 许可证
-
-本项目基于 MIT 许可证开源，详见各模块的 LICENSE 文件。
+**专业级量化交易解决方案，集成完整的策略开发、回测分析、实盘交易生态系统**
 
 ---
 
-**VnPy Freedom** - 为交易者而生，由交易者打造，AI驱动的量化交易平台 🚀
+## ✨ 核心特性
+
+### 🎯 交易策略引擎
+- **缩量回踩策略** - 严格按照通达信公式实现的9重条件筛选
+- **二波企稳策略** - 多时间框架结合的趋势确认策略
+- **决策分析系统** - 完整的策略决策过程追踪和可视化
+- **T+1交易制度** - 针对A股市场的专业交易规则支持
+
+### 📊 数据服务生态
+- **ClickHouse时序数据库** - 高性能历史数据存储和查询
+- **EFinance数据源** - 免费开源的A股实时数据接入
+- **多时间框架支持** - 自动K线数据合成（15分钟→30分钟→1小时）
+- **智能数据管理** - 数据下载、清洗、验证一体化
+
+### 🔧 专业级回测系统
+- **CTA策略回测** - 单品种策略完整回测分析
+- **组合策略回测** - 多品种投资组合策略支持
+- **风险管理集成** - 实时风险监控和仓位管理
+- **绩效分析报告** - 详细的策略表现和风险指标
+
+### 🖥️ 智能用户界面
+- **一键式平台启动** - 智能模块发现和自动加载
+- **实时K线图表** - 集成技术指标和交易信号显示
+- **决策时间线** - 策略每日决策过程的完整记录
+- **模块化设计** - 灵活的功能组件按需加载
+
+---
+
+## 🏗️ 系统架构
+
+```
+VnPy Freedom
+├── 📁 Core_Framework/           # VnPy核心框架
+│   ├── vnpy/                   # 主要VnPy库
+│   └── vnag/                   # 图形分析工具
+├── 📁 Strategy_Applications/    # 策略应用模块
+│   ├── Trading_Strategies/     # 交易策略
+│   ├── Backtesting_Analysis/   # 回测分析
+│   ├── Data_Management/        # 数据管理
+│   └── Risk_Management/        # 风险管理
+├── 📁 Trading_Gateways/        # 交易网关
+│   ├── Cryptocurrency_Exchanges/ # 数字货币交易所
+│   ├── Domestic_Securities/    # 国内证券接口
+│   └── International_Markets/  # 国际市场接口
+├── 📁 Data_Services/           # 数据服务
+│   ├── Market_Data/           # 市场数据
+│   └── Special_Data/          # 特殊数据
+└── 📁 Database_Interfaces/     # 数据库接口
+    ├── Time_Series_Databases/ # 时序数据库
+    └── Relational_Databases/ # 关系型数据库
+```
+
+---
+
+## 🚀 快速开始
+
+### 1. 环境要求
+```bash
+Python 3.11+
+ClickHouse (可选，用于历史数据存储)
+```
+
+### 2. 安装依赖
+```bash
+# 克隆项目
+git clone https://github.com/HackerChenX/freedom.git
+cd freedom
+
+# 创建虚拟环境
+python3.11 -m venv vnpy_freedom_env
+source vnpy_freedom_env/bin/activate  # Linux/macOS
+# vnpy_freedom_env\Scripts\activate   # Windows
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+### 3. 配置数据源
+编辑 `vt_setting.json` 配置数据源：
+```json
+{
+    "datafeed.name": "efinance",
+    "database.name": "clickhouse",
+    "database.host": "localhost",
+    "database.port": 8123,
+    "database.database": "vnpy",
+    "database.user": "default",
+    "database.password": "123456"
+}
+```
+
+### 4. 启动平台
+```bash
+python3.11 run_vnpy_freedom.py
+```
+
+---
+
+## 📈 策略展示
+
+### 缩量回踩策略
+**专业级选股算法，基于通达信公式实现**
+
+🔍 **9重条件筛选**：
+- ✅ 10/20日均线上移
+- ✅ 60/120日均线上移  
+- ✅ 回踩10/20/30日均线
+- ✅ 近60日至少一次涨幅>7%
+- ✅ 110日振幅>8.1%至少两次
+- ✅ 15分钟吸筹信号
+- ✅ 连续缩量阴线
+- ✅ KDJ/DEA任一上移
+- ✅ 无负面信号过滤
+
+📊 **决策分析界面**：
+```
+📅 2025-01-24 交易日决策记录：
+🕐 09:30:00 价格: 10.45
+📊 条件评估：
+  ✅ 10/20均线上移    ✅ 60/120均线上移
+  ✅ 回踩均线        ✅ 60日涨幅>7%
+  ❌ 110日振幅>8.1%  ✅ 15分钟吸筹
+  ✅ 连续缩量        ✅ KDJ/DEA上移
+  ✅ 无负面信号
+
+📈 满足条件: 8/9
+🚀 **执行买入操作**
+💡 买入理由: 强烈关注信号触发：8个条件满足...
+```
+
+---
+
+## 🛠️ 核心功能
+
+### 智能策略引擎
+- **多时间框架分析** - 日线+15分钟联合决策
+- **技术指标集成** - KDJ、MACD、均线系统
+- **风险信号过滤** - 智能排除不利市场环境
+- **回测验证系统** - 历史数据验证策略有效性
+
+### 专业数据管理
+- **高频数据存储** - ClickHouse时序数据库
+- **实时数据更新** - EFinance免费数据源
+- **数据质量监控** - 自动数据验证和清洗
+- **多源数据整合** - 支持TuShare、米筐等数据源
+
+### 用户友好界面
+- **可视化策略监控** - 实时策略状态展示
+- **交互式图表** - 集成技术分析工具
+- **决策过程追踪** - 完整的买卖决策记录
+- **一键启动管理** - 简化的平台操作流程
+
+---
+
+## 📚 文档与教程
+
+- 📖 [项目Wiki](docs/) - 详细的开发文档
+- 🎯 [策略开发指南](docs/base/) - 策略开发最佳实践
+- 🔧 [配置说明](配置文件说明.md) - 系统配置详解
+- 📊 [使用教程](LOCAL_DEVELOPMENT.md) - 本地开发指南
+
+---
+
+## 🤝 贡献
+
+欢迎贡献代码、报告问题或提出改进建议！
+
+1. Fork 项目
+2. 创建功能分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 开启 Pull Request
+
+---
+
+## 📄 许可证
+
+本项目基于 [MIT许可证](LICENSE) - 查看 LICENSE 文件了解详情
+
+---
+
+## 🙏 致谢
+
+- [VnPy](https://github.com/vnpy/vnpy) - 优秀的量化交易框架
+- [ClickHouse](https://clickhouse.com/) - 高性能时序数据库
+- [EFinance](https://github.com/Micro-sheep/efinance) - 免费股票数据接口
+
+---
+
+## 📬 联系方式
+
+- 项目主页: [https://github.com/HackerChenX/freedom](https://github.com/HackerChenX/freedom)
+- 问题反馈: [Issues](https://github.com/HackerChenX/freedom/issues)
+- 功能建议: [Discussions](https://github.com/HackerChenX/freedom/discussions)
+
+---
+
+<div align="center">
+
+**🌟 如果这个项目对您有帮助，请点击 Star 支持我们！🌟**
+
+![GitHub stars](https://img.shields.io/github/stars/HackerChenX/freedom?style=social)
+![GitHub forks](https://img.shields.io/github/forks/HackerChenX/freedom?style=social)
+
+*让量化交易更简单，让投资决策更智能* 💎
+
+</div>
